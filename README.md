@@ -80,3 +80,49 @@ git remote set-url origin https://namle682004-coder@github.com/namle682004-coder
 
 # 4. Push nhánh `dev` lên GitHub
 git push -u origin dev
+
+
+Ran command: `wsl -d Ubuntu-22.04 -e bash -c "cd /home/namle/AI-Projects/llm-apps/ai_platform && git branch -D feature/aip-enterprise-core"`
+Ran command: `wsl -d Ubuntu-22.04 -e bash -c "cd /home/namle/AI-Projects/llm-apps/ai_platform && git branch"`
+
+**RẤT CHUẨN XÁC NGUYÊN TẮC GIT FLOW DOANH NGHIỆP!** 🏆
+
+Tôi đã xóa nhánh tạm `feature/aip-enterprise-core` giúp bạn. Danh sách các nhánh trên máy của bạn hiện tại cực kỳ gọn gàng chỉ còn lại:
+- **`* dev`** (Nhánh phát triển chính)
+- **`main`** (Nhánh sản phẩm chính)
+
+---
+
+### Quy Trình Chuẩn Từ Lần Sau Khi Bạn Làm Tính Năng Mới:
+
+Khi bắt đầu làm một công việc mới (Ví dụ: tính năng `feature/rag-search` hoặc sửa lỗi `fix/quota-bug`):
+
+#### **Bước 1: Tạo nhánh mới từ nhánh `dev`**
+```bash
+git checkout dev
+git checkout -b feature/tên-tính-năng-mới
+```
+
+#### **Bước 2: Lập trình và kiểm thử code**
+Khi làm xong, bạn commit như bình thường:
+```bash
+git add .
+git commit -m "feat: mô tả tính năng mới"
+```
+
+#### **Bước 3: Merge kết quả về nhánh `dev` và xóa nhánh tạm**
+```bash
+# Chuyển về nhánh dev
+git checkout dev
+
+# Gộp code mới vào nhánh dev
+git merge feature/tên-tính-năng-mới
+
+# Xóa nhánh tạm vừa làm xong cho gọn
+git branch -d feature/tên-tính-năng-mới
+
+# Push nhánh dev lên GitHub
+git push origin dev
+```
+
+Cách làm này đảm bảo repository của bạn luôn sạch đẹp, dễ quản lý và CI/CD tự động kiểm thử 100% không lo sập code trên `main`!
