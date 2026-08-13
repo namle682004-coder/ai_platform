@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "image-worker"
+name = "video-worker"
 version = "1.0.0"
-description = "AIP Distributed FLUX.1 / SDXL Image Generation Worker"
+description = "AIP Distributed Wan2.2 Video Generation Worker"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

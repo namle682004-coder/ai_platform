@@ -68,3 +68,15 @@ make dev-gateway
 
 # 3. Tắt hạ tầng Docker khi làm xong
 make dev-env-down
+
+# 1. Tạo nhánh `dev` và chuyển sang nhánh `dev`
+git checkout -b dev
+
+# 2. Merge toàn bộ code từ nhánh `feature/aip-enterprise-core` vào `dev`
+git merge feature/aip-enterprise-core
+
+# 3. Đổi URL Remote chỉ định tài khoản namle682004-coder (nếu chưa đổi)
+git remote set-url origin https://namle682004-coder@github.com/namle682004-coder/ai_platform.git
+
+# 4. Push nhánh `dev` lên GitHub
+git push -u origin dev
