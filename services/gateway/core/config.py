@@ -1,21 +1,42 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+import os
 
 
 class GatewaySettings(BaseSettings):
-    app_name: str = "AIP API Gateway"
-    env: str = "development"
-    debug: bool = True
-    port: int = 8000
-    host: str = "0.0.0.0"
+    """
+    Control Plane Gateway Settings with Multi-Environment Profile Support (Dev, UAT, Production).
+    Single Codebase Principle compliant with 12-Factor App methodology.
+    """
 
-    master_key_pepper: str = "change_this_master_secret_pepper_32bytes"
-    mongo_uri: str = "mongodb://root:example@localhost:27017"
-    mongo_db_name: str = "aip_platform"
-    redis_uri: str = "redis://:example@localhost:6379/0"
-    rabbitmq_uri: str = "amqp://guest:guest@localhost:5672/"
-    minio_endpoint: str = "localhost:9000"
+    # Environment Profile (development | uat | production)
+    environment: str = Field("development", validation_alias="ENVIRONMENT")
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # Gateway Server Network Settings
+    host: str = Field("0.0.0.0", validation_alias="HOST")
+    port: int = Field(8000, validation_alias="PORT")
+    debug: bool = Field(True, validation_alias="DEBUG")
+
+    # Master Security Pepper & Keys
+    master_pepper: str = Field("default_enterprise_secret_pepper_2026", validation_alias="MASTER_PEPPER")
+
+    # Data Store URIs
+    mongo_uri: str = Field("mongodb://root:example@localhost:27017", validation_alias="MONGO_URI")
+    redis_host: str = Field("localhost", validation_alias="REDIS_HOST")
+    redis_port: int = Field(6379, validation_alias="REDIS_PORT")
+    rabbitmq_url: str = Field("amqp://guest:guest@localhost:5672/", validation_alias="RABBITMQ_URL")
+    minio_endpoint: str = Field("localhost:9000", validation_alias="MINIO_ENDPOINT")
+
+    # Default Quota Limits
+    default_rpm_limit: int = Field(60, validation_alias="DEFAULT_RPM_LIMIT")
+    default_tpm_limit: int = Field(100000, validation_alias="DEFAULT_TPM_LIMIT")
+    default_concurrency_limit: int = Field(5, validation_alias="DEFAULT_CONCURRENCY_LIMIT")
+
+    model_config = SettingsConfigDict(
+        env_file=os.getenv("ENV_FILE", ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 gateway_settings = GatewaySettings()
