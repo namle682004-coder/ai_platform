@@ -1,0 +1,83 @@
+# ==========================================
+# AIP Enterprise Monorepo Master .gitignore
+# ==========================================
+
+# Python Bytecode & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.uv/
+
+# Testing & Coverage Caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Environment Variables & Sensitive Secrets
+.env
+.env.local
+.env.*.local
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+
+# IDEs & System Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Heavy Model Weights & Cache (Prevent pushing GBs to Git)
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+*.engine
+*.gguf
+models_cache/
+hf_cache/
+
+# Logs & Temporary Files
+*.log
+logs/
+tmp/
+scratch/

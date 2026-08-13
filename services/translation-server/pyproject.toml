@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "translation-server"
+version = "1.0.0"
+description = "AIP CTranslate2 Translation Server Microservice"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "common",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic-settings>=2.4.0",
+]
+
+[tool.uv.sources]
+common = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]

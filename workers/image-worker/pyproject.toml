@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "image-worker"
+version = "1.0.0"
+description = "AIP Image Generation Worker (FLUX.1 / SDXL)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "common",
+    "aio-pika>=9.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
