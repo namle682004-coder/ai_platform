@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Add services and packages to sys.path for Vercel Serverless environment
+# Add services and packages to sys.path for Vercel & Render environment
 current_dir = os.path.dirname(os.path.abspath(__file__))
 services_dir = os.path.abspath(os.path.join(current_dir, ".."))
 packages_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "packages"))
@@ -12,6 +12,7 @@ if packages_dir not in sys.path:
     sys.path.insert(0, packages_dir)
 
 from fastapi import FastAPI, Depends
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 
@@ -42,7 +43,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 app = FastAPI(
     title="AI Inference Platform - Gateway Microservice",
     version="1.0.0",
-    description="Enterprise Control Plane API Gateway Microservice (Vercel Serverless Ready)",
+    description="Enterprise Control Plane API Gateway Microservice (Cloud Live)",
     docs_url="/docs",
     redoc_url="/redoc",
     dependencies=[Depends(bearer_scheme)],
@@ -58,6 +59,11 @@ app.add_middleware(
 
 app.add_middleware(QuotaMiddleware)
 app.add_middleware(AuthMiddleware)
+
+# Root Landing Redirect to Swagger UI /docs
+@app.get("/", include_in_schema=False)
+async def root_redirect():
+    return RedirectResponse(url="/docs")
 
 # Register Public /v1 Routers
 app.include_router(chat_router)
@@ -86,7 +92,7 @@ async def health_check():
         "service": "gateway-microservice",
         "version": "1.0.0",
         "srs_coverage": "100%",
-        "deployment": "Vercel Serverless Ready",
+        "deployment": "Cloud Production Live",
         "control_plane": {
             "auth_middleware": "active",
             "quota_middleware": "active",
