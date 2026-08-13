@@ -1,0 +1,767 @@
+{
+  "info": {
+    "name": "AI Inference Platform (AIP) API Collection",
+    "description": "Enterprise On-Premise AI Inference Middleware Platform Postman Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Chat Completion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/chat/completions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "chat",
+            "completions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Completion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/completions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "completions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Embeddings",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/embeddings",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "embeddings"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Transcription",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/audio/transcriptions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "audio",
+            "transcriptions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Speech",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/audio/speech",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "audio",
+            "speech"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Generate Images",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/images/generations",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "images",
+            "generations"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Moderation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/moderations",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "moderations"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/predictions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "predictions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Async Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/jobs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "jobs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Job Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/jobs/{job_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "jobs",
+            "{job_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Job Result",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/jobs/{job_id}/result",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "jobs",
+            "{job_id}",
+            "result"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cancel Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/jobs/{job_id}/cancel",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "jobs",
+            "{job_id}",
+            "cancel"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Models",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/models",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "models"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Model Alias",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/models/{alias}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "models",
+            "{alias}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Api Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/keys",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "keys"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Aliases",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/aliases",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "aliases"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Register Alias",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/aliases",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "aliases"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve And Activate Alias",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/aliases/{alias_name}/activate",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "aliases",
+            "{alias_name}",
+            "activate"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Deactivate Alias",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/aliases/{alias_name}/deactivate",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "aliases",
+            "{alias_name}",
+            "deactivate"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Alias",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/aliases/{alias_name}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "aliases",
+            "{alias_name}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Audit Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/audit",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "audit"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Exported Endpoints",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/endpoints",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "endpoints"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Enable Endpoint",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/endpoints/{endpoint_id}/enable",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "endpoints",
+            "{endpoint_id}",
+            "enable"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Disable Endpoint",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/endpoints/{endpoint_id}/disable",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "endpoints",
+            "{endpoint_id}",
+            "disable"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Realtime Active Calls",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/metrics/active-calls",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "metrics",
+            "active-calls"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    }
+  ]
+}

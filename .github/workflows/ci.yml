@@ -1,0 +1,54 @@
+name: AIP Lightweight Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  test-and-validate:
+    name: Fast Code Linting, Tests & OpenAPI Export Verification (No Heavy Docker Build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Install UV Package Manager
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Monorepo Dependencies (Ultra Fast UV Sync)
+        run: |
+          uv venv
+          uv pip install -e packages/common -e packages/sdk-py -e services/gateway -e services/translation-server -e services/stt-server -e services/moderation-server pytest httpx ruff python-multipart
+
+      - name: Run Code Linting (Ruff Check)
+        run: |
+          uv run ruff check .
+
+      - name: Run Automated Pytest Suite (All 15 Integration Tests)
+        env:
+          PYTHONPATH: "services:packages:packages/sdk-py"
+        run: |
+          uv run pytest
+
+      - name: Verify OpenAPI & Postman Asset Generation
+        env:
+          PYTHONPATH: "services:packages:packages/sdk-py"
+        run: |
+          uv run python scripts/export_api_assets.py
+
+      - name: Check Export Assets Artifacts
+        run: |
+          test -f openapi/openapi.json
+          test -f openapi/aip_postman_collection.json
+          test -f openapi/aip_documentation.html
+          echo "All export assets verified successfully!"
