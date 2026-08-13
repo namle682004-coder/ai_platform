@@ -1,35 +1,48 @@
-from fastapi import Depends, FastAPI
+import sys
+import os
+
+# Add services and packages to sys.path for Vercel Serverless environment
+current_dir = os.path.dirname(os.path.abspath(__file__))
+services_dir = os.path.abspath(os.path.join(current_dir, ".."))
+packages_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "packages"))
+
+if services_dir not in sys.path:
+    sys.path.insert(0, services_dir)
+if packages_dir not in sys.path:
+    sys.path.insert(0, packages_dir)
+
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 
-from gateway.api.admin.aliases import router as admin_aliases_router
-from gateway.api.admin.audit import router as admin_audit_router
-from gateway.api.admin.endpoints import router as admin_endpoints_router
-
-# Admin Routers
-from gateway.api.admin.keys import router as admin_keys_router
-from gateway.api.admin.metrics import router as admin_metrics_router
-from gateway.api.v1.audio import router as audio_router
+from gateway.middleware.auth_middleware import AuthMiddleware
+from gateway.middleware.quota_middleware import QuotaMiddleware
 
 # Public Routers
 from gateway.api.v1.chat import router as chat_router
 from gateway.api.v1.completions import router as completions_router
 from gateway.api.v1.embeddings import router as embeddings_router
+from gateway.api.v1.audio import router as audio_router
+from gateway.api.v1.speech import router as speech_router
 from gateway.api.v1.images import router as images_router
-from gateway.api.v1.jobs import router as jobs_router
-from gateway.api.v1.models import router as models_router
 from gateway.api.v1.moderations import router as moderations_router
 from gateway.api.v1.predictions import router as predictions_router
-from gateway.api.v1.speech import router as speech_router
-from gateway.middleware.auth_middleware import AuthMiddleware
-from gateway.middleware.quota_middleware import QuotaMiddleware
+from gateway.api.v1.jobs import router as jobs_router
+from gateway.api.v1.models import router as models_router
+
+# Admin Routers
+from gateway.api.admin.keys import router as admin_keys_router
+from gateway.api.admin.aliases import router as admin_aliases_router
+from gateway.api.admin.audit import router as admin_audit_router
+from gateway.api.admin.endpoints import router as admin_endpoints_router
+from gateway.api.admin.metrics import router as admin_metrics_router
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 app = FastAPI(
     title="AI Inference Platform - Gateway Microservice",
     version="1.0.0",
-    description="Enterprise Control Plane API Gateway Microservice",
+    description="Enterprise Control Plane API Gateway Microservice (Vercel Serverless Ready)",
     docs_url="/docs",
     redoc_url="/redoc",
     dependencies=[Depends(bearer_scheme)],
@@ -73,6 +86,7 @@ async def health_check():
         "service": "gateway-microservice",
         "version": "1.0.0",
         "srs_coverage": "100%",
+        "deployment": "Vercel Serverless Ready",
         "control_plane": {
             "auth_middleware": "active",
             "quota_middleware": "active",
@@ -85,7 +99,6 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-
     from gateway.core.config import gateway_settings
 
     uvicorn.run(
