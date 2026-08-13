@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Header
-from typing import Optional
+
 from common.models.schemas import JobCreateRequest, JobStatusResponse
+from fastapi import APIRouter, Header, HTTPException
 
 router = APIRouter(prefix="/v1", tags=["Async Jobs"])
 _JOBS_STORE: dict[str, dict] = {}
@@ -11,7 +11,7 @@ _JOBS_STORE: dict[str, dict] = {}
 @router.post("/jobs", response_model=JobStatusResponse, status_code=202)
 async def create_async_job(
     request: JobCreateRequest,
-    idempotency_key: Optional[str] = Header(None),
+    idempotency_key: str | None = Header(None),
 ):
     job_id = f"job_{uuid.uuid4().hex[:12]}"
     now = datetime.utcnow()

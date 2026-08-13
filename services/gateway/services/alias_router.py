@@ -1,4 +1,3 @@
-from typing import Dict, Optional
 
 
 class AliasRouterService:
@@ -7,7 +6,7 @@ class AliasRouterService:
     """
 
     def __init__(self):
-        self._default_registry: Dict[str, Dict] = {
+        self._default_registry: dict[str, dict] = {
             "chat-general-standard": {
                 "physical_model": "Qwen/Qwen2.5-1.5B-Instruct",
                 "hf_cache_path": "~/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B-Instruct",
@@ -42,7 +41,7 @@ class AliasRouterService:
             },
         }
 
-    async def resolve_alias(self, alias_name: str) -> Optional[Dict]:
+    async def resolve_alias(self, alias_name: str) -> dict | None:
         return self._default_registry.get(alias_name)
 
 

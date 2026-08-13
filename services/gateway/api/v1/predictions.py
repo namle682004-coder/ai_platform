@@ -1,13 +1,14 @@
+from typing import Any
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from typing import Dict, Any
 
 router = APIRouter(prefix="/v1", tags=["Predictions (Custom Inference)"])
 
 
 class PredictionRequest(BaseModel):
     alias_name: str = Field(..., json_schema_extra={"example": "translate-vi-standard"})
-    payload: Dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 @router.post("/predictions")

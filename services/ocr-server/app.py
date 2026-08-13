@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, Header, UploadFile, File
+
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel
-from typing import Optional, List
 
 ocr_app = FastAPI(
     title="AIP OCR & Document Server (PaddleOCR-VL)",
@@ -10,7 +10,7 @@ ocr_app = FastAPI(
 
 
 class BoundingBox(BaseModel):
-    box: List[List[float]]
+    box: list[list[float]]
     text: str
     confidence: float
 
@@ -18,13 +18,13 @@ class BoundingBox(BaseModel):
 class OCRResponse(BaseModel):
     filename: str
     detected_text: str
-    boxes: List[BoundingBox] = []
+    boxes: list[BoundingBox] = []
 
 
 @ocr_app.post("/v1/ocr/process", response_model=OCRResponse)
 async def process_document_ocr(
     file: UploadFile = File(...),
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized: Bearer API key required")

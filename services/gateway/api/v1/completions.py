@@ -1,15 +1,15 @@
-from fastapi import APIRouter, HTTPException, Request
+
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
-from typing import Optional, List, Union
 
 router = APIRouter(prefix="/v1", tags=["Completions"])
 
 
 class CompletionRequest(BaseModel):
     model: str = Field(..., json_schema_extra={"example": "chat-general-standard"})
-    prompt: Union[str, List[str]] = Field(..., json_schema_extra={"example": "Once upon a time in AI Platform,"})
-    max_tokens: Optional[int] = Field(64, ge=1)
-    temperature: Optional[float] = Field(0.7, ge=0.0, le=2.0)
+    prompt: str | list[str] = Field(..., json_schema_extra={"example": "Once upon a time in AI Platform,"})
+    max_tokens: int | None = Field(64, ge=1)
+    temperature: float | None = Field(0.7, ge=0.0, le=2.0)
     stream: bool = Field(False, json_schema_extra={"example": False})
 
 

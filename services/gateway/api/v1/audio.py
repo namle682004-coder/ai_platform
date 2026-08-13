@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from typing import Optional
+
+from fastapi import APIRouter, File, Form, UploadFile
 
 router = APIRouter(prefix="/v1", tags=["Audio Transcriptions (STT)"])
 
@@ -8,7 +8,7 @@ router = APIRouter(prefix="/v1", tags=["Audio Transcriptions (STT)"])
 async def create_transcription(
     file: UploadFile = File(...),
     model: str = Form("stt-vn-standard"),
-    language: Optional[str] = Form("vi"),
+    language: str | None = Form("vi"),
 ):
     audio_bytes = await file.read()
     return {

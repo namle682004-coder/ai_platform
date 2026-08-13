@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, Header
+
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional, List, Union
 
 moderation_app = FastAPI(
     title="AIP Moderation Server (Llama Guard 4)",
@@ -10,7 +10,7 @@ moderation_app = FastAPI(
 
 
 class ModerationRequest(BaseModel):
-    input: Union[str, List[str]] = Field(..., json_schema_extra={"example": "Kiem tra noi dung nay"})
+    input: str | list[str] = Field(..., json_schema_extra={"example": "Kiem tra noi dung nay"})
     model: str = Field("moderation-multimodal", json_schema_extra={"example": "moderation-multimodal"})
 
 
@@ -39,13 +39,13 @@ class ModerationResult(BaseModel):
 class ModerationResponse(BaseModel):
     id: str = "modr-01HXEXAMPLE"
     model: str
-    results: List[ModerationResult]
+    results: list[ModerationResult]
 
 
 @moderation_app.post("/v1/moderations", response_model=ModerationResponse)
 async def moderate_content(
     request: ModerationRequest,
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized: Bearer API key required")

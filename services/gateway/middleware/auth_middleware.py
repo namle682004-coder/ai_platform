@@ -1,8 +1,8 @@
+from common.models.schemas import AIPError, AIPErrorResponse
+from gateway.api.admin.endpoints import is_endpoint_enabled
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from common.models.schemas import AIPErrorResponse, AIPError
-from gateway.api.admin.endpoints import is_endpoint_enabled
 
 
 class AuthMiddleware(BaseHTTPMiddleware):

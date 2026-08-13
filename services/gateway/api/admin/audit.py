@@ -1,5 +1,6 @@
-from fastapi import APIRouter
 from datetime import datetime
+
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/admin/v1", tags=["Admin - SIEM Audit Logs"])
 

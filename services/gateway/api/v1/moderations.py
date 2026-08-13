@@ -1,13 +1,12 @@
+
 from fastapi import APIRouter
-from common.models.schemas import AIPError
 from pydantic import BaseModel, Field
-from typing import List, Union
 
 router = APIRouter(prefix="/v1", tags=["Moderations"])
 
 
 class ModerationRequest(BaseModel):
-    input: Union[str, List[str]] = Field(..., json_schema_extra={"example": "Kiem tra noi dung an toan"})
+    input: str | list[str] = Field(..., json_schema_extra={"example": "Kiem tra noi dung an toan"})
     model: str = Field("moderation-multimodal", json_schema_extra={"example": "moderation-multimodal"})
 
 

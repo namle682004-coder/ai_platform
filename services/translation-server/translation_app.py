@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, Header
+
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional
 
 translation_app = FastAPI(
     title="AIP Translation Server (CTranslate2)",
@@ -25,7 +25,7 @@ class TranslationResponse(BaseModel):
 @translation_app.post("/v1/predictions", response_model=TranslationResponse)
 async def translate_text(
     request: TranslationRequest,
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized: Bearer API key required")

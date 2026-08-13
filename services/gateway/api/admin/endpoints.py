@@ -1,11 +1,11 @@
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Dict
 
 router = APIRouter(prefix="/admin/v1", tags=["Admin - API Export & Feature Flags Management"])
 
 # Registry of exported endpoints and their dynamic state (Enabled / Disabled)
-_ENDPOINTS_REGISTRY: Dict[str, Dict] = {
+_ENDPOINTS_REGISTRY: dict[str, dict] = {
     "v1_chat_completions": {
         "id": "v1_chat_completions",
         "name": "Chat Completions API",

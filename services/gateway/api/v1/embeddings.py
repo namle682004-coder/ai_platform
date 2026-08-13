@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Header
-from typing import Optional
-from common.models.schemas import EmbeddingRequest, EmbeddingResponse, EmbeddingData, UsageInfo
+
+from common.models.schemas import EmbeddingData, EmbeddingRequest, EmbeddingResponse, UsageInfo
+from fastapi import APIRouter, Header, HTTPException
 
 router = APIRouter(prefix="/v1", tags=["Embeddings"])
 
@@ -8,7 +8,7 @@ router = APIRouter(prefix="/v1", tags=["Embeddings"])
 @router.post("/embeddings", response_model=EmbeddingResponse)
 async def create_embeddings(
     request: EmbeddingRequest,
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized: Bearer API key required")

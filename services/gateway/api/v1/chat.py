@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Request
 from common.models.schemas import ChatCompletionRequest
+from fastapi import APIRouter, HTTPException, Request
 from gateway.services.alias_router import alias_router
 from gateway.services.proxy_service import proxy_service
 

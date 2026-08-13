@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, Header
+from collections.abc import AsyncGenerator
+
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Optional, AsyncGenerator
 
 tts_app = FastAPI(
     title="AIP Text-to-Speech Adapter (viXTTS & OpenVoice)",
@@ -13,14 +14,14 @@ tts_app = FastAPI(
 class TTSRequest(BaseModel):
     model: str = Field("tts-vi-standard", json_schema_extra={"example": "tts-vi-standard"})
     input: str = Field(..., json_schema_extra={"example": "Xin chào, đây là giọng đọc AI."})
-    voice: Optional[str] = Field("northern_female", json_schema_extra={"example": "northern_female"})
+    voice: str | None = Field("northern_female", json_schema_extra={"example": "northern_female"})
     response_format: str = Field("mp3", json_schema_extra={"example": "mp3"})
 
 
 @tts_app.post("/v1/audio/speech")
 async def generate_speech(
     request: TTSRequest,
-    authorization: Optional[str] = Header(None),
+    authorization: str | None = Header(None),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized: Bearer API key required")

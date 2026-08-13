@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Request
+from collections.abc import AsyncGenerator
+
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Optional, AsyncGenerator
 
 router = APIRouter(prefix="/v1", tags=["Audio Speech (TTS)"])
 
@@ -9,7 +10,7 @@ router = APIRouter(prefix="/v1", tags=["Audio Speech (TTS)"])
 class SpeechRequest(BaseModel):
     model: str = Field("tts-vi-standard", json_schema_extra={"example": "tts-vi-standard"})
     input: str = Field(..., json_schema_extra={"example": "Xin chào, đây là hệ thống chuyển đổi văn bản thành giọng nói."})
-    voice: Optional[str] = Field("northern_female", json_schema_extra={"example": "northern_female"})
+    voice: str | None = Field("northern_female", json_schema_extra={"example": "northern_female"})
     response_format: str = Field("mp3", json_schema_extra={"example": "mp3"})
 
 

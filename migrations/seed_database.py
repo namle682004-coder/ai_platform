@@ -1,7 +1,8 @@
-import asyncio
 import argparse
+import asyncio
 import logging
 from datetime import datetime
+
 from motor.motor_asyncio import AsyncIOMotorClient
 
 logging.basicConfig(level=logging.INFO)
@@ -56,7 +57,7 @@ async def seed_database(mongo_uri: str, db_name: str, dry_run: bool = False):
     logger.info(f"Starting MongoDB Migration & Seeding for DB: '{db_name}' (Dry-run: {dry_run})")
     
     if dry_run:
-        logger.info(f"[Dry-run] Would create indexes for collections: api_keys, aliases, jobs, usage_records, audit_logs")
+        logger.info("[Dry-run] Would create indexes for collections: api_keys, aliases, jobs, usage_records, audit_logs")
         logger.info(f"[Dry-run] Would seed {len(DEFAULT_ALIASES)} local cached model aliases.")
         return
 

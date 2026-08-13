@@ -1,6 +1,6 @@
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Optional
 
 router = APIRouter(prefix="/admin/v1", tags=["Admin - Alias Registry & Activation Approval"])
 
@@ -87,4 +87,3 @@ async def delete_alias(alias_name: str):
     if alias_name not in _ALIASES_STORE:
         raise HTTPException(status_code=404, detail="Alias not found")
     del _ALIASES_STORE[alias_name]
-    return None

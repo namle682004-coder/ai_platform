@@ -13,7 +13,6 @@ class QuotaMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app):
         super().__init__(app)
-        # Simulated in-memory counters for demonstration (production executes Redis Lua script)
         self._concurrency_counter: dict[str, int] = {}
         self._rpm_counter: dict[str, int] = {}
 
@@ -23,7 +22,6 @@ class QuotaMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         tenant_id = getattr(request.state, "tenant_id", "TENANT_DEFAULT")
-        rpm_limit = getattr(request.state, "rpm_limit", 60)
         concurrency_limit = getattr(request.state, "concurrency_limit", 5)
 
         # 1. Check Concurrency Limit
@@ -51,6 +49,5 @@ class QuotaMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             return response
         finally:
-            # Decrement Concurrency Semaphore upon completion
             if tenant_id in self._concurrency_counter and self._concurrency_counter[tenant_id] > 0:
                 self._concurrency_counter[tenant_id] -= 1

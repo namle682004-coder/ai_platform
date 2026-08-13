@@ -1,5 +1,6 @@
+from typing import Any
+
 import httpx
-from typing import Dict, Any, List, Optional, Generator
 
 
 class ChatCompletions:
@@ -9,10 +10,10 @@ class ChatCompletions:
     def create(
         self,
         model: str,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         temperature: float = 0.7,
         stream: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         payload = {
             "model": model,
             "messages": messages,
@@ -30,7 +31,7 @@ class Embeddings:
         self,
         model: str,
         input: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         payload = {"model": model, "input": input}
         return self._client._post("/v1/embeddings", json=payload)
 
@@ -39,14 +40,14 @@ class Jobs:
     def __init__(self, client: "AIPClient"):
         self._client = client
 
-    def create(self, job_type: str, alias_name: str, parameters: Optional[Dict] = None) -> Dict[str, Any]:
+    def create(self, job_type: str, alias_name: str, parameters: dict | None = None) -> dict[str, Any]:
         payload = {"job_type": job_type, "alias_name": alias_name, "parameters": parameters or {}}
         return self._client._post("/v1/jobs", json=payload)
 
-    def get_status(self, job_id: str) -> Dict[str, Any]:
+    def get_status(self, job_id: str) -> dict[str, Any]:
         return self._client._get(f"/v1/jobs/{job_id}")
 
-    def get_result(self, job_id: str) -> Dict[str, Any]:
+    def get_result(self, job_id: str) -> dict[str, Any]:
         return self._client._get(f"/v1/jobs/{job_id}/result")
 
 
@@ -68,14 +69,14 @@ class AIPClient:
         self.embeddings = Embeddings(self)
         self.jobs = Jobs(self)
 
-    def _post(self, path: str, json: Dict) -> Dict[str, Any]:
+    def _post(self, path: str, json: dict) -> dict[str, Any]:
         url = f"{self.base_url}{path}"
         with httpx.Client(timeout=60.0) as client:
             res = client.post(url, headers=self.headers, json=json)
             res.raise_for_status()
             return res.json()
 
-    def _get(self, path: str) -> Dict[str, Any]:
+    def _get(self, path: str) -> dict[str, Any]:
         url = f"{self.base_url}{path}"
         with httpx.Client(timeout=30.0) as client:
             res = client.get(url, headers=self.headers)
