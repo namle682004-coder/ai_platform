@@ -1,12 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime, timezone
 
 from common.security.argon2_hasher import generate_api_key
-from common.database.mongodb import mongo_manager
+from common.interfaces.base import IKeyRepository
+from common.repositories.mongo_repositories import key_repository
 
 router = APIRouter(prefix="/admin/v1", tags=["Admin - API Keys & Quota Control"])
+
+
+def get_key_repo() -> IKeyRepository:
+    return key_repository
 
 
 class CreateAPIKeyRequest(BaseModel):
@@ -23,22 +28,11 @@ class UpdateQuotaRequest(BaseModel):
     concurrency_limit: Optional[int] = Field(None, json_schema_extra={"example": 10}, description="Max concurrent requests limit")
 
 
-# In-Memory Fallback Cache if MongoDB is unreachable
-_API_KEYS_MEMORY_CACHE: dict[str, dict] = {
-    "key_01HXDEFAULT": {
-        "key_id": "key_01HXDEFAULT",
-        "tenant_id": "TENANT_RETAIL_BANK",
-        "prefix": "aip_live_test_...",
-        "rpm_limit": 120,
-        "tpm_limit": 200000,
-        "concurrency_limit": 10,
-        "status": "enabled",
-    }
-}
-
-
 @router.post("/keys", summary="Create New API Key in MongoDB Atlas")
-async def create_api_key(request: CreateAPIKeyRequest):
+async def create_api_key(
+    request: CreateAPIKeyRequest,
+    repo: IKeyRepository = Depends(get_key_repo)
+):
     raw_key, hashed_key = generate_api_key(prefix="aip_live_")
     key_id = f"key_{raw_key[-10:]}"
     now = datetime.now(timezone.utc)
@@ -55,17 +49,10 @@ async def create_api_key(request: CreateAPIKeyRequest):
         "created_at": now.isoformat(),
     }
 
-    db = mongo_manager.get_database()
-    if db is not None:
-        try:
-            await db.api_keys.insert_one(record)
-        except Exception:
-            pass
-
-    _API_KEYS_MEMORY_CACHE[key_id] = record
+    created = await repo.create_key(record)
 
     return {
-        "key_id": key_id,
+        "key_id": created["key_id"],
         "tenant_id": request.tenant_id,
         "api_key_plaintext": raw_key,
         "rpm_limit": request.rpm_limit,
@@ -76,23 +63,17 @@ async def create_api_key(request: CreateAPIKeyRequest):
 
 
 @router.get("/keys", summary="List All API Keys and Quotas from MongoDB Atlas")
-async def list_api_keys():
-    db = mongo_manager.get_database()
-    if db is not None:
-        try:
-            cursor = db.api_keys.find({}, {"_id": 0, "hashed_key": 0})
-            keys_list = await cursor.to_list(length=100)
-            if keys_list:
-                return {"object": "list", "data": keys_list}
-        except Exception:
-            pass
-
-    return {"object": "list", "data": list(_API_KEYS_MEMORY_CACHE.values())}
+async def list_api_keys(repo: IKeyRepository = Depends(get_key_repo)):
+    keys = await repo.list_keys()
+    return {"object": "list", "data": keys}
 
 
 @router.put("/keys/{key_id}/quota", summary="Adjust Quota Limits in MongoDB Atlas")
-async def update_api_key_quota(key_id: str, request: UpdateQuotaRequest):
-    db = mongo_manager.get_database()
+async def update_api_key_quota(
+    key_id: str,
+    request: UpdateQuotaRequest,
+    repo: IKeyRepository = Depends(get_key_repo)
+):
     updates = {}
     if request.rpm_limit is not None:
         updates["rpm_limit"] = request.rpm_limit
@@ -101,41 +82,22 @@ async def update_api_key_quota(key_id: str, request: UpdateQuotaRequest):
     if request.concurrency_limit is not None:
         updates["concurrency_limit"] = request.concurrency_limit
 
-    if db is not None and updates:
-        try:
-            result = await db.api_keys.update_one({"key_id": key_id}, {"$set": updates})
-            if result.matched_count > 0:
-                updated_doc = await db.api_keys.find_one({"key_id": key_id}, {"_id": 0})
-                return {
-                    "message": f"Quota updated in MongoDB Atlas for key '{key_id}'.",
-                    "key_id": key_id,
-                    "updated_quota": updates,
-                    "data": updated_doc
-                }
-        except Exception:
-            pass
+    updated = await repo.update_quota(key_id, updates)
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"API key ID '{key_id}' not found.")
 
-    if key_id in _API_KEYS_MEMORY_CACHE:
-        _API_KEYS_MEMORY_CACHE[key_id].update(updates)
-        return {
-            "message": f"Quota updated in memory cache for key '{key_id}'.",
-            "key_id": key_id,
-            "updated_quota": updates,
-        }
-
-    raise HTTPException(status_code=404, detail=f"API key ID '{key_id}' not found.")
+    return {
+        "message": f"Quota updated in MongoDB Atlas for key '{key_id}'.",
+        "key_id": key_id,
+        "updated_quota": updates,
+        "data": updated
+    }
 
 
 @router.delete("/keys/{key_id}", summary="Delete API Key from MongoDB Atlas")
-async def revoke_api_key(key_id: str):
-    db = mongo_manager.get_database()
-    if db is not None:
-        try:
-            await db.api_keys.delete_one({"key_id": key_id})
-        except Exception:
-            pass
-
-    if key_id in _API_KEYS_MEMORY_CACHE:
-        del _API_KEYS_MEMORY_CACHE[key_id]
+async def revoke_api_key(key_id: str, repo: IKeyRepository = Depends(get_key_repo)):
+    deleted = await repo.delete_key(key_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"API key ID '{key_id}' not found.")
 
     return {"message": f"API key '{key_id}' deleted from MongoDB Atlas."}
