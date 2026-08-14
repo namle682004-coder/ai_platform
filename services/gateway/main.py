@@ -74,7 +74,7 @@ app.add_middleware(
 # 2. Prometheus Metrics Exporter Middleware
 app.add_middleware(PrometheusMetricsMiddleware)
 
-# 3. Admin CIDR Allowlist Protection Middleware
+# 3. Admin & Staff CIDR Allowlist Protection Middleware
 app.add_middleware(AdminCIDRMiddleware)
 
 # 4. Control Plane Rate Limit & Quota Middleware
@@ -96,6 +96,14 @@ async def root_redirect():
 async def serve_admin_dashboard():
     dashboard_path = os.path.join(current_dir, "static", "admin_dashboard.html")
     return FileResponse(dashboard_path)
+
+
+# Staff Developer Portal Web UI Endpoint (VPN Protected)
+@app.get("/staff", include_in_schema=False)
+@app.get("/portal", include_in_schema=False)
+async def serve_staff_portal():
+    portal_path = os.path.join(current_dir, "static", "staff_portal.html")
+    return FileResponse(portal_path)
 
 
 # Register Public /v1 Routers
@@ -131,6 +139,7 @@ async def health_check():
             "prometheus_metrics": "active (/metrics)",
             "admin_cidr_allowlist": "active",
             "admin_dashboard_ui": "active (/admin)",
+            "staff_developer_portal": "active (/staff)",
             "mongodb_atlas": "active (ai_platform)",
         }
     }

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIP Developer Hub - Staff Developer Portal (FPT SaaS Standard)</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-body: #060913;
+            --sidebar-bg: #0b0f1d;
+            --panel-bg: rgba(15, 23, 42, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.35);
+            --accent: #2563eb;
+            --purple: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-code: 'Fira Code', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(37, 99, 235, 0.12) 0%, transparent 40%);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--panel-border);
+            margin-bottom: 24px;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10b981, #2563eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-text h2 { font-family: var(--font-heading); font-size: 18px; font-weight: 700; }
+        .brand-text span { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
+
+        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+
+        .nav-item button {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-sub);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item button:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-main); }
+
+        .nav-item.active button {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18), rgba(37, 99, 235, 0.08));
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
+            border-left: 3px solid #10b981;
+            font-weight: 600;
+        }
+
+        .vpn-status {
+            margin-top: auto;
+            padding: 14px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .main-workspace { flex: 1; padding: 32px; overflow-y: auto; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .header h1 { font-family: var(--font-heading); font-size: 26px; font-weight: 700; }
+        .header p { font-size: 14px; color: var(--text-sub); margin-top: 4px; }
+
+        .glass-panel {
+            background: var(--panel-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border); border-radius: 16px; padding: 24px; margin-bottom: 24px;
+        }
+
+        .panel-title { font-family: var(--font-heading); font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+
+        .endpoint-card {
+            background: rgba(0, 0, 0, 0.35); border: 1px solid var(--panel-border);
+            border-radius: 14px; padding: 20px; margin-bottom: 16px;
+        }
+
+        .endpoint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        
+        .method-badge {
+            padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 12px;
+            background: rgba(16, 185, 129, 0.2); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .code-box {
+            background: #090d16; border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px; padding: 16px; font-family: var(--font-code); font-size: 13px;
+            color: #34d399; position: relative; margin-top: 12px;
+        }
+
+        .copy-btn {
+            position: absolute; top: 12px; right: 12px; background: rgba(255, 255, 255, 0.1);
+            border: none; color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;
+        }
+
+        .copy-btn:hover { background: var(--primary); }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">
+            <div class="brand-logo"><i class="fa-solid fa-code"></i></div>
+            <div class="brand-text">
+                <h2>FPT Developer Hub</h2>
+                <span>Staff API Access</span>
+            </div>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item active"><button onclick="switchTab('endpoints')"><i class="fa-solid fa-network-wired"></i> Exported APIs</button></li>
+            <li class="nav-item"><button onclick="switchTab('aliases')"><i class="fa-solid fa-cubes"></i> Model Aliases Catalog</button></li>
+            <li class="nav-item"><button onclick="switchTab('snippets')"><i class="fa-solid fa-terminal"></i> SDK Code Generator</button></li>
+            <li class="nav-item"><button onclick="switchTab('docs')"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
+        </ul>
+
+        <div class="vpn-status">
+            <i class="fa-solid fa-shield-halved" style="color: var(--primary); font-size: 18px;"></i>
+            <div>
+                <div style="font-size: 13px; font-weight: 700;">VPN Network Active</div>
+                <div style="color: var(--text-sub); font-size: 11px;">Protected Corporate CIDR</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-workspace">
+        <div class="header">
+            <div>
+                <h1 id="page-title">Exported API Endpoints for Staff</h1>
+                <p>Enterprise AI Inference Middleware Integration Portal & Interactive Specs</p>
+            </div>
+            <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--primary); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                <i class="fa-solid fa-circle-check"></i> STAFF PERMISSION: GRANTED
+            </div>
+        </div>
+
+        <div id="tab-endpoints" class="tab-pane active">
+            <div class="glass-panel">
+                <div class="panel-title"><i class="fa-solid fa-plug" style="color: var(--primary);"></i> Exported Production APIs (Active)</div>
+                <div id="endpoints-list"></div>
+            </div>
+        </div>
+
+        <div id="tab-aliases" class="tab-pane">
+            <div class="glass-panel">
+                <div class="panel-title"><i class="fa-solid fa-layer-group" style="color: var(--accent);"></i> Active Model Aliases Catalog</div>
+                <div id="aliases-list"></div>
+            </div>
+        </div>
+
+        <div id="tab-snippets" class="tab-pane">
+            <div class="glass-panel">
+                <div class="panel-title"><i class="fa-solid fa-terminal" style="color: var(--purple);"></i> Quick Integration SDK Code Snippets</div>
+
+                <div style="margin-bottom: 24px;">
+                    <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 8px;">1. cURL Request Example</h3>
+                    <div class="code-box">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre>curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "chat-general-standard",
+    "messages": [{"role": "user", "content": "Xin chào AIP Platform!"}]
+  }'</pre>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <h3 style="font-size: 15px; color: var(--accent); margin-bottom: 8px;">2. Python SDK Example</h3>
+                    <div class="code-box">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre>from aip_sdk import AIPClient
+
+client = AIPClient(base_url="https://ai-platform-6p72.onrender.com", api_key="YOUR_API_KEY")
+response = client.chat.completions.create(
+    model="chat-general-standard",
+    messages=[{"role": "user", "content": "Xin chào!"}]
+)
+print(response.choices[0].message.content)</pre>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="font-size: 15px; color: var(--purple); margin-bottom: 8px;">3. C# .NET 8 SDK Example</h3>
+                    <div class="code-box">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre>using Everwin.AIPlatform.SDK;
+
+var client = new AIPClient("https://ai-platform-6p72.onrender.com", "YOUR_API_KEY");
+var response = await client.CreateChatCompletionAsync(new ChatRequest {
+    Model = "chat-general-standard",
+    Prompt = "Xin chào AIP Platform!"
+});
+Console.WriteLine(response.Text);</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-docs" class="tab-pane">
+            <div class="glass-panel" style="padding: 0; overflow: hidden; height: 750px;">
+                <iframe src="/docs" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+
+            event.currentTarget.parentElement.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        function copyCode(btn) {
+            const pre = btn.nextElementSibling;
+            navigator.clipboard.writeText(pre.innerText);
+            btn.innerText = 'Copied!';
+            setTimeout(() => btn.innerText = 'Copy', 2000);
+        }
+
+        async function fetchExportedEndpoints() {
+            try {
+                const res = await fetch('/admin/v1/endpoints');
+                const json = await res.json();
+                const endpoints = json.data || {};
+                const container = document.getElementById('endpoints-list');
+
+                container.innerHTML = Object.entries(endpoints)
+                    .filter(([id, item]) => item.status === 'enabled')
+                    .map(([id, item]) => `
+                        <div class="endpoint-card">
+                            <div class="endpoint-header">
+                                <span class="method-badge">${item.method}</span>
+                                <span style="font-family: var(--font-code); font-size: 15px; font-weight: 600;">${item.path}</span>
+                                <span style="color: var(--primary); font-size: 12px; font-weight: 600;"><i class="fa-solid fa-check"></i> Exported for Staff</span>
+                            </div>
+                            <p style="color: var(--text-sub); font-size: 13px; margin-bottom: 8px;">${item.description}</p>
+                            <div class="code-box">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy Endpoint</button>
+                                <pre>https://ai-platform-6p72.onrender.com${item.path}</pre>
+                            </div>
+                        </div>
+                    `).join('');
+            } catch (err) { console.error('Failed to fetch staff endpoints:', err); }
+        }
+
+        async function fetchModelAliases() {
+            try {
+                const res = await fetch('/admin/v1/aliases');
+                const json = await res.json();
+                const aliases = json.data || {};
+                const container = document.getElementById('aliases-list');
+
+                container.innerHTML = Object.entries(aliases)
+                    .filter(([name, item]) => item.status === 'enabled')
+                    .map(([name, item]) => `
+                        <div class="endpoint-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="font-size: 15px; color: var(--primary);"><code>${name}</code></strong>
+                                <span style="color: var(--purple); font-size: 12px; font-weight: 600;">Runtime: ${item.runtime || 'vllm'}</span>
+                            </div>
+                            <p style="color: var(--text-sub); font-size: 13px; margin-top: 6px;">Physical Model Target: <strong>${item.model_name || 'Qwen3-8B'}</strong></p>
+                        </div>
+                    `).join('');
+            } catch (err) { console.error('Failed to fetch staff aliases:', err); }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchExportedEndpoints();
+            fetchModelAliases();
+        });
+    </script>
+</body>
+</html>
