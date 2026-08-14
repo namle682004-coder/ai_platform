@@ -2,29 +2,57 @@ from typing import Optional, Dict, Any, List
 from common.interfaces.base import IKeyRepository, IAliasRepository, IEndpointRepository, IJobRepository
 from common.database.mongodb import mongo_manager
 
+DEFAULT_ALIASES_LIST = [
+    {"alias_name": "chat-general-standard", "model_name": "Qwen3-8B", "runtime": "vllm", "min_vram_gb": 24, "status": "enabled"},
+    {"alias_name": "chat-general-high-quality", "model_name": "Qwen3-14B", "runtime": "vllm", "min_vram_gb": 32, "status": "enabled"},
+    {"alias_name": "embed-standard", "model_name": "Qwen3-Embedding-8B", "runtime": "vllm", "min_vram_gb": 24, "status": "enabled"},
+    {"alias_name": "embed-cost-optimized", "model_name": "bge-m3", "runtime": "triton", "min_vram_gb": 8, "status": "enabled"},
+    {"alias_name": "translate-vi-standard", "model_name": "NLLB-200 3.3B", "runtime": "ctranslate2", "min_vram_gb": 16, "status": "enabled"},
+    {"alias_name": "stt-vn-standard", "model_name": "PhoWhisper", "runtime": "faster-whisper", "min_vram_gb": 16, "status": "enabled"},
+    {"alias_name": "tts-vi-standard", "model_name": "viXTTS", "runtime": "tts-adapter", "min_vram_gb": 16, "status": "enabled"},
+    {"alias_name": "idp-standard", "model_name": "PaddleOCR-VL", "runtime": "ocr-server", "min_vram_gb": 16, "status": "enabled"},
+    {"alias_name": "image-gen-standard", "model_name": "FLUX.1-schnell", "runtime": "image-worker", "min_vram_gb": 24, "status": "enabled"},
+    {"alias_name": "video-gen-standard", "model_name": "Wan2.2 T2V-A14B", "runtime": "video-worker", "min_vram_gb": 80, "status": "enabled"},
+    {"alias_name": "moderation-multimodal", "model_name": "Llama Guard 4", "runtime": "moderation-server", "min_vram_gb": 24, "status": "enabled"},
+]
+
+DEFAULT_ENDPOINTS_LIST = [
+    {"endpoint_id": "chat_completions", "path": "/v1/chat/completions", "method": "POST", "status": "enabled", "description": "LLM Chat Completions API"},
+    {"endpoint_id": "text_completions", "path": "/v1/completions", "method": "POST", "status": "enabled", "description": "Text Completion API"},
+    {"endpoint_id": "embeddings", "path": "/v1/embeddings", "method": "POST", "status": "enabled", "description": "Vector Embeddings API"},
+    {"endpoint_id": "audio_transcriptions", "path": "/v1/audio/transcriptions", "method": "POST", "status": "enabled", "description": "Speech-to-Text API"},
+    {"endpoint_id": "audio_speech", "path": "/v1/audio/speech", "method": "POST", "status": "enabled", "description": "Text-to-Speech API"},
+    {"endpoint_id": "images_generations", "path": "/v1/images/generations", "method": "POST", "status": "enabled", "description": "Image Generation API"},
+    {"endpoint_id": "moderations", "path": "/v1/moderations", "method": "POST", "status": "enabled", "description": "Content Moderation API"},
+    {"endpoint_id": "predictions", "path": "/v1/predictions", "method": "POST", "status": "enabled", "description": "Custom Predictions API"},
+    {"endpoint_id": "async_jobs", "path": "/v1/jobs", "method": "POST", "status": "enabled", "description": "Async Jobs Creation API"},
+]
+
+DEFAULT_KEY_RECORD = {
+    "key_id": "key_01HXDEFAULT",
+    "tenant_id": "TENANT_RETAIL_BANK",
+    "prefix": "aip_live_test_...",
+    "rpm_limit": 120,
+    "tpm_limit": 200000,
+    "concurrency_limit": 10,
+    "status": "enabled",
+}
+
 
 class MongoKeyRepository(IKeyRepository):
     def __init__(self):
-        self._memory_cache: Dict[str, Dict[str, Any]] = {
-            "key_01HXDEFAULT": {
-                "key_id": "key_01HXDEFAULT",
-                "tenant_id": "TENANT_RETAIL_BANK",
-                "prefix": "aip_live_test_...",
-                "rpm_limit": 120,
-                "tpm_limit": 200000,
-                "concurrency_limit": 10,
-                "status": "enabled",
-            }
+        self._keys_cache: Dict[str, Dict[str, Any]] = {
+            DEFAULT_KEY_RECORD["key_id"]: dict(DEFAULT_KEY_RECORD)
         }
 
     async def create_key(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        self._keys_cache[record["key_id"]] = record
         db = mongo_manager.get_database()
         if db is not None:
             try:
                 await db.api_keys.insert_one(record)
             except Exception:
                 pass
-        self._memory_cache[record["key_id"]] = record
         return record
 
     async def list_keys(self) -> List[Dict[str, Any]]:
@@ -34,48 +62,53 @@ class MongoKeyRepository(IKeyRepository):
                 cursor = db.api_keys.find({}, {"_id": 0, "hashed_key": 0})
                 keys = await cursor.to_list(length=100)
                 if keys:
+                    for k in keys:
+                        self._keys_cache[k["key_id"]] = k
                     return keys
             except Exception:
                 pass
-        return list(self._memory_cache.values())
+        return list(self._keys_cache.values())
 
     async def update_quota(self, key_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        if key_id in self._keys_cache:
+            self._keys_cache[key_id].update(updates)
+            db = mongo_manager.get_database()
+            if db is not None:
+                try:
+                    await db.api_keys.update_one({"key_id": key_id}, {"$set": updates})
+                except Exception:
+                    pass
+            return self._keys_cache[key_id]
+
         db = mongo_manager.get_database()
         if db is not None and updates:
             try:
                 res = await db.api_keys.update_one({"key_id": key_id}, {"$set": updates})
                 if res.matched_count > 0:
-                    return await db.api_keys.find_one({"key_id": key_id}, {"_id": 0})
+                    doc = await db.api_keys.find_one({"key_id": key_id}, {"_id": 0})
+                    if doc:
+                        self._keys_cache[key_id] = doc
+                        return doc
             except Exception:
                 pass
-
-        if key_id in self._memory_cache:
-            self._memory_cache[key_id].update(updates)
-            return self._memory_cache[key_id]
-
         return None
 
     async def delete_key(self, key_id: str) -> bool:
+        if key_id in self._keys_cache:
+            del self._keys_cache[key_id]
         db = mongo_manager.get_database()
         if db is not None:
             try:
                 await db.api_keys.delete_one({"key_id": key_id})
             except Exception:
                 pass
-        if key_id in self._memory_cache:
-            del self._memory_cache[key_id]
-            return True
         return True
 
 
 class MongoAliasRepository(IAliasRepository):
     def __init__(self):
-        self._memory_cache = {
-            "chat-general-standard": {"model_name": "Qwen3-8B", "status": "enabled", "runtime": "vllm"},
-            "chat-general-high-quality": {"model_name": "Qwen3-14B", "status": "enabled", "runtime": "vllm"},
-            "embed-standard": {"model_name": "Qwen3-Embedding-8B", "status": "enabled", "runtime": "vllm"},
-            "stt-vn-standard": {"model_name": "PhoWhisper", "status": "enabled", "runtime": "faster-whisper"},
-            "tts-vi-standard": {"model_name": "viXTTS", "status": "enabled", "runtime": "tts-adapter"},
+        self._aliases_cache: Dict[str, Dict[str, Any]] = {
+            item["alias_name"]: dict(item) for item in DEFAULT_ALIASES_LIST
         }
 
     async def list_aliases(self) -> Dict[str, Any]:
@@ -85,39 +118,42 @@ class MongoAliasRepository(IAliasRepository):
                 cursor = db.aliases.find({}, {"_id": 0})
                 aliases = await cursor.to_list(length=100)
                 if aliases:
-                    return {item["alias_name"]: item for item in aliases}
+                    for item in aliases:
+                        self._aliases_cache[item["alias_name"]] = item
+                    return self._aliases_cache
             except Exception:
                 pass
-        return self._memory_cache
+        return self._aliases_cache
 
     async def update_alias_status(self, alias_name: str, status: str) -> Optional[Dict[str, Any]]:
+        if alias_name in self._aliases_cache:
+            self._aliases_cache[alias_name]["status"] = status
+            db = mongo_manager.get_database()
+            if db is not None:
+                try:
+                    await db.aliases.update_one({"alias_name": alias_name}, {"$set": {"status": status}})
+                except Exception:
+                    pass
+            return self._aliases_cache[alias_name]
+
         db = mongo_manager.get_database()
         if db is not None:
             try:
                 res = await db.aliases.update_one({"alias_name": alias_name}, {"$set": {"status": status}})
                 if res.matched_count > 0:
-                    return await db.aliases.find_one({"alias_name": alias_name}, {"_id": 0})
+                    doc = await db.aliases.find_one({"alias_name": alias_name}, {"_id": 0})
+                    if doc:
+                        self._aliases_cache[alias_name] = doc
+                        return doc
             except Exception:
                 pass
-
-        if alias_name in self._memory_cache:
-            self._memory_cache[alias_name]["status"] = status
-            return self._memory_cache[alias_name]
         return None
 
 
 class MongoEndpointRepository(IEndpointRepository):
     def __init__(self):
-        self._memory_cache = {
-            "chat_completions": {"path": "/v1/chat/completions", "method": "POST", "status": "enabled", "description": "LLM Chat Completions API"},
-            "text_completions": {"path": "/v1/completions", "method": "POST", "status": "enabled", "description": "Text Completion API"},
-            "embeddings": {"path": "/v1/embeddings", "method": "POST", "status": "enabled", "description": "Vector Embeddings API"},
-            "audio_transcriptions": {"path": "/v1/audio/transcriptions", "method": "POST", "status": "enabled", "description": "Speech-to-Text API"},
-            "audio_speech": {"path": "/v1/audio/speech", "method": "POST", "status": "enabled", "description": "Text-to-Speech API"},
-            "images_generations": {"path": "/v1/images/generations", "method": "POST", "status": "enabled", "description": "Image Generation API"},
-            "moderations": {"path": "/v1/moderations", "method": "POST", "status": "enabled", "description": "Content Moderation API"},
-            "predictions": {"path": "/v1/predictions", "method": "POST", "status": "enabled", "description": "Custom Predictions API"},
-            "async_jobs": {"path": "/v1/jobs", "method": "POST", "status": "enabled", "description": "Async Jobs Creation API"},
+        self._endpoints_cache: Dict[str, Dict[str, Any]] = {
+            item["endpoint_id"]: dict(item) for item in DEFAULT_ENDPOINTS_LIST
         }
 
     async def list_endpoints(self) -> Dict[str, Any]:
@@ -127,69 +163,92 @@ class MongoEndpointRepository(IEndpointRepository):
                 cursor = db.endpoints.find({}, {"_id": 0})
                 eps = await cursor.to_list(length=100)
                 if eps:
-                    return {item["endpoint_id"]: item for item in eps}
+                    for item in eps:
+                        self._endpoints_cache[item["endpoint_id"]] = item
+                    return self._endpoints_cache
             except Exception:
                 pass
-        return self._memory_cache
+        return self._endpoints_cache
 
     async def update_endpoint_status(self, endpoint_id: str, status: str) -> Optional[Dict[str, Any]]:
+        if endpoint_id in self._endpoints_cache:
+            self._endpoints_cache[endpoint_id]["status"] = status
+            db = mongo_manager.get_database()
+            if db is not None:
+                try:
+                    await db.endpoints.update_one({"endpoint_id": endpoint_id}, {"$set": {"status": status}})
+                except Exception:
+                    pass
+            return self._endpoints_cache[endpoint_id]
+
         db = mongo_manager.get_database()
         if db is not None:
             try:
                 res = await db.endpoints.update_one({"endpoint_id": endpoint_id}, {"$set": {"status": status}})
                 if res.matched_count > 0:
-                    return await db.endpoints.find_one({"endpoint_id": endpoint_id}, {"_id": 0})
+                    doc = await db.endpoints.find_one({"endpoint_id": endpoint_id}, {"_id": 0})
+                    if doc:
+                        self._endpoints_cache[endpoint_id] = doc
+                        return doc
             except Exception:
                 pass
-
-        if endpoint_id in self._memory_cache:
-            self._memory_cache[endpoint_id]["status"] = status
-            return self._memory_cache[endpoint_id]
         return None
 
 
 class MongoJobRepository(IJobRepository):
     def __init__(self):
-        self._memory_cache: Dict[str, Dict[str, Any]] = {}
+        self._jobs_cache: Dict[str, Dict[str, Any]] = {}
 
     async def create_job(self, job_record: Dict[str, Any]) -> Dict[str, Any]:
+        self._jobs_cache[job_record["job_id"]] = job_record
         db = mongo_manager.get_database()
         if db is not None:
             try:
                 await db.jobs.insert_one(job_record)
             except Exception:
                 pass
-        self._memory_cache[job_record["job_id"]] = job_record
         return job_record
 
     async def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
+        if job_id in self._jobs_cache:
+            return self._jobs_cache[job_id]
         db = mongo_manager.get_database()
         if db is not None:
             try:
                 doc = await db.jobs.find_one({"job_id": job_id}, {"_id": 0})
                 if doc:
+                    self._jobs_cache[job_id] = doc
                     return doc
             except Exception:
                 pass
-        return self._memory_cache.get(job_id)
+        return None
 
     async def update_job_status(self, job_id: str, status: str, updates: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
         payload = {"status": status}
         if updates:
             payload.update(updates)
 
+        if job_id in self._jobs_cache:
+            self._jobs_cache[job_id].update(payload)
+            db = mongo_manager.get_database()
+            if db is not None:
+                try:
+                    await db.jobs.update_one({"job_id": job_id}, {"$set": payload})
+                except Exception:
+                    pass
+            return self._jobs_cache[job_id]
+
         db = mongo_manager.get_database()
         if db is not None:
             try:
                 res = await db.jobs.update_one({"job_id": job_id}, {"$set": payload})
                 if res.matched_count > 0:
-                    return await db.jobs.find_one({"job_id": job_id}, {"_id": 0})
+                    doc = await db.jobs.find_one({"job_id": job_id}, {"_id": 0})
+                    if doc:
+                        self._jobs_cache[job_id] = doc
+                        return doc
             except Exception:
                 pass
-
-        if job_id in self._memory_cache:
-            self._memory_cache[job_id].update(payload)
-            return self._memory_cache[job_id]
         return None
 
 

@@ -21,7 +21,7 @@ class MongoDBManager:
         if not self.client:
             try:
                 logger.info(f"Connecting to MongoDB Atlas Database '{db_name}'...")
-                self.client = AsyncIOMotorClient(uri)
+                self.client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000)
                 self.db = self.client[db_name]
                 # Ping database
                 await self.client.admin.command('ping')
@@ -30,6 +30,12 @@ class MongoDBManager:
                 logger.warning(f"MongoDB Atlas connection warning: {e}")
 
     def get_database(self) -> Optional[AsyncIOMotorDatabase]:
+        if self.db is None and self.client is None:
+            try:
+                self.client = AsyncIOMotorClient(DEFAULT_MONGO_URI, serverSelectionTimeoutMS=5000)
+                self.db = self.client["ai_platform"]
+            except Exception as e:
+                logger.warning(f"Lazy MongoDB connection error: {e}")
         return self.db
 
 
