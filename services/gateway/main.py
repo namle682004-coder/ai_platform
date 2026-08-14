@@ -12,7 +12,7 @@ if packages_dir not in sys.path:
     sys.path.insert(0, packages_dir)
 
 from fastapi import FastAPI, Depends
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 
@@ -73,10 +73,18 @@ app.add_middleware(QuotaMiddleware)
 app.add_middleware(AuthMiddleware)
 
 
-# Root Landing Redirect to Swagger UI /docs
+# Root Landing Redirect to Admin Dashboard /admin
 @app.get("/", include_in_schema=False)
 async def root_redirect():
-    return RedirectResponse(url="/docs")
+    return RedirectResponse(url="/admin")
+
+
+# Admin Dashboard Web UI Endpoint
+@app.get("/admin", include_in_schema=False)
+@app.get("/admin/dashboard", include_in_schema=False)
+async def serve_admin_dashboard():
+    dashboard_path = os.path.join(current_dir, "static", "admin_dashboard.html")
+    return FileResponse(dashboard_path)
 
 
 # Register Public /v1 Routers
@@ -111,7 +119,7 @@ async def health_check():
             "quota_middleware": "active",
             "prometheus_metrics": "active (/metrics)",
             "admin_cidr_allowlist": "active",
-            "durable_job_publisher": "active (RabbitMQ)",
+            "admin_dashboard_ui": "active (/admin)",
         }
     }
 
