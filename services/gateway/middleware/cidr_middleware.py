@@ -82,7 +82,7 @@ HTML_403_SECURITY_PAGE = """<!DOCTYPE html>
     <div class="security-card">
         <div class="shield-icon"><i class="fa-solid fa-shield-halved"></i></div>
         <h1>403 Forbidden - Access Denied</h1>
-        <p>Access to the <strong>AI Inference Platform Admin Control Panel</strong> is strictly restricted to Corporate VPN & Whitelisted CIDR Networks (SRS Section 8.2).</p>
+        <p>Access to the <strong>AI Inference Platform Admin & Staff Portals</strong> is strictly restricted to Corporate VPN & Whitelisted CIDR Networks (SRS Section 8.2).</p>
         <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">Your Unauthorized Client Source IP:</div>
         <div class="ip-badge"><i class="fa-solid fa-network-wired"></i> CLIENT_IP_PLACEHOLDER</div>
         <div class="instructions">
@@ -101,8 +101,8 @@ HTML_403_SECURITY_PAGE = """<!DOCTYPE html>
 
 class AdminCIDRMiddleware(BaseHTTPMiddleware):
     """
-    Admin Endpoint Security Middleware enforcing CIDR Allowlist checks as required by SRS Section 8.2.
-    If unauthorized external IP visits /admin or /admin/*, immediately redirects/replaces with 403 Security Page.
+    Admin & Staff Endpoint Security Middleware enforcing CIDR Allowlist checks as required by SRS Section 8.2.
+    Protects /admin*, /staff*, and /portal* pages from unauthorized external IP access.
     """
 
     def __init__(self, app, allowed_cidrs: list[str] = None):
@@ -122,8 +122,8 @@ class AdminCIDRMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Block unauthorized IPs at the outermost /admin level (UI & APIs)
-        if path.startswith("/admin"):
+        # Protect /admin*, /staff*, and /portal* endpoints with strict CIDR VPN allowlist
+        if path.startswith("/admin") or path.startswith("/staff") or path.startswith("/portal"):
             client_ip_str = request.client.host if request.client else "127.0.0.1"
 
             # Allow local test requests
@@ -150,7 +150,7 @@ class AdminCIDRMiddleware(BaseHTTPMiddleware):
                         )
                         return JSONResponse(status_code=403, content=error_payload.model_dump())
 
-                    # For Web Page requests (/admin, /admin/dashboard), immediately render 403 Security Landing Page
+                    # For Web Page requests (/admin, /staff, /portal), render 403 Security Landing Page
                     html_content = HTML_403_SECURITY_PAGE.replace("CLIENT_IP_PLACEHOLDER", client_ip_str)
                     return HTMLResponse(status_code=403, content=html_content)
             except ValueError:
