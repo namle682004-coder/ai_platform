@@ -19,3 +19,9 @@ def test_admin_list_exported_endpoints():
     assert response.status_code == 200
     data = response.json()
     assert len(data["data"]) >= 8
+
+
+def test_admin_update_endpoint_export_status():
+    response = client.put("/admin/v1/endpoints/chat_completions", json={"status": "disabled"})
+    assert response.status_code == 200
+    assert response.json()["endpoint"]["status"] == "disabled"
