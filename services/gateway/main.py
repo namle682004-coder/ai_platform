@@ -33,6 +33,7 @@ from gateway.api.v1.moderations import router as moderations_router
 from gateway.api.v1.predictions import router as predictions_router
 from gateway.api.v1.jobs import router as jobs_router
 from gateway.api.v1.models import router as models_router
+from gateway.api.v1.auth import router as auth_router
 
 # Admin Routers
 from gateway.api.admin.keys import router as admin_keys_router
@@ -117,6 +118,7 @@ app.include_router(moderations_router)
 app.include_router(predictions_router)
 app.include_router(jobs_router)
 app.include_router(models_router)
+app.include_router(auth_router)
 
 # Register Admin /admin/v1 Routers
 app.include_router(admin_keys_router)
@@ -140,6 +142,8 @@ async def health_check():
             "admin_cidr_allowlist": "active",
             "admin_dashboard_ui": "active (/admin)",
             "staff_developer_portal": "active (/staff)",
+            "audit_logs": "active (/admin/v1/audit-logs)",
+            "auth_system": "active (/v1/auth)",
             "mongodb_atlas": "active (ai_platform)",
         }
     }

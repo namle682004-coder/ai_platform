@@ -650,6 +650,94 @@
         }
       }
     },
+    "/v1/auth/signup": {
+      "post": {
+        "tags": [
+          "Authentication & Staff Accounts"
+        ],
+        "summary": "Register Staff / Admin Account",
+        "operationId": "signup_v1_auth_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication & Staff Accounts"
+        ],
+        "summary": "Login Staff / Admin Account",
+        "operationId": "login_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/admin/v1/keys": {
       "get": {
         "tags": [
@@ -1063,13 +1151,13 @@
         }
       }
     },
-    "/admin/v1/audit": {
+    "/admin/v1/audit-logs": {
       "get": {
         "tags": [
-          "Admin - SIEM Audit Logs"
+          "Admin - Security & Audit Logs"
         ],
-        "summary": "Get Audit Logs",
-        "operationId": "get_audit_logs_admin_v1_audit_get",
+        "summary": "List Security & Action Audit Logs (Admin Only)",
+        "operationId": "list_audit_logs_admin_v1_audit_logs_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1836,6 +1924,26 @@
         ],
         "title": "JobStatusResponse"
       },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "admin@company.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "admin123"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
       "ModerationRequest": {
         "properties": {
           "input": {
@@ -1898,6 +2006,39 @@
           "reason"
         ],
         "title": "RejectRequestPayload"
+      },
+      "SignupRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "staff_namle@company.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "secret123"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name",
+            "example": "Nam Le Developer"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "'staff' or 'admin'",
+            "default": "staff",
+            "example": "staff"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "full_name"
+        ],
+        "title": "SignupRequest"
       },
       "SpeechRequest": {
         "properties": {
