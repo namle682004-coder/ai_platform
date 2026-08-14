@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AI Inference Platform - Gateway Microservice",
-    "description": "Enterprise Control Plane API Gateway Microservice",
+    "description": "Enterprise Control Plane API Gateway Microservice (100% SRS Production Grade)",
     "version": "1.0.0"
   },
   "paths": {

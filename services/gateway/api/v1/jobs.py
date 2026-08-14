@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
-
+from fastapi import APIRouter, HTTPException, Header, BackgroundTasks
+from typing import Optional
 from common.models.schemas import JobCreateRequest, JobStatusResponse
-from fastapi import APIRouter, Header, HTTPException
+from common.services.job_queue import durable_job_publisher
 
 router = APIRouter(prefix="/v1", tags=["Async Jobs"])
 _JOBS_STORE: dict[str, dict] = {}
@@ -11,7 +12,8 @@ _JOBS_STORE: dict[str, dict] = {}
 @router.post("/jobs", response_model=JobStatusResponse, status_code=202)
 async def create_async_job(
     request: JobCreateRequest,
-    idempotency_key: str | None = Header(None),
+    background_tasks: BackgroundTasks,
+    idempotency_key: Optional[str] = Header(None),
 ):
     job_id = f"job_{uuid.uuid4().hex[:12]}"
     now = datetime.utcnow()
@@ -29,6 +31,15 @@ async def create_async_job(
     }
 
     _JOBS_STORE[job_id] = job_record
+
+    # Publish durable message to RabbitMQ in background task
+    background_tasks.add_task(
+        durable_job_publisher.publish_job,
+        job_type=request.job_type,
+        job_id=job_id,
+        payload=request.model_dump(),
+    )
+
     return JobStatusResponse(**job_record)
 
 
@@ -50,7 +61,7 @@ async def get_job_result(job_id: str):
         "job_id": job_id,
         "status": job["status"],
         "result_urls": [f"https://minio.internal/aip-job-artifacts/{job_id}/output.mp4"],
-        "download_expires_at": "2026-08-14T15:00:00Z"
+        "download_expires_at": "2026-08-15T15:00:00Z"
     }
 
 

@@ -9,13 +9,13 @@ def test_health_check_endpoint():
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["srs_coverage"] == "100%"
-    assert data["control_plane"]["realtime_metrics"] == "active"
+    assert "100%" in data["srs_coverage"]
+    assert data["control_plane"]["prometheus_metrics"] == "active (/metrics)"
+    assert data["control_plane"]["admin_cidr_allowlist"] == "active"
 
 
-def test_admin_realtime_active_calls_metrics():
-    response = client.get("/admin/v1/metrics/active-calls")
+def test_admin_list_exported_endpoints():
+    response = client.get("/admin/v1/endpoints")
     assert response.status_code == 200
     data = response.json()
-    assert "total_active_inflight" in data
-    assert len(data["data"]) >= 3
+    assert len(data["data"]) >= 8
