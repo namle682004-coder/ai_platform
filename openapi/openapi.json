@@ -655,7 +655,7 @@
         "tags": [
           "Admin - API Keys & Quota Control"
         ],
-        "summary": "List All API Keys and Assigned Quotas",
+        "summary": "List All API Keys and Quotas from MongoDB Atlas",
         "operationId": "list_api_keys_admin_v1_keys_get",
         "responses": {
           "200": {
@@ -677,7 +677,7 @@
         "tags": [
           "Admin - API Keys & Quota Control"
         ],
-        "summary": "Create New API Key with Initial Quota",
+        "summary": "Create New API Key in MongoDB Atlas",
         "operationId": "create_api_key_admin_v1_keys_post",
         "requestBody": {
           "content": {
@@ -721,7 +721,7 @@
         "tags": [
           "Admin - API Keys & Quota Control"
         ],
-        "summary": "Adjust & Update Quota Limits for API Key / Tenant",
+        "summary": "Adjust Quota Limits in MongoDB Atlas",
         "operationId": "update_api_key_quota_admin_v1_keys__key_id__quota_put",
         "security": [
           {
@@ -776,7 +776,7 @@
         "tags": [
           "Admin - API Keys & Quota Control"
         ],
-        "summary": "Revoke & Delete API Key",
+        "summary": "Delete API Key from MongoDB Atlas",
         "operationId": "revoke_api_key_admin_v1_keys__key_id__delete",
         "security": [
           {
@@ -821,7 +821,7 @@
         "tags": [
           "Admin - Model Aliases"
         ],
-        "summary": "List Model Aliases",
+        "summary": "List Model Aliases from MongoDB Atlas",
         "operationId": "list_model_aliases_admin_v1_aliases_get",
         "responses": {
           "200": {
@@ -845,7 +845,7 @@
         "tags": [
           "Admin - Model Aliases"
         ],
-        "summary": "Update Alias Status",
+        "summary": "Update Alias Status in MongoDB Atlas",
         "operationId": "update_alias_status_admin_v1_aliases__name__put",
         "security": [
           {
@@ -924,7 +924,7 @@
         "tags": [
           "Admin - API Endpoints Management"
         ],
-        "summary": "List All Exported API Endpoints",
+        "summary": "List All Exported API Endpoints from MongoDB Atlas",
         "operationId": "list_exported_endpoints_admin_v1_endpoints_get",
         "responses": {
           "200": {
@@ -948,7 +948,7 @@
         "tags": [
           "Admin - API Endpoints Management"
         ],
-        "summary": "Update API Endpoint Export Status",
+        "summary": "Update API Endpoint Export Status in MongoDB Atlas",
         "operationId": "update_endpoint_export_status_admin_v1_endpoints__endpoint_id__put",
         "security": [
           {

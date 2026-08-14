@@ -408,7 +408,7 @@
       }
     },
     {
-      "name": "List All API Keys and Assigned Quotas",
+      "name": "List All API Keys and Quotas from MongoDB Atlas",
       "request": {
         "method": "GET",
         "header": [
@@ -437,7 +437,7 @@
       }
     },
     {
-      "name": "Create New API Key with Initial Quota",
+      "name": "Create New API Key in MongoDB Atlas",
       "request": {
         "method": "POST",
         "header": [
@@ -466,7 +466,7 @@
       }
     },
     {
-      "name": "Adjust & Update Quota Limits for API Key / Tenant",
+      "name": "Adjust Quota Limits in MongoDB Atlas",
       "request": {
         "method": "PUT",
         "header": [
@@ -497,7 +497,7 @@
       }
     },
     {
-      "name": "Revoke & Delete API Key",
+      "name": "Delete API Key from MongoDB Atlas",
       "request": {
         "method": "DELETE",
         "header": [
@@ -527,7 +527,7 @@
       }
     },
     {
-      "name": "List Model Aliases",
+      "name": "List Model Aliases from MongoDB Atlas",
       "request": {
         "method": "GET",
         "header": [
@@ -556,7 +556,7 @@
       }
     },
     {
-      "name": "Update Alias Status",
+      "name": "Update Alias Status in MongoDB Atlas",
       "request": {
         "method": "PUT",
         "header": [
@@ -615,7 +615,7 @@
       }
     },
     {
-      "name": "List All Exported API Endpoints",
+      "name": "List All Exported API Endpoints from MongoDB Atlas",
       "request": {
         "method": "GET",
         "header": [
@@ -644,7 +644,7 @@
       }
     },
     {
-      "name": "Update API Endpoint Export Status",
+      "name": "Update API Endpoint Export Status in MongoDB Atlas",
       "request": {
         "method": "PUT",
         "header": [
