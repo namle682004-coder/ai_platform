@@ -437,7 +437,7 @@
       }
     },
     {
-      "name": "Create New API Key in MongoDB Atlas",
+      "name": "Create New API Key Direct (Admin Only)",
       "request": {
         "method": "POST",
         "header": [
@@ -461,6 +461,125 @@
             "admin",
             "v1",
             "keys"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Submit API Key Request (Staff Self-Service)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/key-requests",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "key-requests"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Pending Key Requests (Admin Only)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/key-requests",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "key-requests"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve Key Request (Admin Only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/key-requests/{request_id}/approve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "key-requests",
+            "{request_id}",
+            "approve"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reject Key Request (Admin Only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/key-requests/{request_id}/reject",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "key-requests",
+            "{request_id}",
+            "reject"
           ]
         }
       }

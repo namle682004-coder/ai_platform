@@ -1,6 +1,8 @@
 from typing import Optional, Dict, Any, List
 from common.interfaces.base import IKeyRepository, IAliasRepository, IEndpointRepository, IJobRepository
 from common.database.mongodb import mongo_manager
+from common.security.argon2_hasher import generate_api_key
+from datetime import datetime, timezone
 
 DEFAULT_ALIASES_LIST = [
     {"alias_name": "chat-general-standard", "model_name": "Qwen3-8B", "runtime": "vllm", "min_vram_gb": 24, "status": "enabled"},
@@ -44,6 +46,7 @@ class MongoKeyRepository(IKeyRepository):
         self._keys_cache: Dict[str, Dict[str, Any]] = {
             DEFAULT_KEY_RECORD["key_id"]: dict(DEFAULT_KEY_RECORD)
         }
+        self._key_requests_cache: Dict[str, Dict[str, Any]] = {}
 
     async def create_key(self, record: Dict[str, Any]) -> Dict[str, Any]:
         self._keys_cache[record["key_id"]] = record
@@ -79,18 +82,6 @@ class MongoKeyRepository(IKeyRepository):
                 except Exception:
                     pass
             return self._keys_cache[key_id]
-
-        db = mongo_manager.get_database()
-        if db is not None and updates:
-            try:
-                res = await db.api_keys.update_one({"key_id": key_id}, {"$set": updates})
-                if res.matched_count > 0:
-                    doc = await db.api_keys.find_one({"key_id": key_id}, {"_id": 0})
-                    if doc:
-                        self._keys_cache[key_id] = doc
-                        return doc
-            except Exception:
-                pass
         return None
 
     async def delete_key(self, key_id: str) -> bool:
@@ -103,6 +94,101 @@ class MongoKeyRepository(IKeyRepository):
             except Exception:
                 pass
         return True
+
+    async def create_key_request(self, request_record: Dict[str, Any]) -> Dict[str, Any]:
+        self._key_requests_cache[request_record["request_id"]] = request_record
+        db = mongo_manager.get_database()
+        if db is not None:
+            try:
+                await db.key_requests.insert_one(request_record)
+            except Exception:
+                pass
+        return request_record
+
+    async def list_pending_key_requests(self) -> List[Dict[str, Any]]:
+        db = mongo_manager.get_database()
+        if db is not None:
+            try:
+                cursor = db.key_requests.find({"status": "pending_approval"}, {"_id": 0})
+                reqs = await cursor.to_list(length=100)
+                if reqs:
+                    for r in reqs:
+                        self._key_requests_cache[r["request_id"]] = r
+                    return reqs
+            except Exception:
+                pass
+        return [r for r in self._key_requests_cache.values() if r.get("status") == "pending_approval"]
+
+    async def approve_key_request(self, request_id: str) -> Optional[Dict[str, Any]]:
+        req = self._key_requests_cache.get(request_id)
+        db = mongo_manager.get_database()
+        if db is not None and not req:
+            try:
+                req = await db.key_requests.find_one({"request_id": request_id}, {"_id": 0})
+            except Exception:
+                pass
+
+        if not req:
+            return None
+
+        # Generate API key
+        raw_key, hashed_key = generate_api_key(prefix="aip_live_")
+        key_id = f"key_{raw_key[-10:]}"
+        now = datetime.now(timezone.utc).isoformat()
+
+        key_record = {
+            "key_id": key_id,
+            "tenant_id": req["tenant_id"],
+            "prefix": raw_key[:12] + "...",
+            "hashed_key": hashed_key,
+            "rpm_limit": req.get("rpm_limit", 60),
+            "tpm_limit": req.get("tpm_limit", 100000),
+            "concurrency_limit": req.get("concurrency_limit", 5),
+            "status": "enabled",
+            "created_at": now,
+        }
+
+        # Save approved key
+        await self.create_key(key_record)
+
+        # Update request status to approved
+        req["status"] = "approved"
+        req["approved_key_id"] = key_id
+        req["api_key_plaintext"] = raw_key
+        req["updated_at"] = now
+
+        if db is not None:
+            try:
+                await db.key_requests.update_one({"request_id": request_id}, {"$set": req})
+            except Exception:
+                pass
+
+        return req
+
+    async def reject_key_request(self, request_id: str, reason: str) -> Optional[Dict[str, Any]]:
+        req = self._key_requests_cache.get(request_id)
+        db = mongo_manager.get_database()
+        if db is not None and not req:
+            try:
+                req = await db.key_requests.find_one({"request_id": request_id}, {"_id": 0})
+            except Exception:
+                pass
+
+        if not req:
+            return None
+
+        now = datetime.now(timezone.utc).isoformat()
+        req["status"] = "rejected"
+        req["rejection_reason"] = reason
+        req["updated_at"] = now
+
+        if db is not None:
+            try:
+                await db.key_requests.update_one({"request_id": request_id}, {"$set": req})
+            except Exception:
+                pass
+
+        return req
 
 
 class MongoAliasRepository(IAliasRepository):
@@ -135,18 +221,6 @@ class MongoAliasRepository(IAliasRepository):
                 except Exception:
                     pass
             return self._aliases_cache[alias_name]
-
-        db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                res = await db.aliases.update_one({"alias_name": alias_name}, {"$set": {"status": status}})
-                if res.matched_count > 0:
-                    doc = await db.aliases.find_one({"alias_name": alias_name}, {"_id": 0})
-                    if doc:
-                        self._aliases_cache[alias_name] = doc
-                        return doc
-            except Exception:
-                pass
         return None
 
 
@@ -180,18 +254,6 @@ class MongoEndpointRepository(IEndpointRepository):
                 except Exception:
                     pass
             return self._endpoints_cache[endpoint_id]
-
-        db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                res = await db.endpoints.update_one({"endpoint_id": endpoint_id}, {"$set": {"status": status}})
-                if res.matched_count > 0:
-                    doc = await db.endpoints.find_one({"endpoint_id": endpoint_id}, {"_id": 0})
-                    if doc:
-                        self._endpoints_cache[endpoint_id] = doc
-                        return doc
-            except Exception:
-                pass
         return None
 
 
@@ -237,18 +299,6 @@ class MongoJobRepository(IJobRepository):
                 except Exception:
                     pass
             return self._jobs_cache[job_id]
-
-        db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                res = await db.jobs.update_one({"job_id": job_id}, {"$set": payload})
-                if res.matched_count > 0:
-                    doc = await db.jobs.find_one({"job_id": job_id}, {"_id": 0})
-                    if doc:
-                        self._jobs_cache[job_id] = doc
-                        return doc
-            except Exception:
-                pass
         return None
 
 

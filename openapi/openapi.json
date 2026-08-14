@@ -653,7 +653,7 @@
     "/admin/v1/keys": {
       "get": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
         "summary": "List All API Keys and Quotas from MongoDB Atlas",
         "operationId": "list_api_keys_admin_v1_keys_get",
@@ -675,9 +675,9 @@
       },
       "post": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
-        "summary": "Create New API Key in MongoDB Atlas",
+        "summary": "Create New API Key Direct (Admin Only)",
         "operationId": "create_api_key_admin_v1_keys_post",
         "requestBody": {
           "content": {
@@ -716,10 +716,178 @@
         ]
       }
     },
+    "/v1/key-requests": {
+      "post": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "Submit API Key Request (Staff Self-Service)",
+        "operationId": "submit_key_request_v1_key_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/key-requests": {
+      "get": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "List Pending Key Requests (Admin Only)",
+        "operationId": "list_pending_key_requests_admin_v1_key_requests_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/key-requests/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "Approve Key Request (Admin Only)",
+        "operationId": "approve_key_request_admin_v1_key_requests__request_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/key-requests/{request_id}/reject": {
+      "post": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "Reject Key Request (Admin Only)",
+        "operationId": "reject_key_request_admin_v1_key_requests__request_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRequestPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/v1/keys/{key_id}/quota": {
       "put": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
         "summary": "Adjust Quota Limits in MongoDB Atlas",
         "operationId": "update_api_key_quota_admin_v1_keys__key_id__quota_put",
@@ -774,7 +942,7 @@
     "/admin/v1/keys/{key_id}": {
       "delete": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
         "summary": "Delete API Key from MongoDB Atlas",
         "operationId": "revoke_api_key_admin_v1_keys__key_id__delete",
@@ -1717,6 +1885,20 @@
         ],
         "title": "PredictionRequest"
       },
+      "RejectRequestPayload": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "example": "Exceeds department quota limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "RejectRequestPayload"
+      },
       "SpeechRequest": {
         "properties": {
           "model": {
@@ -1755,6 +1937,50 @@
           "input"
         ],
         "title": "SpeechRequest"
+      },
+      "StaffKeyRequest": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "example": "TENANT_RETAIL_BANK"
+          },
+          "requested_by": {
+            "type": "string",
+            "title": "Requested By",
+            "example": "dev_namle@company.com"
+          },
+          "justification": {
+            "type": "string",
+            "title": "Justification",
+            "example": "Project Chatbot AI Integration"
+          },
+          "rpm_limit": {
+            "type": "integer",
+            "title": "Rpm Limit",
+            "default": 60,
+            "example": 60
+          },
+          "tpm_limit": {
+            "type": "integer",
+            "title": "Tpm Limit",
+            "default": 100000,
+            "example": 100000
+          },
+          "concurrency_limit": {
+            "type": "integer",
+            "title": "Concurrency Limit",
+            "default": 5,
+            "example": 5
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "requested_by",
+          "justification"
+        ],
+        "title": "StaffKeyRequest"
       },
       "UpdateQuotaRequest": {
         "properties": {
