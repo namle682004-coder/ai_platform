@@ -6,8 +6,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("aip-seed")
 
-MONGO_URI = "mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_flatform?appName=namle"
-DB_NAME = "ai_flatform"
+MONGO_URI = "mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle"
+DB_NAME = "ai_platform"
 
 DEFAULT_ALIASES = [
     {"alias_name": "chat-general-standard", "model_name": "Qwen3-8B", "runtime": "vllm", "min_vram_gb": 24, "status": "enabled"},
@@ -37,7 +37,7 @@ DEFAULT_ENDPOINTS = [
 
 
 async def seed_mongodb():
-    logger.info("Connecting to MongoDB Atlas Database 'ai_flatform'...")
+    logger.info("Connecting to MongoDB Atlas Database 'ai_platform'...")
     client = AsyncIOMotorClient(MONGO_URI)
     db = client[DB_NAME]
 
@@ -79,7 +79,7 @@ async def seed_mongodb():
         upsert=True
     )
 
-    logger.info("MongoDB Atlas 'ai_flatform' Seeding Completed Successfully! 🚀")
+    logger.info("MongoDB Atlas 'ai_platform' Seeding Completed Successfully! 🚀")
 
 
 if __name__ == "__main__":

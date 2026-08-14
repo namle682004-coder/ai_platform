@@ -20,9 +20,9 @@ class GatewaySettings(BaseSettings):
     # Master Security Pepper & Keys
     master_pepper: str = Field("default_enterprise_secret_pepper_2026", validation_alias="MASTER_PEPPER")
 
-    # MongoDB Atlas Connection URI (ai_flatform DB)
+    # MongoDB Atlas Connection URI (ai_platform DB)
     mongo_uri: str = Field(
-        "mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_flatform?appName=namle",
+        "mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle",
         validation_alias="MONGO_URI"
     )
     redis_host: str = Field("localhost", validation_alias="REDIS_HOST")

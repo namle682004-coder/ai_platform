@@ -4,7 +4,7 @@ from typing import Optional
 
 logger = logging.getLogger("aip-mongodb")
 
-DEFAULT_MONGO_URI = "mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_flatform?appName=namle"
+DEFAULT_MONGO_URI = "mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle"
 
 
 class MongoDBManager:
@@ -17,7 +17,7 @@ class MongoDBManager:
         self.client: Optional[AsyncIOMotorClient] = None
         self.db: Optional[AsyncIOMotorDatabase] = None
 
-    async def connect(self, uri: str = DEFAULT_MONGO_URI, db_name: str = "ai_flatform"):
+    async def connect(self, uri: str = DEFAULT_MONGO_URI, db_name: str = "ai_platform"):
         if not self.client:
             try:
                 logger.info(f"Connecting to MongoDB Atlas Database '{db_name}'...")
