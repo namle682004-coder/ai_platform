@@ -3,41 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Inference Platform - Staff Developer Portal</title>
-    <!-- Google Fonts & Font Awesome Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>AIP Developer Hub - Staff Developer Portal (FPT SaaS Standard)</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --bg-dark: #090d16;
-            --panel-bg: rgba(18, 26, 43, 0.85);
+            --bg-body: #060913;
+            --sidebar-bg: #0b0f1d;
+            --panel-bg: rgba(15, 23, 42, 0.75);
             --panel-border: rgba(255, 255, 255, 0.08);
             --primary: #10b981;
             --primary-glow: rgba(16, 185, 129, 0.35);
-            --accent: #3b82f6;
+            --accent: #2563eb;
             --purple: #8b5cf6;
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --text-sub: #94a3b8;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-code: 'Fira Code', monospace;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background-color: var(--bg-dark);
+            background-color: var(--bg-body);
             color: var(--text-main);
+            font-family: var(--font-body);
             min-height: 100vh;
             display: flex;
             background-image: 
-                radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 40%);
+                radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(37, 99, 235, 0.12) 0%, transparent 40%);
         }
 
-        /* Sidebar Navigation */
         .sidebar {
-            width: 270px;
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
+            width: 280px;
+            background: var(--sidebar-bg);
             border-right: 1px solid var(--panel-border);
             display: flex;
             flex-direction: column;
@@ -47,28 +50,28 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding-bottom: 24px;
+            gap: 14px;
+            padding-bottom: 20px;
             border-bottom: 1px solid var(--panel-border);
             margin-bottom: 24px;
         }
 
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10b981, #2563eb);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 0 15px var(--primary-glow);
+            font-size: 22px;
+            box-shadow: 0 0 20px var(--primary-glow);
         }
 
-        .brand-text h2 { font-size: 16px; font-weight: 700; }
-        .brand-text span { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .brand-text h2 { font-family: var(--font-heading); font-size: 18px; font-weight: 700; }
+        .brand-text span { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
 
-        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 4px; }
 
         .nav-item button {
             width: 100%;
@@ -79,26 +82,24 @@
             border-radius: 10px;
             border: 1px solid transparent;
             background: transparent;
-            color: var(--text-muted);
+            color: var(--text-sub);
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
-        .nav-item button:hover, .nav-item.active button {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-            border-color: var(--panel-border);
-        }
+        .nav-item button:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-main); }
 
         .nav-item.active button {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), transparent);
-            color: var(--primary);
-            border-left: 3px solid var(--primary);
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18), rgba(37, 99, 235, 0.08));
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.3);
+            border-left: 3px solid #10b981;
+            font-weight: 600;
         }
 
-        .vpn-badge {
+        .vpn-status {
             margin-top: auto;
             padding: 14px;
             background: rgba(16, 185, 129, 0.08);
@@ -107,74 +108,42 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 12px;
         }
 
-        /* Main Content */
-        .main-content { flex: 1; padding: 32px; overflow-y: auto; }
+        .main-workspace { flex: 1; padding: 32px; overflow-y: auto; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-        .header-title h1 { font-size: 24px; font-weight: 700; }
-        .header-title p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .header h1 { font-family: var(--font-heading); font-size: 26px; font-weight: 700; }
+        .header p { font-size: 14px; color: var(--text-sub); margin-top: 4px; }
 
-        /* Glass Panel */
         .glass-panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--panel-border);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
+            background: var(--panel-bg); backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border); border-radius: 16px; padding: 24px; margin-bottom: 24px;
         }
 
-        .panel-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .panel-title { font-family: var(--font-heading); font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
 
-        /* Endpoint Card */
         .endpoint-card {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
+            background: rgba(0, 0, 0, 0.35); border: 1px solid var(--panel-border);
+            border-radius: 14px; padding: 20px; margin-bottom: 16px;
         }
 
         .endpoint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .endpoint-method {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 12px;
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--primary);
-            border: 1px solid rgba(16, 185, 129, 0.4);
+        
+        .method-badge {
+            padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 12px;
+            background: rgba(16, 185, 129, 0.2); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
-        .endpoint-path { font-family: monospace; font-size: 15px; font-weight: 600; }
-
-        .code-block {
-            background: #0d1117;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 14px;
-            font-family: monospace;
-            font-size: 13px;
-            color: #7ee787;
-            overflow-x: auto;
-            position: relative;
-            margin-top: 10px;
+        .code-box {
+            background: #090d16; border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px; padding: 16px; font-family: var(--font-code); font-size: 13px;
+            color: #34d399; position: relative; margin-top: 12px;
         }
 
         .copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: var(--text-main);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            cursor: pointer;
+            position: absolute; top: 12px; right: 12px; background: rgba(255, 255, 255, 0.1);
+            border: none; color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;
         }
 
         .copy-btn:hover { background: var(--primary); }
@@ -185,12 +154,11 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <div class="brand">
-            <div class="brand-icon"><i class="fa-solid fa-code"></i></div>
+            <div class="brand-logo"><i class="fa-solid fa-code"></i></div>
             <div class="brand-text">
-                <h2>AIP Developer Portal</h2>
+                <h2>FPT Developer Hub</h2>
                 <span>Staff API Access</span>
             </div>
         </div>
@@ -198,60 +166,51 @@
         <ul class="nav-menu">
             <li class="nav-item active"><button onclick="switchTab('endpoints')"><i class="fa-solid fa-network-wired"></i> Exported APIs</button></li>
             <li class="nav-item"><button onclick="switchTab('aliases')"><i class="fa-solid fa-cubes"></i> Model Aliases Catalog</button></li>
-            <li class="nav-item"><button onclick="switchTab('snippets')"><i class="fa-solid fa-code-compare"></i> SDK Code Generator</button></li>
+            <li class="nav-item"><button onclick="switchTab('snippets')"><i class="fa-solid fa-terminal"></i> SDK Code Generator</button></li>
             <li class="nav-item"><button onclick="switchTab('docs')"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
         </ul>
 
-        <div class="vpn-badge">
-            <i class="fa-solid fa-shield-halved" style="color: var(--primary); font-size: 16px;"></i>
+        <div class="vpn-status">
+            <i class="fa-solid fa-shield-halved" style="color: var(--primary); font-size: 18px;"></i>
             <div>
-                <div style="font-weight: 600;">Corporate VPN Active</div>
-                <div style="color: var(--text-muted); font-size: 10px;">Protected Staff Network</div>
+                <div style="font-size: 13px; font-weight: 700;">VPN Network Active</div>
+                <div style="color: var(--text-sub); font-size: 11px;">Protected Corporate CIDR</div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
+    <div class="main-workspace">
         <div class="header">
-            <div class="header-title">
+            <div>
                 <h1 id="page-title">Exported API Endpoints for Staff</h1>
-                <p>Enterprise AI Inference Middleware Integrations & SDK Specs</p>
+                <p>Enterprise AI Inference Middleware Integration Portal & Interactive Specs</p>
             </div>
-            <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+            <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--primary); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;">
                 <i class="fa-solid fa-circle-check"></i> STAFF PERMISSION: GRANTED
             </div>
         </div>
 
-        <!-- TAB 1: EXPORTED APIS -->
         <div id="tab-endpoints" class="tab-pane active">
             <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-plug"></i> Exported Production APIs (Enabled by Admin)</div>
-                <div id="endpoints-list">
-                    <!-- Dynamic rendering from Backend -->
-                </div>
+                <div class="panel-title"><i class="fa-solid fa-plug" style="color: var(--primary);"></i> Exported Production APIs (Active)</div>
+                <div id="endpoints-list"></div>
             </div>
         </div>
 
-        <!-- TAB 2: MODEL ALIASES -->
         <div id="tab-aliases" class="tab-pane">
             <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-layer-group"></i> Active Model Aliases Catalog</div>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Use these model aliases in your <code>model</code> parameter when calling <code>/v1/chat/completions</code> or other endpoints.</p>
-                <div id="aliases-list">
-                    <!-- Dynamic rendering from Backend -->
-                </div>
+                <div class="panel-title"><i class="fa-solid fa-layer-group" style="color: var(--accent);"></i> Active Model Aliases Catalog</div>
+                <div id="aliases-list"></div>
             </div>
         </div>
 
-        <!-- TAB 3: CODE SNIPPETS GENERATOR -->
         <div id="tab-snippets" class="tab-pane">
             <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-terminal"></i> Quick Integration Code Snippets</div>
+                <div class="panel-title"><i class="fa-solid fa-terminal" style="color: var(--purple);"></i> Quick Integration SDK Code Snippets</div>
 
                 <div style="margin-bottom: 24px;">
-                    <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 8px;">1. cURL Request Example (Chat Completion)</h3>
-                    <div class="code-block">
+                    <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 8px;">1. cURL Request Example</h3>
+                    <div class="code-box">
                         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                         <pre>curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
@@ -265,7 +224,7 @@
 
                 <div style="margin-bottom: 24px;">
                     <h3 style="font-size: 15px; color: var(--accent); margin-bottom: 8px;">2. Python SDK Example</h3>
-                    <div class="code-block">
+                    <div class="code-box">
                         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                         <pre>from aip_sdk import AIPClient
 
@@ -279,8 +238,8 @@ print(response.choices[0].message.content)</pre>
                 </div>
 
                 <div>
-                    <h3 style="font-size: 15px; color: var(--purple); margin-bottom: 8px;">3. C# .NET 8 SDK Example (Everwin.AIPlatform.SDK)</h3>
-                    <div class="code-block">
+                    <h3 style="font-size: 15px; color: var(--purple); margin-bottom: 8px;">3. C# .NET 8 SDK Example</h3>
+                    <div class="code-box">
                         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                         <pre>using Everwin.AIPlatform.SDK;
 
@@ -295,7 +254,6 @@ Console.WriteLine(response.Text);</pre>
             </div>
         </div>
 
-        <!-- TAB 4: SWAGGER DOCS -->
         <div id="tab-docs" class="tab-pane">
             <div class="glass-panel" style="padding: 0; overflow: hidden; height: 750px;">
                 <iframe src="/docs" style="width: 100%; height: 100%; border: none;"></iframe>
@@ -332,12 +290,12 @@ Console.WriteLine(response.Text);</pre>
                     .map(([id, item]) => `
                         <div class="endpoint-card">
                             <div class="endpoint-header">
-                                <span class="endpoint-method">${item.method}</span>
-                                <span class="endpoint-path">${item.path}</span>
+                                <span class="method-badge">${item.method}</span>
+                                <span style="font-family: var(--font-code); font-size: 15px; font-weight: 600;">${item.path}</span>
                                 <span style="color: var(--primary); font-size: 12px; font-weight: 600;"><i class="fa-solid fa-check"></i> Exported for Staff</span>
                             </div>
-                            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 8px;">${item.description}</p>
-                            <div class="code-block">
+                            <p style="color: var(--text-sub); font-size: 13px; margin-bottom: 8px;">${item.description}</p>
+                            <div class="code-box">
                                 <button class="copy-btn" onclick="copyCode(this)">Copy Endpoint</button>
                                 <pre>https://ai-platform-6p72.onrender.com${item.path}</pre>
                             </div>
@@ -359,9 +317,9 @@ Console.WriteLine(response.Text);</pre>
                         <div class="endpoint-card">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <strong style="font-size: 15px; color: var(--primary);"><code>${name}</code></strong>
-                                <span style="color: var(--accent); font-size: 12px; font-weight: 600;">Backend: ${item.runtime || 'vllm'}</span>
+                                <span style="color: var(--purple); font-size: 12px; font-weight: 600;">Runtime: ${item.runtime || 'vllm'}</span>
                             </div>
-                            <p style="color: var(--text-muted); font-size: 13px; margin-top: 6px;">Physical Model Target: <strong>${item.model_name || 'Qwen3-8B'}</strong></p>
+                            <p style="color: var(--text-sub); font-size: 13px; margin-top: 6px;">Physical Model Target: <strong>${item.model_name || 'Qwen3-8B'}</strong></p>
                         </div>
                     `).join('');
             } catch (err) { console.error('Failed to fetch staff aliases:', err); }
