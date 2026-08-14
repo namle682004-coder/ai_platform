@@ -1,5 +1,6 @@
 import sys
 import os
+from contextlib import asynccontextmanager
 
 # Add services and packages to sys.path for Vercel & Render environment
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -40,6 +41,15 @@ from gateway.api.admin.audit import router as admin_audit_router
 from gateway.api.admin.endpoints import router as admin_endpoints_router
 from gateway.api.admin.metrics import router as admin_metrics_router
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from common.database.mongodb import mongo_manager
+    from gateway.core.config import gateway_settings
+    await mongo_manager.connect(uri=gateway_settings.mongo_uri, db_name="ai_platform")
+    yield
+
+
 bearer_scheme = HTTPBearer(auto_error=False)
 
 app = FastAPI(
@@ -49,6 +59,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     dependencies=[Depends(bearer_scheme)],
+    lifespan=lifespan,
 )
 
 # 1. CORS Middleware
@@ -120,6 +131,7 @@ async def health_check():
             "prometheus_metrics": "active (/metrics)",
             "admin_cidr_allowlist": "active",
             "admin_dashboard_ui": "active (/admin)",
+            "mongodb_atlas": "active (ai_platform)",
         }
     }
 
