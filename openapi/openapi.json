@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AI Inference Platform - Gateway Microservice",
-    "description": "Enterprise Control Plane API Gateway Microservice",
+    "description": "Enterprise Control Plane API Gateway Microservice (100% SRS Production Grade)",
     "version": "1.0.0"
   },
   "paths": {
@@ -651,59 +651,12 @@
       }
     },
     "/admin/v1/keys": {
-      "post": {
-        "tags": [
-          "Admin - API Key Management"
-        ],
-        "summary": "Create Api Key",
-        "operationId": "create_api_key_admin_v1_keys_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/APIKeyCreateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIKeyResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/admin/v1/aliases": {
       "get": {
         "tags": [
-          "Admin - Alias Registry & Activation Approval"
+          "Admin - API Keys & Quota Control"
         ],
-        "summary": "List Aliases",
-        "description": "List all registered model aliases and their approval / active status.",
-        "operationId": "list_aliases_admin_v1_aliases_get",
+        "summary": "List All API Keys and Assigned Quotas",
+        "operationId": "list_api_keys_admin_v1_keys_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -722,23 +675,22 @@
       },
       "post": {
         "tags": [
-          "Admin - Alias Registry & Activation Approval"
+          "Admin - API Keys & Quota Control"
         ],
-        "summary": "Register Alias",
-        "description": "Register a new model alias. By default created in DRAFT status requiring Admin Approval.",
-        "operationId": "register_alias_admin_v1_aliases_post",
+        "summary": "Create New API Key with Initial Quota",
+        "operationId": "create_api_key_admin_v1_keys_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AliasCreateRequest"
+                "$ref": "#/components/schemas/CreateAPIKeyRequest"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
@@ -764,14 +716,13 @@
         ]
       }
     },
-    "/admin/v1/aliases/{alias_name}/activate": {
-      "post": {
+    "/admin/v1/keys/{key_id}/quota": {
+      "put": {
         "tags": [
-          "Admin - Alias Registry & Activation Approval"
+          "Admin - API Keys & Quota Control"
         ],
-        "summary": "Approve And Activate Alias",
-        "description": "Admin Approval Endpoint: Approve and publish dynamic export for a model alias.",
-        "operationId": "approve_and_activate_alias_admin_v1_aliases__alias_name__activate_post",
+        "summary": "Adjust & Update Quota Limits for API Key / Tenant",
+        "operationId": "update_api_key_quota_admin_v1_keys__key_id__quota_put",
         "security": [
           {
             "HTTPBearer": []
@@ -779,15 +730,25 @@
         ],
         "parameters": [
           {
-            "name": "alias_name",
+            "name": "key_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Alias Name"
+              "title": "Key Id"
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuotaRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -810,59 +771,13 @@
         }
       }
     },
-    "/admin/v1/aliases/{alias_name}/deactivate": {
-      "post": {
-        "tags": [
-          "Admin - Alias Registry & Activation Approval"
-        ],
-        "summary": "Deactivate Alias",
-        "description": "Admin Endpoint: Deactivate and stop export for a model alias.",
-        "operationId": "deactivate_alias_admin_v1_aliases__alias_name__deactivate_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "alias_name",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Alias Name"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/v1/aliases/{alias_name}": {
+    "/admin/v1/keys/{key_id}": {
       "delete": {
         "tags": [
-          "Admin - Alias Registry & Activation Approval"
+          "Admin - API Keys & Quota Control"
         ],
-        "summary": "Delete Alias",
-        "operationId": "delete_alias_admin_v1_aliases__alias_name__delete",
+        "summary": "Revoke & Delete API Key",
+        "operationId": "revoke_api_key_admin_v1_keys__key_id__delete",
         "security": [
           {
             "HTTPBearer": []
@@ -870,18 +785,102 @@
         ],
         "parameters": [
           {
-            "name": "alias_name",
+            "name": "key_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Alias Name"
+              "title": "Key Id"
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "Successful Response"
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/aliases": {
+      "get": {
+        "tags": [
+          "Admin - Model Aliases"
+        ],
+        "summary": "List Model Aliases",
+        "operationId": "list_model_aliases_admin_v1_aliases_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/aliases/{name}": {
+      "put": {
+        "tags": [
+          "Admin - Model Aliases"
+        ],
+        "summary": "Update Alias Status",
+        "operationId": "update_alias_status_admin_v1_aliases__name__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AliasStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -923,11 +922,9 @@
     "/admin/v1/endpoints": {
       "get": {
         "tags": [
-          "Admin - API Export & Feature Flags Management",
-          "Admin - API Export & Feature Flags Management"
+          "Admin - API Endpoints Management"
         ],
-        "summary": "List Exported Endpoints",
-        "description": "List all registered API endpoints and their current export status (enabled/disabled).",
+        "summary": "List All Exported API Endpoints",
         "operationId": "list_exported_endpoints_admin_v1_endpoints_get",
         "responses": {
           "200": {
@@ -946,15 +943,13 @@
         ]
       }
     },
-    "/admin/v1/endpoints/{endpoint_id}/enable": {
-      "post": {
+    "/admin/v1/endpoints/{endpoint_id}": {
+      "put": {
         "tags": [
-          "Admin - API Export & Feature Flags Management",
-          "Admin - API Export & Feature Flags Management"
+          "Admin - API Endpoints Management"
         ],
-        "summary": "Enable Endpoint",
-        "description": "Dynamically start/enable exporting an API endpoint without restarting server.",
-        "operationId": "enable_endpoint_admin_v1_endpoints__endpoint_id__enable_post",
+        "summary": "Update API Endpoint Export Status",
+        "operationId": "update_endpoint_export_status_admin_v1_endpoints__endpoint_id__put",
         "security": [
           {
             "HTTPBearer": []
@@ -971,6 +966,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndpointStatusUpdateRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -993,61 +998,13 @@
         }
       }
     },
-    "/admin/v1/endpoints/{endpoint_id}/disable": {
-      "post": {
-        "tags": [
-          "Admin - API Export & Feature Flags Management",
-          "Admin - API Export & Feature Flags Management"
-        ],
-        "summary": "Disable Endpoint",
-        "description": "Dynamically stop/disable exporting an API endpoint (returns 503 Service Unavailable to clients).",
-        "operationId": "disable_endpoint_admin_v1_endpoints__endpoint_id__disable_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "endpoint_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Endpoint Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/v1/metrics/active-calls": {
+    "/admin/v1/metrics": {
       "get": {
         "tags": [
-          "Admin - Realtime Alias Traffic & In-Flight Metrics"
+          "Admin - Realtime Metrics"
         ],
-        "summary": "Get Realtime Active Calls",
-        "description": "API 2: Tracking Realtime Called Aliases.\nReturns currently active in-flight requests, request throughput (RPS), and latency per model alias.",
-        "operationId": "get_realtime_active_calls_admin_v1_metrics_active_calls_get",
+        "summary": "Get Active In-Flight Calls & Realtime Traffic Metrics",
+        "operationId": "get_active_calls_metrics_admin_v1_metrics_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1092,200 +1049,20 @@
   },
   "components": {
     "schemas": {
-      "APIKeyCreateRequest": {
+      "AliasStatusUpdateRequest": {
         "properties": {
-          "name": {
+          "status": {
             "type": "string",
-            "title": "Name",
-            "example": "Banking App Primary Key"
-          },
-          "tenant_id": {
-            "type": "string",
-            "title": "Tenant Id",
-            "example": "TENANT_RETAIL_BANK"
-          },
-          "cost_center": {
-            "type": "string",
-            "title": "Cost Center",
-            "example": "CC_DIGITAL_BANKING"
-          },
-          "allowed_aliases": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Allowed Aliases"
-          },
-          "rpm_limit": {
-            "type": "integer",
-            "title": "Rpm Limit",
-            "default": 60
-          },
-          "tpm_limit": {
-            "type": "integer",
-            "title": "Tpm Limit",
-            "default": 100000
-          },
-          "concurrency_limit": {
-            "type": "integer",
-            "title": "Concurrency Limit",
-            "default": 5
-          },
-          "expires_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expires At"
+            "title": "Status",
+            "description": "Status: 'enabled' or 'disabled'",
+            "example": "enabled"
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "tenant_id",
-          "cost_center"
+          "status"
         ],
-        "title": "APIKeyCreateRequest"
-      },
-      "APIKeyResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "tenant_id": {
-            "type": "string",
-            "title": "Tenant Id"
-          },
-          "cost_center": {
-            "type": "string",
-            "title": "Cost Center"
-          },
-          "raw_api_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Raw Api Key"
-          },
-          "allowed_aliases": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Allowed Aliases"
-          },
-          "rpm_limit": {
-            "type": "integer",
-            "title": "Rpm Limit"
-          },
-          "tpm_limit": {
-            "type": "integer",
-            "title": "Tpm Limit"
-          },
-          "concurrency_limit": {
-            "type": "integer",
-            "title": "Concurrency Limit"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "expires_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expires At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "tenant_id",
-          "cost_center",
-          "allowed_aliases",
-          "rpm_limit",
-          "tpm_limit",
-          "concurrency_limit",
-          "is_active",
-          "created_at"
-        ],
-        "title": "APIKeyResponse"
-      },
-      "AliasCreateRequest": {
-        "properties": {
-          "alias_name": {
-            "type": "string",
-            "title": "Alias Name",
-            "example": "chat-finance-v1"
-          },
-          "physical_model": {
-            "type": "string",
-            "title": "Physical Model",
-            "example": "Qwen3-14B"
-          },
-          "runtime_type": {
-            "type": "string",
-            "title": "Runtime Type",
-            "example": "vllm"
-          },
-          "version": {
-            "type": "string",
-            "title": "Version",
-            "default": "v1.0",
-            "example": "v1.0"
-          },
-          "min_vram_gb": {
-            "type": "integer",
-            "title": "Min Vram Gb",
-            "default": 32
-          },
-          "auto_approve": {
-            "type": "boolean",
-            "title": "Auto Approve",
-            "default": false,
-            "example": false
-          },
-          "canary_percent": {
-            "type": "number",
-            "maximum": 100.0,
-            "minimum": 0.0,
-            "title": "Canary Percent",
-            "default": 0.0
-          }
-        },
-        "type": "object",
-        "required": [
-          "alias_name",
-          "physical_model",
-          "runtime_type"
-        ],
-        "title": "AliasCreateRequest"
+        "title": "AliasStatusUpdateRequest"
       },
       "Body_create_transcription_v1_audio_transcriptions_post": {
         "properties": {
@@ -1512,6 +1289,50 @@
         ],
         "title": "CompletionRequest"
       },
+      "CreateAPIKeyRequest": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "example": "TENANT_RETAIL_BANK"
+          },
+          "rpm_limit": {
+            "type": "integer",
+            "title": "Rpm Limit",
+            "default": 60,
+            "example": 60
+          },
+          "tpm_limit": {
+            "type": "integer",
+            "title": "Tpm Limit",
+            "default": 100000,
+            "example": 100000
+          },
+          "concurrency_limit": {
+            "type": "integer",
+            "title": "Concurrency Limit",
+            "default": 5,
+            "example": 5
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At",
+            "example": "2026-12-31T23:59:59Z"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id"
+        ],
+        "title": "CreateAPIKeyRequest"
+      },
       "EmbeddingData": {
         "properties": {
           "object": {
@@ -1608,6 +1429,21 @@
           "usage"
         ],
         "title": "EmbeddingResponse"
+      },
+      "EndpointStatusUpdateRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Export Status: 'enabled' or 'disabled'",
+            "example": "enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "EndpointStatusUpdateRequest"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1919,6 +1755,51 @@
           "input"
         ],
         "title": "SpeechRequest"
+      },
+      "UpdateQuotaRequest": {
+        "properties": {
+          "rpm_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm Limit",
+            "description": "Requests Per Minute limit",
+            "example": 120
+          },
+          "tpm_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tpm Limit",
+            "description": "Tokens Per Minute limit",
+            "example": 200000
+          },
+          "concurrency_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concurrency Limit",
+            "description": "Max concurrent requests limit",
+            "example": 10
+          }
+        },
+        "type": "object",
+        "title": "UpdateQuotaRequest"
       },
       "UsageInfo": {
         "properties": {

@@ -1,26 +1,41 @@
+# ==========================================
+# AIP Enterprise Helm Values Configuration
+# ==========================================
+
 replicaCount: 3
 
 image:
-  repository: harbor.internal/aip/aip-gateway
+  repository: aip-platform/gateway
   pullPolicy: IfNotPresent
   tag: "1.0.0"
 
-nameOverride: ""
-fullnameOverride: ""
+# Kubernetes Namespaces Topology (SRS Section 2.4)
+namespaces:
+  control: aip-control
+  text: aip-text
+  multimodal: aip-multimodal
+  video: aip-video
+  infra: aip-infra
+  observability: aip-observability
 
-serviceAccount:
-  create: true
-  name: "aip-gateway-sa"
+# Kubernetes Node Pools & Taints/Tolerations (SRS Section 11.3)
+nodeSelector:
+  pool: control-plane
 
-podAnnotations: {}
+tolerations: []
 
-podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
-
-securityContext:
-  readOnlyRootFilesystem: false
-  allowPrivilegeEscalation: false
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - aip-gateway
+          topologyKey: "kubernetes.io/hostname"
 
 service:
   type: ClusterIP
@@ -30,14 +45,16 @@ ingress:
   enabled: true
   className: "nginx"
   annotations:
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
   hosts:
-    - host: aip-gateway.enterprise.internal
+    - host: aip-api.enterprise.internal
       paths:
         - path: /
           pathType: Prefix
-  tls: []
+  tls:
+    - secretName: aip-api-tls
+      hosts:
+        - aip-api.enterprise.internal
 
 resources:
   limits:
@@ -47,14 +64,9 @@ resources:
     cpu: 500m
     memory: 1Gi
 
-autoscaling:
-  enabled: true
-  minReplicas: 3
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 75
-
-nodeSelector:
-  pool: control-plane
-
-tolerations: []
-affinity: {}
+env:
+  ENVIRONMENT: production
+  DEBUG: "false"
+  DEFAULT_RPM_LIMIT: "300"
+  DEFAULT_TPM_LIMIT: "500000"
+  DEFAULT_CONCURRENCY_LIMIT: "20"

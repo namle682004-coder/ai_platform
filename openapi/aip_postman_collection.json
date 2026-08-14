@@ -408,7 +408,36 @@
       }
     },
     {
-      "name": "Create Api Key",
+      "name": "List All API Keys and Assigned Quotas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/keys",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "keys"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create New API Key with Initial Quota",
       "request": {
         "method": "POST",
         "header": [
@@ -437,7 +466,68 @@
       }
     },
     {
-      "name": "List Aliases",
+      "name": "Adjust & Update Quota Limits for API Key / Tenant",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/keys/{key_id}/quota",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "keys",
+            "{key_id}",
+            "quota"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Revoke & Delete API Key",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/keys/{key_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "keys",
+            "{key_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Model Aliases",
       "request": {
         "method": "GET",
         "header": [
@@ -466,9 +556,9 @@
       }
     },
     {
-      "name": "Register Alias",
+      "name": "Update Alias Status",
       "request": {
-        "method": "POST",
+        "method": "PUT",
         "header": [
           {
             "key": "Authorization",
@@ -482,36 +572,7 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}/admin/v1/aliases",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "admin",
-            "v1",
-            "aliases"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Approve And Activate Alias",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/admin/v1/aliases/{alias_name}/activate",
+          "raw": "{{base_url}}/admin/v1/aliases/{name}",
           "host": [
             "{{base_url}}"
           ],
@@ -519,69 +580,7 @@
             "admin",
             "v1",
             "aliases",
-            "{alias_name}",
-            "activate"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Deactivate Alias",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/admin/v1/aliases/{alias_name}/deactivate",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "admin",
-            "v1",
-            "aliases",
-            "{alias_name}",
-            "deactivate"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Delete Alias",
-      "request": {
-        "method": "DELETE",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/admin/v1/aliases/{alias_name}",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "admin",
-            "v1",
-            "aliases",
-            "{alias_name}"
+            "{name}"
           ]
         }
       }
@@ -616,7 +615,7 @@
       }
     },
     {
-      "name": "List Exported Endpoints",
+      "name": "List All Exported API Endpoints",
       "request": {
         "method": "GET",
         "header": [
@@ -645,9 +644,9 @@
       }
     },
     {
-      "name": "Enable Endpoint",
+      "name": "Update API Endpoint Export Status",
       "request": {
-        "method": "POST",
+        "method": "PUT",
         "header": [
           {
             "key": "Authorization",
@@ -661,7 +660,7 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}/admin/v1/endpoints/{endpoint_id}/enable",
+          "raw": "{{base_url}}/admin/v1/endpoints/{endpoint_id}",
           "host": [
             "{{base_url}}"
           ],
@@ -669,45 +668,13 @@
             "admin",
             "v1",
             "endpoints",
-            "{endpoint_id}",
-            "enable"
+            "{endpoint_id}"
           ]
         }
       }
     },
     {
-      "name": "Disable Endpoint",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/admin/v1/endpoints/{endpoint_id}/disable",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "admin",
-            "v1",
-            "endpoints",
-            "{endpoint_id}",
-            "disable"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Get Realtime Active Calls",
+      "name": "Get Active In-Flight Calls & Realtime Traffic Metrics",
       "request": {
         "method": "GET",
         "header": [
@@ -723,15 +690,14 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}/admin/v1/metrics/active-calls",
+          "raw": "{{base_url}}/admin/v1/metrics",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "admin",
             "v1",
-            "metrics",
-            "active-calls"
+            "metrics"
           ]
         }
       }
