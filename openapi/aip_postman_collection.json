@@ -408,7 +408,36 @@
       }
     },
     {
-      "name": "Create Api Key",
+      "name": "List All API Keys and Assigned Quotas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/keys",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "keys"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create New API Key with Initial Quota",
       "request": {
         "method": "POST",
         "header": [
@@ -432,6 +461,67 @@
             "admin",
             "v1",
             "keys"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Adjust & Update Quota Limits for API Key / Tenant",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/keys/{key_id}/quota",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "keys",
+            "{key_id}",
+            "quota"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Revoke & Delete API Key",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/keys/{key_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "keys",
+            "{key_id}"
           ]
         }
       }

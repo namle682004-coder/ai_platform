@@ -651,30 +651,50 @@
       }
     },
     "/admin/v1/keys": {
+      "get": {
+        "tags": [
+          "Admin - API Keys & Quota Control"
+        ],
+        "summary": "List All API Keys and Assigned Quotas",
+        "operationId": "list_api_keys_admin_v1_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
       "post": {
         "tags": [
-          "Admin - API Key Management"
+          "Admin - API Keys & Quota Control"
         ],
-        "summary": "Create Api Key",
+        "summary": "Create New API Key with Initial Quota",
         "operationId": "create_api_key_admin_v1_keys_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/APIKeyCreateRequest"
+                "$ref": "#/components/schemas/CreateAPIKeyRequest"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/APIKeyResponse"
-                }
+                "schema": {}
               }
             }
           },
@@ -694,6 +714,106 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/admin/v1/keys/{key_id}/quota": {
+      "put": {
+        "tags": [
+          "Admin - API Keys & Quota Control"
+        ],
+        "summary": "Adjust & Update Quota Limits for API Key / Tenant",
+        "operationId": "update_api_key_quota_admin_v1_keys__key_id__quota_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuotaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/keys/{key_id}": {
+      "delete": {
+        "tags": [
+          "Admin - API Keys & Quota Control"
+        ],
+        "summary": "Revoke & Delete API Key",
+        "operationId": "revoke_api_key_admin_v1_keys__key_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/admin/v1/aliases": {
@@ -929,158 +1049,13 @@
   },
   "components": {
     "schemas": {
-      "APIKeyCreateRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name",
-            "example": "Banking App Primary Key"
-          },
-          "tenant_id": {
-            "type": "string",
-            "title": "Tenant Id",
-            "example": "TENANT_RETAIL_BANK"
-          },
-          "cost_center": {
-            "type": "string",
-            "title": "Cost Center",
-            "example": "CC_DIGITAL_BANKING"
-          },
-          "allowed_aliases": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Allowed Aliases"
-          },
-          "rpm_limit": {
-            "type": "integer",
-            "title": "Rpm Limit",
-            "default": 60
-          },
-          "tpm_limit": {
-            "type": "integer",
-            "title": "Tpm Limit",
-            "default": 100000
-          },
-          "concurrency_limit": {
-            "type": "integer",
-            "title": "Concurrency Limit",
-            "default": 5
-          },
-          "expires_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expires At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "tenant_id",
-          "cost_center"
-        ],
-        "title": "APIKeyCreateRequest"
-      },
-      "APIKeyResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "tenant_id": {
-            "type": "string",
-            "title": "Tenant Id"
-          },
-          "cost_center": {
-            "type": "string",
-            "title": "Cost Center"
-          },
-          "raw_api_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Raw Api Key"
-          },
-          "allowed_aliases": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Allowed Aliases"
-          },
-          "rpm_limit": {
-            "type": "integer",
-            "title": "Rpm Limit"
-          },
-          "tpm_limit": {
-            "type": "integer",
-            "title": "Tpm Limit"
-          },
-          "concurrency_limit": {
-            "type": "integer",
-            "title": "Concurrency Limit"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "expires_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expires At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "tenant_id",
-          "cost_center",
-          "allowed_aliases",
-          "rpm_limit",
-          "tpm_limit",
-          "concurrency_limit",
-          "is_active",
-          "created_at"
-        ],
-        "title": "APIKeyResponse"
-      },
       "AliasStatusUpdateRequest": {
         "properties": {
           "status": {
             "type": "string",
             "title": "Status",
-            "description": "Status: 'active' or 'inactive'",
-            "example": "active"
+            "description": "Status: 'enabled' or 'disabled'",
+            "example": "enabled"
           }
         },
         "type": "object",
@@ -1313,6 +1288,50 @@
           "prompt"
         ],
         "title": "CompletionRequest"
+      },
+      "CreateAPIKeyRequest": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "example": "TENANT_RETAIL_BANK"
+          },
+          "rpm_limit": {
+            "type": "integer",
+            "title": "Rpm Limit",
+            "default": 60,
+            "example": 60
+          },
+          "tpm_limit": {
+            "type": "integer",
+            "title": "Tpm Limit",
+            "default": 100000,
+            "example": 100000
+          },
+          "concurrency_limit": {
+            "type": "integer",
+            "title": "Concurrency Limit",
+            "default": 5,
+            "example": 5
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At",
+            "example": "2026-12-31T23:59:59Z"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id"
+        ],
+        "title": "CreateAPIKeyRequest"
       },
       "EmbeddingData": {
         "properties": {
@@ -1736,6 +1755,51 @@
           "input"
         ],
         "title": "SpeechRequest"
+      },
+      "UpdateQuotaRequest": {
+        "properties": {
+          "rpm_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm Limit",
+            "description": "Requests Per Minute limit",
+            "example": 120
+          },
+          "tpm_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tpm Limit",
+            "description": "Tokens Per Minute limit",
+            "example": 200000
+          },
+          "concurrency_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concurrency Limit",
+            "description": "Max concurrent requests limit",
+            "example": 10
+          }
+        },
+        "type": "object",
+        "title": "UpdateQuotaRequest"
       },
       "UsageInfo": {
         "properties": {
