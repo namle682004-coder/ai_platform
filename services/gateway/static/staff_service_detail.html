@@ -54,7 +54,8 @@
 
         .btn-status-toggle { background: #007bff; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: background 0.15s; }
         .btn-status-toggle:hover { background: #0056b3; }
-        .btn-status-toggle.active { background: #10b981; }
+        .btn-status-toggle.disabled { background: #dc3545; color: #ffffff; }
+        .btn-status-toggle.disabled:hover { background: #b02a37; }
 
         .btn-buy { background: #004085; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; }
         .free-remain { font-size: 12.5px; color: var(--text-sub); margin-left: auto; }
@@ -465,12 +466,43 @@
             const isEnabled = !!apis[currentSvcName];
             const btn = document.getElementById('svc-toggle-btn');
             if (isEnabled) {
-                btn.innerText = 'ENABLED';
-                btn.classList.add('active');
+                btn.innerText = 'DISABLE';
+                btn.classList.add('disabled');
             } else {
                 btn.innerText = 'ENABLE';
-                btn.classList.remove('active');
+                btn.classList.remove('disabled');
             }
+
+            populateApiKeySelector();
+        }
+
+        function populateApiKeySelector() {
+            const projects = getProjects();
+            const selector = document.getElementById('api-key-selector');
+            selector.innerHTML = '';
+
+            if (projects.length > 0 && projects[0].api_key) {
+                projects.forEach(p => {
+                    const keyVal = p.api_key || 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm';
+                    const opt = document.createElement('option');
+                    opt.value = keyVal;
+                    opt.innerText = `${p.key_name || p.project_name} (${keyVal.substring(0, 8)}...)`;
+                    selector.appendChild(opt);
+                });
+            } else {
+                const defaultKeys = [
+                    { name: 'Default Live Key', key: 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm' },
+                    { name: 'Secondary Backup Key', key: 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR' }
+                ];
+                defaultKeys.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k.key;
+                    opt.innerText = `${k.name} (${k.key.substring(0, 8)}...)`;
+                    selector.appendChild(opt);
+                });
+            }
+
+            updateSnippetCode();
         }
 
         function handleServiceHeaderToggleClick() {
@@ -508,7 +540,7 @@
             const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
             const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
 
-            const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+            const rawKey = 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm';
             const newProj = {
                 project_id: 'proj_' + Math.random().toString(36).substring(7),
                 project_name: projName,
@@ -543,17 +575,25 @@
         }
 
         function updateSnippetCode() {
-            const keyVal = document.getElementById('api-key-selector').value;
+            const selector = document.getElementById('api-key-selector');
+            const keyVal = selector && selector.value ? selector.value : 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm';
             const box = document.getElementById('snippet-code-box');
 
+            let endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/transcriptions';
+            if (currentSvcName === 'Text to Speech') {
+                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/speech';
+            } else if (currentSvcName === 'LLM Chatbot API') {
+                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/chat/completions';
+            }
+
             if (currentLang === 'curl') {
-                box.innerText = `curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: ${keyVal}" -T "speech.wav"`;
+                box.innerText = `curl -X POST ${endpointUrl} -H "api-key: ${keyVal}" -T ""`;
             } else if (currentLang === 'python') {
-                box.innerText = `import requests\n\nheaders = {'api-key': '${keyVal}'}\nfiles = {'file': open('speech.wav', 'rb')}\nres = requests.post('https://ai-platform-6p72.onrender.com/v1/audio/transcriptions', headers=headers, files=files)\nprint(res.json())`;
+                box.innerText = `import requests\n\nurl = '${endpointUrl}'\npayload = open('', 'rb').read()\nheaders = {\n    'api-key': '${keyVal}'\n}\n\nresponse = requests.post(url=url, data=payload, headers=headers)\n\nprint(response.json())`;
             } else if (currentLang === 'php') {
-                box.innerText = `$ch = curl_init('https://ai-platform-6p72.onrender.com/v1/audio/transcriptions');\ncurl_setopt($ch, CURLOPT_HTTPHEADER, array('api-key: ${keyVal}'));\n$result = curl_exec($ch);`;
+                box.innerText = `<?php\n\n$curl = curl_init();\n\n$filePath = '';\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => file_get_contents($filePath),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo "cURL Error #:" . $err;\n} else {\n  echo $response;\n}\n\n?>`;
             } else if (currentLang === 'cs') {
-                box.innerText = `var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("api-key", "${keyVal}");\nvar response = await client.PostAsync("https://ai-platform-6p72.onrender.com/v1/audio/transcriptions", null);`;
+                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nnamespace Demo_ASR_API\n{\n    class Program\n    {\n        static void Main(string[] args)\n        {\n            String result = Task.Run(async ()\n            {\n                String filePath = @"";\n                var payload = File.ReadAllBytes(filePath);\n\n                HttpClient client = new HttpClient();\n                client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n                var response = await client.PostAsync("${endpointUrl}", new ByteArrayContent(payload));\n                return await response.Content.ReadAsStringAsync();\n            }).GetAwaiter().GetResult();\n\n            Console.WriteLine(result);\n            Console.ReadLine();\n        }\n    }\n}`;
             }
         }
 
