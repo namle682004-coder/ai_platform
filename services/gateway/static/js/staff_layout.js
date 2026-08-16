@@ -198,6 +198,49 @@ function getActiveProjectName() {
     return 'wwrwer23';
 }
 
+async function fetchPaidBalanceFromBackend() {
+    try {
+        const res = await fetch('/v1/portal/balance?t=' + new Date().getTime());
+        if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.paid_balance === 'number') {
+                localStorage.setItem('aip_paid_balance', data.paid_balance.toString());
+                return data.paid_balance;
+            }
+        }
+    } catch(err) {
+        console.error("Failed to fetch balance from backend:", err);
+    }
+    return parseInt(localStorage.getItem('aip_paid_balance') || '0');
+}
+
+async function rechargePaidBalanceOnBackend(addCredits, amountStr, packageName, projectName) {
+    try {
+        const res = await fetch('/v1/portal/recharge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                credits: addCredits,
+                amount: amountStr,
+                package: packageName,
+                project: projectName || 'default'
+            })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.paid_balance === 'number') {
+                localStorage.setItem('aip_paid_balance', data.paid_balance.toString());
+                return data.paid_balance;
+            }
+        }
+    } catch(err) {
+        console.error("Failed to recharge on backend:", err);
+    }
+    const localNew = parseInt(localStorage.getItem('aip_paid_balance') || '0') + addCredits;
+    localStorage.setItem('aip_paid_balance', localNew.toString());
+    return localNew;
+}
+
 function setActiveProjectName(name) {
     localStorage.setItem('aip_active_project', name);
     const label = document.getElementById('current-project-label');

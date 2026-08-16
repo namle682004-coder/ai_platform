@@ -49,6 +49,13 @@ class ApisStateUpdateRequest(BaseModel):
     enabled_apis: Dict[str, bool]
 
 
+class RechargeBalanceRequest(BaseModel):
+    credits: int
+    amount: str
+    package: str
+    project: Optional[str] = "default"
+
+
 # --- 1. PROJECTS REST ENDPOINTS ---
 @router.get("/projects", response_model=List[dict])
 async def list_user_projects():
@@ -161,6 +168,27 @@ async def update_user_apis_state(req: ApisStateUpdateRequest):
     """Update active API states for user in MongoDB Atlas api_subscriptions collection."""
     updated = await api_subscription_repository.update_user_subscriptions("user_staff_01", req.enabled_apis)
     return {"message": "API states updated successfully", "enabled_apis": updated}
+
+
+# --- 5. SUBSCRIPTION BALANCE & RECHARGE REST ENDPOINTS ---
+@router.get("/balance")
+async def get_user_balance():
+    """Get paid balance from MongoDB Atlas api_subscriptions collection."""
+    bal = await api_subscription_repository.get_user_paid_balance("user_staff_01")
+    return {"paid_balance": bal}
+
+
+@router.post("/recharge")
+async def recharge_user_balance(req: RechargeBalanceRequest):
+    """Recharge credits and record payment in MongoDB Atlas."""
+    new_bal = await api_subscription_repository.recharge_user_balance(
+        user_id="user_staff_01",
+        add_credits=req.credits,
+        amount=req.amount,
+        package=req.package,
+        project=req.project or "default"
+    )
+    return {"message": "Recharged successfully", "paid_balance": new_bal}
 
 
 # --- 5. CONTACT & FEEDBACK REST ENDPOINTS ---
