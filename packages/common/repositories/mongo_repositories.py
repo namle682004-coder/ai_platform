@@ -6,6 +6,10 @@ from common.repositories.api_log_repository import MongoAPILogRepository, api_lo
 from common.repositories.notification_repository import MongoNotificationRepository, notification_repository
 from common.repositories.webhook_repository import MongoWebhookRepository, webhook_repository
 from common.repositories.user_repository import MongoUserRepository, user_repository
+from common.repositories.tenant_repository import MongoTenantRepository, tenant_repository
+from common.repositories.rate_limit_repository import MongoRateLimitRepository, rate_limit_repository
+from common.repositories.model_catalog_repository import MongoModelCatalogRepository, model_catalog_repository
+from common.repositories.session_repository import MongoSessionRepository, session_repository
 
 __all__ = [
     "MongoKeyRepository",
@@ -17,6 +21,10 @@ __all__ = [
     "MongoNotificationRepository",
     "MongoWebhookRepository",
     "MongoUserRepository",
+    "MongoTenantRepository",
+    "MongoRateLimitRepository",
+    "MongoModelCatalogRepository",
+    "MongoSessionRepository",
     "key_repository",
     "alias_repository",
     "endpoint_repository",
@@ -26,4 +34,8 @@ __all__ = [
     "notification_repository",
     "webhook_repository",
     "user_repository",
+    "tenant_repository",
+    "rate_limit_repository",
+    "model_catalog_repository",
+    "session_repository",
 ]

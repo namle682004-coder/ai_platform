@@ -6,6 +6,10 @@ from common.interfaces.api_logs import IAPILogRepository
 from common.interfaces.notifications import INotificationRepository
 from common.interfaces.webhooks import IWebhookRepository
 from common.interfaces.users import IUserRepository
+from common.interfaces.tenants import ITenantRepository
+from common.interfaces.rate_limits import IRateLimitRepository
+from common.interfaces.models import IModelCatalogRepository
+from common.interfaces.sessions import ISessionRepository
 
 __all__ = [
     "IKeyRepository",
@@ -17,4 +21,8 @@ __all__ = [
     "INotificationRepository",
     "IWebhookRepository",
     "IUserRepository",
+    "ITenantRepository",
+    "IRateLimitRepository",
+    "IModelCatalogRepository",
+    "ISessionRepository",
 ]
