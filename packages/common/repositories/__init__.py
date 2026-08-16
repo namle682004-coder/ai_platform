@@ -5,6 +5,7 @@ from common.repositories.project_repository import MongoProjectRepository, proje
 from common.repositories.api_log_repository import MongoAPILogRepository, api_log_repository
 from common.repositories.notification_repository import MongoNotificationRepository, notification_repository
 from common.repositories.webhook_repository import MongoWebhookRepository, webhook_repository
+from common.repositories.user_repository import MongoUserRepository, user_repository
 
 __all__ = [
     "MongoKeyRepository",
@@ -15,6 +16,7 @@ __all__ = [
     "MongoAPILogRepository",
     "MongoNotificationRepository",
     "MongoWebhookRepository",
+    "MongoUserRepository",
     "key_repository",
     "alias_repository",
     "endpoint_repository",
@@ -23,4 +25,5 @@ __all__ = [
     "api_log_repository",
     "notification_repository",
     "webhook_repository",
+    "user_repository",
 ]
