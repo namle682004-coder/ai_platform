@@ -1,4 +1,7 @@
-import urllib.request, json, urllib.error
+import urllib.request
+import json
+import urllib.error
+
 try:
     req = urllib.request.Request(
         'http://localhost:8000/v1/auth/login', 

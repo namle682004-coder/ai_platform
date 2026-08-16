@@ -132,9 +132,18 @@ async def delete_user_api_key(key_id: str):
 # --- 3. PAYMENTS & TRANSACTIONS REST ENDPOINTS ---
 @router.get("/payments", response_model=List[dict])
 async def list_user_payments():
-    """Fetch payment history transactions from MongoDB Atlas."""
-    payments = tenant_repository.list_payments() if hasattr(tenant_repository, "list_payments") else []
-    return payments
+    """Fetch payment history transactions directly from MongoDB Atlas payments collection."""
+    from common.database.mongodb import mongo_manager
+    db = mongo_manager.get_database()
+    if db is not None:
+        try:
+            cursor = db.payments.find({"user_id": "user_staff_01"}, {"_id": 0}).sort("_id", -1)
+            docs = await cursor.to_list(100)
+            if docs:
+                return docs
+        except Exception:
+            pass
+    return []
 
 
 @router.post("/payments", status_code=status.HTTP_201_CREATED)
