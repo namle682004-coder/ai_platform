@@ -248,7 +248,7 @@
             <div class="confirm-header" id="modal-confirm-header">Confirm</div>
             <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API</div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" id="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-cancel" id="btn-confirm-cancel" onclick="cancelConfirmModal()">CANCEL</button>
                 <button class="btn-confirm-ok" id="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
             </div>
         </div>
@@ -270,7 +270,7 @@
                 </div>
             </div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" id="btn-proj-cancel" onclick="closeProjectModal()">HỦY BỎ</button>
+                <button class="btn-confirm-cancel" id="btn-proj-cancel" onclick="cancelProjectModal()">HỦY BỎ</button>
                 <button class="btn-confirm-ok" style="background:var(--fpt-cyan);" id="btn-proj-submit" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
             </div>
         </div>
@@ -623,6 +623,9 @@
         function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
         function closeConfirmModal() { 
             document.getElementById('confirm-modal').classList.remove('active'); 
+        }
+        function cancelConfirmModal() {
+            closeConfirmModal();
             syncUIState();
         }
 
@@ -648,6 +651,9 @@
         function openProjectModal() { document.getElementById('project-modal').classList.add('active'); }
         function closeProjectModal() { 
             document.getElementById('project-modal').classList.remove('active'); 
+        }
+        function cancelProjectModal() {
+            closeProjectModal();
             syncUIState();
         }
 
