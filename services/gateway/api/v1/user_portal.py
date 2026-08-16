@@ -189,3 +189,131 @@ async def submit_user_contact(req: ContactMessageRequest):
     }
     notification_repository.save_notification(contact_doc)
     return {"message": "Contact message submitted successfully!", "contact": contact_doc}
+
+
+# --- 6. CATALOG OF ALL APIS IN DATABASE WITH 4 TABS SPECIFICATIONS ---
+DEFAULT_API_CATALOG = [
+    {
+        "api_id": "api_stt",
+        "name": "Speech to Text",
+        "category": "Speech Recognition",
+        "description": "Nhận dạng giọng nói tiếng Việt độ chính xác cao dựa trên mô hình PhoWhisper ASR Large v3.",
+        "icon": "fa-microphone",
+        "free_quota": "10,000 blocks",
+        "unit": "block",
+        "status": "active",
+        "overview": {
+            "title": "PhoWhisper Speech-to-Text Large v3 Engine",
+            "summary": "Dịch vụ chuyển đổi giọng nói thành văn bản tiếng Việt chuẩn xác nhất, hỗ trợ nhận dạng tiếng địa phương 3 miền (Bắc, Trung, Nam) và lọc nhiễu môi trường đỉnh cao.",
+            "features": [
+                "Độ chính xác nhận dạng WER (Word Error Rate) dưới 3.5%",
+                "Hỗ trợ ghi âm trực tiếp hoặc tải tệp âm thanh (WAV, MP3, FLAC, M4A)",
+                "Tự động ngắt câu và thêm dấu câu thông minh (Punctuation)",
+                "Tốc độ xử lý siêu nhanh Real-time Factor (RTF) < 0.15"
+            ]
+        },
+        "document": {
+            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/audio/transcriptions",
+            "method": "POST",
+            "content_type": "multipart/form-data",
+            "headers": [
+                {"name": "api-key", "type": "string", "required": True, "desc": "Khóa API Key khởi tạo từ Console"}
+            ],
+            "parameters": [
+                {"name": "file", "type": "file", "required": True, "desc": "File âm thanh định dạng WAV/MP3/FLAC"},
+                {"name": "model", "type": "string", "required": False, "desc": "Tên mô hình (mặc định: PhoWhisper-STT-v1)"}
+            ],
+            "sample_response": '{\n  "text": "Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT.",\n  "language": "vi",\n  "duration": 3.42,\n  "confidence": 0.985\n}'
+        },
+        "pricing": {
+            "free_quota": "10,000 blocks miễn phí mỗi tháng",
+            "pay_as_you_go": "150 VNĐ / block (1 block = 15 giây âm thanh)",
+            "billing_cycle": "Thanh toán theo mức sử dụng thực tế (Pay-as-you-go)"
+        }
+    },
+    {
+        "api_id": "api_tts",
+        "name": "Text to Speech",
+        "category": "Speech Synthesis",
+        "description": "Tổng hợp giọng nói tiếng Việt tự nhiên đa vùng miền dựa trên mô hình viXTTS Neural Engine.",
+        "icon": "fa-volume-high",
+        "free_quota": "100,000 characters",
+        "unit": "character",
+        "status": "active",
+        "overview": {
+            "title": "viXTTS Neural Speech Synthesis Engine",
+            "summary": "Công nghệ tổng hợp giọng đọc AI mang cảm xúc tự nhiên như người thật, hỗ trợ nhiều giọng đọc Nam/Nữ vùng miền đa dạng.",
+            "features": [
+                "Giọng đọc truyền cảm, ngắt nghỉ theo ngữ cảnh tự nhiên",
+                "Hỗ trợ 6 giọng đọc tiêu chuẩn (Nam/Nữ Hà Nội, Huế, Sài Gòn)",
+                "Tùy chỉnh tốc độ đọc, cao độ và định dạng file đầu ra (MP3, WAV)",
+                "Thời gian phản hồi siêu thấp thích hợp cho trợ lý ảo Voicebot"
+            ]
+        },
+        "document": {
+            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/audio/speech",
+            "method": "POST",
+            "content_type": "application/json",
+            "headers": [
+                {"name": "api-key", "type": "string", "required": True, "desc": "Khóa API Key của bạn"},
+                {"name": "Content-Type", "type": "string", "required": True, "desc": "application/json"}
+            ],
+            "parameters": [
+                {"name": "input", "type": "string", "required": True, "desc": "Văn bản tiếng Việt cần đọc"},
+                {"name": "voice", "type": "string", "required": False, "desc": "Giọng đọc (hanoi_female, saigon_male, etc.)"},
+                {"name": "response_format", "type": "string", "required": False, "desc": "mp3 hoặc wav"}
+            ],
+            "sample_response": '{\n  "audio_url": "https://ai-platform-6p72.onrender.com/v1/audio/output_speech.mp3",\n  "characters_processed": 48,\n  "status": "success"\n}'
+        },
+        "pricing": {
+            "free_quota": "100,000 ký tự miễn phí mỗi tháng",
+            "pay_as_you_go": "1 VNĐ / ký tự văn bản",
+            "billing_cycle": "Thanh toán theo lượng ký tự tiêu thụ"
+        }
+    },
+    {
+        "api_id": "api_llm",
+        "name": "LLM Chatbot API",
+        "category": "Generative AI",
+        "description": "API xử lý ngôn ngữ tự nhiên và Chatbot thông minh dựa trên mô hình Qwen3-14B & DeepSeek V3.",
+        "icon": "fa-robot",
+        "free_quota": "50,000 tokens",
+        "unit": "token",
+        "status": "active",
+        "overview": {
+            "title": "Qwen3 & DeepSeek V3 Generative AI Engine",
+            "summary": "Mô hình ngôn ngữ lớn thế hệ mới tối ưu cho tiếng Việt, có khả năng suy luận logic, trả lời câu hỏi và viết mã lập trình chuyên nghiệp.",
+            "features": [
+                "Mô hình Qwen3-14B & DeepSeek V3 671B thông minh hàng đầu",
+                "Hỗ trợ context window lớn đến 64,000 tokens",
+                "Khả năng đọc hiểu tài liệu, trích xuất thông tin và tạo báo cáo",
+                "Chuẩn RESTful API tương thích 100% với OpenAI SDK"
+            ]
+        },
+        "document": {
+            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/chat/completions",
+            "method": "POST",
+            "content_type": "application/json",
+            "headers": [
+                {"name": "api-key", "type": "string", "required": True, "desc": "Khóa API Key của bạn"},
+                {"name": "Content-Type", "type": "string", "required": True, "desc": "application/json"}
+            ],
+            "parameters": [
+                {"name": "model", "type": "string", "required": True, "desc": "deepseek-v3 hoặc qwen3-14b"},
+                {"name": "messages", "type": "array", "required": True, "desc": "Danh sách tin nhắn hội thoại role/content"}
+            ],
+            "sample_response": '{\n  "id": "chatcmpl-99812",\n  "choices": [{\n    "message": {\n      "role": "assistant",\n      "content": "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?"\n    }\n  }],\n  "usage": { "total_tokens": 32 }\n}'
+        },
+        "pricing": {
+            "free_quota": "50,000 tokens miễn phí mỗi tháng",
+            "pay_as_you_go": "10 VNĐ / 1,000 tokens",
+            "billing_cycle": "Thanh toán dựa trên tổng Input + Output Tokens"
+        }
+    }
+]
+
+
+@router.get("/apis-catalog", response_model=List[dict])
+async def list_database_apis_catalog():
+    """Fetch all available API services catalog from MongoDB Atlas."""
+    return DEFAULT_API_CATALOG
