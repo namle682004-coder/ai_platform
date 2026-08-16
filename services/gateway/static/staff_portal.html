@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIP Developer Hub - Staff Portal</title>
+    <title>FPT.AI Platform - Developer Console</title>
     <!-- Google Fonts & Font Awesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --bg-body: #f8fafc;
+            --fpt-cyan: #00a4b8;
+            --fpt-cyan-dark: #008496;
+            --fpt-cyan-light: #e6f7f9;
+            --bg-body: #f4f6f8;
             --sidebar-bg: #ffffff;
-            --panel-bg: #ffffff;
-            --panel-border: #e2e8f0;
-            --primary: #10b981;
-            --primary-light: #ecfdf5;
-            --accent: #2563eb;
-            --purple: #7c3aed;
-            --text-main: #0f172a;
-            --text-sub: #64748b;
-            --font-heading: 'Outfit', sans-serif;
-            --font-body: 'Inter', sans-serif;
+            --text-dark: #2b3648;
+            --text-sub: #6c757d;
+            --border-color: #e9ecef;
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --font-main: 'Roboto', 'Inter', sans-serif;
             --font-code: 'Fira Code', monospace;
         }
 
@@ -29,327 +27,365 @@
 
         body {
             background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: var(--font-body);
+            color: var(--text-dark);
+            font-family: var(--font-main);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
         }
 
-        .sidebar {
-            width: 270px; background: var(--sidebar-bg);
-            border-right: 1px solid var(--panel-border);
-            display: flex; flex-direction: column; padding: 24px 16px;
+        /* Top Header Bar */
+        .top-header {
+            height: 60px;
+            background: linear-gradient(90deg, #0096aa, #00b4cf);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .brand {
-            display: flex; align-items: center; gap: 12px;
-            padding-bottom: 20px; border-bottom: 1px solid var(--panel-border); margin-bottom: 24px;
-        }
+        .header-left { display: flex; align-items: center; gap: 24px; }
 
         .brand-logo {
-            width: 42px; height: 42px; border-radius: 10px;
-            background: linear-gradient(135deg, #10b981, #2563eb);
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; font-size: 20px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px;
+            letter-spacing: -0.5px; color: #ffffff; text-decoration: none;
         }
 
-        .brand-text h2 { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; }
-        .brand-text span { font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .brand-logo i { font-size: 22px; }
 
-        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+        .project-selector {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff; padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; font-weight: 500;
+        }
+
+        .header-right { display: flex; align-items: center; gap: 20px; font-size: 13px; }
+
+        .user-menu {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            padding: 5px 12px; border-radius: 20px; background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Layout Container */
+        .layout-body { display: flex; flex: 1; min-height: calc(100vh - 60px); }
+
+        /* Left Navigation Sidebar */
+        .sidebar {
+            width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color);
+            padding: 16px 0; display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .nav-section { margin-bottom: 12px; }
+
+        .section-title {
+            padding: 8px 24px; font-size: 13px; font-weight: 600; color: var(--text-dark);
+            display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+        }
+
+        .nav-list { list-style: none; }
 
         .nav-item button {
-            width: 100%; display: flex; align-items: center; gap: 12px;
-            padding: 10px 14px; border-radius: 8px; border: 1px solid transparent;
-            background: transparent; color: var(--text-sub); font-size: 13.5px; font-weight: 500;
-            cursor: pointer; transition: all 0.15s ease;
+            width: 100%; text-align: left; padding: 10px 24px 10px 36px; border: none;
+            background: transparent; color: var(--text-sub); font-size: 13.5px;
+            cursor: pointer; transition: all 0.15s ease; display: block;
         }
 
-        .nav-item button:hover { background: #f1f5f9; color: var(--text-main); }
+        .nav-item button:hover { background: #f8f9fa; color: var(--fpt-cyan); }
 
         .nav-item.active button {
-            background: var(--primary-light); color: var(--primary);
-            border-color: rgba(16, 185, 129, 0.2); font-weight: 600;
+            background: #f0fafb; color: var(--fpt-cyan); font-weight: 600;
+            border-left: 3px solid var(--fpt-cyan); padding-left: 33px;
         }
 
-        .vpn-badge {
-            margin-top: auto; padding: 14px; background: #f8fafc;
-            border: 1px solid var(--panel-border); border-radius: 12px;
-            display: flex; align-items: center; gap: 10px; font-size: 12px;
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 32px 40px; overflow-y: auto; }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: #ffffff; border-radius: 8px; padding: 36px 40px; margin-bottom: 32px;
+            box-shadow: var(--card-shadow); border: 1px solid var(--border-color); text-align: center;
+            background-image: radial-gradient(circle at 90% 10%, rgba(0, 164, 184, 0.05) 0%, transparent 50%);
         }
 
-        .main-workspace { flex: 1; padding: 32px; overflow-y: auto; }
+        .welcome-banner h1 { font-size: 28px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; }
+        .welcome-banner p { color: var(--text-sub); font-size: 14.5px; margin-bottom: 20px; }
+        .welcome-banner a { color: var(--fpt-cyan); text-decoration: underline; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .header h1 { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: #0f172a; }
-        .header p { font-size: 13.5px; color: var(--text-sub); margin-top: 2px; }
-
-        .glass-panel { background: #ffffff; border: 1px solid var(--panel-border); border-radius: 14px; padding: 22px; margin-bottom: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .panel-title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-
-        .endpoint-card {
-            background: #f8fafc; border: 1px solid var(--panel-border);
-            border-radius: 12px; padding: 18px; margin-bottom: 14px;
+        .btn-explore {
+            background: var(--fpt-cyan); color: #ffffff; border: none; padding: 10px 32px;
+            border-radius: 4px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px;
+            cursor: pointer; transition: background 0.2s ease; display: inline-block; text-decoration: none;
         }
 
-        .endpoint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .method-badge { padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 11.5px; background: var(--primary-light); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .btn-explore:hover { background: var(--fpt-cyan-dark); }
+
+        /* Section Heading */
+        .section-header { font-size: 22px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; }
+
+        /* API Grid Cards */
+        .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+
+        .api-card {
+            background: #ffffff; border-radius: 8px; border: 1px solid var(--border-color);
+            padding: 24px; box-shadow: var(--card-shadow); transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .api-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+
+        .api-icon {
+            width: 56px; height: 56px; border-radius: 12px; background: #0062d6; color: #ffffff;
+            display: flex; align-items: center; justify-content: center; font-size: 24px;
+        }
+
+        .card-title { font-size: 17px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+        .card-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+
+        /* Switch */
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ced4da; transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--fpt-cyan); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* Generic Glass Container for Tabs */
+        .panel-box {
+            background: #ffffff; border-radius: 8px; border: 1px solid var(--border-color);
+            padding: 28px; box-shadow: var(--card-shadow); margin-bottom: 24px;
+        }
+
+        .panel-title { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
+        th { color: var(--text-sub); font-weight: 600; font-size: 12px; text-transform: uppercase; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #f8f9fa; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); color: var(--text-dark); }
+        code { font-family: var(--font-code); font-size: 12.5px; color: #0062d6; background: #eef5ff; padding: 3px 6px; border-radius: 4px; }
 
         .code-box {
-            background: #0f172a; border: 1px solid #1e293b;
-            border-radius: 8px; padding: 14px; font-family: var(--font-code); font-size: 12.5px;
-            color: #34d399; position: relative; margin-top: 10px;
+            background: #1e293b; color: #38bdf8; border-radius: 6px; padding: 16px;
+            font-family: var(--font-code); font-size: 13px; position: relative; margin-top: 12px;
         }
 
         .copy-btn {
-            position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.15);
-            border: none; color: #ffffff; padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer;
+            position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.15);
+            border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
         }
 
-        .copy-btn:hover { background: var(--primary); }
+        .copy-btn:hover { background: var(--fpt-cyan); }
 
-        .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
-        th { color: var(--text-sub); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; padding: 12px 14px; border-bottom: 1px solid var(--panel-border); background: #f8fafc; }
-        td { padding: 14px; border-bottom: 1px solid var(--panel-border); vertical-align: middle; color: #1e293b; }
-        tr:hover td { background: #f8fafc; }
-
-        code { font-family: var(--font-code); font-size: 12.5px; color: #6d28d9; background: #f3e8ff; padding: 3px 7px; border-radius: 5px; border: 1px solid #e9d5ff; }
-
-        .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
-        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25); }
-        .btn-primary:hover { background: #059669; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
-        .modal.active { display: flex; }
-        .modal-content { background: #ffffff; border: 1px solid var(--panel-border); border-radius: 16px; width: 460px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-header h3 { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; }
-        .modal-close { background: none; border: none; color: var(--text-sub); font-size: 20px; cursor: pointer; }
-
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 12.5px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; }
-        .form-control { width: 100%; padding: 10px 14px; border-radius: 8px; background: #ffffff; border: 1px solid var(--panel-border); color: var(--text-main); font-size: 13.5px; outline: none; }
-        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
-
-        .progress-bar-bg { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; width: 120px; }
-        .progress-bar-fill { background: var(--primary); height: 100%; width: 25%; }
+        .btn { padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-cyan { background: var(--fpt-cyan); color: #ffffff; }
+        .btn-cyan:hover { background: var(--fpt-cyan-dark); }
 
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
+
+        /* Auth Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: #ffffff; border-radius: 8px; width: 440px; padding: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--text-dark); }
+        .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-sub); }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12.5px; color: var(--text-sub); margin-bottom: 6px; font-weight: 500; }
+        .form-control { width: 100%; padding: 10px 14px; border-radius: 4px; border: 1px solid #ced4da; font-size: 13.5px; outline: none; }
+        .form-control:focus { border-color: var(--fpt-cyan); }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="brand">
-            <div class="brand-logo"><i class="fa-solid fa-code"></i></div>
-            <div class="brand-text">
-                <h2>FPT Developer Hub</h2>
-                <span>Staff Developer Portal</span>
+    <!-- Header Top Bar -->
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff" class="brand-logo">
+                <i class="fa-solid fa-network-wired"></i> FPT.AI Platform
+            </a>
+            <div class="project-selector">
+                <i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
             </div>
         </div>
 
-        <ul class="nav-menu">
-            <li class="nav-item active"><button onclick="switchTab('endpoints')"><i class="fa-solid fa-network-wired"></i> Exported APIs</button></li>
-            <li class="nav-item"><button onclick="switchTab('playground')"><i class="fa-solid fa-flask"></i> AI Playground Sandbox</button></li>
-            <li class="nav-item"><button onclick="switchTab('my-keys')"><i class="fa-solid fa-key"></i> My Approved API Keys</button></li>
-            <li class="nav-item"><button onclick="switchTab('my-jobs')"><i class="fa-solid fa-bolt"></i> My Async Jobs Tracker</button></li>
-            <li class="nav-item"><button onclick="switchTab('request-key')"><i class="fa-solid fa-paper-plane"></i> Request API Key</button></li>
-            <li class="nav-item"><button onclick="switchTab('aliases')"><i class="fa-solid fa-cubes"></i> Model Aliases Catalog</button></li>
-            <li class="nav-item"><button onclick="switchTab('snippets')"><i class="fa-solid fa-terminal"></i> SDK Code Generator</button></li>
-            <li class="nav-item"><button onclick="switchTab('docs')"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
-            <li class="nav-item"><button onclick="window.open('/status', '_blank')"><i class="fa-solid fa-globe"></i> Public Status Page</button></li>
-        </ul>
-
-        <div class="vpn-badge">
-            <i class="fa-solid fa-shield-halved" style="color: var(--primary); font-size: 16px;"></i>
-            <div>
-                <div style="font-size: 12px; font-weight: 700;">VPN Protected Network</div>
-                <div style="color: var(--text-sub); font-size: 10.5px;">Corporate Staff Access</div>
+        <div class="header-right">
+            <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="user-menu" onclick="openModal('modal-auth')">
+                <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 18px;"></i>
             </div>
         </div>
     </div>
 
-    <div class="main-workspace">
-        <div class="header">
-            <div>
-                <h1 id="page-title">Exported API Endpoints for Staff</h1>
-                <p>Enterprise AI Inference Integration Portal & Code Snippets</p>
+    <!-- Layout Body -->
+    <div class="layout-body">
+        
+        <!-- Left Navigation Sidebar -->
+        <div class="sidebar">
+            
+            <div class="nav-section">
+                <div class="section-title">
+                    <span>Console</span> <i class="fa-solid fa-chevron-up" style="font-size: 10px; color: var(--text-sub);"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item active"><button onclick="switchTab('dashboard')">Dashboard</button></li>
+                    <li class="nav-item"><button onclick="switchTab('apis')">APIs</button></li>
+                    <li class="nav-item"><button onclick="switchTab('keys')">API Keys</button></li>
+                    <li class="nav-item"><button onclick="switchTab('report')">API report</button></li>
+                </ul>
             </div>
-            <button class="btn btn-primary" onclick="openModal('modal-request-key')"><i class="fa-solid fa-paper-plane"></i> Request New API Key</button>
+
+            <div class="nav-section">
+                <div class="section-title">
+                    <span>Applications</span> <i class="fa-solid fa-chevron-up" style="font-size: 10px; color: var(--text-sub);"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item"><button onclick="switchTab('chatbot')">Chatbot</button></li>
+                    <li class="nav-item"><button onclick="switchTab('reader')">Reader</button></li>
+                    <li class="nav-item"><button onclick="switchTab('voicemaker')">VoiceMaker</button></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="section-title"><span>Payment history</span></div>
+            </div>
+
+            <div class="nav-section">
+                <div class="section-title"><span>Contact us</span></div>
+                <div class="section-title"><span>Getting started</span></div>
+                <div class="section-title"><span>Feedback</span></div>
+            </div>
+
         </div>
 
-        <div id="tab-endpoints" class="tab-pane active">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-plug" style="color: var(--primary);"></i> Exported Production APIs (Active)</div>
-                <div id="endpoints-list"></div>
-            </div>
-        </div>
+        <!-- Main Content -->
+        <div class="main-content">
 
-        <!-- TAB: DEVELOPER AI PLAYGROUND SANDBOX -->
-        <div id="tab-playground" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-flask" style="color: var(--primary);"></i> Developer AI Model Testing Sandbox</div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div>
-                        <div class="form-group">
-                            <label>Target Model Alias</label>
-                            <select id="staff-pg-alias" class="form-control">
-                                <option value="chat-general-standard">chat-general-standard (Qwen3-8B)</option>
-                                <option value="chat-general-high-quality">chat-general-high-quality (Qwen3-14B)</option>
-                                <option value="embed-standard">embed-standard (Qwen3-Embedding-8B)</option>
-                                <option value="moderation-multimodal">moderation-multimodal (Llama Guard 4)</option>
-                            </select>
+            <!-- TAB 1: DASHBOARD & APIS -->
+            <div id="tab-dashboard" class="tab-pane active">
+                
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <h1 id="welcome-title">Welcome, Nam Lê</h1>
+                    <p>Thông báo quan trọng FPT.AI Console cung cấp hạ tầng AI Cloud Middleware chuẩn Enterprise cho doanh nghiệp. Xem thêm tại đây <a href="/docs">Link</a></p>
+                    <a href="#apis-anchor" class="btn-explore">EXPLORE</a>
+                </div>
+
+                <div id="apis-anchor" class="section-header">APIs</div>
+
+                <!-- API Grid Cards -->
+                <div class="api-grid">
+                    
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid fa-microphone-lines"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
                         </div>
-                        <div class="form-group">
-                            <label>Prompt Content</label>
-                            <textarea id="staff-pg-prompt" class="form-control" rows="5" placeholder="Enter prompt to test model response...">Xin chào! Thử nghiệm gọi API từ Staff Developer Portal.</textarea>
-                        </div>
-                        <button class="btn btn-primary" onclick="runStaffPlaygroundTest()"><i class="fa-solid fa-paper-plane"></i> Test API Response</button>
+                        <div class="card-title">Speech to Text</div>
+                        <div class="card-desc">Convert your voice into text using PhoWhisper STT model</div>
                     </div>
-                    <div>
-                        <div class="form-group">
-                            <label>JSON Response Output</label>
-                            <pre id="staff-pg-output" style="background: #0f172a; color: #34d399; padding: 14px; border-radius: 8px; font-family: var(--font-code); font-size: 12.5px; height: 210px; overflow-y: auto;">Click "Test API Response" to test API endpoint...</pre>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid fa-volume-high"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
                         </div>
+                        <div class="card-title">Text to Speech</div>
+                        <div class="card-desc">Convert text to natural-sounding voices with viXTTS synthesis</div>
                     </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid fa-id-card"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Driver's license recognition</div>
+                        <div class="card-desc">Extract rich information from license and ID card images</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon" style="background:#2563eb;"><i class="fa-solid fa-comments"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">LLM Chatbot API</div>
+                        <div class="card-desc">Qwen3-8B & 14B High Quality LLM Reasoning Endpoints</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon" style="background:#7c3aed;"><i class="fa-solid fa-cubes"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Vector Embeddings</div>
+                        <div class="card-desc">High dimensional semantic text embeddings for RAG</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon" style="background:#f43f5e;"><i class="fa-solid fa-shield-halved"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Content Moderation</div>
+                        <div class="card-desc">Llama Guard 4 Multimodal safety inspection API</div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- TAB 2: API KEYS & SELF SERVICE REQUEST -->
+            <div id="tab-keys" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title"><i class="fa-solid fa-key" style="color:var(--fpt-cyan);"></i> My API Keys & Self-Service Request</div>
+                    <p style="color:var(--text-sub); font-size:13.5px; margin-bottom:20px;">Submit a new API Key request for your project. Admin will review and approve your request.</p>
+
+                    <form onsubmit="handleStaffKeyRequest(event)" style="max-width:560px;">
+                        <div class="form-group">
+                            <label>Tenant / Department ID</label>
+                            <input type="text" id="req-tenant" class="form-control" value="TENANT_RETAIL_BANK" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Corporate Developer Email</label>
+                            <input type="email" id="req-email" class="form-control" value="dev_namle@company.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Justification</label>
+                            <textarea id="req-justification" class="form-control" rows="2" required>FPT.AI Mobile App Integration</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-cyan"><i class="fa-solid fa-paper-plane"></i> Submit API Key Request</button>
+                    </form>
                 </div>
             </div>
-        </div>
 
-        <!-- TAB: MY APPROVED KEYS & QUOTA -->
-        <div id="tab-my-keys" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-key" style="color: var(--primary);"></i> My Approved API Keys & Quota Metering</div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Key ID</th>
-                                <th>Tenant / Team</th>
-                                <th>RPM Quota Limit</th>
-                                <th>TPM Token Quota</th>
-                                <th>Usage Progress</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>key_01HXDEFAULT</code></td>
-                                <td><strong>TENANT_RETAIL_BANK</strong></td>
-                                <td>120 req/min</td>
-                                <td>200,000 tpm</td>
-                                <td>
-                                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 25%;"></div></div>
-                                    <span style="font-size:11px; color:var(--text-sub);">25% Used</span>
-                                </td>
-                                <td><span style="color:var(--primary); font-weight:700;">active</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+            <!-- TAB 3: APIS CATALOG & CODE SNIPPETS -->
+            <div id="tab-apis" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title"><i class="fa-solid fa-code" style="color:var(--fpt-cyan);"></i> SDK Integration Snippets</div>
 
-        <!-- TAB: MY ASYNC JOBS TRACKER -->
-        <div id="tab-my-jobs" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-bolt" style="color: var(--purple);"></i> My Async Processing Jobs Tracker</div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Job ID</th>
-                                <th>Job Type</th>
-                                <th>Model Alias</th>
-                                <th>Status</th>
-                                <th>Progress</th>
-                                <th>Output Download</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>job_01HXVIDEO</code></td>
-                                <td>video_generation</td>
-                                <td>video-gen-standard</td>
-                                <td><span style="color:var(--primary); font-weight:700;">completed</span></td>
-                                <td>100%</td>
-                                <td><a href="#" style="color:var(--accent); text-decoration:none; font-weight:600;"><i class="fa-solid fa-download"></i> Download Video Result</a></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-request-key" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-paper-plane" style="color: var(--accent);"></i> Staff API Key Self-Service Request</div>
-                <p style="color: var(--text-sub); font-size: 13.5px; margin-bottom: 20px;">Submit a key request for your project or department. Admin will review and approve your request.</p>
-
-                <form onsubmit="handleStaffKeyRequest(event)" style="max-width: 580px;">
-                    <div class="form-group">
-                        <label>Tenant / Department ID</label>
-                        <input type="text" id="req-tenant" class="form-control" placeholder="e.g. TENANT_RETAIL_BANK" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Requester Corporate Email</label>
-                        <input type="email" id="req-email" class="form-control" placeholder="e.g. dev_namle@company.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Project Justification / Business Reason</label>
-                        <textarea id="req-justification" class="form-control" rows="3" placeholder="e.g. Integration with Mobile Banking AI Assistant" required></textarea>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                        <div class="form-group">
-                            <label>Requested RPM</label>
-                            <input type="number" id="req-rpm" class="form-control" value="60" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Requested TPM</label>
-                            <input type="number" id="req-tpm" class="form-control" value="100000" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Concurrency</label>
-                            <input type="number" id="req-conc" class="form-control" value="5" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Key Request to Admin</button>
-                </form>
-            </div>
-        </div>
-
-        <div id="tab-aliases" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-layer-group" style="color: var(--accent);"></i> Active Model Aliases Catalog</div>
-                <div id="aliases-list"></div>
-            </div>
-        </div>
-
-        <div id="tab-snippets" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-terminal" style="color: var(--purple);"></i> Quick Integration SDK Code Snippets</div>
-
-                <div style="margin-bottom: 22px;">
-                    <h3 style="font-size: 14.5px; color: var(--primary); margin-bottom: 6px;">1. cURL Request Example</h3>
-                    <div class="code-box">
-                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                        <pre>curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions \
+                    <div style="margin-bottom:24px;">
+                        <h4 style="margin-bottom:8px; color:var(--fpt-cyan);">cURL Request Example</h4>
+                        <div class="code-box">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "chat-general-standard",
-    "messages": [{"role": "user", "content": "Xin chào AIP Platform!"}]
+    "messages": [{"role": "user", "content": "Xin chào FPT.AI Platform!"}]
   }'</pre>
+                        </div>
                     </div>
-                </div>
 
-                <div style="margin-bottom: 22px;">
-                    <h3 style="font-size: 14.5px; color: var(--accent); margin-bottom: 6px;">2. Python SDK Example</h3>
-                    <div class="code-box">
-                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                        <pre>from aip_sdk import AIPClient
+                    <div>
+                        <h4 style="margin-bottom:8px; color:#2563eb;">Python SDK Example</h4>
+                        <div class="code-box">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>from aip_sdk import AIPClient
 
 client = AIPClient(base_url="https://ai-platform-6p72.onrender.com", api_key="YOUR_API_KEY")
 response = client.chat.completions.create(
@@ -357,62 +393,78 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Xin chào!"}]
 )
 print(response.choices[0].message.content)</pre>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 style="font-size: 14.5px; color: var(--purple); margin-bottom: 6px;">3. C# .NET 8 SDK Example</h3>
-                    <div class="code-box">
-                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                        <pre>using Everwin.AIPlatform.SDK;
-
-var client = new AIPClient("https://ai-platform-6p72.onrender.com", "YOUR_API_KEY");
-var response = await client.CreateChatCompletionAsync(new ChatRequest {
-    Model = "chat-general-standard",
-    Prompt = "Xin chào AIP Platform!"
-});
-Console.WriteLine(response.Text);</pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="tab-docs" class="tab-pane">
-            <div class="glass-panel" style="padding: 0; overflow: hidden; height: 750px;">
-                <iframe src="/docs" style="width: 100%; height: 100%; border: none;"></iframe>
+            <!-- TAB 4: API REPORT -->
+            <div id="tab-report" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title"><i class="fa-solid fa-chart-line" style="color:var(--fpt-cyan);"></i> API Usage Report</div>
+                    <p style="color:var(--text-sub);">Total Calls This Month: <strong>12,450 Requests</strong> | Success Rate: <strong style="color:#10b981;">99.98%</strong></p>
+                </div>
             </div>
+
+            <!-- APPLICATION TABS -->
+            <div id="tab-chatbot" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title">Chatbot LLM Qwen3 Engine</div>
+                    <p style="color:var(--text-sub);">High throughput conversational AI engine deployed on vLLM cluster.</p>
+                </div>
+            </div>
+
+            <div id="tab-reader" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title">Reader IDP OCR Engine</div>
+                    <p style="color:var(--text-sub);">Extract text and structured JSON from Driver License, ID Card, and Passports.</p>
+                </div>
+            </div>
+
+            <div id="tab-voicemaker" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title">VoiceMaker TTS Synthesis</div>
+                    <p style="color:var(--text-sub);">Natural Vietnamese text to speech voice synthesis engine.</p>
+                </div>
+            </div>
+
         </div>
 
     </div>
 
-    <!-- Modal: Request Key -->
-    <div class="modal" id="modal-request-key">
+    <!-- Modal: Auth Login / Signup -->
+    <div class="modal" id="modal-auth">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Request New API Key</h3>
-                <button class="modal-close" onclick="closeModal('modal-request-key')">&times;</button>
+                <h3 id="auth-title">FPT.AI Developer Login</h3>
+                <button class="modal-close" onclick="closeModal('modal-auth')">&times;</button>
             </div>
-            <form onsubmit="handleStaffKeyRequestModal(event)">
+            <form onsubmit="handleAuthSubmit(event)">
                 <div class="form-group">
-                    <label>Tenant ID</label>
-                    <input type="text" id="m-tenant" class="form-control" placeholder="e.g. TENANT_RETAIL_BANK" required>
+                    <label>Developer Email</label>
+                    <input type="email" id="auth-email" class="form-control" value="dev_namle@company.com" required>
                 </div>
                 <div class="form-group">
-                    <label>Corporate Email</label>
-                    <input type="email" id="m-email" class="form-control" placeholder="e.g. dev_namle@company.com" required>
+                    <label>Password</label>
+                    <input type="password" id="auth-password" class="form-control" value="secret123" required>
                 </div>
-                <div class="form-group">
-                    <label>Justification Reason</label>
-                    <input type="text" id="m-justification" class="form-control" placeholder="e.g. AI Chatbot Integration" required>
+                <div id="auth-signup-fields" style="display:none;">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="auth-fullname" class="form-control" placeholder="Nam Lê">
+                    </div>
                 </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Request</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                    <a href="#" id="auth-toggle-link" style="font-size:12.5px; color:var(--fpt-cyan);" onclick="toggleAuthMode()">Need an account? Register Free</a>
+                    <button type="submit" class="btn btn-cyan" id="auth-submit-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        let isSignupMode = false;
+
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -431,22 +483,45 @@ Console.WriteLine(response.Text);</pre>
             setTimeout(() => btn.innerText = 'Copy', 2000);
         }
 
-        async function runStaffPlaygroundTest() {
-            const alias = document.getElementById('staff-pg-alias').value;
-            const prompt = document.getElementById('staff-pg-prompt').value;
-            const output = document.getElementById('staff-pg-output');
-            output.innerText = 'Executing model request...';
+        function toggleAuthMode() {
+            isSignupMode = !isSignupMode;
+            document.getElementById('auth-title').innerText = isSignupMode ? 'Register Free FPT.AI Developer' : 'FPT.AI Developer Login';
+            document.getElementById('auth-signup-fields').style.display = isSignupMode ? 'block' : 'none';
+            document.getElementById('auth-submit-btn').innerHTML = isSignupMode ? '<i class="fa-solid fa-user-plus"></i> Register Free' : '<i class="fa-solid fa-right-to-bracket"></i> Login';
+            document.getElementById('auth-toggle-link').innerText = isSignupMode ? 'Already have an account? Login' : 'Need an account? Register Free';
+        }
 
-            try {
-                const res = await fetch('/v1/chat/completions', {
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (isSignupMode) {
+                const fullName = document.getElementById('auth-fullname').value || 'Nam Lê';
+                const res = await fetch('/v1/auth/signup', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer aip_live_test_key'},
-                    body: JSON.stringify({ model: alias, messages: [{role: 'user', content: prompt}] })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password, full_name: fullName, role: 'staff' })
                 });
                 const data = await res.json();
-                output.innerText = JSON.stringify(data, null, 2);
-            } catch (err) {
-                output.innerText = 'Error testing API: ' + err;
+                alert(data.message);
+                closeModal('modal-auth');
+            } else {
+                const res = await fetch('/v1/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const name = data.user.full_name || 'Nam Lê';
+                    document.getElementById('header-username').innerText = name;
+                    document.getElementById('welcome-title').innerText = `Welcome, ${name}`;
+                    alert(`Welcome ${name}! Developer Session Active.`);
+                    closeModal('modal-auth');
+                } else {
+                    alert('Login Failed: ' + data.detail);
+                }
             }
         }
 
@@ -456,25 +531,6 @@ Console.WriteLine(response.Text);</pre>
                 tenant_id: document.getElementById('req-tenant').value,
                 requested_by: document.getElementById('req-email').value,
                 justification: document.getElementById('req-justification').value,
-                rpm_limit: parseInt(document.getElementById('req-rpm').value),
-                tpm_limit: parseInt(document.getElementById('req-tpm').value),
-                concurrency_limit: parseInt(document.getElementById('req-conc').value)
-            };
-            const res = await fetch('/v1/key-requests', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            alert(`API Key Request Submitted Successfully!\nRequest ID: ${data.request_id}\nStatus: Pending Admin Approval`);
-        }
-
-        async function handleStaffKeyRequestModal(e) {
-            e.preventDefault();
-            const payload = {
-                tenant_id: document.getElementById('m-tenant').value,
-                requested_by: document.getElementById('m-email').value,
-                justification: document.getElementById('m-justification').value,
                 rpm_limit: 60,
                 tpm_limit: 100000,
                 concurrency_limit: 5
@@ -486,60 +542,7 @@ Console.WriteLine(response.Text);</pre>
             });
             const data = await res.json();
             alert(`API Key Request Submitted Successfully!\nRequest ID: ${data.request_id}\nStatus: Pending Admin Approval`);
-            closeModal('modal-request-key');
         }
-
-        async function fetchExportedEndpoints() {
-            try {
-                const res = await fetch('/admin/v1/endpoints');
-                const json = await res.json();
-                const endpoints = json.data || {};
-                const container = document.getElementById('endpoints-list');
-
-                container.innerHTML = Object.entries(endpoints)
-                    .filter(([id, item]) => item.status === 'enabled')
-                    .map(([id, item]) => `
-                        <div class="endpoint-card">
-                            <div class="endpoint-header">
-                                <span class="method-badge">${item.method}</span>
-                                <span style="font-family: var(--font-code); font-size: 14.5px; font-weight: 600; color: #0f172a;">${item.path}</span>
-                                <span style="color: var(--primary); font-size: 12px; font-weight: 600;"><i class="fa-solid fa-check"></i> Exported for Staff</span>
-                            </div>
-                            <p style="color: var(--text-sub); font-size: 13px; margin-bottom: 8px;">${item.description}</p>
-                            <div class="code-box">
-                                <button class="copy-btn" onclick="copyCode(this)">Copy Endpoint</button>
-                                <pre>https://ai-platform-6p72.onrender.com${item.path}</pre>
-                            </div>
-                        </div>
-                    `).join('');
-            } catch (err) { console.error('Failed to fetch staff endpoints:', err); }
-        }
-
-        async function fetchModelAliases() {
-            try {
-                const res = await fetch('/admin/v1/aliases');
-                const json = await res.json();
-                const aliases = json.data || {};
-                const container = document.getElementById('aliases-list');
-
-                container.innerHTML = Object.entries(aliases)
-                    .filter(([name, item]) => item.status === 'enabled')
-                    .map(([name, item]) => `
-                        <div class="endpoint-card">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <strong style="font-size: 14.5px; color: var(--primary);"><code>${name}</code></strong>
-                                <span style="color: var(--purple); font-size: 12px; font-weight: 600;">Runtime: ${item.runtime || 'vllm'}</span>
-                            </div>
-                            <p style="color: var(--text-sub); font-size: 13px; margin-top: 6px;">Physical Model Target: <strong>${item.model_name || 'Qwen3-8B'}</strong></p>
-                        </div>
-                    `).join('');
-            } catch (err) { console.error('Failed to fetch staff aliases:', err); }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchExportedEndpoints();
-            fetchModelAliases();
-        });
     </script>
 </body>
 </html>
