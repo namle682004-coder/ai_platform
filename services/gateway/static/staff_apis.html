@@ -609,19 +609,22 @@
             targetPendingApi = apiName;
             if (!currentState) {
                 targetPendingAction = 'enable';
-                checkboxEl.checked = false;
+                checkboxEl.checked = true;
                 document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${apiName}"?`;
                 openConfirmModal();
             } else {
                 targetPendingAction = 'disable';
-                checkboxEl.checked = true;
+                checkboxEl.checked = false;
                 document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${apiName}"?`;
                 openConfirmModal();
             }
         }
 
         function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
-        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+        function closeConfirmModal() { 
+            document.getElementById('confirm-modal').classList.remove('active'); 
+            syncUIState();
+        }
 
         async function onConfirmEnableClick() {
             closeConfirmModal();
@@ -643,7 +646,10 @@
         }
 
         function openProjectModal() { document.getElementById('project-modal').classList.add('active'); }
-        function closeProjectModal() { document.getElementById('project-modal').classList.remove('active'); }
+        function closeProjectModal() { 
+            document.getElementById('project-modal').classList.remove('active'); 
+            syncUIState();
+        }
 
         async function submitFirstProjectForm() {
             const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
