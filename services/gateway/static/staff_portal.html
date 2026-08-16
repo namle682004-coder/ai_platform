@@ -210,9 +210,9 @@
         }
 
         /* Generic Modals */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal.active { display: flex; }
-        .modal-content { background: #ffffff; border-radius: 8px; width: 480px; padding: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-content { background: #ffffff; border-radius: 8px; width: 480px; padding: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--text-dark); }
         .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-sub); }
@@ -220,11 +220,62 @@
         .form-group label { display: block; font-size: 12.5px; color: var(--text-sub); margin-bottom: 6px; font-weight: 500; }
         .form-control { width: 100%; padding: 10px 14px; border-radius: 4px; border: 1px solid #ced4da; font-size: 13.5px; outline: none; }
 
+        /* MANDATORY AUTH GATE OVERLAY */
+        #mandatory-auth-gate {
+            display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(0, 150, 170, 0.95), rgba(0, 180, 207, 0.95));
+            z-index: 9999; align-items: center; justify-content: center;
+        }
+
+        .auth-gate-card {
+            background: #ffffff; border-radius: 12px; width: 440px; padding: 36px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3); text-align: center;
+        }
+
+        .auth-gate-logo { font-size: 24px; font-weight: 800; color: var(--fpt-cyan); margin-bottom: 8px; }
+        .auth-gate-title { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; }
+
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
     </style>
 </head>
 <body>
+
+    <!-- MANDATORY AUTH GATE OVERLAY (FORCES LOGIN/REGISTER FIRST) -->
+    <div id="mandatory-auth-gate">
+        <div class="auth-gate-card">
+            <div class="auth-gate-logo"><i class="fa-solid fa-network-wired"></i> FPT.AI Platform</div>
+            <div class="auth-gate-title" id="gate-card-title">Đăng Nhập Hoặc Đăng Ký Tài Khoản</div>
+            <p style="color:var(--text-sub); font-size:13px; margin-bottom:24px;">Bạn bắt buộc phải Đăng Nhập hoặc Đăng Ký tài khoản Developer trước khi truy cập vào FPT.AI Console.</p>
+
+            <form onsubmit="handleGateAuthSubmit(event)">
+                <div class="form-group" style="text-align:left;">
+                    <label>Developer Email</label>
+                    <input type="email" id="gate-email" class="form-control" value="dev_namle@company.com" required>
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label>Password</label>
+                    <input type="password" id="gate-password" class="form-control" value="secret123" required>
+                </div>
+                <div id="gate-signup-fields" style="display:none; text-align:left;">
+                    <div class="form-group">
+                        <label>Họ và Tên (Full Name)</label>
+                        <input type="text" id="gate-fullname" class="form-control" placeholder="Nam Lê">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-explore" id="gate-submit-btn" style="width:100%; margin-top:10px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Developer
+                </button>
+            </form>
+
+            <div style="margin-top:20px; font-size:13px;">
+                <a href="#" id="gate-toggle-link" style="color:var(--fpt-cyan); font-weight:600; text-decoration:none;" onclick="toggleGateAuthMode()">
+                    Chưa có tài khoản? Đăng Ký Miễn Phí
+                </a>
+            </div>
+        </div>
+    </div>
 
     <!-- Header Top Bar -->
     <div class="top-header">
@@ -239,8 +290,9 @@
 
         <div class="header-right">
             <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
-            <div class="user-menu" onclick="openModal('modal-auth')">
+            <div class="user-menu">
                 <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 18px;"></i>
+                <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left:8px; cursor:pointer;" onclick="logoutUser()"></i>
             </div>
         </div>
     </div>
@@ -346,18 +398,13 @@
                 </div>
             </div>
 
-            <!-- TAB 2: SERVICE DETAIL WORKSPACE (EXACT REPLICA OF USER SCREENSHOT) -->
+            <!-- TAB 2: SERVICE DETAIL WORKSPACE -->
             <div id="tab-service-detail" class="tab-pane">
-                
-                <!-- Top Notice Bar -->
                 <div class="notice-bar">
-                    <div>
-                        <i class="fa-solid fa-certificate"></i> Thông báo quan trọng FPT.AI Console cung cấp dịch vụ cho khách hàng doanh nghiệp. Xem thêm tại đây <a href="#" style="color:#fff; text-decoration:underline;">Link</a>
-                    </div>
+                    <div><i class="fa-solid fa-certificate"></i> Thông báo quan trọng FPT.AI Console cung cấp dịch vụ cho khách hàng doanh nghiệp. Xem thêm tại đây <a href="#" style="color:#fff; text-decoration:underline;">Link</a></div>
                     <i class="fa-solid fa-xmark" style="cursor:pointer;"></i>
                 </div>
 
-                <!-- Service Header Bar -->
                 <div class="service-header-card">
                     <div class="service-title-box">
                         <div class="service-icon-lg" id="svc-detail-icon"><i class="fa-solid fa-microphone-lines"></i></div>
@@ -368,7 +415,6 @@
                     </div>
                 </div>
 
-                <!-- Sub Nav Tabs -->
                 <div class="service-nav-tabs">
                     <button class="tab-btn">OVERVIEW</button>
                     <button class="tab-btn active">SERVICE</button>
@@ -376,29 +422,21 @@
                     <button class="tab-btn">PRICING</button>
                 </div>
 
-                <!-- Split Workspace Layout -->
                 <div class="service-grid">
-                    
-                    <!-- Left Column: Demo Sandbox Tester -->
                     <div class="sandbox-left">
                         <div>
                             <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
                             <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
                         </div>
-
-                        <div class="identified-box" id="identified-result-box">
-                            Identified Text
-                        </div>
+                        <div class="identified-box" id="identified-result-box">Identified Text</div>
                     </div>
 
-                    <!-- Right Column: API Keys & Code Snippet Generator -->
                     <div class="api-right">
                         <div class="api-header">API</div>
-
                         <div class="key-select-box">
                             <label>API Key</label>
                             <select class="select-input" id="api-key-selector" onchange="updateSnippetKey()">
-                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (aip_live_...) </option>
+                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (aip_live_...)</option>
                                 <option value="aip_live_key_default_01">Main Production Key</option>
                             </select>
                         </div>
@@ -415,9 +453,7 @@
                             curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -T ""
                         </div>
                     </div>
-
                 </div>
-
             </div>
 
         </div>
@@ -434,7 +470,7 @@
                 Bạn có chắc chắn muốn kích hoạt dịch vụ <strong id="confirm-svc-name" style="color:var(--fpt-cyan);">Speech to Text</strong> cho dự án của mình không?
             </p>
             <div style="text-align:right;">
-                <button class="btn" style="background:#e9ecef; color:#495057; margin-right:8px;" onclick="closeModal('modal-confirm-svc')">Hủy bỏ</button>
+                <button class="btn-explore" style="background:#e9ecef; color:#495057; margin-right:8px;" onclick="closeModal('modal-confirm-svc')">Hủy bỏ</button>
                 <button class="btn-explore" onclick="proceedToProjectKeyStep()">Xác Nhận Kích Hoạt</button>
             </div>
         </div>
@@ -463,32 +499,66 @@
         </div>
     </div>
 
-    <!-- MODAL AUTH -->
-    <div class="modal" id="modal-auth">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>FPT.AI Developer Login</h3>
-                <button class="modal-close" onclick="closeModal('modal-auth')">&times;</button>
-            </div>
-            <form onsubmit="handleAuthSubmit(event)">
-                <div class="form-group">
-                    <label>Developer Email</label>
-                    <input type="email" id="auth-email" class="form-control" value="dev_namle@company.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="auth-password" class="form-control" value="secret123" required>
-                </div>
-                <div style="text-align:right; margin-top:20px;">
-                    <button type="submit" class="btn-explore">Login</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
+        let isGateSignupMode = false;
         let selectedService = 'Speech to Text';
         let currentLang = 'curl';
+
+        function checkMandatoryAuth() {
+            const userSession = localStorage.getItem('aip_user_session');
+            if (userSession) {
+                const user = JSON.parse(userSession);
+                document.getElementById('mandatory-auth-gate').style.display = 'none';
+                document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
+                document.getElementById('welcome-title').innerText = `Welcome, ${user.full_name || 'Nam Lê'}`;
+            } else {
+                document.getElementById('mandatory-auth-gate').style.display = 'flex';
+            }
+        }
+
+        function toggleGateAuthMode() {
+            isGateSignupMode = !isGateSignupMode;
+            document.getElementById('gate-card-title').innerText = isGateSignupMode ? 'Đăng Ký Tài Khoản Developer' : 'Đăng Nhập Hoặc Đăng Ký Tài Khoản';
+            document.getElementById('gate-signup-fields').style.display = isGateSignupMode ? 'block' : 'none';
+            document.getElementById('gate-submit-btn').innerHTML = isGateSignupMode ? '<i class="fa-solid fa-user-plus"></i> Đăng Ký Miễn Phí' : '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Developer';
+            document.getElementById('gate-toggle-link').innerText = isGateSignupMode ? 'Đã có tài khoản? Đăng Nhập' : 'Chưa có tài khoản? Đăng Ký Miễn Phí';
+        }
+
+        async function handleGateAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('gate-email').value;
+            const password = document.getElementById('gate-password').value;
+
+            if (isGateSignupMode) {
+                const fullName = document.getElementById('gate-fullname').value || 'Nam Lê';
+                const res = await fetch('/v1/auth/signup', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password, full_name: fullName, role: 'staff' })
+                });
+                const data = await res.json();
+                alert(data.message);
+                toggleGateAuthMode();
+            } else {
+                const res = await fetch('/v1/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('aip_user_session', JSON.stringify(data.user));
+                    checkMandatoryAuth();
+                } else {
+                    alert('Đăng nhập thất bại: ' + data.detail);
+                }
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('aip_user_session');
+            checkMandatoryAuth();
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -499,34 +569,26 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // Step 1: Click Card -> Confirmation Popup
         function triggerServiceActivation(svcName) {
             selectedService = svcName;
             document.getElementById('confirm-svc-name').innerText = svcName;
             openModal('modal-confirm-svc');
         }
 
-        // Step 2: Confirm -> Prompt Project & API Key Form
         function proceedToProjectKeyStep() {
             closeModal('modal-confirm-svc');
             openModal('modal-project-key');
         }
 
-        // Step 3: Finish Form -> Open Exact Service Detail Workspace Page
         function finishKeySetup(e) {
             e.preventDefault();
-            const projName = document.getElementById('setup-proj-name').value;
-            const keyName = document.getElementById('setup-key-name').value;
             closeModal('modal-project-key');
-
-            openServiceDetail(selectedService, keyName);
+            openServiceDetail(selectedService);
         }
 
-        function openServiceDetail(svcName, keyName = 'hello') {
+        function openServiceDetail(svcName) {
             selectedService = svcName;
             document.getElementById('svc-detail-title').innerText = svcName;
-            
-            // Switch to Detail Tab
             switchTab('service-detail');
             updateSnippetCode();
         }
@@ -581,27 +643,9 @@
             }, 2000);
         }
 
-        async function handleAuthSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-
-            const res = await fetch('/v1/auth/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                const name = data.user.full_name || 'Nam Lê';
-                document.getElementById('header-username').innerText = name;
-                document.getElementById('welcome-title').innerText = `Welcome, ${name}`;
-                alert(`Welcome ${name}! Session active.`);
-                closeModal('modal-auth');
-            } else {
-                alert('Login Failed: ' + data.detail);
-            }
-        }
+        window.addEventListener('DOMContentLoaded', () => {
+            checkMandatoryAuth();
+        });
     </script>
 </body>
 </html>
