@@ -243,49 +243,8 @@
 
             <!-- PANEL 2: SERVICE TAB (INTERACTIVE SANDBOX) -->
             <div class="tab-panel active" id="panel-SERVICE">
-                <div class="service-grid">
-                    <div class="sandbox-left">
-                        <div style="margin-bottom:14px;">
-                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Voice Selector</label>
-                            <select id="tts-voice-select" class="select-input" style="width:100%; border:none; border-bottom:1.5px solid #cbd5e1;">
-                                <option value="banmai">Nữ Hà Nội - Ban Mai (Khuyên dùng)</option>
-                                <option value="leminh">Nam Hà Nội - Lê Minh</option>
-                                <option value="lannhi">Nữ Sài Gòn - Lan Nhi</option>
-                                <option value="myan">Nữ Huế - Mỹ An</option>
-                            </select>
-                        </div>
-                        <div style="margin-bottom:14px;">
-                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Input Text Prompt</label>
-                            <textarea id="tts-text-input" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập đoạn văn bản tiếng Việt cần chuyển thành giọng nói...">Chào mừng bạn đến với Everwin AI Platform! Hệ thống tổng hợp giọng nói viXTTS sẵn sàng phục vụ.</textarea>
-                        </div>
-                        <div>
-                            <button class="btn-action-outline blue" onclick="simulateTTS()"><i class="fa-solid fa-play"></i> GENERATE AUDIO SPEECH</button>
-                        </div>
-                        <div class="identified-box" id="identified-result-box" style="margin-top:14px;">Audio Output Status</div>
-                    </div>
-
-                    <div class="api-right">
-                        <div class="api-header">API</div>
-                        <div class="key-select-box">
-                            <label>API Key</label>
-                            <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
-                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
-                                <option value="aip_live_key_default_01">Main Production Key</option>
-                            </select>
-                        </div>
-
-                        <div class="lang-options">
-                            <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
-                            <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
-                            <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
-                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
-                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
-                        </div>
-
-                        <div class="code-snippet-card" id="snippet-code-box">
-                            curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/speech -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"input": "Xin chào", "voice": "banmai"}'
-                        </div>
-                    </div>
+                <div style="padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                    You need to enable this api to run demo
                 </div>
             </div>
 
@@ -653,15 +612,18 @@
 
         function updateToggleButtonUI(isEnabled) {
             const btn = document.getElementById('svc-toggle-btn') || document.getElementById('btn-header-toggle-api');
+            const freeRemainEl = document.querySelector('.free-remain');
             if (btn) {
                 if (!isEnabled) {
                     btn.innerText = 'ENABLE';
                     btn.classList.remove('disabled');
                     btn.style.background = '#007bff';
+                    if (freeRemainEl) freeRemainEl.style.display = 'none';
                 } else {
                     btn.innerText = 'DISABLE';
                     btn.classList.add('disabled');
                     btn.style.background = '#64748b';
+                    if (freeRemainEl) freeRemainEl.style.display = 'inline';
                 }
             }
         }
@@ -792,52 +754,80 @@
         }
 
         function renderInteractiveSandbox(svcName, isEnabled) {
-            const leftBox = document.querySelector('.sandbox-left');
-            if (!leftBox) return;
+            const panel = document.getElementById('panel-SERVICE');
+            if (!panel) return;
 
             if (!isEnabled) {
-                leftBox.innerHTML = `
-                    <div style="padding: 24px 0; color: #64748b; font-size: 14px;">
+                panel.innerHTML = `
+                    <div style="padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
                         You need to enable this api to run demo
                     </div>
                 `;
                 return;
             }
 
-            leftBox.innerHTML = `
-                <div style="margin-bottom:14px;">
-                    <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Voice Selector</label>
-                    <select id="tts-voice-select" class="select-input" style="width:100%; border:none; border-bottom:1.5px solid #cbd5e1;">
-                        <option value="banmai">Nữ Hà Nội - Ban Mai (Khuyên dùng)</option>
-                        <option value="leminh">Nam Hà Nội - Lê Minh</option>
-                        <option value="lannhi">Nữ Sài Gòn - Lan Nhi</option>
-                        <option value="myan">Nữ Huế - Mỹ An</option>
-                    </select>
+            panel.innerHTML = `
+                <div class="service-grid">
+                    <div class="sandbox-left">
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Voice Selector</label>
+                            <select id="tts-voice-select" class="select-input" style="width:100%; border:none; border-bottom:1.5px solid #cbd5e1;">
+                                <option value="banmai">Nữ Hà Nội - Ban Mai (Khuyên dùng)</option>
+                                <option value="leminh">Nam Hà Nội - Lê Minh</option>
+                                <option value="lannhi">Nữ Sài Gòn - Lan Nhi</option>
+                                <option value="myan">Nữ Huế - Mỹ An</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Input Text Prompt</label>
+                            <textarea id="tts-text-input" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập đoạn văn bản tiếng Việt cần chuyển thành giọng nói...">Chào mừng bạn đến với Everwin AI Platform! Hệ thống tổng hợp giọng nói viXTTS sẵn sàng phục vụ.</textarea>
+                        </div>
+                        <div>
+                            <button class="btn-action-outline blue" onclick="simulateTTS()"><i class="fa-solid fa-play"></i> GENERATE AUDIO SPEECH</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box" style="margin-top:14px;">Audio Output Status</div>
+                    </div>
+
+                    <div class="api-right">
+                        <div class="api-header">API</div>
+                        <div class="key-select-box">
+                            <label>API Key</label>
+                            <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
+                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
+                                <option value="aip_live_key_default_01">Main Production Key</option>
+                            </select>
+                        </div>
+
+                        <div class="lang-options">
+                            <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
+                            <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
+                            <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
+                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
+                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                        </div>
+
+                        <div class="code-snippet-card" id="snippet-code-box">
+                            curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/speech -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"input": "Xin chào", "voice": "banmai"}'
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-bottom:14px;">
-                    <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Input Text Prompt</label>
-                    <textarea id="tts-text-input" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập đoạn văn bản tiếng Việt cần chuyển thành giọng nói...">Chào mừng bạn đến với Everwin AI Platform! Hệ thống tổng hợp giọng nói viXTTS sẵn sàng phục vụ.</textarea>
-                </div>
-                <div>
-                    <button class="btn-action-outline blue" onclick="simulateTTS()"><i class="fa-solid fa-play"></i> GENERATE AUDIO SPEECH</button>
-                </div>
-                <div class="identified-box" id="identified-result-box" style="margin-top:14px;">Audio Output Status</div>
             `;
+            updateSnippetCode();
         }
 
         let targetPendingAction = 'enable';
 
         async function handleServiceHeaderToggleClick() {
-            const apis = await fetchEnabledAPIsFromBackend();
-            const isEnabled = !!apis[currentSvcName];
+            const apis = getEnabledAPIs();
+            const isEnabled = isApiActive(apis, currentSvcName);
 
             if (!isEnabled) {
                 targetPendingAction = 'enable';
-                document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${currentSvcName}"?`;
+                document.getElementById('modal-confirm-body').innerText = `Do you want to enable this API`;
                 openConfirmModal();
             } else {
                 targetPendingAction = 'disable';
-                document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${currentSvcName}"?`;
+                document.getElementById('modal-confirm-body').innerText = `Do you want to disable this API`;
                 openConfirmModal();
             }
         }
@@ -871,7 +861,20 @@
             const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
             const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
 
-            const rawKey = 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm';
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: projName, billing_type: 'prepaid' })
+                });
+                await fetch('/v1/user/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: keyName, project_name: projName })
+                });
+            } catch (err) {}
+
+            const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
             const newProj = {
                 project_id: 'proj_' + Math.random().toString(36).substring(7),
                 project_name: projName,
@@ -883,6 +886,7 @@
             const projects = await getProjects();
             projects.push(newProj);
             setProjects(projects);
+            setActiveProjectName(projName);
 
             closeProjectModal();
             await activateApi(currentSvcName, projName);
