@@ -200,7 +200,7 @@ function getActiveProjectName() {
 
 async function fetchPaidBalanceFromBackend() {
     try {
-        const res = await fetch('/v1/portal/balance?t=' + new Date().getTime());
+        const res = await fetch('/v1/user/balance?t=' + new Date().getTime());
         if (res.ok) {
             const data = await res.json();
             if (data && typeof data.paid_balance === 'number') {
@@ -216,7 +216,7 @@ async function fetchPaidBalanceFromBackend() {
 
 async function rechargePaidBalanceOnBackend(addCredits, amountStr, packageName, projectName) {
     try {
-        const res = await fetch('/v1/portal/recharge', {
+        const res = await fetch('/v1/user/recharge', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
