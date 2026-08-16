@@ -90,6 +90,7 @@
         #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
         .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
     </style>
+    <script src="/static/js/staff_layout.js"></script>
 </head>
 <body>
 
@@ -98,7 +99,7 @@
     <div class="top-header">
         <div class="header-left">
             <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
-            <div class="project-selector" onclick="showProjectSelectorToast()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="project-selector" onclick="openSelectProjectModal()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
             <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
@@ -123,30 +124,42 @@
     <div class="layout-body">
         <div class="sidebar">
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span id="txt-nav-console">Console</span>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                    <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> Console</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/dashboard" id="txt-nav-dashboard">Dashboard</a></li>
-                    <li class="nav-item"><a href="/staff/apis" id="txt-nav-apis">APIs</a></li>
-                    <li class="nav-item"><a href="/staff/keys" id="txt-nav-keys">API Keys</a></li>
-                    <li class="nav-item active"><a href="/staff/report" id="txt-nav-report">API report</a></li>
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
+                    <li class="nav-item active"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
                 </ul>
             </div>
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span id="txt-nav-apps">Applications</span>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                    <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/service?name=Speech%20to%20Text">Speech to Text</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=Text%20to%20Speech">Text to Speech</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=LLM%20Chatbot%20API">LLM Chatbot</a></li>
+                    <li class="nav-item"><a href="/staff/service?name=Speech%20to%20Text"><i class="fa-solid fa-microphone" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
+                    <li class="nav-item"><a href="/staff/service?name=Text%20to%20Speech"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
+                    <li class="nav-item"><a href="/staff/service?name=LLM%20Chatbot%20API"><i class="fa-solid fa-robot" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
                 </ul>
             </div>
-            <div class="nav-section"><div class="section-title"><span>Payment history</span></div></div>
-            <div class="nav-section"><div class="section-title"><span>Contact us</span></div></div>
+            <div class="nav-section">
+                <div class="section-title">
+                    <a href="/staff/payment" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-credit-card" style="width: 14px;"></i> Payment history
+                    </a>
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="section-title">
+                    <a href="/staff/contact" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-headset" style="width: 14px;"></i> Contact us
+                    </a>
+                </div>
+            </div>
         </div>
 
         <div class="main-content">
