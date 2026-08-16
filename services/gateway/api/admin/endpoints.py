@@ -15,7 +15,10 @@ class EndpointStatusUpdateRequest(BaseModel):
 
 
 def is_endpoint_enabled(endpoint_id: str) -> bool:
-    endpoint = endpoint_repository._memory_cache.get(endpoint_id)
+    cache = getattr(endpoint_repository, "_endpoints_cache", None)
+    if cache is None:
+        cache = getattr(endpoint_repository, "_memory_cache", {})
+    endpoint = cache.get(endpoint_id)
     if not endpoint:
         return True
     return endpoint.get("status") == "enabled"
