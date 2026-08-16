@@ -203,7 +203,10 @@
             </div>
 
             <div class="service-header-card">
-                <div class="service-title-box">
+                <div class="service-title-box" style="display:flex; align-items:center;">
+                    <a href="/staff/apis" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:14px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to APIs Catalog">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
                     <div class="service-icon-lg" id="svc-detail-icon" style="background:#ef4444;"><i class="fa-solid fa-shield-halved"></i></div>
                     <div class="service-name" id="svc-detail-title">Content Moderation API</div>
                     <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>

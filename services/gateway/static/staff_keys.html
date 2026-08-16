@@ -163,9 +163,14 @@
 
         <div class="main-content">
             <div class="page-title-row">
-                <div>
-                    <div class="page-title">API Keys</div>
-                    <div class="page-subtitle">Create credentials to access your enabled APIs. For more information, see the authentication documentation.</div>
+                <div style="display:flex; align-items:center;">
+                    <a href="/staff/dashboard" style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:12px; font-size:14px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to Dashboard">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <div class="page-title">API Keys</div>
+                        <div class="page-subtitle">Create credentials to access your enabled APIs. For more information, see the authentication documentation.</div>
+                    </div>
                 </div>
                 <button class="btn-create-blue" onclick="openCreateApiKeyModal()">CREATE API KEY</button>
             </div>

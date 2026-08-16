@@ -203,7 +203,10 @@
             </div>
 
             <div class="service-header-card">
-                <div class="service-title-box">
+                <div class="service-title-box" style="display:flex; align-items:center;">
+                    <a href="/staff/apis" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:14px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to APIs Catalog">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
                     <div class="service-icon-lg" id="svc-detail-icon" style="background:#2563eb;"><i class="fa-solid fa-comments"></i></div>
                     <div class="service-name" id="svc-detail-title">LLM Chatbot API</div>
                     <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
@@ -276,16 +279,6 @@
 
                         <div class="code-snippet-card" id="snippet-code-box">
                             curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"messages": [{"role": "user", "content": "Hello"}]}'
-                        </div>
-                    </div>
-                </div>
-            </div>
-                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
-                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
-                        </div>
-
-                        <div class="code-snippet-card" id="snippet-code-box">
-                            curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -T ""
                         </div>
                     </div>
                 </div>
