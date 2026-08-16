@@ -762,13 +762,22 @@
                 `;
             }
 
-            // 4. SERVICE TAB (Interactive Sandbox according to Service type!)
-            renderInteractiveSandbox(svcName);
+            // 4. SERVICE TAB (Interactive Sandbox according to Service type & enabled state!)
+            renderInteractiveSandbox(svcName, isEnabled);
         }
 
-        function renderInteractiveSandbox(svcName) {
+        function renderInteractiveSandbox(svcName, isEnabled) {
             const leftBox = document.querySelector('.sandbox-left');
             if (!leftBox) return;
+
+            if (!isEnabled) {
+                leftBox.innerHTML = `
+                    <div style="padding: 24px 0; color: #64748b; font-size: 14px;">
+                        You need to enable this api to run demo
+                    </div>
+                `;
+                return;
+            }
 
             if (svcName === 'Text to Speech') {
                 leftBox.innerHTML = `
