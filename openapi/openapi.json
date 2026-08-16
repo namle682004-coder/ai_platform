@@ -650,10 +650,173 @@
         }
       }
     },
+    "/v1/auth/signup": {
+      "post": {
+        "tags": [
+          "Authentication & Staff Accounts"
+        ],
+        "summary": "Register Staff / Admin Account",
+        "operationId": "signup_v1_auth_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication & Staff Accounts"
+        ],
+        "summary": "Login Staff / Admin Account",
+        "operationId": "login_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/mcp/sse": {
+      "get": {
+        "tags": [
+          "Model Context Protocol (MCP) Gateway Bridge"
+        ],
+        "summary": "MCP Server-Sent Events (SSE) Stream",
+        "description": "Establishes SSE Connection for MCP Clients (Cursor, Antigravity, Claude Desktop).",
+        "operationId": "mcp_sse_stream_v1_mcp_sse_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/mcp/messages": {
+      "post": {
+        "tags": [
+          "Model Context Protocol (MCP) Gateway Bridge"
+        ],
+        "summary": "MCP JSON-RPC Tool Execution Message Endpoint",
+        "description": "Receives MCP JSON-RPC 2.0 requests from MCP Clients and executes AIP Model tools.",
+        "operationId": "mcp_messages_v1_mcp_messages_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/mcp/tools": {
+      "get": {
+        "tags": [
+          "Model Context Protocol (MCP) Gateway Bridge"
+        ],
+        "summary": "List Available MCP Tools",
+        "description": "Returns the list of exposed AIP Model tools for MCP protocol.",
+        "operationId": "list_mcp_tools_v1_mcp_tools_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/admin/v1/keys": {
       "get": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
         "summary": "List All API Keys and Quotas from MongoDB Atlas",
         "operationId": "list_api_keys_admin_v1_keys_get",
@@ -675,9 +838,9 @@
       },
       "post": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
-        "summary": "Create New API Key in MongoDB Atlas",
+        "summary": "Create New API Key Direct (Admin Only)",
         "operationId": "create_api_key_admin_v1_keys_post",
         "requestBody": {
           "content": {
@@ -716,10 +879,178 @@
         ]
       }
     },
+    "/v1/key-requests": {
+      "post": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "Submit API Key Request (Staff Self-Service)",
+        "operationId": "submit_key_request_v1_key_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/key-requests": {
+      "get": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "List Pending Key Requests (Admin Only)",
+        "operationId": "list_pending_key_requests_admin_v1_key_requests_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/key-requests/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "Approve Key Request (Admin Only)",
+        "operationId": "approve_key_request_admin_v1_key_requests__request_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/key-requests/{request_id}/reject": {
+      "post": {
+        "tags": [
+          "Admin & Staff - API Keys, Requests & Quota Control"
+        ],
+        "summary": "Reject Key Request (Admin Only)",
+        "operationId": "reject_key_request_admin_v1_key_requests__request_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectRequestPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/v1/keys/{key_id}/quota": {
       "put": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
         "summary": "Adjust Quota Limits in MongoDB Atlas",
         "operationId": "update_api_key_quota_admin_v1_keys__key_id__quota_put",
@@ -774,7 +1105,7 @@
     "/admin/v1/keys/{key_id}": {
       "delete": {
         "tags": [
-          "Admin - API Keys & Quota Control"
+          "Admin & Staff - API Keys, Requests & Quota Control"
         ],
         "summary": "Delete API Key from MongoDB Atlas",
         "operationId": "revoke_api_key_admin_v1_keys__key_id__delete",
@@ -895,13 +1226,13 @@
         }
       }
     },
-    "/admin/v1/audit": {
+    "/admin/v1/audit-logs": {
       "get": {
         "tags": [
-          "Admin - SIEM Audit Logs"
+          "Admin - Security & Audit Logs"
         ],
-        "summary": "Get Audit Logs",
-        "operationId": "get_audit_logs_admin_v1_audit_get",
+        "summary": "List Security & Action Audit Logs (Admin Only)",
+        "operationId": "list_audit_logs_admin_v1_audit_logs_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1020,6 +1351,208 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/admin/v1/maintenance/status": {
+      "get": {
+        "tags": [
+          "Admin - System Maintenance & Emergency Circuit Breaker"
+        ],
+        "summary": "Get System Maintenance Status",
+        "operationId": "get_maintenance_status_admin_v1_maintenance_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/maintenance/toggle": {
+      "post": {
+        "tags": [
+          "Admin - System Maintenance & Emergency Circuit Breaker"
+        ],
+        "summary": "Toggle System Maintenance Mode (Emergency Circuit Breaker)",
+        "operationId": "toggle_maintenance_admin_v1_maintenance_toggle_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleMaintenanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/users": {
+      "get": {
+        "tags": [
+          "Admin - User & RBAC Governance"
+        ],
+        "summary": "List Registered Users (Admin Only)",
+        "operationId": "list_users_admin_v1_users_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/users/{user_id}/status": {
+      "put": {
+        "tags": [
+          "Admin - User & RBAC Governance"
+        ],
+        "summary": "Lock or Unlock User Account (Admin Only)",
+        "operationId": "update_user_status_admin_v1_users__user_id__status_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/users/{user_id}/role": {
+      "put": {
+        "tags": [
+          "Admin - User & RBAC Governance"
+        ],
+        "summary": "Update User Role / RBAC Permission (Admin Only)",
+        "operationId": "update_user_role_admin_v1_users__user_id__role_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/health": {
@@ -1668,6 +2201,26 @@
         ],
         "title": "JobStatusResponse"
       },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "admin@company.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "admin123"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
       "ModerationRequest": {
         "properties": {
           "input": {
@@ -1717,6 +2270,53 @@
         ],
         "title": "PredictionRequest"
       },
+      "RejectRequestPayload": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "example": "Exceeds department quota limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "RejectRequestPayload"
+      },
+      "SignupRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "staff_namle@company.com"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "example": "secret123"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name",
+            "example": "Nam Le Developer"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "'staff' or 'admin'",
+            "default": "staff",
+            "example": "staff"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "full_name"
+        ],
+        "title": "SignupRequest"
+      },
       "SpeechRequest": {
         "properties": {
           "model": {
@@ -1755,6 +2355,68 @@
           "input"
         ],
         "title": "SpeechRequest"
+      },
+      "StaffKeyRequest": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "example": "TENANT_RETAIL_BANK"
+          },
+          "requested_by": {
+            "type": "string",
+            "title": "Requested By",
+            "example": "dev_namle@company.com"
+          },
+          "justification": {
+            "type": "string",
+            "title": "Justification",
+            "example": "Project Chatbot AI Integration"
+          },
+          "rpm_limit": {
+            "type": "integer",
+            "title": "Rpm Limit",
+            "default": 60,
+            "example": 60
+          },
+          "tpm_limit": {
+            "type": "integer",
+            "title": "Tpm Limit",
+            "default": 100000,
+            "example": 100000
+          },
+          "concurrency_limit": {
+            "type": "integer",
+            "title": "Concurrency Limit",
+            "default": 5,
+            "example": 5
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "requested_by",
+          "justification"
+        ],
+        "title": "StaffKeyRequest"
+      },
+      "ToggleMaintenanceRequest": {
+        "properties": {
+          "is_maintenance": {
+            "type": "boolean",
+            "title": "Is Maintenance"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": "Emergency GPU Cluster Stop"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_maintenance"
+        ],
+        "title": "ToggleMaintenanceRequest"
       },
       "UpdateQuotaRequest": {
         "properties": {
@@ -1800,6 +2462,36 @@
         },
         "type": "object",
         "title": "UpdateQuotaRequest"
+      },
+      "UpdateRoleRequest": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "'admin', 'staff', or 'manager'",
+            "example": "admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "UpdateRoleRequest"
+      },
+      "UpdateStatusRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "'active' or 'locked'",
+            "example": "locked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "UpdateStatusRequest"
       },
       "UsageInfo": {
         "properties": {

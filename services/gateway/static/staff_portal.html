@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIP Developer Hub - Staff Developer Portal (FPT SaaS Standard)</title>
+    <title>FPT.AI Platform - Developer Console</title>
     <!-- Google Fonts & Font Awesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --bg-body: #060913;
-            --sidebar-bg: #0b0f1d;
-            --panel-bg: rgba(15, 23, 42, 0.75);
-            --panel-border: rgba(255, 255, 255, 0.08);
-            --primary: #10b981;
-            --primary-glow: rgba(16, 185, 129, 0.35);
-            --accent: #2563eb;
-            --purple: #8b5cf6;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --font-heading: 'Outfit', sans-serif;
-            --font-body: 'Inter', sans-serif;
+            --fpt-cyan: #00a4b8;
+            --fpt-cyan-dark: #008496;
+            --fpt-cyan-light: #e6f7f9;
+            --bg-body: #f4f6f8;
+            --sidebar-bg: #ffffff;
+            --text-dark: #2b3648;
+            --text-sub: #6c757d;
+            --border-color: #e9ecef;
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --font-main: 'Roboto', 'Inter', sans-serif;
             --font-code: 'Fira Code', monospace;
         }
 
@@ -29,204 +27,365 @@
 
         body {
             background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: var(--font-body);
+            color: var(--text-dark);
+            font-family: var(--font-main);
             min-height: 100vh;
             display: flex;
-            background-image: 
-                radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(37, 99, 235, 0.12) 0%, transparent 40%);
-        }
-
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--panel-border);
-            display: flex;
             flex-direction: column;
-            padding: 24px 16px;
         }
 
-        .brand {
+        /* Top Header Bar */
+        .top-header {
+            height: 60px;
+            background: linear-gradient(90deg, #0096aa, #00b4cf);
+            color: #ffffff;
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--panel-border);
-            margin-bottom: 24px;
+            justify-content: space-between;
+            padding: 0 24px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+
+        .header-left { display: flex; align-items: center; gap: 24px; }
 
         .brand-logo {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #10b981, #2563eb);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 0 20px var(--primary-glow);
+            display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px;
+            letter-spacing: -0.5px; color: #ffffff; text-decoration: none;
         }
 
-        .brand-text h2 { font-family: var(--font-heading); font-size: 18px; font-weight: 700; }
-        .brand-text span { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
+        .brand-logo i { font-size: 22px; }
 
-        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+        .project-selector {
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff; padding: 6px 14px; border-radius: 4px; font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; font-weight: 500;
+        }
+
+        .header-right { display: flex; align-items: center; gap: 20px; font-size: 13px; }
+
+        .user-menu {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            padding: 5px 12px; border-radius: 20px; background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Layout Container */
+        .layout-body { display: flex; flex: 1; min-height: calc(100vh - 60px); }
+
+        /* Left Navigation Sidebar */
+        .sidebar {
+            width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color);
+            padding: 16px 0; display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .nav-section { margin-bottom: 12px; }
+
+        .section-title {
+            padding: 8px 24px; font-size: 13px; font-weight: 600; color: var(--text-dark);
+            display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+        }
+
+        .nav-list { list-style: none; }
 
         .nav-item button {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: var(--text-sub);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            width: 100%; text-align: left; padding: 10px 24px 10px 36px; border: none;
+            background: transparent; color: var(--text-sub); font-size: 13.5px;
+            cursor: pointer; transition: all 0.15s ease; display: block;
         }
 
-        .nav-item button:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-main); }
+        .nav-item button:hover { background: #f8f9fa; color: var(--fpt-cyan); }
 
         .nav-item.active button {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18), rgba(37, 99, 235, 0.08));
-            color: #34d399;
-            border-color: rgba(16, 185, 129, 0.3);
-            border-left: 3px solid #10b981;
-            font-weight: 600;
+            background: #f0fafb; color: var(--fpt-cyan); font-weight: 600;
+            border-left: 3px solid var(--fpt-cyan); padding-left: 33px;
         }
 
-        .vpn-status {
-            margin-top: auto;
-            padding: 14px;
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 32px 40px; overflow-y: auto; }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: #ffffff; border-radius: 8px; padding: 36px 40px; margin-bottom: 32px;
+            box-shadow: var(--card-shadow); border: 1px solid var(--border-color); text-align: center;
+            background-image: radial-gradient(circle at 90% 10%, rgba(0, 164, 184, 0.05) 0%, transparent 50%);
         }
 
-        .main-workspace { flex: 1; padding: 32px; overflow-y: auto; }
+        .welcome-banner h1 { font-size: 28px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; }
+        .welcome-banner p { color: var(--text-sub); font-size: 14.5px; margin-bottom: 20px; }
+        .welcome-banner a { color: var(--fpt-cyan); text-decoration: underline; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-        .header h1 { font-family: var(--font-heading); font-size: 26px; font-weight: 700; }
-        .header p { font-size: 14px; color: var(--text-sub); margin-top: 4px; }
-
-        .glass-panel {
-            background: var(--panel-bg); backdrop-filter: blur(16px);
-            border: 1px solid var(--panel-border); border-radius: 16px; padding: 24px; margin-bottom: 24px;
+        .btn-explore {
+            background: var(--fpt-cyan); color: #ffffff; border: none; padding: 10px 32px;
+            border-radius: 4px; font-weight: 700; font-size: 13px; letter-spacing: 0.5px;
+            cursor: pointer; transition: background 0.2s ease; display: inline-block; text-decoration: none;
         }
 
-        .panel-title { font-family: var(--font-heading); font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .btn-explore:hover { background: var(--fpt-cyan-dark); }
 
-        .endpoint-card {
-            background: rgba(0, 0, 0, 0.35); border: 1px solid var(--panel-border);
-            border-radius: 14px; padding: 20px; margin-bottom: 16px;
+        /* Section Heading */
+        .section-header { font-size: 22px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; }
+
+        /* API Grid Cards */
+        .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+
+        .api-card {
+            background: #ffffff; border-radius: 8px; border: 1px solid var(--border-color);
+            padding: 24px; box-shadow: var(--card-shadow); transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .endpoint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        
-        .method-badge {
-            padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 12px;
-            background: rgba(16, 185, 129, 0.2); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);
+        .api-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+
+        .api-icon {
+            width: 56px; height: 56px; border-radius: 12px; background: #0062d6; color: #ffffff;
+            display: flex; align-items: center; justify-content: center; font-size: 24px;
         }
+
+        .card-title { font-size: 17px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+        .card-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+
+        /* Switch */
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ced4da; transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--fpt-cyan); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* Generic Glass Container for Tabs */
+        .panel-box {
+            background: #ffffff; border-radius: 8px; border: 1px solid var(--border-color);
+            padding: 28px; box-shadow: var(--card-shadow); margin-bottom: 24px;
+        }
+
+        .panel-title { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
+        th { color: var(--text-sub); font-weight: 600; font-size: 12px; text-transform: uppercase; padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #f8f9fa; }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); color: var(--text-dark); }
+        code { font-family: var(--font-code); font-size: 12.5px; color: #0062d6; background: #eef5ff; padding: 3px 6px; border-radius: 4px; }
 
         .code-box {
-            background: #090d16; border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px; padding: 16px; font-family: var(--font-code); font-size: 13px;
-            color: #34d399; position: relative; margin-top: 12px;
+            background: #1e293b; color: #38bdf8; border-radius: 6px; padding: 16px;
+            font-family: var(--font-code); font-size: 13px; position: relative; margin-top: 12px;
         }
 
         .copy-btn {
-            position: absolute; top: 12px; right: 12px; background: rgba(255, 255, 255, 0.1);
-            border: none; color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;
+            position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.15);
+            border: none; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
         }
 
-        .copy-btn:hover { background: var(--primary); }
+        .copy-btn:hover { background: var(--fpt-cyan); }
+
+        .btn { padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-cyan { background: var(--fpt-cyan); color: #ffffff; }
+        .btn-cyan:hover { background: var(--fpt-cyan-dark); }
 
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
+
+        /* Auth Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: #ffffff; border-radius: 8px; width: 440px; padding: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--text-dark); }
+        .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-sub); }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12.5px; color: var(--text-sub); margin-bottom: 6px; font-weight: 500; }
+        .form-control { width: 100%; padding: 10px 14px; border-radius: 4px; border: 1px solid #ced4da; font-size: 13.5px; outline: none; }
+        .form-control:focus { border-color: var(--fpt-cyan); }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="brand">
-            <div class="brand-logo"><i class="fa-solid fa-code"></i></div>
-            <div class="brand-text">
-                <h2>FPT Developer Hub</h2>
-                <span>Staff API Access</span>
+    <!-- Header Top Bar -->
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff" class="brand-logo">
+                <i class="fa-solid fa-network-wired"></i> FPT.AI Platform
+            </a>
+            <div class="project-selector">
+                <i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
             </div>
         </div>
 
-        <ul class="nav-menu">
-            <li class="nav-item active"><button onclick="switchTab('endpoints')"><i class="fa-solid fa-network-wired"></i> Exported APIs</button></li>
-            <li class="nav-item"><button onclick="switchTab('aliases')"><i class="fa-solid fa-cubes"></i> Model Aliases Catalog</button></li>
-            <li class="nav-item"><button onclick="switchTab('snippets')"><i class="fa-solid fa-terminal"></i> SDK Code Generator</button></li>
-            <li class="nav-item"><button onclick="switchTab('docs')"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
-        </ul>
-
-        <div class="vpn-status">
-            <i class="fa-solid fa-shield-halved" style="color: var(--primary); font-size: 18px;"></i>
-            <div>
-                <div style="font-size: 13px; font-weight: 700;">VPN Network Active</div>
-                <div style="color: var(--text-sub); font-size: 11px;">Protected Corporate CIDR</div>
+        <div class="header-right">
+            <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="user-menu" onclick="openModal('modal-auth')">
+                <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 18px;"></i>
             </div>
         </div>
     </div>
 
-    <div class="main-workspace">
-        <div class="header">
-            <div>
-                <h1 id="page-title">Exported API Endpoints for Staff</h1>
-                <p>Enterprise AI Inference Middleware Integration Portal & Interactive Specs</p>
+    <!-- Layout Body -->
+    <div class="layout-body">
+        
+        <!-- Left Navigation Sidebar -->
+        <div class="sidebar">
+            
+            <div class="nav-section">
+                <div class="section-title">
+                    <span>Console</span> <i class="fa-solid fa-chevron-up" style="font-size: 10px; color: var(--text-sub);"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item active"><button onclick="switchTab('dashboard')">Dashboard</button></li>
+                    <li class="nav-item"><button onclick="switchTab('apis')">APIs</button></li>
+                    <li class="nav-item"><button onclick="switchTab('keys')">API Keys</button></li>
+                    <li class="nav-item"><button onclick="switchTab('report')">API report</button></li>
+                </ul>
             </div>
-            <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--primary); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;">
-                <i class="fa-solid fa-circle-check"></i> STAFF PERMISSION: GRANTED
+
+            <div class="nav-section">
+                <div class="section-title">
+                    <span>Applications</span> <i class="fa-solid fa-chevron-up" style="font-size: 10px; color: var(--text-sub);"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item"><button onclick="switchTab('chatbot')">Chatbot</button></li>
+                    <li class="nav-item"><button onclick="switchTab('reader')">Reader</button></li>
+                    <li class="nav-item"><button onclick="switchTab('voicemaker')">VoiceMaker</button></li>
+                </ul>
             </div>
+
+            <div class="nav-section">
+                <div class="section-title"><span>Payment history</span></div>
+            </div>
+
+            <div class="nav-section">
+                <div class="section-title"><span>Contact us</span></div>
+                <div class="section-title"><span>Getting started</span></div>
+                <div class="section-title"><span>Feedback</span></div>
+            </div>
+
         </div>
 
-        <div id="tab-endpoints" class="tab-pane active">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-plug" style="color: var(--primary);"></i> Exported Production APIs (Active)</div>
-                <div id="endpoints-list"></div>
+        <!-- Main Content -->
+        <div class="main-content">
+
+            <!-- TAB 1: DASHBOARD & APIS -->
+            <div id="tab-dashboard" class="tab-pane active">
+                
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <h1 id="welcome-title">Welcome, Nam Lê</h1>
+                    <p>Thông báo quan trọng FPT.AI Console cung cấp hạ tầng AI Cloud Middleware chuẩn Enterprise cho doanh nghiệp. Xem thêm tại đây <a href="/docs">Link</a></p>
+                    <a href="#apis-anchor" class="btn-explore">EXPLORE</a>
+                </div>
+
+                <div id="apis-anchor" class="section-header">APIs</div>
+
+                <!-- API Grid Cards -->
+                <div class="api-grid">
+                    
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid fa-microphone-lines"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Speech to Text</div>
+                        <div class="card-desc">Convert your voice into text using PhoWhisper STT model</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid fa-volume-high"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Text to Speech</div>
+                        <div class="card-desc">Convert text to natural-sounding voices with viXTTS synthesis</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid fa-id-card"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Driver's license recognition</div>
+                        <div class="card-desc">Extract rich information from license and ID card images</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon" style="background:#2563eb;"><i class="fa-solid fa-comments"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">LLM Chatbot API</div>
+                        <div class="card-desc">Qwen3-8B & 14B High Quality LLM Reasoning Endpoints</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon" style="background:#7c3aed;"><i class="fa-solid fa-cubes"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Vector Embeddings</div>
+                        <div class="card-desc">High dimensional semantic text embeddings for RAG</div>
+                    </div>
+
+                    <div class="api-card">
+                        <div class="card-top">
+                            <div class="api-icon" style="background:#f43f5e;"><i class="fa-solid fa-shield-halved"></i></div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="card-title">Content Moderation</div>
+                        <div class="card-desc">Llama Guard 4 Multimodal safety inspection API</div>
+                    </div>
+
+                </div>
+
             </div>
-        </div>
 
-        <div id="tab-aliases" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-layer-group" style="color: var(--accent);"></i> Active Model Aliases Catalog</div>
-                <div id="aliases-list"></div>
+            <!-- TAB 2: API KEYS & SELF SERVICE REQUEST -->
+            <div id="tab-keys" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title"><i class="fa-solid fa-key" style="color:var(--fpt-cyan);"></i> My API Keys & Self-Service Request</div>
+                    <p style="color:var(--text-sub); font-size:13.5px; margin-bottom:20px;">Submit a new API Key request for your project. Admin will review and approve your request.</p>
+
+                    <form onsubmit="handleStaffKeyRequest(event)" style="max-width:560px;">
+                        <div class="form-group">
+                            <label>Tenant / Department ID</label>
+                            <input type="text" id="req-tenant" class="form-control" value="TENANT_RETAIL_BANK" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Corporate Developer Email</label>
+                            <input type="email" id="req-email" class="form-control" value="dev_namle@company.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Justification</label>
+                            <textarea id="req-justification" class="form-control" rows="2" required>FPT.AI Mobile App Integration</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-cyan"><i class="fa-solid fa-paper-plane"></i> Submit API Key Request</button>
+                    </form>
+                </div>
             </div>
-        </div>
 
-        <div id="tab-snippets" class="tab-pane">
-            <div class="glass-panel">
-                <div class="panel-title"><i class="fa-solid fa-terminal" style="color: var(--purple);"></i> Quick Integration SDK Code Snippets</div>
+            <!-- TAB 3: APIS CATALOG & CODE SNIPPETS -->
+            <div id="tab-apis" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title"><i class="fa-solid fa-code" style="color:var(--fpt-cyan);"></i> SDK Integration Snippets</div>
 
-                <div style="margin-bottom: 24px;">
-                    <h3 style="font-size: 15px; color: var(--primary); margin-bottom: 8px;">1. cURL Request Example</h3>
-                    <div class="code-box">
-                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                        <pre>curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions \
+                    <div style="margin-bottom:24px;">
+                        <h4 style="margin-bottom:8px; color:var(--fpt-cyan);">cURL Request Example</h4>
+                        <div class="code-box">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "chat-general-standard",
-    "messages": [{"role": "user", "content": "Xin chào AIP Platform!"}]
+    "messages": [{"role": "user", "content": "Xin chào FPT.AI Platform!"}]
   }'</pre>
+                        </div>
                     </div>
-                </div>
 
-                <div style="margin-bottom: 24px;">
-                    <h3 style="font-size: 15px; color: var(--accent); margin-bottom: 8px;">2. Python SDK Example</h3>
-                    <div class="code-box">
-                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                        <pre>from aip_sdk import AIPClient
+                    <div>
+                        <h4 style="margin-bottom:8px; color:#2563eb;">Python SDK Example</h4>
+                        <div class="code-box">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>from aip_sdk import AIPClient
 
 client = AIPClient(base_url="https://ai-platform-6p72.onrender.com", api_key="YOUR_API_KEY")
 response = client.chat.completions.create(
@@ -234,35 +393,78 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Xin chào!"}]
 )
 print(response.choices[0].message.content)</pre>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 style="font-size: 15px; color: var(--purple); margin-bottom: 8px;">3. C# .NET 8 SDK Example</h3>
-                    <div class="code-box">
-                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                        <pre>using Everwin.AIPlatform.SDK;
-
-var client = new AIPClient("https://ai-platform-6p72.onrender.com", "YOUR_API_KEY");
-var response = await client.CreateChatCompletionAsync(new ChatRequest {
-    Model = "chat-general-standard",
-    Prompt = "Xin chào AIP Platform!"
-});
-Console.WriteLine(response.Text);</pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div id="tab-docs" class="tab-pane">
-            <div class="glass-panel" style="padding: 0; overflow: hidden; height: 750px;">
-                <iframe src="/docs" style="width: 100%; height: 100%; border: none;"></iframe>
+            <!-- TAB 4: API REPORT -->
+            <div id="tab-report" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title"><i class="fa-solid fa-chart-line" style="color:var(--fpt-cyan);"></i> API Usage Report</div>
+                    <p style="color:var(--text-sub);">Total Calls This Month: <strong>12,450 Requests</strong> | Success Rate: <strong style="color:#10b981;">99.98%</strong></p>
+                </div>
             </div>
+
+            <!-- APPLICATION TABS -->
+            <div id="tab-chatbot" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title">Chatbot LLM Qwen3 Engine</div>
+                    <p style="color:var(--text-sub);">High throughput conversational AI engine deployed on vLLM cluster.</p>
+                </div>
+            </div>
+
+            <div id="tab-reader" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title">Reader IDP OCR Engine</div>
+                    <p style="color:var(--text-sub);">Extract text and structured JSON from Driver License, ID Card, and Passports.</p>
+                </div>
+            </div>
+
+            <div id="tab-voicemaker" class="tab-pane">
+                <div class="panel-box">
+                    <div class="panel-title">VoiceMaker TTS Synthesis</div>
+                    <p style="color:var(--text-sub);">Natural Vietnamese text to speech voice synthesis engine.</p>
+                </div>
+            </div>
+
         </div>
 
     </div>
 
+    <!-- Modal: Auth Login / Signup -->
+    <div class="modal" id="modal-auth">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="auth-title">FPT.AI Developer Login</h3>
+                <button class="modal-close" onclick="closeModal('modal-auth')">&times;</button>
+            </div>
+            <form onsubmit="handleAuthSubmit(event)">
+                <div class="form-group">
+                    <label>Developer Email</label>
+                    <input type="email" id="auth-email" class="form-control" value="dev_namle@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-password" class="form-control" value="secret123" required>
+                </div>
+                <div id="auth-signup-fields" style="display:none;">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="auth-fullname" class="form-control" placeholder="Nam Lê">
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                    <a href="#" id="auth-toggle-link" style="font-size:12.5px; color:var(--fpt-cyan);" onclick="toggleAuthMode()">Need an account? Register Free</a>
+                    <button type="submit" class="btn btn-cyan" id="auth-submit-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        let isSignupMode = false;
+
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -271,6 +473,9 @@ Console.WriteLine(response.Text);</pre>
             document.getElementById('tab-' + tabId).classList.add('active');
         }
 
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
         function copyCode(btn) {
             const pre = btn.nextElementSibling;
             navigator.clipboard.writeText(pre.innerText);
@@ -278,57 +483,66 @@ Console.WriteLine(response.Text);</pre>
             setTimeout(() => btn.innerText = 'Copy', 2000);
         }
 
-        async function fetchExportedEndpoints() {
-            try {
-                const res = await fetch('/admin/v1/endpoints');
-                const json = await res.json();
-                const endpoints = json.data || {};
-                const container = document.getElementById('endpoints-list');
-
-                container.innerHTML = Object.entries(endpoints)
-                    .filter(([id, item]) => item.status === 'enabled')
-                    .map(([id, item]) => `
-                        <div class="endpoint-card">
-                            <div class="endpoint-header">
-                                <span class="method-badge">${item.method}</span>
-                                <span style="font-family: var(--font-code); font-size: 15px; font-weight: 600;">${item.path}</span>
-                                <span style="color: var(--primary); font-size: 12px; font-weight: 600;"><i class="fa-solid fa-check"></i> Exported for Staff</span>
-                            </div>
-                            <p style="color: var(--text-sub); font-size: 13px; margin-bottom: 8px;">${item.description}</p>
-                            <div class="code-box">
-                                <button class="copy-btn" onclick="copyCode(this)">Copy Endpoint</button>
-                                <pre>https://ai-platform-6p72.onrender.com${item.path}</pre>
-                            </div>
-                        </div>
-                    `).join('');
-            } catch (err) { console.error('Failed to fetch staff endpoints:', err); }
+        function toggleAuthMode() {
+            isSignupMode = !isSignupMode;
+            document.getElementById('auth-title').innerText = isSignupMode ? 'Register Free FPT.AI Developer' : 'FPT.AI Developer Login';
+            document.getElementById('auth-signup-fields').style.display = isSignupMode ? 'block' : 'none';
+            document.getElementById('auth-submit-btn').innerHTML = isSignupMode ? '<i class="fa-solid fa-user-plus"></i> Register Free' : '<i class="fa-solid fa-right-to-bracket"></i> Login';
+            document.getElementById('auth-toggle-link').innerText = isSignupMode ? 'Already have an account? Login' : 'Need an account? Register Free';
         }
 
-        async function fetchModelAliases() {
-            try {
-                const res = await fetch('/admin/v1/aliases');
-                const json = await res.json();
-                const aliases = json.data || {};
-                const container = document.getElementById('aliases-list');
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
 
-                container.innerHTML = Object.entries(aliases)
-                    .filter(([name, item]) => item.status === 'enabled')
-                    .map(([name, item]) => `
-                        <div class="endpoint-card">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <strong style="font-size: 15px; color: var(--primary);"><code>${name}</code></strong>
-                                <span style="color: var(--purple); font-size: 12px; font-weight: 600;">Runtime: ${item.runtime || 'vllm'}</span>
-                            </div>
-                            <p style="color: var(--text-sub); font-size: 13px; margin-top: 6px;">Physical Model Target: <strong>${item.model_name || 'Qwen3-8B'}</strong></p>
-                        </div>
-                    `).join('');
-            } catch (err) { console.error('Failed to fetch staff aliases:', err); }
+            if (isSignupMode) {
+                const fullName = document.getElementById('auth-fullname').value || 'Nam Lê';
+                const res = await fetch('/v1/auth/signup', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password, full_name: fullName, role: 'staff' })
+                });
+                const data = await res.json();
+                alert(data.message);
+                closeModal('modal-auth');
+            } else {
+                const res = await fetch('/v1/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const name = data.user.full_name || 'Nam Lê';
+                    document.getElementById('header-username').innerText = name;
+                    document.getElementById('welcome-title').innerText = `Welcome, ${name}`;
+                    alert(`Welcome ${name}! Developer Session Active.`);
+                    closeModal('modal-auth');
+                } else {
+                    alert('Login Failed: ' + data.detail);
+                }
+            }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchExportedEndpoints();
-            fetchModelAliases();
-        });
+        async function handleStaffKeyRequest(e) {
+            e.preventDefault();
+            const payload = {
+                tenant_id: document.getElementById('req-tenant').value,
+                requested_by: document.getElementById('req-email').value,
+                justification: document.getElementById('req-justification').value,
+                rpm_limit: 60,
+                tpm_limit: 100000,
+                concurrency_limit: 5
+            };
+            const res = await fetch('/v1/key-requests', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            alert(`API Key Request Submitted Successfully!\nRequest ID: ${data.request_id}\nStatus: Pending Admin Approval`);
+        }
     </script>
 </body>
 </html>

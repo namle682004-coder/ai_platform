@@ -35,6 +35,9 @@ class GatewaySettings(BaseSettings):
     default_tpm_limit: int = Field(100000, validation_alias="DEFAULT_TPM_LIMIT")
     default_concurrency_limit: int = Field(5, validation_alias="DEFAULT_CONCURRENCY_LIMIT")
 
+    # Admin CIDR Protection
+    admin_allowed_cidrs: str = Field("116.101.7.0/24,127.0.0.1/32,::1/128", validation_alias="ADMIN_ALLOWED_CIDRS")
+
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env"),
         env_file_encoding="utf-8",
