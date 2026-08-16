@@ -99,7 +99,6 @@
         <div class="auth-header">
             <a href="/staff" class="brand-badge"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
             <div class="auth-title">Đăng Ký Tài Khoản Developer</div>
-            <div class="auth-subtitle">Tạo tài khoản mới để trải nghiệm Everwin AI Cloud Middleware</div>
         </div>
 
         <form onsubmit="handleSignupSubmit(event)">
@@ -134,17 +133,6 @@
                     <i class="fa-solid fa-shield-halved input-icon"></i>
                     <input type="password" id="signup-confirm-password" class="form-control" placeholder="••••••••" required>
                     <i class="fa-regular fa-eye toggle-password" id="toggle-pwd-icon2" onclick="togglePasswordVisibility('signup-confirm-password', 'toggle-pwd-icon2')"></i>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Role (Vai Trò Systems)</label>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-user-shield input-icon"></i>
-                    <select id="signup-role" class="form-control">
-                        <option value="staff">Developer (Staff)</option>
-                        <option value="admin">System Admin</option>
-                    </select>
                 </div>
             </div>
 
@@ -186,7 +174,7 @@
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
             const confirmPwd = document.getElementById('signup-confirm-password').value;
-            const role = document.getElementById('signup-role').value;
+            const role = 'staff';
 
             if (password !== confirmPwd) {
                 alert('Mật khẩu xác nhận không trùng khớp!');
