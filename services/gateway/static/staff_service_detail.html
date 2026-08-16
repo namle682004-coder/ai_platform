@@ -818,8 +818,8 @@
 
         let targetPendingAction = 'enable';
 
-        function handleServiceHeaderToggleClick() {
-            const apis = getEnabledAPIs();
+        async function handleServiceHeaderToggleClick() {
+            const apis = await fetchEnabledAPIsFromBackend();
             const isEnabled = !!apis[currentSvcName];
 
             if (!isEnabled) {

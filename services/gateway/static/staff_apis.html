@@ -574,9 +574,9 @@
 
         let targetPendingAction = 'enable';
 
-        function handleApiToggleClick(apiName, checkboxEl, e) {
+        async function handleApiToggleClick(apiName, checkboxEl, e) {
             if (e) e.stopPropagation();
-            const apis = getEnabledAPIs();
+            const apis = await fetchEnabledAPIsFromBackend();
             const currentState = !!apis[apiName];
 
             targetPendingApi = apiName;
@@ -649,11 +649,6 @@
                 ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
                 : `Đã kích hoạt thành công API ${apiName}!`;
             showToast(msg, 'success');
-
-            // Automatically navigate to service detail page after activation!
-            setTimeout(() => {
-                navigateToService(apiName);
-            }, 600);
         }
 
         function navigateToService(apiName) {
