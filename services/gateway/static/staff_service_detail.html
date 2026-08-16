@@ -241,7 +241,13 @@
             <!-- PANEL 2: SERVICE TAB (INTERACTIVE SANDBOX) -->
             <div class="tab-panel active" id="panel-SERVICE">
                 <div class="service-grid">
-                    <div class="sandbox-left"></div>
+                    <div class="sandbox-left">
+                        <div>
+                            <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
+                            <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box">Identified Text</div>
+                    </div>
 
                     <div class="api-right">
                         <div class="api-header">API</div>
@@ -1051,8 +1057,17 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             checkMandatoryAuth();
-            const urlParams = new URLSearchParams(window.location.search);
-            currentSvcName = urlParams.get('name') || 'Speech to Text';
+            const pathname = window.location.pathname;
+            if (pathname.includes('/staff/service-tts')) {
+                currentSvcName = 'Text to Speech';
+            } else if (pathname.includes('/staff/service-llm')) {
+                currentSvcName = 'LLM Chatbot API';
+            } else if (pathname.includes('/staff/service-stt')) {
+                currentSvcName = 'Speech to Text';
+            } else {
+                const urlParams = new URLSearchParams(window.location.search);
+                currentSvcName = urlParams.get('name') || 'Speech to Text';
+            }
             document.getElementById('svc-detail-title').innerText = currentSvcName;
 
             const iconBox = document.getElementById('svc-detail-icon');

@@ -420,9 +420,10 @@
                     ? (paidUnit === 1 ? paidBal.toLocaleString() : (paidBal > 0 ? Math.floor(paidBal / paidUnit).toLocaleString() : '0'))
                     : '0 (OFF)';
 
+                const svcUrl = item.name === 'Text to Speech' ? '/staff/service-tts' : (item.name === 'LLM Chatbot API' ? '/staff/service-llm' : '/staff/service-stt');
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='/staff/service?name=${encodeURIComponent(item.name)}'">${item.name}</strong></td>
+                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${item.name}</strong></td>
                     <td>${statusBadge}</td>
                     <td>0</td>
                     <td>0</td>

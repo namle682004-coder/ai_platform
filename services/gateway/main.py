@@ -176,6 +176,9 @@ async def serve_staff_report():
 
 
 @app.get("/staff/service", include_in_schema=False)
+@app.get("/staff/service-stt", include_in_schema=False)
+@app.get("/staff/service-tts", include_in_schema=False)
+@app.get("/staff/service-llm", include_in_schema=False)
 async def serve_staff_service():
     service_path = os.path.join(current_dir, "static", "staff_service_detail.html")
     return FileResponse(service_path)

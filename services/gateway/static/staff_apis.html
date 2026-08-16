@@ -652,7 +652,13 @@
         }
 
         function navigateToService(apiName) {
-            window.location.href = `/staff/service?name=${encodeURIComponent(apiName)}`;
+            if (apiName === 'Text to Speech') {
+                window.location.href = '/staff/service-tts';
+            } else if (apiName === 'LLM Chatbot API') {
+                window.location.href = '/staff/service-llm';
+            } else {
+                window.location.href = '/staff/service-stt';
+            }
         }
 
         function toggleNavSection(headerEl) {
