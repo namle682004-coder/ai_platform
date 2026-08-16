@@ -102,12 +102,37 @@ async def serve_admin_dashboard():
     return FileResponse(dashboard_path)
 
 
-# Staff Developer Portal Web UI Endpoint (VPN Protected)
+# Staff Developer Portal Web UI Endpoints (Clean Architecture Split Pages)
 @app.get("/staff", include_in_schema=False)
+@app.get("/staff/dashboard", include_in_schema=False)
 @app.get("/portal", include_in_schema=False)
-async def serve_staff_portal():
-    portal_path = os.path.join(current_dir, "static", "staff_portal.html")
-    return FileResponse(portal_path)
+async def serve_staff_dashboard():
+    dashboard_path = os.path.join(current_dir, "static", "staff_dashboard.html")
+    return FileResponse(dashboard_path)
+
+
+@app.get("/staff/apis", include_in_schema=False)
+async def serve_staff_apis():
+    apis_path = os.path.join(current_dir, "static", "staff_apis.html")
+    return FileResponse(apis_path)
+
+
+@app.get("/staff/keys", include_in_schema=False)
+async def serve_staff_keys():
+    keys_path = os.path.join(current_dir, "static", "staff_keys.html")
+    return FileResponse(keys_path)
+
+
+@app.get("/staff/report", include_in_schema=False)
+async def serve_staff_report():
+    report_path = os.path.join(current_dir, "static", "staff_report.html")
+    return FileResponse(report_path)
+
+
+@app.get("/staff/service", include_in_schema=False)
+async def serve_staff_service():
+    service_path = os.path.join(current_dir, "static", "staff_service_detail.html")
+    return FileResponse(service_path)
 
 
 # Public Status Page Endpoint (/status)
