@@ -92,8 +92,8 @@ class AdminCIDRMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Circuit Breaker Check
-        if is_system_in_maintenance() and not path.startswith("/admin") and path not in ["/health", "/status"]:
+        # Circuit Breaker Check (API endpoints blocked during GPU maintenance; staff & static UI remain accessible)
+        if is_system_in_maintenance() and not (path.startswith("/admin") or path.startswith("/staff") or path.startswith("/static")) and path not in ["/health", "/status"]:
             if "text/html" in request.headers.get("accept", ""):
                 return HTMLResponse(status_code=503, content=HTML_503_MAINTENANCE_PAGE)
             return JSONResponse(status_code=503, content={"error": {"message": "Service in Emergency Maintenance Mode.", "type": "circuit_breaker"}})
