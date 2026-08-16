@@ -577,15 +577,33 @@
                 grid.innerHTML = '';
                 catalog.forEach(item => {
                     const isChecked = !!apis[item.name];
-                    const iconClass = item.icon || (item.name === 'Speech to Text' ? 'fa-microphone' : (item.name === 'Text to Speech' ? 'fa-volume-high' : 'fa-comments'));
-                    const desc = item.description || (item.name === 'Speech to Text' ? 'Convert your voice into text using PhoWhisper STT model' : (item.name === 'Text to Speech' ? 'Convert text to natural-sounding voices with viXTTS synthesis' : 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints'));
+                    let iconClass = 'fa-plug';
+                    let bgColor = '#64748b';
+                    let desc = item.description || '';
+                    
+                    if (item.name === 'Speech to Text' || item.name === 'Speech to Text API') {
+                        iconClass = 'fa-microphone-lines'; bgColor = '#10b981';
+                        desc = 'Convert your voice into text using PhoWhisper STT model';
+                    } else if (item.name === 'Text to Speech' || item.name === 'Text to Speech API') {
+                        iconClass = 'fa-volume-high'; bgColor = '#10b981';
+                        desc = 'Convert text to natural-sounding voices with viXTTS synthesis';
+                    } else if (item.name === 'LLM Chatbot API' || item.name === 'LLM Chatbot') {
+                        iconClass = 'fa-robot'; bgColor = '#3b82f6';
+                        desc = 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints';
+                    } else if (item.name === 'Image Generation API' || item.name === 'Image Generation') {
+                        iconClass = 'fa-image'; bgColor = '#8b5cf6';
+                        desc = 'Generate images from text using Stable Diffusion XL';
+                    } else if (item.name === 'Content Moderation API' || item.name === 'Content Moderation') {
+                        iconClass = 'fa-shield-halved'; bgColor = '#ef4444';
+                        desc = 'Scan and filter bad language / toxic text content';
+                    }
 
                     const card = document.createElement('div');
                     card.className = 'api-card';
                     card.onclick = () => navigateToService(item.name);
                     card.innerHTML = `
                         <div class="card-top">
-                            <div class="api-icon"><i class="fa-solid ${iconClass}"></i></div>
+                            <div class="api-icon" style="background:${bgColor};"><i class="fa-solid ${iconClass}"></i></div>
                             <label class="switch" onclick="event.stopPropagation()">
                                 <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${item.name}', this, event)">
                                 <span class="slider"></span>
@@ -757,6 +775,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             checkMandatoryAuth();
             applyLanguage();
+            syncUIState();
         });
     </script>
 </body>
