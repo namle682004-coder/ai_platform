@@ -376,8 +376,8 @@
     <!-- MODAL 1: EXACT FPT.AI CONFIRM POPUP (Replica of User Screenshot) -->
     <div class="modal-overlay" id="confirm-modal">
         <div class="confirm-box">
-            <div class="confirm-header">Confirm</div>
-            <div class="confirm-body">Do you want to enable this API</div>
+            <div class="confirm-header" id="modal-confirm-header">Confirm</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API</div>
             <div class="confirm-footer">
                 <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
                 <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
@@ -808,19 +808,19 @@
 
         let targetPendingAction = 'enable';
 
-        async function handleServiceHeaderToggleClick() {
+        function handleServiceHeaderToggleClick() {
             const apis = getEnabledAPIs();
             const isEnabled = isApiActive(apis, currentSvcName);
+            const bodyEl = document.getElementById('modal-confirm-body');
 
             if (!isEnabled) {
                 targetPendingAction = 'enable';
-                document.getElementById('modal-confirm-body').innerText = `Do you want to enable this API`;
-                openConfirmModal();
+                if (bodyEl) bodyEl.innerText = `Do you want to enable this API`;
             } else {
                 targetPendingAction = 'disable';
-                document.getElementById('modal-confirm-body').innerText = `Do you want to disable this API`;
-                openConfirmModal();
+                if (bodyEl) bodyEl.innerText = `Do you want to disable this API`;
             }
+            openConfirmModal();
         }
 
         function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
