@@ -51,15 +51,16 @@ class ApisStateUpdateRequest(BaseModel):
 @router.get("/projects", response_model=List[dict])
 async def list_user_projects():
     """Fetch user projects from MongoDB Atlas."""
-    projects = project_repository.list_projects()
+    projects = await project_repository.list_user_projects(user_id="user_staff_01")
     if not projects:
         default_proj = {
             "project_id": "proj_default",
             "project_name": "wwrwer23",
             "type": "prepaid",
+            "user_id": "user_staff_01",
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
-        project_repository.save_project(default_proj)
+        await project_repository.create_project(default_proj)
         return [default_proj]
     return projects
 
@@ -72,9 +73,10 @@ async def create_user_project(req: ProjectCreateRequest):
         "project_id": proj_id,
         "project_name": req.project_name,
         "type": req.billing_type,
+        "user_id": "user_staff_01",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    saved = project_repository.save_project(proj_doc)
+    saved = await project_repository.create_project(proj_doc)
     return {"message": f"Project '{req.project_name}' created successfully!", "project": saved}
 
 
