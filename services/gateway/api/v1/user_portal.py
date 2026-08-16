@@ -10,6 +10,7 @@ from common.repositories.notification_repository import notification_repository
 from common.repositories.tenant_repository import tenant_repository
 from common.repositories.user_repository import user_repository
 from common.repositories.endpoint_repository import endpoint_repository
+from common.repositories.api_subscription_repository import api_subscription_repository
 
 router = APIRouter(prefix="/v1/user", tags=["User Portal & Console API"])
 
@@ -150,16 +151,15 @@ async def record_user_payment(req: PaymentCreateRequest):
 # --- 4. API ACTIVATION STATES REST ENDPOINTS ---
 @router.get("/apis-state")
 async def get_user_apis_state():
-    """Get active API states for user from MongoDB Atlas."""
-    user = await user_repository.get_user_by_id("user_staff_01")
-    enabled = user.get("enabled_apis", {"Speech to Text": True, "Text to Speech": False, "LLM Chatbot API": False}) if user else {"Speech to Text": True, "Text to Speech": False, "LLM Chatbot API": False}
+    """Get active API states for user from MongoDB Atlas api_subscriptions collection."""
+    enabled = await api_subscription_repository.get_user_subscriptions("user_staff_01")
     return {"enabled_apis": enabled}
 
 
 @router.post("/apis-state")
 async def update_user_apis_state(req: ApisStateUpdateRequest):
-    """Update active API states for user in MongoDB Atlas."""
-    await user_repository.update_user("user_staff_01", {"enabled_apis": req.enabled_apis})
+    """Update active API states for user in MongoDB Atlas api_subscriptions collection."""
+    await api_subscription_repository.update_user_subscriptions("user_staff_01", req.enabled_apis)
     return {"message": "API states updated successfully", "enabled_apis": req.enabled_apis}
 
 

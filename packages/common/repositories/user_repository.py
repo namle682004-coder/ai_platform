@@ -82,7 +82,7 @@ class MongoUserRepository(IUserRepository):
             db = mongo_manager.get_database()
             if db is not None:
                 try:
-                    await db.users.update_one({"user_id": user_id}, {"$set": updates})
+                    await db.users.update_one({"user_id": user_id}, {"$set": user}, upsert=True)
                 except Exception:
                     pass
             user.pop("_id", None)
