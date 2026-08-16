@@ -696,21 +696,21 @@
         function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
         function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
 
-        function onConfirmEnableClick() {
+        async function onConfirmEnableClick() {
             closeConfirmModal();
-            const projects = getProjects();
+            const projects = await getProjects();
 
             if (targetPendingAction === 'disable') {
                 const apis = getEnabledAPIs();
                 apis[currentSvcName] = false;
-                setEnabledAPIs(apis);
+                await setEnabledAPIs(apis);
                 syncServiceUIState();
                 showToast(`API "${currentSvcName}" has been disabled.`, 'warning');
             } else {
                 if (projects.length === 0) {
                     openProjectModal();
                 } else {
-                    activateApi(currentSvcName);
+                    await activateApi(currentSvcName);
                 }
             }
         }
@@ -731,18 +731,18 @@
                 created_at: new Date().toISOString()
             };
 
-            const projects = getProjects();
+            const projects = await getProjects();
             projects.push(newProj);
             setProjects(projects);
 
             closeProjectModal();
-            activateApi(currentSvcName, projName);
+            await activateApi(currentSvcName, projName);
         }
 
-        function activateApi(apiName, projName = '') {
+        async function activateApi(apiName, projName = '') {
             const apis = getEnabledAPIs();
             apis[apiName] = true;
-            setEnabledAPIs(apis);
+            await setEnabledAPIs(apis);
             syncServiceUIState();
 
             const msg = projName 

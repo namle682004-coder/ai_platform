@@ -76,6 +76,39 @@ async function getProjects() {
     ];
 }
 
+function getEnabledAPIs() {
+    const data = localStorage.getItem('aip_enabled_apis');
+    if (data) {
+        try { return JSON.parse(data); } catch(e) {}
+    }
+    return { "Speech to Text": true, "Text to Speech": false, "LLM Chatbot API": false };
+}
+
+async function fetchEnabledAPIsFromBackend() {
+    try {
+        const res = await fetch('/v1/user/apis-state');
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.enabled_apis && Object.keys(data.enabled_apis).length > 0) {
+                localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
+                return data.enabled_apis;
+            }
+        }
+    } catch(err) {}
+    return getEnabledAPIs();
+}
+
+async function setEnabledAPIs(apiObj) {
+    localStorage.setItem('aip_enabled_apis', JSON.stringify(apiObj));
+    try {
+        await fetch('/v1/user/apis-state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled_apis: apiObj })
+        });
+    } catch(err) {}
+}
+
 function getActiveProjectName() {
     const active = localStorage.getItem('aip_active_project');
     if (active) return active;
