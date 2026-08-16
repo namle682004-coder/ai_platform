@@ -427,30 +427,38 @@
 
         function applyLanguage() {
             const t = i18nDict[currentLang] || i18nDict.en;
-            document.getElementById('current-lang-text').innerText = t.langText;
-            document.getElementById('txt-nav-console').innerText = t.console;
-            document.getElementById('txt-nav-dashboard').innerText = t.dashboard;
-            document.getElementById('txt-nav-apis').innerText = t.apis;
-            document.getElementById('txt-nav-keys').innerText = t.keys;
-            document.getElementById('txt-nav-report').innerText = t.report;
-            document.getElementById('txt-nav-apps').innerText = t.apps;
+            const setTxt = (id, text) => {
+                const el = document.getElementById(id);
+                if (el && text !== undefined) el.innerText = text;
+            };
+
+            setTxt('current-lang-text', t.langText);
+            setTxt('txt-nav-console', t.console);
+            setTxt('txt-nav-dashboard', t.dashboard);
+            setTxt('txt-nav-apis', t.apis);
+            setTxt('txt-nav-keys', t.keys);
+            setTxt('txt-nav-report', t.report);
+            setTxt('txt-nav-applications', t.apps);
+            setTxt('txt-nav-apps', t.apps);
+            setTxt('txt-nav-payment', t.payment);
+            setTxt('txt-nav-contact', t.contact);
 
             const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
             const userName = userSession ? JSON.parse(userSession).full_name : 'Nam Lê';
-            document.getElementById('welcome-title').innerText = t.welcomeTitle + userName;
-            document.getElementById('btn-explore-text').innerText = t.explore;
+            setTxt('welcome-title', t.welcomeTitle + userName);
+            setTxt('btn-explore-text', t.explore);
 
-            document.getElementById('modal-confirm-header').innerText = t.confirmHeader;
-            document.getElementById('modal-confirm-body').innerText = t.confirmBody;
-            document.getElementById('btn-confirm-cancel').innerText = t.btnCancel;
-            document.getElementById('btn-confirm-ok').innerText = t.btnConfirm;
+            setTxt('modal-confirm-header', t.confirmHeader);
+            setTxt('modal-confirm-body', t.confirmBody);
+            setTxt('btn-confirm-cancel', t.btnCancel);
+            setTxt('btn-confirm-ok', t.btnConfirm);
 
-            document.getElementById('modal-proj-header').innerText = t.projHeader;
-            document.getElementById('modal-proj-desc').innerText = t.projDesc;
-            document.getElementById('lbl-proj-name').innerText = t.projNameLbl;
-            document.getElementById('lbl-key-name').innerText = t.keyNameLbl;
-            document.getElementById('btn-proj-cancel').innerText = t.btnProjCancel;
-            document.getElementById('btn-proj-submit').innerText = t.btnProjSubmit;
+            setTxt('modal-proj-header', t.projHeader);
+            setTxt('modal-proj-desc', t.projDesc);
+            setTxt('lbl-proj-name', t.projNameLbl);
+            setTxt('lbl-key-name', t.keyNameLbl);
+            setTxt('btn-proj-cancel', t.btnProjCancel);
+            setTxt('btn-proj-submit', t.btnProjSubmit);
 
             syncUIState();
         }
