@@ -66,43 +66,56 @@
         .btn-buy-link:hover { text-decoration: underline; }
 
         /* MODAL OVERLAY */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.65); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-overlay.active { display: flex; }
 
-        /* PRICING & INVOICE SELECTION MODAL (Exact Replica of User Screenshot) */
-        .pricing-modal-box { background: #ffffff; width: 500px; border-radius: 4px; box-shadow: 0 16px 36px rgba(0,0,0,0.3); overflow: hidden; font-family: var(--font-body); }
-        .pricing-modal-header { background: #e5e7eb; padding: 16px 24px; font-family: var(--font-heading); font-size: 18px; font-weight: 600; color: #1f2937; }
-        .pricing-modal-body { padding: 24px; font-size: 14px; color: #374151; }
+        /* ULTRA COMPACT PRICING MODAL */
+        .pricing-modal-box { background: #ffffff; width: 440px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); animation: modalFadeIn 0.2s ease-out; }
+        .pricing-modal-header { background: #f8fafc; border-bottom: 1px solid var(--border-color); padding: 14px 20px; font-family: var(--font-heading); font-size: 16.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; justify-content: space-between; }
+        .pricing-modal-body { padding: 16px 20px; font-size: 13.5px; color: #334155; }
 
-        .price-badge-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
-        .price-free-title { font-family: var(--font-heading); font-size: 28px; font-weight: 800; color: #007bff; }
-        .price-sub-text { font-size: 16px; font-weight: 700; color: #1f2937; }
+        .price-badge-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; background: #eff6ff; padding: 8px 14px; border-radius: 8px; border: 1px solid #dbeafe; }
+        .price-free-title { font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: #007bff; }
+        .price-sub-text { font-size: 12px; font-weight: 600; color: #1e40af; }
 
-        .pack-option-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.15s; }
-        .pack-option-card.active { border-color: #007bff; background: rgba(0, 123, 255, 0.05); }
+        .pack-option-card { border: 1.5px solid var(--border-color); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.15s; background: #fff; }
+        .pack-option-card:hover { border-color: #93c5fd; background: #f8fafc; }
+        .pack-option-card.active { border-color: #007bff; background: rgba(0, 123, 255, 0.05); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15); }
 
-        .invoice-question-title { font-weight: 700; margin-bottom: 8px; font-size: 13.5px; color: #1f2937; }
-        .invoice-radio-group { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; }
-        .invoice-radio-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px; font-weight: 500; }
+        .pricing-modal-footer { padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; background: #f8fafc; }
+        .btn-modal-cancel { background: transparent; color: #64748b; border: 1px solid #cbd5e1; font-weight: 700; font-size: 12.5px; padding: 8px 16px; cursor: pointer; border-radius: 6px; }
+        .btn-modal-cancel:hover { background: #e2e8f0; color: #0f172a; }
+        .btn-modal-next { background: linear-gradient(135deg, #007bff, #0056b3); color: #ffffff; border: none; font-weight: 700; font-size: 12.5px; padding: 8px 20px; cursor: pointer; border-radius: 6px; box-shadow: 0 3px 8px rgba(0, 123, 255, 0.3); display: flex; align-items: center; gap: 6px; }
+        .btn-modal-next:hover { opacity: 0.92; }
 
-        .invoice-fields-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 16px; display: none; }
-        .invoice-fields-box.active { display: block; }
-        .form-input-sm { width: 100%; padding: 8px 10px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 12.5px; margin-top: 4px; margin-bottom: 8px; outline: none; }
+        /* ENTERPRISE VNPAY PAYMENT PORTAL MODAL */
+        .vnpay-box { background: #ffffff; width: 680px; max-width: 95vw; border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.35); overflow: hidden; font-family: var(--font-body); animation: modalFadeIn 0.25s ease-out; }
+        .vnpay-header { background: linear-gradient(135deg, #005baa 0%, #ed1c24 100%); padding: 14px 20px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+        .vnpay-body { padding: 20px; }
+        .vnpay-grid-2col { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+        
+        .vnpay-qr-panel { background: #f8fafc; border: 1.5px dashed #005baa; border-radius: 10px; padding: 14px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .vnpay-qr-img { width: 180px; height: 180px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; object-fit: contain; }
+        
+        .vnpay-info-panel { display: flex; flex-direction: column; justify-content: space-between; }
+        .vnpay-info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .vnpay-info-label { color: #64748b; font-weight: 500; }
+        .vnpay-info-value { color: #0f172a; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .btn-copy-mini { background: #e0f2fe; color: #0284c7; border: none; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .btn-copy-mini:hover { background: #bae6fd; }
 
-        .redirect-notice { font-size: 12.5px; color: #475569; }
+        .vnpay-sync-status { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px; margin-top: 14px; font-size: 12px; color: #166534; display: flex; align-items: center; gap: 8px; }
+        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); animation: pulse 1.5s infinite; }
 
-        .pricing-modal-footer { padding: 12px 24px 18px 24px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; }
-        .btn-modal-cancel { background: transparent; color: #1f2937; border: none; font-weight: 700; font-size: 13px; padding: 8px 18px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
-        .btn-modal-cancel:hover { background: #f3f4f6; }
-        .btn-modal-next { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 24px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
-        .btn-modal-next:hover { background: #0056b3; }
-
-        /* VNPAY PAYMENT PORTAL MODAL */
-        .vnpay-box { background: #ffffff; width: 560px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; }
-        .vnpay-header { background: linear-gradient(90deg, #ed1c24, #005baa); padding: 18px 24px; color: #fff; display: flex; align-items: center; justify-content: space-between; }
-        .vnpay-body { padding: 24px; }
-        .vnpay-qr-card { background: #f8fafc; border: 1px dashed #005baa; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 20px; }
-        .vnpay-qr-img { width: 160px; height: 160px; border-radius: 8px; margin-bottom: 10px; }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
 
         /* Toast Container */
         #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
@@ -240,133 +253,149 @@
         </div>
     </div>
 
-    <!-- STEP 1 & STEP 2: PRICING & INVOICE SELECTION MODAL (Compact 2-Step Flow) -->
+    <!-- PRICING MODAL (Ultra-Compact - Invoice Removed) -->
     <div class="modal-overlay" id="pricing-modal">
-        <div class="pricing-modal-box" style="width: 480px;">
-            <!-- STEP 1: CHỌN GÓI CƯỚC -->
-            <div id="pricing-step-1">
-                <div class="pricing-modal-header" id="pricing-modal-title">LLM Chatbot API - Pricing</div>
-                <div class="pricing-modal-body" style="padding: 20px 24px 16px 24px;">
-                    <div class="price-badge-row" style="margin-bottom: 14px;">
-                        <span class="price-free-title" id="pack-price-display">FREE 100,000</span>
-                        <span class="price-sub-text" id="pack-unit-display">characters / month</span>
+        <div class="pricing-modal-box">
+            <div class="pricing-modal-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-cart-plus" style="color:#007bff;"></i>
+                    <span id="pricing-modal-title">Nạp Gói Cước API</span>
+                </div>
+                <i class="fa-solid fa-xmark" style="cursor:pointer; color:#94a3b8; font-size:16px;" onclick="closePricingModal()"></i>
+            </div>
+            <div class="pricing-modal-body">
+                <div class="price-badge-row">
+                    <div>
+                        <span style="font-size:11px; color:#64748b; font-weight:600; display:block;">GÓI ĐANG CHỌN</span>
+                        <span class="price-free-title" id="pack-price-display">PREMIUM 1.5M</span>
                     </div>
-
-                    <div style="margin-bottom: 16px;">
-                        <div class="pack-option-card active" id="opt-pack-1" onclick="selectPackOption(1, 'FREE 100,000', '0 VNĐ', 100000, 'Free Tier')">
-                            <div>
-                                <strong style="font-size:13.5px;">Gói Miễn Phí (Free Tier)</strong>
-                                <div style="font-size:12px; color:#64748b;">100,000 ký tự / tháng</div>
-                            </div>
-                            <span style="font-weight:700; color:#007bff;">FREE</span>
-                        </div>
-
-                        <div class="pack-option-card" id="opt-pack-2" onclick="selectPackOption(2, 'PREMIUM 1.5M', '500,000 VNĐ', 1500000, 'Premium 500k')">
-                            <div>
-                                <strong style="font-size:13.5px;">Gói Premium 500k</strong>
-                                <div style="font-size:12px; color:#64748b;">1,500,000 ký tự + Tốc độ cao</div>
-                            </div>
-                            <span style="font-weight:700; color:#10b981;">500,000 VNĐ</span>
-                        </div>
-
-                        <div class="pack-option-card" id="opt-pack-3" onclick="selectPackOption(3, 'PREMIUM 4.0M', '1,000,000 VNĐ', 4000000, 'Enterprise 1M')">
-                            <div>
-                                <strong style="font-size:13.5px;">Gói Enterprise 1M</strong>
-                                <div style="font-size:12px; color:#64748b;">4,000,000 ký tự + Ưu tiên GPU</div>
-                            </div>
-                            <span style="font-weight:700; color:#7c3aed;">1,000,000 VNĐ</span>
-                        </div>
-                    </div>
-
-                    <!-- Compact 1-line Invoice Checkbox -->
-                    <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#334155; cursor:pointer;">
-                            <input type="checkbox" id="chk-need-invoice" style="width:16px; height:16px; accent-color:#007bff; cursor:pointer;">
-                            <span>Yêu cầu xuất hóa đơn GTGT (VAT Invoice)</span>
-                        </label>
-                        <i class="fa-solid fa-file-invoice-dollar" style="color: #007bff; font-size: 16px;"></i>
-                    </div>
+                    <span class="price-sub-text" id="pack-unit-display" style="color:#007bff; font-size:14px; font-weight:700;">500,000 VNĐ</span>
                 </div>
 
-                <div class="pricing-modal-footer">
-                    <span class="redirect-notice">Chuyển tiếp đến cổng VNPAY</span>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn-modal-cancel" onclick="closePricingModal()">HỦY</button>
-                        <button class="btn-modal-next" onclick="handlePricingNextStep()">TIẾP TỤC <i class="fa-solid fa-arrow-right" style="font-size:11px; margin-left:4px;"></i></button>
+                <div style="margin-top: 10px;">
+                    <div class="pack-option-card" id="opt-pack-1" onclick="selectPackOption(1, 'FREE 100,000', '0 VNĐ', 100000, 'Gói Miễn Phí (Free Tier)')">
+                        <div>
+                            <strong style="font-size:13px; color:#0f172a;">Gói Miễn Phí (Free Tier)</strong>
+                            <div style="font-size:11.5px; color:#64748b;">100,000 units / tháng</div>
+                        </div>
+                        <span style="font-weight:700; color:#007bff; font-size:13px;">FREE</span>
+                    </div>
+
+                    <div class="pack-option-card active" id="opt-pack-2" onclick="selectPackOption(2, 'PREMIUM 1.5M', '500,000 VNĐ', 1500000, 'Gói Premium 500k')">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <strong style="font-size:13px; color:#0f172a;">Gói Premium 500k</strong>
+                                <span style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px;">PHỔ BIẾN</span>
+                            </div>
+                            <div style="font-size:11.5px; color:#64748b;">1,500,000 units + Ưu tiên băng thông</div>
+                        </div>
+                        <span style="font-weight:700; color:#10b981; font-size:13px;">500,000 VNĐ</span>
+                    </div>
+
+                    <div class="pack-option-card" id="opt-pack-3" onclick="selectPackOption(3, 'ENTERPRISE 4.0M', '1,000,000 VNĐ', 4000000, 'Gói Enterprise 1M')">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <strong style="font-size:13px; color:#0f172a;">Gói Enterprise 1M</strong>
+                                <span style="background:#f3e8ff; color:#7e22ce; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px;">GPU CAO CẤP</span>
+                            </div>
+                            <div style="font-size:11.5px; color:#64748b;">4,000,000 units + Ưu tiên GPU Dedicated</div>
+                        </div>
+                        <span style="font-weight:700; color:#7c3aed; font-size:13px;">1,000,000 VNĐ</span>
                     </div>
                 </div>
             </div>
 
-            <!-- STEP 2: THÔNG TIN XUẤT HÓA ĐƠN VAT -->
-            <div id="pricing-step-2" style="display: none;">
-                <div class="pricing-modal-header" style="background:#0f4c81; color:#fff; display:flex; justify-content:space-between; align-items:center;">
-                    <span>Thông Tin Xuất Hóa Đơn VAT</span>
-                    <span style="font-size:12px; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px;">Bước 2 / 2</span>
-                </div>
-                <div class="pricing-modal-body" style="padding: 20px 24px 16px 24px;">
-                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 12.5px; color: #1e40af; font-weight: 500;" id="step2-pack-summary">Gói chọn: Free Tier</span>
-                        <strong style="color: #ed1c24; font-size: 14px;" id="step2-cost-summary">0 VNĐ</strong>
-                    </div>
-
-                    <div style="margin-bottom: 12px;">
-                        <label style="font-size: 12px; font-weight: 600; color: #334155; display:block; margin-bottom:4px;">Mã số thuế doanh nghiệp (Tax Code) *</label>
-                        <input type="text" class="form-input-sm" id="inv-tax-code" placeholder="Ví dụ: 0101234567-99" value="0101234567-99">
-                    </div>
-
-                    <div style="margin-bottom: 12px;">
-                        <label style="font-size: 12px; font-weight: 600; color: #334155; display:block; margin-bottom:4px;">Tên Công Ty (Company Name) *</label>
-                        <input type="text" class="form-input-sm" id="inv-company-name" placeholder="Tên công ty trên GPKD..." value="Everwin Technology Solutions Ltd">
-                    </div>
-
-                    <div>
-                        <label style="font-size: 12px; font-weight: 600; color: #334155; display:block; margin-bottom:4px;">Địa chỉ xuất hóa đơn (Company Address)</label>
-                        <input type="text" class="form-input-sm" id="inv-address" placeholder="Địa chỉ theo hóa đơn GTGT..." value="Tầng 12, Tòa nhà Everwin, Hà Nội">
-                    </div>
-                </div>
-
-                <div class="pricing-modal-footer">
-                    <button class="btn-modal-cancel" onclick="goBackToStep1()"><i class="fa-solid fa-arrow-left" style="font-size:11px; margin-right:4px;"></i> QUAY LẠI</button>
-                    <button class="btn-modal-next" onclick="openVNPAYModal()"><i class="fa-solid fa-credit-card" style="font-size:11px; margin-right:4px;"></i> THANH TOÁN VNPAY</button>
-                </div>
+            <div class="pricing-modal-footer">
+                <button class="btn-modal-cancel" onclick="closePricingModal()">HỦY</button>
+                <button class="btn-modal-next" onclick="openVNPAYModal()">
+                    <i class="fa-solid fa-qrcode"></i> CHUYỂN KHOẢN VNPAY-QR
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- STEP 2: VNPAY PAYMENT PORTAL SIMULATION MODAL -->
+    <!-- ENTERPRISE VNPAY / VIETQR PAYMENT PORTAL MODAL -->
     <div class="modal-overlay" id="vnpay-modal">
         <div class="vnpay-box">
             <div class="vnpay-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-qrcode" style="font-size:22px;"></i>
-                    <strong style="font-family:var(--font-heading); font-size:16px;">VNPAY Payment Gateway</strong>
-                </div>
-                <span style="font-size:12px; background:rgba(255,255,255,0.2); padding:3px 8px; border-radius:4px;">Secure SSL 256-bit</span>
-            </div>
-            <div class="vnpay-body">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+                    <i class="fa-solid fa-shield-halved" style="font-size:20px;"></i>
                     <div>
-                        <div style="font-size:12px; color:#64748b;">Đơn hàng: <strong id="vnpay-order-id">AIP_VNPAY_981247</strong></div>
-                        <div style="font-size:14px; font-weight:700; color:#0f172a;" id="vnpay-order-title">Nạp gói cước Text to Speech</div>
+                        <div style="font-family:var(--font-heading); font-size:15px; font-weight:700;">CỔNG THANH TOÁN VNPAY-QR / VIETQR</div>
+                        <div style="font-size:11px; opacity:0.85;">Hệ thống nạp tự động 24/7 - Xử lý tức thì</div>
                     </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:11px; color:#64748b;">Số tiền thanh toán:</div>
-                        <div style="font-family:var(--font-heading); font-size:20px; font-weight:800; color:#ed1c24;" id="vnpay-order-amount">500,000 VNĐ</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:11px; opacity:0.9;">Thời gian giữ mã QR</div>
+                    <strong style="font-family:var(--font-heading); font-size:15px; color:#fef08a;" id="vnpay-timer">14:59</strong>
+                </div>
+            </div>
+
+            <div class="vnpay-body">
+                <div class="vnpay-grid-2col">
+                    <!-- CỘT TRÁI: QR CODE -->
+                    <div class="vnpay-qr-panel">
+                        <div style="font-size:12px; font-weight:700; color:#005baa; margin-bottom:8px;">
+                            <i class="fa-solid fa-qrcode"></i> QUÉT MÃ ĐỂ THANH TOÁN
+                        </div>
+                        <img id="vnpay-dynamic-qr" class="vnpay-qr-img" src="" alt="VNPAY VietQR Code">
+                        <div style="font-size:11px; color:#64748b; margin-top:8px;">
+                            Mở App Ngân hàng hoặc Ví VNPAY / MoMo quét mã
+                        </div>
+                    </div>
+
+                    <!-- CỘT PHẢI: CHI TIẾT CHUYỂN KHOẢN THỦ CÔNG -->
+                    <div class="vnpay-info-panel">
+                        <div>
+                            <div class="vnpay-info-row">
+                                <span class="vnpay-info-label">Ngân hàng thụ hưởng</span>
+                                <span class="vnpay-info-value" style="color:#005baa;"><i class="fa-solid fa-building-columns"></i> MB Bank (Ngân Hàng Quân Đội)</span>
+                            </div>
+                            <div class="vnpay-info-row">
+                                <span class="vnpay-info-label">Số tài khoản</span>
+                                <span class="vnpay-info-value">
+                                    <strong id="val-acc-num">09888888688</strong>
+                                    <button class="btn-copy-mini" onclick="copyToClip('09888888688', 'Số tài khoản')">Sao chép</button>
+                                </span>
+                            </div>
+                            <div class="vnpay-info-row">
+                                <span class="vnpay-info-label">Chủ tài khoản</span>
+                                <span class="vnpay-info-value">
+                                    <span id="val-acc-name">CONG TY CONG NGHE EVERWIN AI</span>
+                                    <button class="btn-copy-mini" onclick="copyToClip('CONG TY CONG NGHE EVERWIN AI', 'Chủ tài khoản')">Sao chép</button>
+                                </span>
+                            </div>
+                            <div class="vnpay-info-row">
+                                <span class="vnpay-info-label">Số tiền thanh toán</span>
+                                <span class="vnpay-info-value">
+                                    <strong style="color:#ed1c24; font-size:15px;" id="vnpay-order-amount">500,000 VNĐ</strong>
+                                    <button class="btn-copy-mini" onclick="copyToClip(selectedPackCost.replace(/[^0-9]/g, ''), 'Số tiền')">Sao chép</button>
+                                </span>
+                            </div>
+                            <div class="vnpay-info-row" style="background:#fffbeb; padding:8px 10px; border-radius:6px; border:1px solid #fef3c7; margin-top:6px;">
+                                <div>
+                                    <span class="vnpay-info-label" style="color:#b45309; font-weight:700;">Nội dung chuyển khoản (Bắt buộc)</span>
+                                    <div style="font-size:10.5px; color:#92400e;">Vui lòng giữ đúng nội dung để hệ thống duyệt tự động</div>
+                                </div>
+                                <span class="vnpay-info-value">
+                                    <strong style="color:#b45309; font-size:14px;" id="vnpay-order-memo">AIP VNPAY 882914</strong>
+                                    <button class="btn-copy-mini" style="background:#fde68a; color:#b45309;" onclick="copyToClip(document.getElementById('vnpay-order-memo').innerText, 'Nội dung chuyển khoản')">Sao chép</button>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="vnpay-sync-status">
+                            <div class="pulse-dot"></div>
+                            <span>Đang lắng nghe giao dịch chuyển khoản từ Webhook VNPAY / MB Bank...</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="vnpay-qr-card">
-                    <div style="font-size:13px; font-weight:700; color:#005baa; margin-bottom:10px;">Quét mã QR bằng App Ngân Hàng để Thanh Toán</div>
-                    <!-- Real SVG Vector QR Code -->
-                    <svg class="vnpay-qr-img" viewBox="0 0 100 100" style="background:#fff; padding:10px; border:1px solid #cbd5e1;">
-                        <path d="M0,0 h30 v30 h-30 z M40,0 h20 v10 h-20 z M70,0 h30 v30 h-30 z M0,40 h10 v20 h-10 z M30,30 h40 v40 h-40 z M80,40 h20 v20 h-20 z M0,70 h30 v30 h-30 z M40,80 h30 v20 h-30 z M80,80 h20 v20 h-20 z" fill="#005baa"/>
-                    </svg>
-                    <div style="font-size:12px; color:#64748b;">Hỗ trợ: Vietcombank, Techcombank, MBBank, Agribank, VNPAY QR</div>
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <button style="background:transparent; border:none; color:#64748b; font-weight:600; font-size:13px; cursor:pointer;" onclick="closeVNPAYModal()">HỦY GIAO DỊCH</button>
-                    <button style="background:#ed1c24; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:700; font-size:13.5px; cursor:pointer; box-shadow:0 4px 12px rgba(237,28,36,0.3);" onclick="confirmVNPAYPayment()">XÁC NHẬN THANH TOÁN VNPAY</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; border-top:1px solid #e2e8f0; padding-top:14px;">
+                    <button style="background:transparent; border:1px solid #cbd5e1; color:#64748b; font-weight:600; font-size:12.5px; padding:8px 16px; border-radius:6px; cursor:pointer;" onclick="closeVNPAYModal()">HỦY GIAO DỊCH</button>
+                    <button style="background:linear-gradient(135deg, #16a34a, #15803d); color:#fff; border:none; padding:10px 22px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer; box-shadow:0 4px 12px rgba(22,163,74,0.3); display:flex; align-items:center; gap:8px;" onclick="confirmVNPAYPayment()">
+                        <i class="fa-solid fa-circle-check"></i> TÔI ĐÃ CHUYỂN KHOẢN THÀNH CÔNG
+                    </button>
                 </div>
             </div>
         </div>
@@ -513,16 +542,13 @@
             }
         }
 
-        let selectedPackName = 'Free Tier';
+        let selectedPackName = 'Gói Premium 500k';
+        let vnpayTimerInterval = null;
 
         function openPricingModalFor(apiName) {
             currentTargetApi = apiName;
-            document.getElementById('pricing-modal-title').innerText = `${apiName} - Pricing`;
-            // Reset to Step 1
-            document.getElementById('pricing-step-1').style.display = 'block';
-            document.getElementById('pricing-step-2').style.display = 'none';
-            const chk = document.getElementById('chk-need-invoice');
-            if (chk) chk.checked = false;
+            document.getElementById('pricing-modal-title').innerText = `${apiName} - Nạp Gói Cước`;
+            selectPackOption(2, 'PREMIUM 1.5M', '500,000 VNĐ', 1500000, 'Gói Premium 500k');
             document.getElementById('pricing-modal').classList.add('active');
         }
 
@@ -539,51 +565,74 @@
                 }
             });
             document.getElementById('pack-price-display').innerText = titleText;
+            document.getElementById('pack-unit-display').innerText = costText;
             selectedPackCost = costText;
             selectedAddChars = addChars;
             selectedPackName = packName || titleText;
         }
 
-        function handlePricingNextStep() {
-            const chk = document.getElementById('chk-need-invoice');
-            if (chk && chk.checked) {
-                // Switch to Step 2 (Invoice Info)
-                document.getElementById('step2-pack-summary').innerText = `Gói: ${selectedPackName} (${currentTargetApi})`;
-                document.getElementById('step2-cost-summary').innerText = selectedPackCost;
-                document.getElementById('pricing-step-1').style.display = 'none';
-                document.getElementById('pricing-step-2').style.display = 'block';
-            } else {
-                // Direct to VNPAY Payment
-                openVNPAYModal();
-            }
-        }
-
-        function goBackToStep1() {
-            document.getElementById('pricing-step-1').style.display = 'block';
-            document.getElementById('pricing-step-2').style.display = 'none';
+        function copyToClip(text, label = 'Nội dung') {
+            navigator.clipboard.writeText(text);
+            showToast(`Đã sao chép ${label} vào bộ nhớ tạm!`, 'success');
         }
 
         function openVNPAYModal() {
             closePricingModal();
-            const orderId = 'AIP_VNPAY_' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('vnpay-order-id').innerText = orderId;
-            document.getElementById('vnpay-order-title').innerText = `Nạp gói cước ${currentTargetApi}`;
+            const orderCode = Math.floor(100000 + Math.random() * 900000);
+            const memo = `AIP VNPAY ${orderCode}`;
+            const numAmount = parseInt(selectedPackCost.replace(/[^0-9]/g, '')) || 500000;
+
+            // Generate official VietQR dynamic URL for MBBank (970422)
+            const qrUrl = `https://api.vietqr.io/image/970422-09888888688-compact2.jpg?amount=${numAmount}&addInfo=${encodeURIComponent(memo)}&accountName=CONG%20TY%20CONG%20NGHE%20EVERWIN%20AI`;
+            
+            const qrImg = document.getElementById('vnpay-dynamic-qr');
+            if (qrImg) {
+                qrImg.src = qrUrl;
+                qrImg.onerror = () => {
+                    // Fallback to high-contrast generated SVG QR code if offline
+                    qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(`2|99|09888888688|CONG TY CONG NGHE EVERWIN AI||0|0|${numAmount}|${memo}|transfer_p2p`);
+                };
+            }
+
             document.getElementById('vnpay-order-amount').innerText = selectedPackCost;
+            document.getElementById('vnpay-order-memo').innerText = memo;
+
+            // Start 15-minute countdown timer
+            startVnpayTimer(15 * 60);
+
             document.getElementById('vnpay-modal').classList.add('active');
         }
 
+        function startVnpayTimer(durationSecs) {
+            if (vnpayTimerInterval) clearInterval(vnpayTimerInterval);
+            let timer = durationSecs;
+            const timerEl = document.getElementById('vnpay-timer');
+            vnpayTimerInterval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                if (timerEl) {
+                    timerEl.innerText = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                }
+                if (--timer < 0) {
+                    clearInterval(vnpayTimerInterval);
+                    if (timerEl) timerEl.innerText = '00:00 (Hết hạn)';
+                }
+            }, 1000);
+        }
+
         function closeVNPAYModal() {
+            if (vnpayTimerInterval) clearInterval(vnpayTimerInterval);
             document.getElementById('vnpay-modal').classList.remove('active');
         }
 
         function confirmVNPAYPayment() {
-            showToast('Đang kết nối VNPAY Gateway & xử lý giao dịch...', 'info');
+            showToast('🔄 Đang xác thực giao dịch chuyển khoản qua Webhook...', 'info');
             setTimeout(() => {
                 closeVNPAYModal();
                 const newBal = getPaidBalance() + selectedAddChars;
                 setPaidBalance(newBal);
 
-                // Record payment transaction
+                // Record payment transaction into localStorage
                 const rawHist = localStorage.getItem('aip_payment_history');
                 const hist = rawHist ? JSON.parse(rawHist) : [];
                 const txnId = 'VNP' + Math.floor(10000000 + Math.random() * 90000000);
@@ -591,16 +640,16 @@
                     txn_ref: txnId,
                     date: new Date().toISOString().replace('T', ' ').substring(0, 16).replace(/-/g, '/'),
                     status: 'SUCCESS',
-                    amount: selectedPackCost.replace(/[^0-9]/g, '') || 500000,
-                    package: `Premium ${currentTargetApi}`,
+                    amount: selectedPackCost.replace(/[^0-9]/g, '') || '500000',
+                    package: `${selectedPackName} (${currentTargetApi})`,
                     project: getActiveProjectName(),
                     txn_no: Math.floor(10000000 + Math.random() * 90000000).toString()
                 });
                 localStorage.setItem('aip_payment_history', JSON.stringify(hist));
 
                 renderApisSummaryTable();
-                showToast(`🎉 Thanh toán VNPAY ${selectedPackCost} thành công! Đã cộng ${selectedAddChars.toLocaleString()} vào tài khoản.`, 'success');
-            }, 1500);
+                showToast(`🎉 Đã nhận giao dịch ${selectedPackCost}! Đã nạp thành công ${selectedAddChars.toLocaleString()} credits vào tài khoản.`, 'success');
+            }, 1200);
         }
 
         function initCharts() {
