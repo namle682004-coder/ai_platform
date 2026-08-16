@@ -641,14 +641,16 @@
             const catalog = await fetchApiCatalogFromBackend();
             const isEnabled = !!apis[currentSvcName];
 
-            const btn = document.getElementById('btn-header-toggle-api');
+            const btn = document.getElementById('svc-toggle-btn') || document.getElementById('btn-header-toggle-api');
             if (btn) {
                 if (!isEnabled) {
                     btn.innerText = 'ENABLE';
                     btn.classList.remove('disabled');
+                    btn.style.background = '#007bff';
                 } else {
                     btn.innerText = 'DISABLE';
                     btn.classList.add('disabled');
+                    btn.style.background = '#64748b';
                 }
             }
 
@@ -842,7 +844,7 @@
                 const apis = getEnabledAPIs();
                 apis[currentSvcName] = false;
                 await setEnabledAPIs(apis);
-                syncServiceUIState();
+                await syncServiceUIState();
                 showToast(`API "${currentSvcName}" has been disabled.`, 'warning');
             } else {
                 if (projects.length === 0) {
@@ -881,7 +883,7 @@
             const apis = getEnabledAPIs();
             apis[apiName] = true;
             await setEnabledAPIs(apis);
-            syncServiceUIState();
+            await syncServiceUIState();
 
             const msg = projName 
                 ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
