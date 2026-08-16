@@ -45,10 +45,11 @@ class AuditService:
         db = mongo_manager.get_database()
         if db is not None:
             try:
-                await db.audit_logs.insert_one(record)
+                await db.audit_logs.insert_one(dict(record))
             except Exception as e:
                 logger.warning(f"MongoDB audit log write error: {e}")
 
+        record.pop("_id", None)
         self._memory_logs.insert(0, record)
         return record
 
