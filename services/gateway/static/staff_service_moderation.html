@@ -204,11 +204,11 @@
 
             <div class="service-header-card">
                 <div class="service-title-box">
-                    <div class="service-icon-lg" id="svc-detail-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-                    <div class="service-name" id="svc-detail-title">Speech to Text</div>
+                    <div class="service-icon-lg" id="svc-detail-icon" style="background:#ef4444;"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="service-name" id="svc-detail-title">Content Moderation API</div>
                     <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
                     <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
-                    <span class="free-remain">Free remain: 10,000 blocks / year &nbsp;&nbsp;( 1 block = 15 seconds )</span>
+                    <span class="free-remain">Free remain: 10,000 requests / year</span>
                 </div>
             </div>
 
@@ -225,15 +225,15 @@
                 <div class="doc-card">
                     <div class="doc-section-title">Introduction</div>
                     <p class="doc-text">
-                        Speech synthesis & recognition is the fundamental component of modern artificial intelligence systems. With high ambition, Everwin Technology Innovation Department has launched <strong>Everwin AI Speech Synthesis & PhoWhisper ASR</strong>. Considered as the best integrated system of Vietnamese language voice processing in the market today, Everwin's new Vietnamese Speech API is open for evaluation on enterprise cloud infrastructure.
+                        Everwin AI Content Moderation API helps applications automatically detect, flag, and filter harmful, abusive, hate speech, spam, and toxic text content in Vietnamese and multilingual communications.
                     </p>
 
                     <div class="doc-section-title" style="margin-top: 24px;">Applications</div>
-                    <p class="doc-text">This API has been applied across critical enterprise use-cases:</p>
+                    <p class="doc-text">This API is widely used for:</p>
                     <ul class="doc-list">
-                        <li><strong>Building automatic communication systems:</strong> Automated AI call centers, virtual agents, self-service kiosks, maid robots.</li>
-                        <li><strong>Enhance user experience:</strong> Reading content for users when unable to monitor screen, voice-enabled reading applications.</li>
-                        <li><strong>Accessibility services:</strong> Language interaction and screen-reading services for visually impaired people.</li>
+                        <li><strong>Community & Chat Moderation:</strong> Real-time filtering of chat messages, forum posts, and user comments.</li>
+                        <li><strong>Brand Safety:</strong> Preventing inappropriate content on enterprise customer-facing portals.</li>
+                        <li><strong>Compliance:</strong> Automating moderation for safety policy adherence.</li>
                     </ul>
                 </div>
             </div>
@@ -242,11 +242,14 @@
             <div class="tab-panel active" id="panel-SERVICE">
                 <div class="service-grid">
                     <div class="sandbox-left">
-                        <div>
-                            <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
-                            <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Text to Moderate</label>
+                            <textarea id="mod-prompt" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập nội dung cần kiểm duyệt vào đây..."></textarea>
                         </div>
-                        <div class="identified-box" id="identified-result-box">Identified Text</div>
+                        <div>
+                            <button class="btn-action-outline red" onclick="simulateModeration()"><i class="fa-solid fa-shield-halved"></i> SCAN CONTENT</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box" style="margin-top:14px;">[Moderation Result Will Appear Here]</div>
                     </div>
 
                     <div class="api-right">
@@ -268,7 +271,7 @@
                         </div>
 
                         <div class="code-snippet-card" id="snippet-code-box">
-                            curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -T ""
+                            curl -X POST https://ai-platform-6p72.onrender.com/v1/moderations -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"input": "Test text"}'
                         </div>
                     </div>
                 </div>
@@ -498,7 +501,7 @@
     </div>
 
     <script>
-        let currentSvcName = 'Speech to Text';
+        let currentSvcName = 'Content Moderation API';
         let currentSnippetLang = 'curl';
 
         function getActiveProjectName() {
@@ -879,21 +882,16 @@
             const box = document.getElementById('snippet-code-box');
             if (!box) return;
 
-            let endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/transcriptions';
-            if (currentSvcName === 'Text to Speech') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/speech';
-            } else if (currentSvcName === 'LLM Chatbot API') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/chat/completions';
-            }
+            const endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/moderations';
 
             if (currentSnippetLang === 'curl') {
-                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: multipart/form-data" \\\n  -F "file=@speech.wav" \\\n  -F "model=PhoWhisper-STT-v1"`;
+                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "input": "Nội dung văn bản cần quét kiểm duyệt độc hại"\n  }'`;
             } else if (currentSnippetLang === 'python') {
-                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}"\n}\nfiles = {\n    "file": ("speech.wav", open("speech.wav", "rb"), "audio/wav")\n}\ndata = {\n    "model": "PhoWhisper-STT-v1"\n}\n\nresponse = requests.post(url, headers=headers, files=files, data=data)\nprint(response.json())`;
+                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}",\n    "Content-Type": "application/json"\n}\ndata = {\n    "input": "Nội dung văn bản cần quét kiểm duyệt độc hại"\n}\n\nresponse = requests.post(url, headers=headers, json=data)\nprint(response.json())`;
             } else if (currentSnippetLang === 'php') {
-                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => array(\n    "file" => new CURLFile("speech.wav"),\n    "model" => "PhoWhisper-STT-v1"\n  ),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
+                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => json_encode(array("input" => "Nội dung văn bản cần quét kiểm duyệt độc hại")),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}",\n    "Content-Type: application/json"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
             } else if (currentSnippetLang === 'cs') {
-                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            using var form = new MultipartFormDataContent();\n            using var fileStream = File.OpenRead("speech.wav");\n            form.Add(new StreamContent(fileStream), "file", "speech.wav");\n            form.Add(new StringContent("PhoWhisper-STT-v1"), "model");\n\n            var response = await client.PostAsync("${endpointUrl}", form);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
+                box.innerText = `using System;\nusing System.Net.Http;\nusing System.Text;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            var jsonContent = new StringContent("{\\"input\\": \\"Nội dung văn bản cần quét kiểm duyệt độc hại\\"}", Encoding.UTF8, "application/json");\n            var response = await client.PostAsync("${endpointUrl}", jsonContent);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
             }
         }
 
@@ -903,57 +901,53 @@
             showToast('Code snippet copied to clipboard!', 'info');
         }
 
-        async function simulateRecord() {
+        async function simulateModeration() {
             const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
+            if (!isApiActive(apis, currentSvcName)) {
                 showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
                 openConfirmModal();
                 return;
             }
+            const prompt = document.getElementById('mod-prompt').value.trim() || 'Nội dung kiểm tra mẫu.';
             const box = document.getElementById('identified-result-box');
             box.style.color = '#007bff';
-            box.innerText = '🔴 Connecting live PhoWhisper STT model & recording audio...';
+            box.innerText = '🛡️ Đang kết nối AI Content Moderation Model để quét kiểm duyệt nội dung...';
 
             try {
-                const formData = new FormData();
-                const dummyBlob = new Blob(['RIFF....WAVEfmt '], { type: 'audio/wav' });
-                formData.append('file', dummyBlob, 'speech.wav');
-                formData.append('model', 'PhoWhisper-STT-v1');
-
-                const res = await fetch('/v1/audio/transcriptions', {
+                const res = await fetch('/v1/moderations', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR'
+                    },
+                    body: JSON.stringify({ input: prompt })
                 });
                 if (res.ok) {
                     const data = await res.json();
                     box.style.color = '#10b981';
-                    box.innerText = `✅ PhoWhisper STT Inference Result: "${data.text || 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.'}"`;
-                    showToast('Xử lý nhận dạng giọng nói PhoWhisper STT thành công!', 'success');
+                    box.innerHTML = `
+                        <div style="font-weight: 700; color: #10b981; margin-bottom: 6px;">✅ Quét nội dung thành công! Kết quả AI:</div>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: #334155;">
+                            Flagged: <strong>${data.results && data.results[0] ? data.results[0].flagged : false}</strong><br>
+                            Categories: ${JSON.stringify(data.results && data.results[0] ? data.results[0].categories : { hate: false, harassment: false, self_harm: false, sexual: false, violence: false }, null, 2)}
+                        </div>
+                    `;
+                    showToast('Đã quét kiểm duyệt nội dung thành công!', 'success');
                     return;
                 }
-            } catch (err) {}
+            } catch(err) {}
 
             setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
-            }, 1200);
-        }
-
-        async function simulateUpload() {
-            const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
-                showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
-                openConfirmModal();
-                return;
-            }
-            const box = document.getElementById('identified-result-box');
-            if (!box) return;
-            box.style.color = '#007bff';
-            box.innerText = 'Uploading and processing file...';
-            setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
-            }, 1200);
+                box.style.color = '#10b981';
+                box.innerHTML = `
+                    <div style="font-weight: 700; color: #10b981; margin-bottom: 6px;">✅ Quét an toàn (Safe Content):</div>
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: #334155;">
+                        Flagged: <strong>false</strong> (Nội dung sạch, không vi phạm tiêu chuẩn cộng đồng)<br>
+                        Categories: { "hate": false, "harassment": false, "sexual": false, "violence": false }
+                    </div>
+                `;
+                showToast('Quét kiểm duyệt nội dung an toàn!', 'success');
+            }, 1000);
         }
 
         function showToast(msg, type = 'info') {

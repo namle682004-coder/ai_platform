@@ -204,11 +204,11 @@
 
             <div class="service-header-card">
                 <div class="service-title-box">
-                    <div class="service-icon-lg" id="svc-detail-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-                    <div class="service-name" id="svc-detail-title">Speech to Text</div>
+                    <div class="service-icon-lg" id="svc-detail-icon" style="background:#8b5cf6;"><i class="fa-solid fa-image"></i></div>
+                    <div class="service-name" id="svc-detail-title">Image Generation API</div>
                     <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
                     <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
-                    <span class="free-remain">Free remain: 10,000 blocks / year &nbsp;&nbsp;( 1 block = 15 seconds )</span>
+                    <span class="free-remain">Free remain: 100 images / year</span>
                 </div>
             </div>
 
@@ -225,15 +225,15 @@
                 <div class="doc-card">
                     <div class="doc-section-title">Introduction</div>
                     <p class="doc-text">
-                        Speech synthesis & recognition is the fundamental component of modern artificial intelligence systems. With high ambition, Everwin Technology Innovation Department has launched <strong>Everwin AI Speech Synthesis & PhoWhisper ASR</strong>. Considered as the best integrated system of Vietnamese language voice processing in the market today, Everwin's new Vietnamese Speech API is open for evaluation on enterprise cloud infrastructure.
+                        Everwin AI Image Generation API leverages state-of-the-art diffusion models (SDXL) to turn text descriptions into high-resolution, photorealistic or artistic images in seconds.
                     </p>
 
                     <div class="doc-section-title" style="margin-top: 24px;">Applications</div>
-                    <p class="doc-text">This API has been applied across critical enterprise use-cases:</p>
+                    <p class="doc-text">This API is ideal for:</p>
                     <ul class="doc-list">
-                        <li><strong>Building automatic communication systems:</strong> Automated AI call centers, virtual agents, self-service kiosks, maid robots.</li>
-                        <li><strong>Enhance user experience:</strong> Reading content for users when unable to monitor screen, voice-enabled reading applications.</li>
-                        <li><strong>Accessibility services:</strong> Language interaction and screen-reading services for visually impaired people.</li>
+                        <li><strong>Creative & Marketing Design:</strong> Automated banner, poster, and product visual creation.</li>
+                        <li><strong>Game & Virtual Assets:</strong> Character and concept art prototyping.</li>
+                        <li><strong>E-Commerce:</strong> Background replacement and automated merchandise visualization.</li>
                     </ul>
                 </div>
             </div>
@@ -242,11 +242,14 @@
             <div class="tab-panel active" id="panel-SERVICE">
                 <div class="service-grid">
                     <div class="sandbox-left">
-                        <div>
-                            <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
-                            <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Image Prompt</label>
+                            <textarea id="img-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập mô tả bức ảnh bạn muốn tạo (Ví dụ: Một phi hành gia đang cưỡi ngựa trên sao hỏa)...">Một thành phố tương lai cyberpunk với nhiều neon sáng rực.</textarea>
                         </div>
-                        <div class="identified-box" id="identified-result-box">Identified Text</div>
+                        <div>
+                            <button class="btn-action-outline blue" style="background:#8b5cf6; color:white; border:none;" onclick="simulateImageGen()"><i class="fa-solid fa-image"></i> GENERATE IMAGE</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box" style="margin-top:14px; min-height: 200px; display: flex; align-items: center; justify-content: center;">[Image Output Will Appear Here]</div>
                     </div>
 
                     <div class="api-right">
@@ -263,6 +266,16 @@
                             <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
                             <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
                             <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
+                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
+                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                        </div>
+
+                        <div class="code-snippet-card" id="snippet-code-box">
+                            curl -X POST https://ai-platform-6p72.onrender.com/v1/images/generations -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"prompt": "Cyberpunk city"}'
+                        </div>
+                    </div>
+                </div>
+            </div>
                             <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
                             <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
                         </div>
@@ -498,7 +511,7 @@
     </div>
 
     <script>
-        let currentSvcName = 'Speech to Text';
+        let currentSvcName = 'Image Generation API';
         let currentSnippetLang = 'curl';
 
         function getActiveProjectName() {
@@ -879,21 +892,16 @@
             const box = document.getElementById('snippet-code-box');
             if (!box) return;
 
-            let endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/transcriptions';
-            if (currentSvcName === 'Text to Speech') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/speech';
-            } else if (currentSvcName === 'LLM Chatbot API') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/chat/completions';
-            }
+            const endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/images/generations';
 
             if (currentSnippetLang === 'curl') {
-                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: multipart/form-data" \\\n  -F "file=@speech.wav" \\\n  -F "model=PhoWhisper-STT-v1"`;
+                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "prompt": "Một bức ảnh nghệ thuật độ phân giải cao phong cách cyberpunk",\n    "n": 1,\n    "size": "1024x1024"\n  }'`;
             } else if (currentSnippetLang === 'python') {
-                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}"\n}\nfiles = {\n    "file": ("speech.wav", open("speech.wav", "rb"), "audio/wav")\n}\ndata = {\n    "model": "PhoWhisper-STT-v1"\n}\n\nresponse = requests.post(url, headers=headers, files=files, data=data)\nprint(response.json())`;
+                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}",\n    "Content-Type": "application/json"\n}\ndata = {\n    "prompt": "Một bức ảnh nghệ thuật độ phân giải cao phong cách cyberpunk",\n    "n": 1,\n    "size": "1024x1024"\n}\n\nresponse = requests.post(url, headers=headers, json=data)\nprint(response.json())`;
             } else if (currentSnippetLang === 'php') {
-                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => array(\n    "file" => new CURLFile("speech.wav"),\n    "model" => "PhoWhisper-STT-v1"\n  ),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
+                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => json_encode(array("prompt" => "Một bức ảnh cyberpunk", "size" => "1024x1024")),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}",\n    "Content-Type: application/json"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
             } else if (currentSnippetLang === 'cs') {
-                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            using var form = new MultipartFormDataContent();\n            using var fileStream = File.OpenRead("speech.wav");\n            form.Add(new StreamContent(fileStream), "file", "speech.wav");\n            form.Add(new StringContent("PhoWhisper-STT-v1"), "model");\n\n            var response = await client.PostAsync("${endpointUrl}", form);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
+                box.innerText = `using System;\nusing System.Net.Http;\nusing System.Text;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            var jsonContent = new StringContent("{\\"prompt\\": \\"Cyberpunk city\\", \\"size\\": \\"1024x1024\\"}", Encoding.UTF8, "application/json");\n            var response = await client.PostAsync("${endpointUrl}", jsonContent);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
             }
         }
 
@@ -903,56 +911,50 @@
             showToast('Code snippet copied to clipboard!', 'info');
         }
 
-        async function simulateRecord() {
+        async function simulateImageGen() {
             const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
+            if (!isApiActive(apis, currentSvcName)) {
                 showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
                 openConfirmModal();
                 return;
             }
+            const prompt = document.getElementById('img-prompt').value.trim() || 'Một thành phố tương lai cyberpunk rực rỡ.';
             const box = document.getElementById('identified-result-box');
             box.style.color = '#007bff';
-            box.innerText = '🔴 Connecting live PhoWhisper STT model & recording audio...';
+            box.innerHTML = '<div style="padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang khởi tạo Stable Diffusion XL pipeline & render hình ảnh AI...</div>';
 
             try {
-                const formData = new FormData();
-                const dummyBlob = new Blob(['RIFF....WAVEfmt '], { type: 'audio/wav' });
-                formData.append('file', dummyBlob, 'speech.wav');
-                formData.append('model', 'PhoWhisper-STT-v1');
-
-                const res = await fetch('/v1/audio/transcriptions', {
+                const res = await fetch('/v1/images/generations', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR'
+                    },
+                    body: JSON.stringify({ prompt: prompt, size: "512x512" })
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    box.style.color = '#10b981';
-                    box.innerText = `✅ PhoWhisper STT Inference Result: "${data.text || 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.'}"`;
-                    showToast('Xử lý nhận dạng giọng nói PhoWhisper STT thành công!', 'success');
+                    const imgUrl = data.data && data.data[0] ? data.data[0].url : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80';
+                    box.innerHTML = `
+                        <div style="text-align:center; padding: 10px;">
+                            <img src="${imgUrl}" style="max-width:100%; max-height:280px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" alt="AI Generated Image">
+                            <div style="font-size:12px; color:#64748b; margin-top:8px;">Prompt: <em>"${prompt}"</em></div>
+                        </div>
+                    `;
+                    showToast('Đã tạo ảnh AI thành công!', 'success');
                     return;
                 }
-            } catch (err) {}
+            } catch(err) {}
 
             setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
-            }, 1200);
-        }
-
-        async function simulateUpload() {
-            const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
-                showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
-                openConfirmModal();
-                return;
-            }
-            const box = document.getElementById('identified-result-box');
-            if (!box) return;
-            box.style.color = '#007bff';
-            box.innerText = 'Uploading and processing file...';
-            setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
+                const sampleImg = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80';
+                box.innerHTML = `
+                    <div style="text-align:center; padding: 10px;">
+                        <img src="${sampleImg}" style="max-width:100%; max-height:280px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" alt="AI Generated Image">
+                        <div style="font-size:12px; color:#64748b; margin-top:8px;">Prompt: <em>"${prompt}"</em></div>
+                    </div>
+                `;
+                showToast('Đã tạo ảnh AI thành công!', 'success');
             }, 1200);
         }
 

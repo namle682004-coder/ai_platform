@@ -498,7 +498,7 @@
     </div>
 
     <script>
-        let currentSvcName = 'Speech to Text';
+        let currentSvcName = 'Speech to Text API';
         let currentSnippetLang = 'curl';
 
         function getActiveProjectName() {
@@ -902,7 +902,7 @@
 
         async function simulateRecord() {
             const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
+            if (!isApiActive(apis, currentSvcName)) {
                 showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
                 openConfirmModal();
                 return;
@@ -938,7 +938,7 @@
 
         async function simulateUpload() {
             const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
+            if (!isApiActive(apis, currentSvcName)) {
                 showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
                 openConfirmModal();
                 return;

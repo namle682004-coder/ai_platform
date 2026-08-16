@@ -601,7 +601,7 @@
             if (grid) {
                 grid.innerHTML = '';
                 catalog.forEach(item => {
-                    const isChecked = !!apis[item.name];
+                    const isChecked = isApiActive(apis, item.name);
                     let iconClass = 'fa-plug';
                     let bgColor = '#64748b';
                     let desc = item.description || '';
@@ -648,7 +648,7 @@
         function handleApiToggleClick(apiName, checkboxEl, e) {
             if (e) e.stopPropagation();
             const apis = getEnabledAPIs();
-            const currentState = !!apis[apiName];
+            const currentState = isApiActive(apis, apiName);
 
             targetPendingApi = apiName;
             pendingCheckboxEl = checkboxEl;

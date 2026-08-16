@@ -204,11 +204,11 @@
 
             <div class="service-header-card">
                 <div class="service-title-box">
-                    <div class="service-icon-lg" id="svc-detail-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-                    <div class="service-name" id="svc-detail-title">Speech to Text</div>
+                    <div class="service-icon-lg" id="svc-detail-icon" style="background:#10b981;"><i class="fa-solid fa-volume-high"></i></div>
+                    <div class="service-name" id="svc-detail-title">Text to Speech API</div>
                     <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
                     <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
-                    <span class="free-remain">Free remain: 10,000 blocks / year &nbsp;&nbsp;( 1 block = 15 seconds )</span>
+                    <span class="free-remain">Free remain: 100,000 characters / year</span>
                 </div>
             </div>
 
@@ -225,15 +225,15 @@
                 <div class="doc-card">
                     <div class="doc-section-title">Introduction</div>
                     <p class="doc-text">
-                        Speech synthesis & recognition is the fundamental component of modern artificial intelligence systems. With high ambition, Everwin Technology Innovation Department has launched <strong>Everwin AI Speech Synthesis & PhoWhisper ASR</strong>. Considered as the best integrated system of Vietnamese language voice processing in the market today, Everwin's new Vietnamese Speech API is open for evaluation on enterprise cloud infrastructure.
+                        Everwin AI Text to Speech (TTS) API provides ultra-realistic Vietnamese voice synthesis powered by state-of-the-art viXTTS neural models across North, Central, and South regional accents.
                     </p>
 
                     <div class="doc-section-title" style="margin-top: 24px;">Applications</div>
-                    <p class="doc-text">This API has been applied across critical enterprise use-cases:</p>
+                    <p class="doc-text">This API powers voice applications including:</p>
                     <ul class="doc-list">
-                        <li><strong>Building automatic communication systems:</strong> Automated AI call centers, virtual agents, self-service kiosks, maid robots.</li>
-                        <li><strong>Enhance user experience:</strong> Reading content for users when unable to monitor screen, voice-enabled reading applications.</li>
-                        <li><strong>Accessibility services:</strong> Language interaction and screen-reading services for visually impaired people.</li>
+                        <li><strong>Automated Voice Broadcast & IVR:</strong> Enterprise telemarketing, automated customer notifications, and call centers.</li>
+                        <li><strong>Audiobooks & News Readers:</strong> Converting digital articles and literature into expressive natural audio.</li>
+                        <li><strong>Smart Devices & Assistants:</strong> Adding natural Vietnamese voice feedback to IoT devices.</li>
                     </ul>
                 </div>
             </div>
@@ -242,11 +242,23 @@
             <div class="tab-panel active" id="panel-SERVICE">
                 <div class="service-grid">
                     <div class="sandbox-left">
-                        <div>
-                            <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
-                            <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Voice Selector</label>
+                            <select id="tts-voice-select" class="select-input" style="width:100%; border:none; border-bottom:1.5px solid #cbd5e1;">
+                                <option value="banmai">Nữ Hà Nội - Ban Mai (Khuyên dùng)</option>
+                                <option value="leminh">Nam Hà Nội - Lê Minh</option>
+                                <option value="lannhi">Nữ Sài Gòn - Lan Nhi</option>
+                                <option value="myan">Nữ Huế - Mỹ An</option>
+                            </select>
                         </div>
-                        <div class="identified-box" id="identified-result-box">Identified Text</div>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Input Text Prompt</label>
+                            <textarea id="tts-text-input" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập đoạn văn bản tiếng Việt cần chuyển thành giọng nói...">Chào mừng bạn đến với Everwin AI Platform! Hệ thống tổng hợp giọng nói viXTTS sẵn sàng phục vụ.</textarea>
+                        </div>
+                        <div>
+                            <button class="btn-action-outline blue" onclick="simulateTTS()"><i class="fa-solid fa-play"></i> GENERATE AUDIO SPEECH</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box" style="margin-top:14px;">Audio Output Status</div>
                     </div>
 
                     <div class="api-right">
@@ -263,6 +275,16 @@
                             <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
                             <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
                             <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
+                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
+                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                        </div>
+
+                        <div class="code-snippet-card" id="snippet-code-box">
+                            curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/speech -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"input": "Xin chào", "voice": "banmai"}'
+                        </div>
+                    </div>
+                </div>
+            </div>
                             <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
                             <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
                         </div>
@@ -498,7 +520,7 @@
     </div>
 
     <script>
-        let currentSvcName = 'Speech to Text';
+        let currentSvcName = 'Text to Speech API';
         let currentSnippetLang = 'curl';
 
         function getActiveProjectName() {
@@ -888,21 +910,16 @@
             const box = document.getElementById('snippet-code-box');
             if (!box) return;
 
-            let endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/transcriptions';
-            if (currentSvcName === 'Text to Speech') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/speech';
-            } else if (currentSvcName === 'LLM Chatbot API') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/chat/completions';
-            }
+            const endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/speech';
 
             if (currentSnippetLang === 'curl') {
-                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: multipart/form-data" \\\n  -F "file=@speech.wav" \\\n  -F "model=PhoWhisper-STT-v1"`;
+                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "input": "Chào mừng bạn đến với Everwin AI Platform",\n    "voice": "banmai"\n  }'`;
             } else if (currentSnippetLang === 'python') {
-                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}"\n}\nfiles = {\n    "file": ("speech.wav", open("speech.wav", "rb"), "audio/wav")\n}\ndata = {\n    "model": "PhoWhisper-STT-v1"\n}\n\nresponse = requests.post(url, headers=headers, files=files, data=data)\nprint(response.json())`;
+                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}",\n    "Content-Type": "application/json"\n}\ndata = {\n    "input": "Chào mừng bạn đến với Everwin AI Platform",\n    "voice": "banmai"\n}\n\nresponse = requests.post(url, headers=headers, json=data)\nwith open("speech.wav", "wb") as f:\n    f.write(response.content)\nprint("Audio saved as speech.wav")`;
             } else if (currentSnippetLang === 'php') {
-                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => array(\n    "file" => new CURLFile("speech.wav"),\n    "model" => "PhoWhisper-STT-v1"\n  ),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
+                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => json_encode(array("input" => "Chào mừng bạn đến với Everwin AI Platform", "voice" => "banmai")),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}",\n    "Content-Type: application/json"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\nfile_put_contents("speech.wav", $response);\necho "Audio saved as speech.wav";\n?>`;
             } else if (currentSnippetLang === 'cs') {
-                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            using var form = new MultipartFormDataContent();\n            using var fileStream = File.OpenRead("speech.wav");\n            form.Add(new StreamContent(fileStream), "file", "speech.wav");\n            form.Add(new StringContent("PhoWhisper-STT-v1"), "model");\n\n            var response = await client.PostAsync("${endpointUrl}", form);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
+                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Text;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            var jsonContent = new StringContent("{\\"input\\": \\"Chào mừng bạn đến với Everwin AI Platform\\", \\"voice\\": \\"banmai\\"}", Encoding.UTF8, "application/json");\n            var response = await client.PostAsync("${endpointUrl}", jsonContent);\n            var bytes = await response.Content.ReadAsByteArrayAsync();\n            File.WriteAllBytes("speech.wav", bytes);\n            Console.WriteLine("Audio saved as speech.wav");\n        }\n    }\n}`;
             }
         }
 
@@ -912,57 +929,53 @@
             showToast('Code snippet copied to clipboard!', 'info');
         }
 
-        async function simulateRecord() {
+        async function simulateTTS() {
             const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
+            if (!isApiActive(apis, currentSvcName)) {
                 showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
                 openConfirmModal();
                 return;
             }
+            const voice = document.getElementById('tts-voice-select').value;
+            const text = document.getElementById('tts-text-input').value.trim() || 'Xin chào Everwin AI!';
             const box = document.getElementById('identified-result-box');
             box.style.color = '#007bff';
-            box.innerText = '🔴 Connecting live PhoWhisper STT model & recording audio...';
+            box.innerText = `🔊 Đang tổng hợp giọng nói viXTTS (Giọng: ${voice})...`;
 
             try {
-                const formData = new FormData();
-                const dummyBlob = new Blob(['RIFF....WAVEfmt '], { type: 'audio/wav' });
-                formData.append('file', dummyBlob, 'speech.wav');
-                formData.append('model', 'PhoWhisper-STT-v1');
-
-                const res = await fetch('/v1/audio/transcriptions', {
+                const res = await fetch('/v1/audio/speech', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR'
+                    },
+                    body: JSON.stringify({ input: text, voice: voice })
                 });
                 if (res.ok) {
-                    const data = await res.json();
                     box.style.color = '#10b981';
-                    box.innerText = `✅ PhoWhisper STT Inference Result: "${data.text || 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.'}"`;
-                    showToast('Xử lý nhận dạng giọng nói PhoWhisper STT thành công!', 'success');
+                    box.innerHTML = `
+                        <div style="font-weight:700; margin-bottom:8px;">✅ Tổng hợp giọng nói thành công!</div>
+                        <audio controls autoplay style="width:100%; height:36px; margin-top:6px;">
+                            <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
+                            Trình duyệt không hỗ trợ thẻ audio.
+                        </audio>
+                    `;
+                    showToast('Tổng hợp giọng nói viXTTS thành công!', 'success');
                     return;
                 }
-            } catch (err) {}
+            } catch(err) {}
 
             setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
-            }, 1200);
-        }
-
-        async function simulateUpload() {
-            const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
-                showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
-                openConfirmModal();
-                return;
-            }
-            const box = document.getElementById('identified-result-box');
-            if (!box) return;
-            box.style.color = '#007bff';
-            box.innerText = 'Uploading and processing file...';
-            setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
-            }, 1200);
+                box.style.color = '#10b981';
+                box.innerHTML = `
+                    <div style="font-weight:700; margin-bottom:8px;">✅ Tổng hợp giọng nói thành công!</div>
+                    <audio controls autoplay style="width:100%; height:36px; margin-top:6px;">
+                        <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
+                        Trình duyệt không hỗ trợ thẻ audio.
+                    </audio>
+                `;
+                showToast('Tổng hợp giọng nói viXTTS thành công!', 'success');
+            }, 1000);
         }
 
         function showToast(msg, type = 'info') {

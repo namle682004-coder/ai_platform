@@ -98,15 +98,41 @@ async function fetchEnabledAPIsFromBackend() {
     return getEnabledAPIs();
 }
 
+function isApiActive(apis, name) {
+    if (!apis || !name) return false;
+    if (apis[name] !== undefined) return !!apis[name];
+    if (apis[name + ' API'] !== undefined) return !!apis[name + ' API'];
+    const withoutApi = name.replace(/\s+API$/i, '');
+    if (apis[withoutApi] !== undefined) return !!apis[withoutApi];
+    return false;
+}
+
 async function setEnabledAPIs(apiObj) {
-    localStorage.setItem('aip_enabled_apis', JSON.stringify(apiObj));
+    const synced = { ...apiObj };
+    for (const key of Object.keys(apiObj)) {
+        const val = apiObj[key];
+        if (key.endsWith(' API')) {
+            synced[key.replace(/\s+API$/, '')] = val;
+        } else {
+            synced[key + ' API'] = val;
+        }
+    }
+    localStorage.setItem('aip_enabled_apis', JSON.stringify(synced));
     try {
-        await fetch('/v1/user/apis-state', {
+        const res = await fetch('/v1/user/apis-state', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ enabled_apis: apiObj })
+            body: JSON.stringify({ enabled_apis: synced })
         });
-    } catch(err) {}
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.enabled_apis) {
+                localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
+            }
+        }
+    } catch(err) {
+        console.error("Failed to update API state on backend:", err);
+    }
 }
 
 async function fetchApiCatalogFromBackend() {
