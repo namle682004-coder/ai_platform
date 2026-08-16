@@ -60,9 +60,15 @@
         .free-remain { font-size: 12.5px; color: var(--text-sub); margin-left: auto; }
 
         .service-nav-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; gap: 8px; }
-        .tab-btn { padding: 10px 20px; font-size: 13px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; position: relative; border-bottom: 3px solid transparent; margin-bottom: -2px; }
-        .tab-btn.active { color: var(--fpt-cyan); border-bottom-color: var(--fpt-cyan); background: #ffffff; }
+        .tab-btn { padding: 10px 24px; font-size: 13px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; position: relative; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--fpt-cyan); }
+        .tab-btn.active { color: var(--fpt-cyan); border-bottom-color: var(--fpt-cyan); background: #ffffff; border-radius: 6px 6px 0 0; }
 
+        /* Dynamic Tab Panels */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* SERVICE TAB (SANDBOX) */
         .service-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
         .sandbox-left { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
         .btn-action-outline { padding: 9px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; background: #fff; display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; }
@@ -83,7 +89,21 @@
 
         .code-snippet-card { background: #0f172a; color: #38bdf8; padding: 16px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; word-break: break-all; white-space: pre-wrap; }
 
-        /* FPT.AI CONFIRM POPUP MODAL (Exact Replica of User Screenshot) */
+        /* OVERVIEW, DOCUMENT, PRICING TAB STYLES */
+        .doc-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 28px; margin-bottom: 24px; }
+        .doc-section-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 14px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+        .doc-text { font-size: 14px; color: #334155; line-height: 1.7; margin-bottom: 16px; }
+        .doc-list { margin-left: 20px; font-size: 13.5px; color: #475569; line-height: 1.8; margin-bottom: 16px; }
+
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+        .doc-table th, .doc-table td { border: 1px solid var(--border-color); padding: 12px 14px; text-align: left; }
+        .doc-table th { background: #f8fafc; font-weight: 700; color: #1e293b; }
+        .badge-req { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-opt { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+
+        .url-box { background: #1e293b; color: #38bdf8; padding: 12px 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 16px; }
+
+        /* FPT.AI CONFIRM POPUP MODAL */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
         .modal-overlay.active { display: flex; }
         .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
@@ -95,7 +115,6 @@
         .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
         .btn-confirm-ok:hover { background: #0056b3; }
 
-        /* Form Modal for Creating First Project */
         .form-control-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; margin-top: 6px; outline: none; }
 
         /* Toast Container */
@@ -153,48 +172,193 @@
                     <div class="service-icon-lg" id="svc-detail-icon"><i class="fa-solid fa-microphone-lines"></i></div>
                     <div class="service-name" id="svc-detail-title">Speech to Text</div>
                     <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
-                    <button class="btn-buy">BUY</button>
+                    <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
                     <span class="free-remain">Free remain: 10,000 blocks / year &nbsp;&nbsp;( 1 block = 15 seconds )</span>
                 </div>
             </div>
 
+            <!-- TABS NAVIGATION -->
             <div class="service-nav-tabs">
-                <button class="tab-btn">OVERVIEW</button>
-                <button class="tab-btn active">SERVICE</button>
-                <button class="tab-btn">DOCUMENT</button>
-                <button class="tab-btn">PRICING</button>
+                <button class="tab-btn" id="tab-btn-OVERVIEW" onclick="switchTab('OVERVIEW')">OVERVIEW</button>
+                <button class="tab-btn active" id="tab-btn-SERVICE" onclick="switchTab('SERVICE')">SERVICE</button>
+                <button class="tab-btn" id="tab-btn-DOCUMENT" onclick="switchTab('DOCUMENT')">DOCUMENT</button>
+                <button class="tab-btn" id="tab-btn-PRICING" onclick="switchTab('PRICING')">PRICING</button>
             </div>
 
-            <div class="service-grid">
-                <div class="sandbox-left">
-                    <div>
-                        <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
-                        <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box">Identified Text</div>
+            <!-- PANEL 1: OVERVIEW TAB -->
+            <div class="tab-panel" id="panel-OVERVIEW">
+                <div class="doc-card">
+                    <div class="doc-section-title">Introduction</div>
+                    <p class="doc-text">
+                        Speech synthesis & recognition is the fundamental component of modern artificial intelligence systems. With high ambition, Everwin Technology Innovation Department has launched <strong>Everwin AI Speech Synthesis & PhoWhisper ASR</strong>. Considered as the best integrated system of Vietnamese language voice processing in the market today, Everwin's new Vietnamese Speech API is open for evaluation on enterprise cloud infrastructure.
+                    </p>
+
+                    <div class="doc-section-title" style="margin-top: 24px;">Applications</div>
+                    <p class="doc-text">This API has been applied across critical enterprise use-cases:</p>
+                    <ul class="doc-list">
+                        <li><strong>Building automatic communication systems:</strong> Automated AI call centers, virtual agents, self-service kiosks, maid robots.</li>
+                        <li><strong>Enhance user experience:</strong> Reading content for users when unable to monitor screen, voice-enabled reading applications.</li>
+                        <li><strong>Accessibility services:</strong> Language interaction and screen-reading services for visually impaired people.</li>
+                    </ul>
                 </div>
+            </div>
 
-                <div class="api-right">
-                    <div class="api-header">API</div>
-                    <div class="key-select-box">
-                        <label>API Key</label>
-                        <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
-                            <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
-                            <option value="aip_live_key_default_01">Main Production Key</option>
-                        </select>
+            <!-- PANEL 2: SERVICE TAB (INTERACTIVE SANDBOX) -->
+            <div class="tab-panel active" id="panel-SERVICE">
+                <div class="service-grid">
+                    <div class="sandbox-left">
+                        <div>
+                            <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
+                            <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box">Identified Text</div>
                     </div>
 
-                    <div class="lang-options">
-                        <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
-                        <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
-                        <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
-                        <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
-                        <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
-                    </div>
+                    <div class="api-right">
+                        <div class="api-header">API</div>
+                        <div class="key-select-box">
+                            <label>API Key</label>
+                            <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
+                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
+                                <option value="aip_live_key_default_01">Main Production Key</option>
+                            </select>
+                        </div>
 
-                    <div class="code-snippet-card" id="snippet-code-box">
-                        curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -T ""
+                        <div class="lang-options">
+                            <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
+                            <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
+                            <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
+                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
+                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                        </div>
+
+                        <div class="code-snippet-card" id="snippet-code-box">
+                            curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -T ""
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- PANEL 3: DOCUMENT TAB (API SPECIFICATION) -->
+            <div class="tab-panel" id="panel-DOCUMENT">
+                <div class="doc-card">
+                    <div class="doc-section-title">API Endpoint & Request URL</div>
+                    <div class="url-box">POST https://ai-platform-6p72.onrender.com/v1/audio/speech</div>
+
+                    <div class="doc-section-title" style="margin-top: 20px;">Request Headers & Parameters</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Required</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>api_key</code></td>
+                                <td><span class="badge-req">YES</span></td>
+                                <td>None</td>
+                                <td>Your API Key (Get from Developer Console).</td>
+                            </tr>
+                            <tr>
+                                <td><code>voice</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td><code>banmai</code></td>
+                                <td>Identify the voice: <code>banmai</code> (female northern), <code>lannhi</code> (female southern), <code>leminh</code> (male northern), <code>myan</code> (female middle), <code>thuminh</code> (female northern), <code>giahuy</code> (male middle), <code>linhsan</code> (female southern).</td>
+                            </tr>
+                            <tr>
+                                <td><code>speed</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td><code>0</code></td>
+                                <td>Adjust speed of the voice: <code>+3</code> (fastest), <code>0</code> (normal), <code>-3</code> (slowest).</td>
+                            </tr>
+                            <tr>
+                                <td><code>format</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td><code>mp3</code></td>
+                                <td>Identify output format: <code>mp3</code> or <code>wav</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>callback_url</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td>None</td>
+                                <td>URL provided by customer to receive async notification when sound is ready.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top: 24px;">Request Body & Limit</div>
+                    <p class="doc-text">
+                        Contains raw text to convert into speech.<br>
+                        <strong>Note:</strong> Limit per request: 5,000 characters. Minimum request length: 3 characters.
+                    </p>
+
+                    <div class="doc-section-title" style="margin-top: 24px;">Sample Response (Success JSON)</div>
+                    <div class="code-snippet-card">
+{
+  "async": "https://s3-ap-southeast-1.amazonaws.com/text2speech-v4/female.0.pro.4b5b15285847e83acbb3beb945434453.mp3",
+  "error": 0,
+  "message": "The content will be returned after a few seconds under the async link.",
+  "request_id": "4b5b15285847e83acbb3beb945434453"
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 4: PRICING TAB -->
+            <div class="tab-panel" id="panel-PRICING">
+                <div class="doc-card">
+                    <div class="doc-section-title">Everwin AI Speech - Pricing</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Price (VND)</th>
+                                <th>Unit</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Free Tier</strong></td>
+                                <td>Free of charge</td>
+                                <td>Monthly</td>
+                                <td>100,000 characters / month (v5 natural voices). Standard speed, queued processing.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 500k</strong></td>
+                                <td>500,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 1,500,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 1M</strong></td>
+                                <td>1,000,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 4,000,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 2M</strong></td>
+                                <td>2,000,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 10,000,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 5M</strong></td>
+                                <td>5,000,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 27,000,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Business Premium</strong></td>
+                                <td>Custom Pricing</td>
+                                <td>Enterprise</td>
+                                <td>Unlimited usage time, dedicated GPU cluster, 24/7 technical support. Hotline: 1900 638 399.</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -237,6 +401,21 @@
     <script>
         let currentSvcName = 'Speech to Text';
         let currentLang = 'curl';
+
+        function switchTab(tabName) {
+            const tabs = ['OVERVIEW', 'SERVICE', 'DOCUMENT', 'PRICING'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const panel = document.getElementById(`panel-${t}`);
+                if (t === tabName) {
+                    btn.classList.add('active');
+                    panel.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                    panel.classList.remove('active');
+                }
+            });
+        }
 
         function getEnabledAPIs() {
             const data = localStorage.getItem('aip_enabled_apis');
@@ -282,10 +461,8 @@
             const isEnabled = !!apis[currentSvcName];
 
             if (!isEnabled) {
-                // Currently DISABLED -> User wants to ENABLE -> Open Confirm Modal
                 openConfirmModal();
             } else {
-                // Currently ENABLED -> Disable directly
                 apis[currentSvcName] = false;
                 setEnabledAPIs(apis);
                 syncServiceUIState();
@@ -301,10 +478,8 @@
             const projects = getProjects();
 
             if (projects.length === 0) {
-                // First API activation and NO project exists -> Open Project Creation Modal
                 openProjectModal();
             } else {
-                // Project already exists -> Directly enable API!
                 activateApi(currentSvcName);
             }
         }
