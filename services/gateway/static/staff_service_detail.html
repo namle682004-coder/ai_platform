@@ -751,15 +751,18 @@
             showToast(msg, 'success');
         }
 
+        let currentSnippetLang = 'curl';
+
         function switchSnippetLang(lang) {
-            currentLang = lang;
+            currentSnippetLang = lang;
             updateSnippetCode();
         }
 
         function updateSnippetCode() {
             const selector = document.getElementById('api-key-selector');
-            const keyVal = selector && selector.value ? selector.value : 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm';
+            const keyVal = selector && selector.value ? selector.value : 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
             const box = document.getElementById('snippet-code-box');
+            if (!box) return;
 
             let endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/transcriptions';
             if (currentSvcName === 'Text to Speech') {
@@ -768,14 +771,14 @@
                 endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/chat/completions';
             }
 
-            if (currentLang === 'curl') {
-                box.innerText = `curl -X POST ${endpointUrl} -H "api-key: ${keyVal}" -T ""`;
-            } else if (currentLang === 'python') {
-                box.innerText = `import requests\n\nurl = '${endpointUrl}'\npayload = open('', 'rb').read()\nheaders = {\n    'api-key': '${keyVal}'\n}\n\nresponse = requests.post(url=url, data=payload, headers=headers)\n\nprint(response.json())`;
-            } else if (currentLang === 'php') {
-                box.innerText = `<?php\n\n$curl = curl_init();\n\n$filePath = '';\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => file_get_contents($filePath),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo "cURL Error #:" . $err;\n} else {\n  echo $response;\n}\n\n?>`;
-            } else if (currentLang === 'cs') {
-                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nnamespace Demo_ASR_API\n{\n    class Program\n    {\n        static void Main(string[] args)\n        {\n            String result = Task.Run(async ()\n            {\n                String filePath = @"";\n                var payload = File.ReadAllBytes(filePath);\n\n                HttpClient client = new HttpClient();\n                client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n                var response = await client.PostAsync("${endpointUrl}", new ByteArrayContent(payload));\n                return await response.Content.ReadAsStringAsync();\n            }).GetAwaiter().GetResult();\n\n            Console.WriteLine(result);\n            Console.ReadLine();\n        }\n    }\n}`;
+            if (currentSnippetLang === 'curl') {
+                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: multipart/form-data" \\\n  -F "file=@speech.wav" \\\n  -F "model=PhoWhisper-STT-v1"`;
+            } else if (currentSnippetLang === 'python') {
+                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}"\n}\nfiles = {\n    "file": ("speech.wav", open("speech.wav", "rb"), "audio/wav")\n}\ndata = {\n    "model": "PhoWhisper-STT-v1"\n}\n\nresponse = requests.post(url, headers=headers, files=files, data=data)\nprint(response.json())`;
+            } else if (currentSnippetLang === 'php') {
+                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => array(\n    "file" => new CURLFile("speech.wav"),\n    "model" => "PhoWhisper-STT-v1"\n  ),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
+            } else if (currentSnippetLang === 'cs') {
+                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            using var form = new MultipartFormDataContent();\n            using var fileStream = File.OpenRead("speech.wav");\n            form.Add(new StreamContent(fileStream), "file", "speech.wav");\n            form.Add(new StringContent("PhoWhisper-STT-v1"), "model");\n\n            var response = await client.PostAsync("${endpointUrl}", form);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
             }
         }
 
