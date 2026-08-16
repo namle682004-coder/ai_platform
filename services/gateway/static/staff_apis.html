@@ -159,45 +159,42 @@
 
             <div class="api-grid">
                 <!-- Speech to Text Card -->
-                <div class="api-card">
+                <div class="api-card" onclick="navigateToService('Speech to Text')">
                     <div class="card-top">
                         <div class="api-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-                        <label class="switch">
-                            <input type="checkbox" id="toggle-stt" onchange="handleApiToggleClick('Speech to Text', this)">
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="toggle-stt" onchange="handleApiToggleClick('Speech to Text', this, event)">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="card-title" onclick="navigateToService('Speech to Text')">Speech to Text</div>
+                    <div class="card-title">Speech to Text</div>
                     <div class="card-desc">Convert your voice into text using PhoWhisper STT model</div>
-                    <button class="btn-enable-api" id="btn-stt" onclick="handleApiToggleClick('Speech to Text', document.getElementById('toggle-stt'))">ENABLE</button>
                 </div>
 
                 <!-- Text to Speech Card -->
-                <div class="api-card">
+                <div class="api-card" onclick="navigateToService('Text to Speech')">
                     <div class="card-top">
                         <div class="api-icon"><i class="fa-solid fa-volume-high"></i></div>
-                        <label class="switch">
-                            <input type="checkbox" id="toggle-tts" onchange="handleApiToggleClick('Text to Speech', this)">
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="toggle-tts" onchange="handleApiToggleClick('Text to Speech', this, event)">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="card-title" onclick="navigateToService('Text to Speech')">Text to Speech</div>
+                    <div class="card-title">Text to Speech</div>
                     <div class="card-desc">Convert text to natural-sounding voices with viXTTS synthesis</div>
-                    <button class="btn-enable-api" id="btn-tts" onclick="handleApiToggleClick('Text to Speech', document.getElementById('toggle-tts'))">ENABLE</button>
                 </div>
 
                 <!-- LLM Chatbot Card -->
-                <div class="api-card">
+                <div class="api-card" onclick="navigateToService('LLM Chatbot API')">
                     <div class="card-top">
                         <div class="api-icon" style="background:#2563eb;"><i class="fa-solid fa-comments"></i></div>
-                        <label class="switch">
-                            <input type="checkbox" id="toggle-llm" onchange="handleApiToggleClick('LLM Chatbot API', this)">
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="toggle-llm" onchange="handleApiToggleClick('LLM Chatbot API', this, event)">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="card-title" onclick="navigateToService('LLM Chatbot API')">LLM Chatbot API</div>
+                    <div class="card-title">LLM Chatbot API</div>
                     <div class="card-desc">Qwen3-8B & 14B High Quality LLM Reasoning Endpoints</div>
-                    <button class="btn-enable-api" id="btn-llm" onclick="handleApiToggleClick('LLM Chatbot API', document.getElementById('toggle-llm'))">ENABLE</button>
                 </div>
             </div>
         </div>
@@ -532,32 +529,13 @@
                 document.getElementById('current-project-label').innerText = t.selectProj;
             }
 
-            const sttState = !!apis["Speech to Text"];
-            document.getElementById('toggle-stt').checked = sttState;
-            updateBtnState('btn-stt', sttState);
-
-            const ttsState = !!apis["Text to Speech"];
-            document.getElementById('toggle-tts').checked = ttsState;
-            updateBtnState('btn-tts', ttsState);
-
-            const llmState = !!apis["LLM Chatbot API"];
-            document.getElementById('toggle-llm').checked = llmState;
-            updateBtnState('btn-llm', llmState);
+            document.getElementById('toggle-stt').checked = !!apis["Speech to Text"];
+            document.getElementById('toggle-tts').checked = !!apis["Text to Speech"];
+            document.getElementById('toggle-llm').checked = !!apis["LLM Chatbot API"];
         }
 
-        function updateBtnState(btnId, isEnabled) {
-            const btn = document.getElementById(btnId);
-            const t = i18nDict[currentLang] || i18nDict.en;
-            if (isEnabled) {
-                btn.innerText = t.btnEnabled;
-                btn.classList.add('active');
-            } else {
-                btn.innerText = t.btnEnable;
-                btn.classList.remove('active');
-            }
-        }
-
-        function handleApiToggleClick(apiName, checkboxEl) {
+        function handleApiToggleClick(apiName, checkboxEl, e) {
+            if (e) e.stopPropagation();
             const apis = getEnabledAPIs();
             const currentState = !!apis[apiName];
 
@@ -621,6 +599,11 @@
                 ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
                 : `Đã kích hoạt thành công API ${apiName}!`;
             showToast(msg, 'success');
+
+            // Automatically navigate to service detail page after activation!
+            setTimeout(() => {
+                navigateToService(apiName);
+            }, 600);
         }
 
         function navigateToService(apiName) {
