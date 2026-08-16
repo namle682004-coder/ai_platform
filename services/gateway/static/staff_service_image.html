@@ -203,12 +203,15 @@
             </div>
 
             <div class="service-header-card">
-                <div class="service-title-box">
-                    <div class="service-icon-lg" id="svc-detail-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-                    <div class="service-name" id="svc-detail-title">Speech to Text</div>
+                <div class="service-title-box" style="display:flex; align-items:center;">
+                    <a href="/staff/apis" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:14px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to APIs Catalog">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div class="service-icon-lg" id="svc-detail-icon" style="background:#8b5cf6;"><i class="fa-solid fa-image"></i></div>
+                    <div class="service-name" id="svc-detail-title">Image Generation API</div>
                     <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
                     <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
-                    <span class="free-remain">Free remain: 10,000 blocks / year &nbsp;&nbsp;( 1 block = 15 seconds )</span>
+                    <span class="free-remain">Free remain: 100 images / year</span>
                 </div>
             </div>
 
@@ -225,52 +228,23 @@
                 <div class="doc-card">
                     <div class="doc-section-title">Introduction</div>
                     <p class="doc-text">
-                        Speech synthesis & recognition is the fundamental component of modern artificial intelligence systems. With high ambition, Everwin Technology Innovation Department has launched <strong>Everwin AI Speech Synthesis & PhoWhisper ASR</strong>. Considered as the best integrated system of Vietnamese language voice processing in the market today, Everwin's new Vietnamese Speech API is open for evaluation on enterprise cloud infrastructure.
+                        Everwin AI Image Generation API leverages state-of-the-art diffusion models (SDXL) to turn text descriptions into high-resolution, photorealistic or artistic images in seconds.
                     </p>
 
                     <div class="doc-section-title" style="margin-top: 24px;">Applications</div>
-                    <p class="doc-text">This API has been applied across critical enterprise use-cases:</p>
+                    <p class="doc-text">This API is ideal for:</p>
                     <ul class="doc-list">
-                        <li><strong>Building automatic communication systems:</strong> Automated AI call centers, virtual agents, self-service kiosks, maid robots.</li>
-                        <li><strong>Enhance user experience:</strong> Reading content for users when unable to monitor screen, voice-enabled reading applications.</li>
-                        <li><strong>Accessibility services:</strong> Language interaction and screen-reading services for visually impaired people.</li>
+                        <li><strong>Creative & Marketing Design:</strong> Automated banner, poster, and product visual creation.</li>
+                        <li><strong>Game & Virtual Assets:</strong> Character and concept art prototyping.</li>
+                        <li><strong>E-Commerce:</strong> Background replacement and automated merchandise visualization.</li>
                     </ul>
                 </div>
             </div>
 
             <!-- PANEL 2: SERVICE TAB (INTERACTIVE SANDBOX) -->
             <div class="tab-panel active" id="panel-SERVICE">
-                <div class="service-grid">
-                    <div class="sandbox-left">
-                        <div>
-                            <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
-                            <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
-                        </div>
-                        <div class="identified-box" id="identified-result-box">Identified Text</div>
-                    </div>
-
-                    <div class="api-right">
-                        <div class="api-header">API</div>
-                        <div class="key-select-box">
-                            <label>API Key</label>
-                            <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
-                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
-                                <option value="aip_live_key_default_01">Main Production Key</option>
-                            </select>
-                        </div>
-
-                        <div class="lang-options">
-                            <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
-                            <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
-                            <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
-                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
-                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
-                        </div>
-
-                        <div class="code-snippet-card" id="snippet-code-box">
-                            curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -T ""
-                        </div>
-                    </div>
+                <div style="padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                    You need to enable this api to run demo
                 </div>
             </div>
 
@@ -402,8 +376,8 @@
     <!-- MODAL 1: EXACT FPT.AI CONFIRM POPUP (Replica of User Screenshot) -->
     <div class="modal-overlay" id="confirm-modal">
         <div class="confirm-box">
-            <div class="confirm-header">Confirm</div>
-            <div class="confirm-body">Do you want to enable this API</div>
+            <div class="confirm-header" id="modal-confirm-header">Confirm</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API</div>
             <div class="confirm-footer">
                 <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
                 <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
@@ -498,8 +472,8 @@
     </div>
 
     <script>
-        let currentSvcName = 'Speech to Text';
-        let currentLang = 'curl';
+        let currentSvcName = 'Image Generation API';
+        let currentSnippetLang = 'curl';
 
         function getActiveProjectName() {
             const active = localStorage.getItem('aip_active_project');
@@ -606,50 +580,10 @@
             });
         }
 
-        function getEnabledAPIs() {
-            const data = localStorage.getItem('aip_enabled_apis');
-            return data ? JSON.parse(data) : { "Speech to Text": false, "Text to Speech": false, "LLM Chatbot API": false };
-        }
-
-        function setEnabledAPIs(apisObj) {
-            localStorage.setItem('aip_enabled_apis', JSON.stringify(apisObj));
-        }
-
-        function getProjects() {
-            const data = localStorage.getItem('aip_projects');
-            return data ? JSON.parse(data) : [];
-        }
-
-        function setProjects(projList) {
-            localStorage.setItem('aip_projects', JSON.stringify(projList));
-        }
-
-        function syncServiceUIState() {
-            const apis = getEnabledAPIs();
-            const projects = getProjects();
-
-            if (projects.length > 0) {
-                document.getElementById('current-project-label').innerText = projects[0].project_name;
-            } else {
-                document.getElementById('current-project-label').innerText = 'Select a project';
-            }
-
-            const isEnabled = !!apis[currentSvcName];
-            const btn = document.getElementById('svc-toggle-btn');
-            if (isEnabled) {
-                btn.innerText = 'DISABLE';
-                btn.classList.add('disabled');
-            } else {
-                btn.innerText = 'ENABLE';
-                btn.classList.remove('disabled');
-            }
-
-            populateApiKeySelector();
-        }
-
         function populateApiKeySelector() {
             const projects = getProjects();
             const selector = document.getElementById('api-key-selector');
+            if (!selector) return;
             selector.innerHTML = '';
 
             if (projects.length > 0 && projects[0].api_key) {
@@ -676,22 +610,37 @@
             updateSnippetCode();
         }
 
-        async function syncServiceUIState() {
-            const apis = await fetchEnabledAPIsFromBackend();
-            const catalog = await fetchApiCatalogFromBackend();
-            const isEnabled = !!apis[currentSvcName];
-
-            const btn = document.getElementById('btn-header-toggle-api');
+        function updateToggleButtonUI(isEnabled) {
+            const btn = document.getElementById('svc-toggle-btn') || document.getElementById('btn-header-toggle-api');
+            const freeRemainEl = document.querySelector('.free-remain');
             if (btn) {
                 if (!isEnabled) {
                     btn.innerText = 'ENABLE';
                     btn.classList.remove('disabled');
+                    btn.style.background = '#007bff';
+                    if (freeRemainEl) freeRemainEl.style.display = 'none';
                 } else {
                     btn.innerText = 'DISABLE';
                     btn.classList.add('disabled');
+                    btn.style.background = '#64748b';
+                    if (freeRemainEl) freeRemainEl.style.display = 'inline';
                 }
             }
+        }
 
+        async function syncServiceUIState() {
+            // 1. Instant zero-latency render from local cache (prevents visual jump/flicker)
+            const cachedApis = getEnabledAPIs();
+            const initialEnabled = isApiActive(cachedApis, currentSvcName);
+            updateToggleButtonUI(initialEnabled);
+            renderInteractiveSandbox(currentSvcName, initialEnabled);
+
+            // 2. Background revalidation from MongoDB Atlas
+            const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
+            const isEnabled = isApiActive(apis, currentSvcName);
+
+            updateToggleButtonUI(isEnabled);
             populateApiKeySelector();
             await renderDynamicServiceTabs(currentSvcName, catalog);
         }
@@ -800,75 +749,78 @@
                 `;
             }
 
-            // 4. SERVICE TAB (Interactive Sandbox according to Service type!)
-            renderInteractiveSandbox(svcName);
+            // 4. SERVICE TAB (Interactive Sandbox according to Service type & enabled state!)
+            renderInteractiveSandbox(svcName, isEnabled);
         }
 
-        function renderInteractiveSandbox(svcName) {
-            const leftBox = document.querySelector('.sandbox-left');
-            if (!leftBox) return;
+        function renderInteractiveSandbox(svcName, isEnabled) {
+            const panel = document.getElementById('panel-SERVICE');
+            if (!panel) return;
 
-            if (svcName === 'Text to Speech') {
-                leftBox.innerHTML = `
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Voice Selector</label>
-                        <select id="tts-voice-select" class="select-input" style="width:100%; border:none; border-bottom:1.5px solid #cbd5e1;">
-                            <option value="banmai">Nữ Hà Nội - Ban Mai (Khuyên dùng)</option>
-                            <option value="leminh">Nam Hà Nội - Lê Minh</option>
-                            <option value="lannhi">Nữ Sài Gòn - Lan Nhi</option>
-                            <option value="myan">Nữ Huế - Mỹ An</option>
-                        </select>
+            if (!isEnabled) {
+                panel.innerHTML = `
+                    <div style="padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                        You need to enable this api to run demo
                     </div>
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Input Text Prompt</label>
-                        <textarea id="tts-text-input" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập đoạn văn bản tiếng Việt cần chuyển thành giọng nói...">Chào mừng bạn đến với Everwin AI Platform! Hệ thống tổng hợp giọng nói viXTTS sẵn sàng phục vụ.</textarea>
-                    </div>
-                    <div>
-                        <button class="btn-action-outline blue" onclick="simulateTTS()"><i class="fa-solid fa-play"></i> GENERATE AUDIO SPEECH</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">Audio Output Status</div>
                 `;
-            } else if (svcName === 'LLM Chatbot API') {
-                leftBox.innerHTML = `
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">System Message Prompt</label>
-                        <input type="text" id="llm-system-prompt" class="form-control-input" value="You are a helpful AI assistant for Everwin AI Platform. Answer concisely in Vietnamese.">
-                    </div>
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">User Prompt</label>
-                        <textarea id="llm-user-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập câu hỏi của bạn cho AI...">Hãy giới thiệu về Everwin AI Platform và các mô hình AI nổi bật.</textarea>
-                    </div>
-                    <div>
-                        <button class="btn-action-outline blue" onclick="simulateLLMChat()"><i class="fa-solid fa-paper-plane"></i> SEND CHAT PROMPT</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">AI Chat Output</div>
-                `;
-            } else {
-                leftBox.innerHTML = `
-                    <div>
-                        <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
-                        <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box">Identified Text</div>
-                `;
+                return;
             }
+
+            panel.innerHTML = `
+                <div class="service-grid">
+                    <div class="sandbox-left">
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Image Prompt</label>
+                            <textarea id="img-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập mô tả bức ảnh bạn muốn tạo (Ví dụ: Một phi hành gia đang cưỡi ngựa trên sao hỏa)...">Một thành phố tương lai cyberpunk với nhiều neon sáng rực.</textarea>
+                        </div>
+                        <div>
+                            <button class="btn-action-outline blue" style="background:#8b5cf6; color:white; border:none;" onclick="simulateImageGen()"><i class="fa-solid fa-image"></i> GENERATE IMAGE</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box" style="margin-top:14px; min-height: 200px; display: flex; align-items: center; justify-content: center;">[Image Output Will Appear Here]</div>
+                    </div>
+
+                    <div class="api-right">
+                        <div class="api-header">API</div>
+                        <div class="key-select-box">
+                            <label>API Key</label>
+                            <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
+                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
+                                <option value="aip_live_key_default_01">Main Production Key</option>
+                            </select>
+                        </div>
+
+                        <div class="lang-options">
+                            <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
+                            <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
+                            <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
+                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
+                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                        </div>
+
+                        <div class="code-snippet-card" id="snippet-code-box">
+                            curl -X POST https://ai-platform-6p72.onrender.com/v1/images/generations -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"prompt": "Cyberpunk city"}'
+                        </div>
+                    </div>
+                </div>
+            `;
+            updateSnippetCode();
         }
 
         let targetPendingAction = 'enable';
 
         function handleServiceHeaderToggleClick() {
             const apis = getEnabledAPIs();
-            const isEnabled = !!apis[currentSvcName];
+            const isEnabled = isApiActive(apis, currentSvcName);
+            const bodyEl = document.getElementById('modal-confirm-body');
 
             if (!isEnabled) {
                 targetPendingAction = 'enable';
-                document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${currentSvcName}"?`;
-                openConfirmModal();
+                if (bodyEl) bodyEl.innerText = `Do you want to enable this API`;
             } else {
                 targetPendingAction = 'disable';
-                document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${currentSvcName}"?`;
-                openConfirmModal();
+                if (bodyEl) bodyEl.innerText = `Do you want to disable this API`;
             }
+            openConfirmModal();
         }
 
         function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
@@ -882,7 +834,7 @@
                 const apis = getEnabledAPIs();
                 apis[currentSvcName] = false;
                 await setEnabledAPIs(apis);
-                syncServiceUIState();
+                await syncServiceUIState();
                 showToast(`API "${currentSvcName}" has been disabled.`, 'warning');
             } else {
                 if (projects.length === 0) {
@@ -900,7 +852,20 @@
             const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
             const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
 
-            const rawKey = 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm';
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: projName, billing_type: 'prepaid' })
+                });
+                await fetch('/v1/user/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: keyName, project_name: projName })
+                });
+            } catch (err) {}
+
+            const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
             const newProj = {
                 project_id: 'proj_' + Math.random().toString(36).substring(7),
                 project_name: projName,
@@ -912,6 +877,7 @@
             const projects = await getProjects();
             projects.push(newProj);
             setProjects(projects);
+            setActiveProjectName(projName);
 
             closeProjectModal();
             await activateApi(currentSvcName, projName);
@@ -921,7 +887,7 @@
             const apis = getEnabledAPIs();
             apis[apiName] = true;
             await setEnabledAPIs(apis);
-            syncServiceUIState();
+            await syncServiceUIState();
 
             const msg = projName 
                 ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
@@ -929,7 +895,7 @@
             showToast(msg, 'success');
         }
 
-        let currentSnippetLang = 'curl';
+        /* duplicate removed */
 
         function switchSnippetLang(lang) {
             currentSnippetLang = lang;
@@ -942,21 +908,16 @@
             const box = document.getElementById('snippet-code-box');
             if (!box) return;
 
-            let endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/transcriptions';
-            if (currentSvcName === 'Text to Speech') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/audio/speech';
-            } else if (currentSvcName === 'LLM Chatbot API') {
-                endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/chat/completions';
-            }
+            const endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/images/generations';
 
             if (currentSnippetLang === 'curl') {
-                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: multipart/form-data" \\\n  -F "file=@speech.wav" \\\n  -F "model=PhoWhisper-STT-v1"`;
+                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "prompt": "Một bức ảnh nghệ thuật độ phân giải cao phong cách cyberpunk",\n    "n": 1,\n    "size": "1024x1024"\n  }'`;
             } else if (currentSnippetLang === 'python') {
-                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}"\n}\nfiles = {\n    "file": ("speech.wav", open("speech.wav", "rb"), "audio/wav")\n}\ndata = {\n    "model": "PhoWhisper-STT-v1"\n}\n\nresponse = requests.post(url, headers=headers, files=files, data=data)\nprint(response.json())`;
+                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}",\n    "Content-Type": "application/json"\n}\ndata = {\n    "prompt": "Một bức ảnh nghệ thuật độ phân giải cao phong cách cyberpunk",\n    "n": 1,\n    "size": "1024x1024"\n}\n\nresponse = requests.post(url, headers=headers, json=data)\nprint(response.json())`;
             } else if (currentSnippetLang === 'php') {
-                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => array(\n    "file" => new CURLFile("speech.wav"),\n    "model" => "PhoWhisper-STT-v1"\n  ),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
+                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => json_encode(array("prompt" => "Một bức ảnh cyberpunk", "size" => "1024x1024")),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}",\n    "Content-Type: application/json"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
             } else if (currentSnippetLang === 'cs') {
-                box.innerText = `using System;\nusing System.IO;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            using var form = new MultipartFormDataContent();\n            using var fileStream = File.OpenRead("speech.wav");\n            form.Add(new StreamContent(fileStream), "file", "speech.wav");\n            form.Add(new StringContent("PhoWhisper-STT-v1"), "model");\n\n            var response = await client.PostAsync("${endpointUrl}", form);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
+                box.innerText = `using System;\nusing System.Net.Http;\nusing System.Text;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            var jsonContent = new StringContent("{\\"prompt\\": \\"Cyberpunk city\\", \\"size\\": \\"1024x1024\\"}", Encoding.UTF8, "application/json");\n            var response = await client.PostAsync("${endpointUrl}", jsonContent);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
             }
         }
 
@@ -966,50 +927,50 @@
             showToast('Code snippet copied to clipboard!', 'info');
         }
 
-        async function simulateRecord() {
+        async function simulateImageGen() {
             const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
+            if (!isApiActive(apis, currentSvcName)) {
                 showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
                 openConfirmModal();
                 return;
             }
+            const prompt = document.getElementById('img-prompt').value.trim() || 'Một thành phố tương lai cyberpunk rực rỡ.';
             const box = document.getElementById('identified-result-box');
             box.style.color = '#007bff';
-            box.innerText = '🔴 Connecting live PhoWhisper STT model & recording audio...';
+            box.innerHTML = '<div style="padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang khởi tạo Stable Diffusion XL pipeline & render hình ảnh AI...</div>';
 
             try {
-                const formData = new FormData();
-                const dummyBlob = new Blob(['RIFF....WAVEfmt '], { type: 'audio/wav' });
-                formData.append('file', dummyBlob, 'speech.wav');
-                formData.append('model', 'PhoWhisper-STT-v1');
-
-                const res = await fetch('/v1/audio/transcriptions', {
+                const res = await fetch('/v1/images/generations', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR'
+                    },
+                    body: JSON.stringify({ prompt: prompt, size: "512x512" })
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    box.style.color = '#10b981';
-                    box.innerText = `✅ PhoWhisper STT Inference Result: "${data.text || 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.'}"`;
-                    showToast('Xử lý nhận dạng giọng nói PhoWhisper STT thành công!', 'success');
+                    const imgUrl = data.data && data.data[0] ? data.data[0].url : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80';
+                    box.innerHTML = `
+                        <div style="text-align:center; padding: 10px;">
+                            <img src="${imgUrl}" style="max-width:100%; max-height:280px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" alt="AI Generated Image">
+                            <div style="font-size:12px; color:#64748b; margin-top:8px;">Prompt: <em>"${prompt}"</em></div>
+                        </div>
+                    `;
+                    showToast('Đã tạo ảnh AI thành công!', 'success');
                     return;
                 }
-            } catch (err) {}
+            } catch(err) {}
 
             setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
-            }, 1200);
-        }
-
-        async function simulateUpload() {
-            const apis = getEnabledAPIs();
-            if (!apis[currentSvcName]) {
-                showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
-                openConfirmModal();
-                return;
-            }
-                box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
+                const sampleImg = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80';
+                box.innerHTML = `
+                    <div style="text-align:center; padding: 10px;">
+                        <img src="${sampleImg}" style="max-width:100%; max-height:280px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" alt="AI Generated Image">
+                        <div style="font-size:12px; color:#64748b; margin-top:8px;">Prompt: <em>"${prompt}"</em></div>
+                    </div>
+                `;
+                showToast('Đã tạo ảnh AI thành công!', 'success');
             }, 1200);
         }
 
@@ -1084,23 +1045,16 @@
             showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             checkMandatoryAuth();
-            const urlParams = new URLSearchParams(window.location.search);
-            currentSvcName = urlParams.get('name') || 'Speech to Text';
+            currentSvcName = 'Image Generation API';
             document.getElementById('svc-detail-title').innerText = currentSvcName;
 
             const iconBox = document.getElementById('svc-detail-icon');
-            if (currentSvcName === 'Text to Speech') {
-                iconBox.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-            } else if (currentSvcName === 'LLM Chatbot API') {
-                iconBox.innerHTML = '<i class="fa-solid fa-comments"></i>';
-                iconBox.style.background = '#2563eb';
-            } else {
-                iconBox.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>';
-            }
+            iconBox.innerHTML = '<i class="fa-solid fa-image"></i>';
+            iconBox.style.background = '#8b5cf6';
 
-            syncServiceUIState();
+            await syncServiceUIState();
             updateSnippetCode();
         });
     </script>

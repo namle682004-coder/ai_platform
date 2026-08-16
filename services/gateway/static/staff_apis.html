@@ -141,10 +141,12 @@
                     <span id="txt-nav-applications"><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
-                <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/service?name=Speech%20to%20Text"><i class="fa-solid fa-microphone" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=Text%20to%20Speech"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=LLM%20Chatbot%20API"><i class="fa-solid fa-robot" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
+                                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone-lines" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
+                    <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
+                    <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
+                    <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image" style="width: 16px; text-align: center;"></i> Image Gen API</a></li>
+                    <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield-halved" style="width: 16px; text-align: center;"></i> Moderation API</a></li>
                 </ul>
             </div>
             <div class="nav-section">
@@ -170,7 +172,12 @@
                 <a href="#apis-anchor" class="btn-explore" id="btn-explore-text">EXPLORE</a>
             </div>
 
-            <div id="apis-anchor" class="page-title" id="txt-catalog-title">APIs Catalog</div>
+            <div id="apis-anchor" class="page-title" style="display:flex; align-items:center;">
+                <a href="/staff/dashboard" style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:12px; font-size:14px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to Dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <span id="txt-catalog-title">APIs Catalog</span>
+            </div>
 
             <div class="api-grid" id="api-cards-grid-container">
                 <!-- Speech to Text Card -->
@@ -211,6 +218,31 @@
                     <div class="card-title">LLM Chatbot API</div>
                     <div class="card-desc">Qwen3-8B & 14B High Quality LLM Reasoning Endpoints</div>
                 </div>
+                <!-- Image Generation Card -->
+                <div class="api-card" onclick="navigateToService('Image Generation API')">
+                    <div class="card-top">
+                        <div class="api-icon" style="background:#8b5cf6;"><i class="fa-solid fa-image"></i></div>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="toggle-image" onchange="handleApiToggleClick('Image Generation API', this, event)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-title">Image Generation API</div>
+                    <div class="card-desc">Generate images from text using Stable Diffusion XL</div>
+                </div>
+
+                <!-- Content Moderation Card -->
+                <div class="api-card" onclick="navigateToService('Content Moderation API')">
+                    <div class="card-top">
+                        <div class="api-icon" style="background:#ef4444;"><i class="fa-solid fa-shield-halved"></i></div>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="toggle-moderation" onchange="handleApiToggleClick('Content Moderation API', this, event)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-title">Content Moderation API</div>
+                    <div class="card-desc">Scan and filter bad language / toxic text content</div>
+                </div>
             </div>
         </div>
     </div>
@@ -221,7 +253,7 @@
             <div class="confirm-header" id="modal-confirm-header">Confirm</div>
             <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API</div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" id="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-cancel" id="btn-confirm-cancel" onclick="cancelConfirmModal()">CANCEL</button>
                 <button class="btn-confirm-ok" id="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
             </div>
         </div>
@@ -243,7 +275,7 @@
                 </div>
             </div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" id="btn-proj-cancel" onclick="closeProjectModal()">HỦY BỎ</button>
+                <button class="btn-confirm-cancel" id="btn-proj-cancel" onclick="cancelProjectModal()">HỦY BỎ</button>
                 <button class="btn-confirm-ok" style="background:var(--fpt-cyan);" id="btn-proj-submit" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
             </div>
         </div>
@@ -395,42 +427,43 @@
 
         function applyLanguage() {
             const t = i18nDict[currentLang] || i18nDict.en;
-            document.getElementById('current-lang-text').innerText = t.langText;
-            document.getElementById('txt-nav-console').innerText = t.console;
-            document.getElementById('txt-nav-dashboard').innerText = t.dashboard;
-            document.getElementById('txt-nav-apis').innerText = t.apis;
-            document.getElementById('txt-nav-keys').innerText = t.keys;
-            document.getElementById('txt-nav-report').innerText = t.report;
-            document.getElementById('txt-nav-apps').innerText = t.apps;
+            const setTxt = (id, text) => {
+                const el = document.getElementById(id);
+                if (el && text !== undefined) el.innerText = text;
+            };
+
+            setTxt('current-lang-text', t.langText);
+            setTxt('txt-nav-console', t.console);
+            setTxt('txt-nav-dashboard', t.dashboard);
+            setTxt('txt-nav-apis', t.apis);
+            setTxt('txt-nav-keys', t.keys);
+            setTxt('txt-nav-report', t.report);
+            setTxt('txt-nav-applications', t.apps);
+            setTxt('txt-nav-apps', t.apps);
+            setTxt('txt-nav-payment', t.payment);
+            setTxt('txt-nav-contact', t.contact);
 
             const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
             const userName = userSession ? JSON.parse(userSession).full_name : 'Nam Lê';
-            document.getElementById('welcome-title').innerText = t.welcomeTitle + userName;
-            document.getElementById('btn-explore-text').innerText = t.explore;
+            setTxt('welcome-title', t.welcomeTitle + userName);
+            setTxt('btn-explore-text', t.explore);
 
-            document.getElementById('modal-confirm-header').innerText = t.confirmHeader;
-            document.getElementById('modal-confirm-body').innerText = t.confirmBody;
-            document.getElementById('btn-confirm-cancel').innerText = t.btnCancel;
-            document.getElementById('btn-confirm-ok').innerText = t.btnConfirm;
+            setTxt('modal-confirm-header', t.confirmHeader);
+            setTxt('modal-confirm-body', t.confirmBody);
+            setTxt('btn-confirm-cancel', t.btnCancel);
+            setTxt('btn-confirm-ok', t.btnConfirm);
 
-            document.getElementById('modal-proj-header').innerText = t.projHeader;
-            document.getElementById('modal-proj-desc').innerText = t.projDesc;
-            document.getElementById('lbl-proj-name').innerText = t.projNameLbl;
-            document.getElementById('lbl-key-name').innerText = t.keyNameLbl;
-            document.getElementById('btn-proj-cancel').innerText = t.btnProjCancel;
-            document.getElementById('btn-proj-submit').innerText = t.btnProjSubmit;
+            setTxt('modal-proj-header', t.projHeader);
+            setTxt('modal-proj-desc', t.projDesc);
+            setTxt('lbl-proj-name', t.projNameLbl);
+            setTxt('lbl-key-name', t.keyNameLbl);
+            setTxt('btn-proj-cancel', t.btnProjCancel);
+            setTxt('btn-proj-submit', t.btnProjSubmit);
 
             syncUIState();
         }
 
-        function getEnabledAPIs() {
-            const data = localStorage.getItem('aip_enabled_apis');
-            return data ? JSON.parse(data) : { "Speech to Text": false, "Text to Speech": false, "LLM Chatbot API": false };
-        }
-
-        function setEnabledAPIs(apisObj) {
-            localStorage.setItem('aip_enabled_apis', JSON.stringify(apisObj));
-        }
+        /* Centralized getEnabledAPIs and setEnabledAPIs from staff_layout.js */
 
         function getProjects() {
             const data = localStorage.getItem('aip_projects');
@@ -514,11 +547,21 @@
             document.getElementById('create-project-modal').classList.remove('active');
         }
 
-        function submitCreatePrepaidProject() {
+        async function submitCreatePrepaidProject() {
             const name = document.getElementById('input-new-project-name').value.trim() || 'New Prepaid Project';
             const type = document.getElementById('input-new-project-type').value;
 
-            const projects = getProjects();
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: name, billing_type: type })
+                });
+            } catch(err) {
+                console.error("Failed to persist prepaid project to backend:", err);
+            }
+
+            const projects = await getProjects();
             const newProj = {
                 project_id: 'proj_' + Math.random().toString(36).substring(7),
                 project_name: name,
@@ -533,9 +576,52 @@
             showToast(`Prepaid Project "${name}" created successfully!`, 'success');
         }
 
+        function renderCardsGrid(catalog, apis) {
+            const grid = document.getElementById('api-cards-grid-container');
+            if (!grid) return;
+            grid.innerHTML = '';
+            catalog.forEach(item => {
+                const isChecked = isApiActive(apis, item.name);
+                let iconClass = 'fa-plug';
+                let bgColor = '#64748b';
+                let desc = item.description || '';
+                
+                if (item.name.includes('Speech to Text')) {
+                    iconClass = 'fa-microphone-lines'; bgColor = '#10b981';
+                    desc = 'Convert your voice into text using PhoWhisper STT model';
+                } else if (item.name.includes('Text to Speech')) {
+                    iconClass = 'fa-volume-high'; bgColor = '#10b981';
+                    desc = 'Convert text to natural-sounding voices with viXTTS synthesis';
+                } else if (item.name.includes('LLM') || item.name.includes('Chatbot')) {
+                    iconClass = 'fa-robot'; bgColor = '#3b82f6';
+                    desc = 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints';
+                } else if (item.name.includes('Image')) {
+                    iconClass = 'fa-image'; bgColor = '#8b5cf6';
+                    desc = 'Generate images from text using Stable Diffusion XL';
+                } else if (item.name.includes('Moderation')) {
+                    iconClass = 'fa-shield-halved'; bgColor = '#ef4444';
+                    desc = 'Scan and filter bad language / toxic text content';
+                }
+
+                const card = document.createElement('div');
+                card.className = 'api-card';
+                card.onclick = () => navigateToService(item.name);
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="api-icon" style="background:${bgColor};"><i class="fa-solid ${iconClass}"></i></div>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${item.name}', this, event)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-title">${item.name}</div>
+                    <div class="card-desc">${desc}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
         async function syncUIState() {
-            const apis = await fetchEnabledAPIsFromBackend();
-            const catalog = await fetchApiCatalogFromBackend();
             const projects = await getProjects();
             const t = i18nDict[currentLang] || i18nDict.en;
 
@@ -545,56 +631,57 @@
                 document.getElementById('current-project-label').innerText = t.selectProj;
             }
 
-            const grid = document.getElementById('api-cards-grid-container');
-            if (grid) {
-                grid.innerHTML = '';
-                catalog.forEach(item => {
-                    const isChecked = !!apis[item.name];
-                    const iconClass = item.icon || (item.name === 'Speech to Text' ? 'fa-microphone' : (item.name === 'Text to Speech' ? 'fa-volume-high' : 'fa-comments'));
-                    const desc = item.description || (item.name === 'Speech to Text' ? 'Convert your voice into text using PhoWhisper STT model' : (item.name === 'Text to Speech' ? 'Convert text to natural-sounding voices with viXTTS synthesis' : 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints'));
+            // 1. Instant zero-latency render (prevents toggle jump/flicker)
+            const cachedApis = getEnabledAPIs();
+            const defaultCatalog = [
+                { name: "Speech to Text API" },
+                { name: "Text to Speech API" },
+                { name: "LLM Chatbot API" },
+                { name: "Image Generation API" },
+                { name: "Content Moderation API" }
+            ];
+            renderCardsGrid(defaultCatalog, cachedApis);
 
-                    const card = document.createElement('div');
-                    card.className = 'api-card';
-                    card.onclick = () => navigateToService(item.name);
-                    card.innerHTML = `
-                        <div class="card-top">
-                            <div class="api-icon"><i class="fa-solid ${iconClass}"></i></div>
-                            <label class="switch" onclick="event.stopPropagation()">
-                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${item.name}', this, event)">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="card-title">${item.name}</div>
-                        <div class="card-desc">${desc}</div>
-                    `;
-                    grid.appendChild(card);
-                });
-            }
+            // 2. Background revalidation from MongoDB Atlas
+            const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
+            renderCardsGrid(catalog && catalog.length ? catalog : defaultCatalog, apis);
         }
 
         let targetPendingAction = 'enable';
+        let pendingCheckboxEl = null;
 
         function handleApiToggleClick(apiName, checkboxEl, e) {
             if (e) e.stopPropagation();
             const apis = getEnabledAPIs();
-            const currentState = !!apis[apiName];
+            const currentState = isApiActive(apis, apiName);
 
             targetPendingApi = apiName;
+            pendingCheckboxEl = checkboxEl;
             if (!currentState) {
                 targetPendingAction = 'enable';
-                checkboxEl.checked = false;
+                checkboxEl.checked = true;
                 document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${apiName}"?`;
                 openConfirmModal();
             } else {
                 targetPendingAction = 'disable';
-                checkboxEl.checked = true;
+                checkboxEl.checked = false;
                 document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${apiName}"?`;
                 openConfirmModal();
             }
         }
 
         function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
-        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+        function closeConfirmModal() { 
+            document.getElementById('confirm-modal').classList.remove('active'); 
+        }
+        function cancelConfirmModal() {
+            closeConfirmModal();
+            if (pendingCheckboxEl) {
+                const apis = getEnabledAPIs();
+                pendingCheckboxEl.checked = !!apis[targetPendingApi];
+            }
+        }
 
         async function onConfirmEnableClick() {
             closeConfirmModal();
@@ -604,23 +691,52 @@
                 const apis = getEnabledAPIs();
                 apis[targetPendingApi] = false;
                 await setEnabledAPIs(apis);
-                await syncUIState();
+                if (pendingCheckboxEl) {
+                    pendingCheckboxEl.checked = false;
+                }
                 showToast(`API "${targetPendingApi}" has been disabled.`, 'warning');
             } else {
                 if (projects.length === 0) {
                     openProjectModal();
                 } else {
                     await activateApi(targetPendingApi);
+                    if (pendingCheckboxEl) {
+                        pendingCheckboxEl.checked = true;
+                    }
                 }
             }
         }
 
         function openProjectModal() { document.getElementById('project-modal').classList.add('active'); }
-        function closeProjectModal() { document.getElementById('project-modal').classList.remove('active'); }
+        function closeProjectModal() { 
+            document.getElementById('project-modal').classList.remove('active'); 
+        }
+        function cancelProjectModal() {
+            closeProjectModal();
+            if (pendingCheckboxEl) {
+                const apis = getEnabledAPIs();
+                pendingCheckboxEl.checked = !!apis[targetPendingApi];
+            }
+        }
 
         async function submitFirstProjectForm() {
             const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
             const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
+
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: projName, billing_type: 'prepaid' })
+                });
+                await fetch('/v1/user/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: keyName, project_name: projName })
+                });
+            } catch (err) {
+                console.error("Failed to persist project & key to backend:", err);
+            }
 
             const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
             const newProj = {
@@ -634,30 +750,38 @@
             const projects = await getProjects();
             projects.push(newProj);
             setProjects(projects);
+            setActiveProjectName(projName);
 
             closeProjectModal();
             await activateApi(targetPendingApi, projName);
+            if (pendingCheckboxEl) {
+                pendingCheckboxEl.checked = true;
+            }
         }
 
         async function activateApi(apiName, projName = '') {
             const apis = getEnabledAPIs();
             apis[apiName] = true;
             await setEnabledAPIs(apis);
-            await syncUIState();
 
             const msg = projName 
                 ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
                 : `Đã kích hoạt thành công API ${apiName}!`;
             showToast(msg, 'success');
-
-            // Automatically navigate to service detail page after activation!
-            setTimeout(() => {
-                navigateToService(apiName);
-            }, 600);
         }
 
         function navigateToService(apiName) {
-            window.location.href = `/staff/service?name=${encodeURIComponent(apiName)}`;
+            if (apiName === 'Text to Speech' || apiName === 'Text to Speech API') {
+                window.location.href = '/staff/service-tts';
+            } else if (apiName === 'LLM Chatbot API') {
+                window.location.href = '/staff/service-llm';
+            } else if (apiName === 'Image Generation API') {
+                window.location.href = '/staff/service-image';
+            } else if (apiName === 'Content Moderation API') {
+                window.location.href = '/staff/service-moderation';
+            } else {
+                window.location.href = '/staff/service-stt';
+            }
         }
 
         function toggleNavSection(headerEl) {
@@ -713,6 +837,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             checkMandatoryAuth();
             applyLanguage();
+            syncUIState();
         });
     </script>
 </body>

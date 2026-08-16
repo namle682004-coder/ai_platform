@@ -76,42 +76,99 @@ async function getProjects() {
     ];
 }
 
+function toCanonicalApiName(name) {
+    if (!name) return "";
+    const trimmed = name.trim();
+    const low = trimmed.toLowerCase();
+    if (low.includes("speech to text")) return "Speech to Text API";
+    if (low.includes("text to speech")) return "Text to Speech API";
+    if (low.includes("llm") || low.includes("chatbot")) return "LLM Chatbot API";
+    if (low.includes("image")) return "Image Generation API";
+    if (low.includes("moderation")) return "Content Moderation API";
+    return trimmed.endsWith(" API") ? trimmed : (trimmed + " API");
+}
+
 function getEnabledAPIs() {
     const data = localStorage.getItem('aip_enabled_apis');
     if (data) {
-        try { return JSON.parse(data); } catch(e) {}
+        try {
+            const parsed = JSON.parse(data);
+            const sanitized = {};
+            for (const [k, v] of Object.entries(parsed)) {
+                sanitized[toCanonicalApiName(k)] = Boolean(v);
+            }
+            return sanitized;
+        } catch(e) {}
     }
-    return { "Speech to Text": true, "Text to Speech": false, "LLM Chatbot API": false };
+    return {
+        "Speech to Text API": true,
+        "Text to Speech API": false,
+        "LLM Chatbot API": false,
+        "Image Generation API": false,
+        "Content Moderation API": false
+    };
 }
 
 async function fetchEnabledAPIsFromBackend() {
     try {
-        const res = await fetch('/v1/user/apis-state');
+        const res = await fetch('/v1/user/apis-state?t=' + new Date().getTime());
         if (res.ok) {
             const data = await res.json();
             if (data && data.enabled_apis && Object.keys(data.enabled_apis).length > 0) {
-                localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
-                return data.enabled_apis;
+                const sanitized = {};
+                for (const [k, v] of Object.entries(data.enabled_apis)) {
+                    sanitized[toCanonicalApiName(k)] = Boolean(v);
+                }
+                localStorage.setItem('aip_enabled_apis', JSON.stringify(sanitized));
+                return sanitized;
             }
         }
     } catch(err) {}
     return getEnabledAPIs();
 }
 
+function isApiActive(apis, name) {
+    if (!apis || !name) return false;
+    const canon = toCanonicalApiName(name);
+    if (apis[canon] !== undefined) return Boolean(apis[canon]);
+    if (apis[name] !== undefined) return Boolean(apis[name]);
+    return false;
+}
+
 async function setEnabledAPIs(apiObj) {
-    localStorage.setItem('aip_enabled_apis', JSON.stringify(apiObj));
+    const current = getEnabledAPIs();
+    const cleanUpdated = { ...current };
+
+    // Directly update only the canonical keys that changed
+    for (const [key, val] of Object.entries(apiObj)) {
+        cleanUpdated[toCanonicalApiName(key)] = Boolean(val);
+    }
+
+    localStorage.setItem('aip_enabled_apis', JSON.stringify(cleanUpdated));
     try {
-        await fetch('/v1/user/apis-state', {
+        const res = await fetch('/v1/user/apis-state', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ enabled_apis: apiObj })
+            body: JSON.stringify({ enabled_apis: cleanUpdated })
         });
-    } catch(err) {}
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.enabled_apis) {
+                const backendClean = {};
+                for (const [k, v] of Object.entries(data.enabled_apis)) {
+                    backendClean[toCanonicalApiName(k)] = Boolean(v);
+                }
+                localStorage.setItem('aip_enabled_apis', JSON.stringify(backendClean));
+            }
+        }
+    } catch(err) {
+        console.error("Failed to update API state on backend:", err);
+    }
 }
 
 async function fetchApiCatalogFromBackend() {
     try {
-        const res = await fetch('/v1/user/apis-catalog');
+        const res = await fetch('/v1/user/apis-catalog?t=' + new Date().getTime());
         if (res.ok) {
             const data = await res.json();
             localStorage.setItem('aip_catalog', JSON.stringify(data));
@@ -122,7 +179,9 @@ async function fetchApiCatalogFromBackend() {
     return cached ? JSON.parse(cached) : [
         { name: "Speech to Text", unit: "block", free_quota: "10,000 blocks" },
         { name: "Text to Speech", unit: "character", free_quota: "100,000 characters" },
-        { name: "LLM Chatbot API", unit: "token", free_quota: "50,000 tokens" }
+        { name: "LLM Chatbot API", unit: "token", free_quota: "50,000 tokens" },
+        { name: "Image Generation API", unit: "image", free_quota: "100 images" },
+        { name: "Content Moderation API", unit: "request", free_quota: "10,000 requests" }
     ];
 }
 
@@ -137,6 +196,49 @@ function getActiveProjectName() {
         } catch(e) {}
     }
     return 'wwrwer23';
+}
+
+async function fetchPaidBalanceFromBackend() {
+    try {
+        const res = await fetch('/v1/user/balance?t=' + new Date().getTime());
+        if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.paid_balance === 'number') {
+                localStorage.setItem('aip_paid_balance', data.paid_balance.toString());
+                return data.paid_balance;
+            }
+        }
+    } catch(err) {
+        console.error("Failed to fetch balance from backend:", err);
+    }
+    return parseInt(localStorage.getItem('aip_paid_balance') || '0');
+}
+
+async function rechargePaidBalanceOnBackend(addCredits, amountStr, packageName, projectName) {
+    try {
+        const res = await fetch('/v1/user/recharge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                credits: addCredits,
+                amount: amountStr,
+                package: packageName,
+                project: projectName || 'default'
+            })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.paid_balance === 'number') {
+                localStorage.setItem('aip_paid_balance', data.paid_balance.toString());
+                return data.paid_balance;
+            }
+        }
+    } catch(err) {
+        console.error("Failed to recharge on backend:", err);
+    }
+    const localNew = parseInt(localStorage.getItem('aip_paid_balance') || '0') + addCredits;
+    localStorage.setItem('aip_paid_balance', localNew.toString());
+    return localNew;
 }
 
 function setActiveProjectName(name) {

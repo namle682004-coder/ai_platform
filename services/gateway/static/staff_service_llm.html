@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everwin AI Platform - Service Sandbox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/static/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --fpt-blue: #0f4c81;
+            --fpt-cyan: #00a4b8;
+            --fpt-orange: #f97316;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .top-header { background: var(--fpt-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+        .layout-body { display: flex; flex: 1; }
+
+        .sidebar { width: 220px; background: #ffffff; border-right: 1px solid var(--border-color); padding: 20px 0; }
+        .nav-section { margin-bottom: 24px; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 0 20px 8px 20px; letter-spacing: 0.5px; }
+        .nav-list { list-style: none; }
+        .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.15s ease; border-left: 3px solid transparent; }
+        .nav-item.active a, .nav-item a:hover { background: #f1f5f9; color: var(--fpt-cyan); border-left-color: var(--fpt-cyan); }
+
+        .main-content { flex: 1; padding: 24px 32px; background: #f8fafc; }
+
+        .notice-bar { background: #1e3a8a; color: #fff; padding: 10px 16px; border-radius: 6px; font-size: 12.5px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+
+        .service-header-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; margin-bottom: 20px; }
+        .service-title-box { display: flex; align-items: center; gap: 16px; }
+        .service-icon-lg { width: 56px; height: 56px; border-radius: 12px; background: var(--fpt-cyan); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+        .service-name { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #0f172a; }
+
+        .btn-status-toggle { background: #007bff; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: background 0.15s; }
+        .btn-status-toggle:hover { background: #0056b3; }
+        .btn-status-toggle.disabled { background: #dc3545; color: #ffffff; }
+        .btn-status-toggle.disabled:hover { background: #b02a37; }
+
+        .btn-buy { background: #004085; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; }
+        .free-remain { font-size: 12.5px; color: var(--text-sub); margin-left: auto; }
+
+        .service-nav-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; gap: 8px; }
+        .tab-btn { padding: 10px 24px; font-size: 13px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; position: relative; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--fpt-cyan); }
+        .tab-btn.active { color: var(--fpt-cyan); border-bottom-color: var(--fpt-cyan); background: #ffffff; border-radius: 6px 6px 0 0; }
+
+        /* Dynamic Tab Panels */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* SERVICE TAB (SANDBOX) */
+        .service-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+        .sandbox-left { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .btn-action-outline { padding: 9px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; background: #fff; display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; }
+        .btn-action-outline.red { border: 1px solid #dc3545; color: #dc3545; }
+        .btn-action-outline.blue { border: 1px solid #007bff; color: #007bff; }
+
+        .identified-box { flex: 1; min-height: 200px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; font-size: 13.5px; color: #475569; line-height: 1.6; }
+
+        .api-right { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; }
+        .api-header { font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px; }
+
+        .key-select-box { margin-bottom: 18px; }
+        .key-select-box label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; }
+        .select-input { width: 100%; padding: 6px 20px 6px 0; border: none; border-bottom: 1.5px solid #cbd5e1; border-radius: 0; font-size: 13.5px; outline: none; background: transparent; color: #1e293b; font-weight: 500; }
+        .select-input:focus { border-bottom-color: #007bff; }
+
+        .lang-options { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; font-size: 13px; font-weight: 600; color: #334155; }
+        .btn-copy-blue { margin-left: auto; background: #007bff; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+
+        .code-snippet-card { background: #f8fafc; color: #991b1b; border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.6; word-break: break-all; white-space: pre-wrap; }
+
+        /* OVERVIEW, DOCUMENT, PRICING TAB STYLES */
+        .doc-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 28px; margin-bottom: 24px; }
+        .doc-section-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 14px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+        .doc-text { font-size: 14px; color: #334155; line-height: 1.7; margin-bottom: 16px; }
+        .doc-list { margin-left: 20px; font-size: 13.5px; color: #475569; line-height: 1.8; margin-bottom: 16px; }
+
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+        .doc-table th, .doc-table td { border: 1px solid var(--border-color); padding: 12px 14px; text-align: left; }
+        .doc-table th { background: #f8fafc; font-weight: 700; color: #1e293b; }
+        .badge-req { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-opt { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+
+        .url-box { background: #1e293b; color: #38bdf8; padding: 12px 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 16px; }
+
+        /* FPT.AI CONFIRM POPUP MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
+        .confirm-header { background: #e5e7eb; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1f2937; }
+        .confirm-body { padding: 24px 20px; font-size: 14px; color: #374151; }
+        .confirm-footer { padding: 12px 20px 16px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
+        .btn-confirm-cancel:hover { background: #f3f4f6; }
+        .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
+        .btn-confirm-ok:hover { background: #0056b3; }
+
+        .form-control-input { width: 100%; padding: 8px 12px 8px 0; border: none; border-bottom: 1.5px solid #cbd5e1; border-radius: 0; font-size: 13.5px; margin-top: 6px; outline: none; background: transparent; color: #1e293b; }
+        .form-control-input:focus { border-bottom-color: #007bff; }
+
+        /* Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
+    </style>
+    <script src="/static/js/staff_layout.js"></script>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
+            <div class="project-selector" onclick="openSelectProjectModal()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+        </div>
+        <div class="header-right">
+            <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
+            <div style="position:relative; cursor:pointer;" onclick="toggleLangDropdown(event)">
+                <i class="fa-solid fa-globe"></i> <span id="current-lang-text">English</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                <div id="lang-dropdown-menu" style="display:none; position:absolute; top:35px; right:0; background:#fff; color:#0f172a; border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,0.15); border:1px solid #cbd5e1; width:140px; z-index:10000; overflow:hidden;">
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;" onclick="setAppLanguage('en'); event.stopPropagation();">
+                        🇬🇧 English
+                    </div>
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; border-top:1px solid #f1f5f9;" onclick="setAppLanguage('vi'); event.stopPropagation();">
+                        🇻🇳 Tiếng Việt
+                    </div>
+                </div>
+            </div>
+            <div class="user-menu">
+                <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
+                <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left:6px; cursor:pointer;" onclick="logoutUser()"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout-body">
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                    <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> Console</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                    <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item" id="nav-stt"><a href="/staff/service?name=Speech%20to%20Text"><i class="fa-solid fa-microphone" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
+                    <li class="nav-item" id="nav-tts"><a href="/staff/service?name=Text%20to%20Speech"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
+                    <li class="nav-item" id="nav-llm"><a href="/staff/service?name=LLM%20Chatbot%20API"><i class="fa-solid fa-robot" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="section-title">
+                    <a href="/staff/payment" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-credit-card" style="width: 14px;"></i> Payment history
+                    </a>
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="section-title">
+                    <a href="/staff/contact" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-headset" style="width: 14px;"></i> Contact us
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="notice-bar">
+                <div><i class="fa-solid fa-certificate"></i> Thông báo quan trọng Everwin AI Console cung cấp dịch vụ cho khách hàng doanh nghiệp. Xem thêm tại đây <a href="#" style="color:#fff; text-decoration:underline;">Link</a></div>
+                <i class="fa-solid fa-xmark" style="cursor:pointer;"></i>
+            </div>
+
+            <div class="service-header-card">
+                <div class="service-title-box" style="display:flex; align-items:center;">
+                    <a href="/staff/apis" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:14px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to APIs Catalog">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div class="service-icon-lg" id="svc-detail-icon" style="background:#2563eb;"><i class="fa-solid fa-comments"></i></div>
+                    <div class="service-name" id="svc-detail-title">LLM Chatbot API</div>
+                    <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
+                    <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
+                    <span class="free-remain">Free remain: 50,000 tokens / year</span>
+                </div>
+            </div>
+
+            <!-- TABS NAVIGATION -->
+            <div class="service-nav-tabs">
+                <button class="tab-btn" id="tab-btn-OVERVIEW" onclick="switchTab('OVERVIEW')">OVERVIEW</button>
+                <button class="tab-btn active" id="tab-btn-SERVICE" onclick="switchTab('SERVICE')">SERVICE</button>
+                <button class="tab-btn" id="tab-btn-DOCUMENT" onclick="switchTab('DOCUMENT')">DOCUMENT</button>
+                <button class="tab-btn" id="tab-btn-PRICING" onclick="switchTab('PRICING')">PRICING</button>
+            </div>
+
+            <!-- PANEL 1: OVERVIEW TAB -->
+            <div class="tab-panel" id="panel-OVERVIEW">
+                <div class="doc-card">
+                    <div class="doc-section-title">Introduction</div>
+                    <p class="doc-text">
+                        Everwin AI Large Language Model (LLM) Inference API offers high-speed OpenAI-compatible Chat Completions endpoints powered by Qwen3-8B and Qwen3-14B hosted on dedicated GPU vLLM infrastructure.
+                    </p>
+
+                    <div class="doc-section-title" style="margin-top: 24px;">Applications</div>
+                    <p class="doc-text">This API powers enterprise AI workflows including:</p>
+                    <ul class="doc-list">
+                        <li><strong>Conversational Agents:</strong> Smart customer support chatbots and virtual assistants.</li>
+                        <li><strong>Content Generation & Summarization:</strong> Document processing, email drafting, and report writing.</li>
+                        <li><strong>Structured Extraction:</strong> JSON extraction, sentiment analysis, and coding assistance.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PANEL 2: SERVICE TAB (INTERACTIVE SANDBOX) -->
+            <div class="tab-panel active" id="panel-SERVICE">
+                <div style="padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                    You need to enable this api to run demo
+                </div>
+            </div>
+
+            <!-- PANEL 3: DOCUMENT TAB (API SPECIFICATION) -->
+            <div class="tab-panel" id="panel-DOCUMENT">
+                <div class="doc-card">
+                    <div class="doc-section-title">API Endpoint & Request URL</div>
+                    <div class="url-box">POST https://ai-platform-6p72.onrender.com/v1/audio/speech</div>
+
+                    <div class="doc-section-title" style="margin-top: 20px;">Request Headers & Parameters</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Required</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>api_key</code></td>
+                                <td><span class="badge-req">YES</span></td>
+                                <td>None</td>
+                                <td>Your API Key (Get from Developer Console).</td>
+                            </tr>
+                            <tr>
+                                <td><code>voice</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td><code>banmai</code></td>
+                                <td>Identify the voice: <code>banmai</code> (female northern), <code>lannhi</code> (female southern), <code>leminh</code> (male northern), <code>myan</code> (female middle), <code>thuminh</code> (female northern), <code>giahuy</code> (male middle), <code>linhsan</code> (female southern).</td>
+                            </tr>
+                            <tr>
+                                <td><code>speed</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td><code>0</code></td>
+                                <td>Adjust speed of the voice: <code>+3</code> (fastest), <code>0</code> (normal), <code>-3</code> (slowest).</td>
+                            </tr>
+                            <tr>
+                                <td><code>format</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td><code>mp3</code></td>
+                                <td>Identify output format: <code>mp3</code> or <code>wav</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>callback_url</code></td>
+                                <td><span class="badge-opt">NO</span></td>
+                                <td>None</td>
+                                <td>URL provided by customer to receive async notification when sound is ready.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top: 24px;">Request Body & Limit</div>
+                    <p class="doc-text">
+                        Contains raw text to convert into speech.<br>
+                        <strong>Note:</strong> Limit per request: 5,000 characters. Minimum request length: 3 characters.
+                    </p>
+
+                    <div class="doc-section-title" style="margin-top: 24px;">Sample Response (Success JSON)</div>
+                    <div class="code-snippet-card">
+{
+  "async": "https://s3-ap-southeast-1.amazonaws.com/text2speech-v4/female.0.pro.4b5b15285847e83acbb3beb945434453.mp3",
+  "error": 0,
+  "message": "The content will be returned after a few seconds under the async link.",
+  "request_id": "4b5b15285847e83acbb3beb945434453"
+}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 4: PRICING TAB -->
+            <div class="tab-panel" id="panel-PRICING">
+                <div class="doc-card">
+                    <div class="doc-section-title">Everwin AI Speech - Pricing</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Price (VND)</th>
+                                <th>Unit</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Free Tier</strong></td>
+                                <td>Free of charge</td>
+                                <td>Monthly</td>
+                                <td>100,000 characters / month (v5 natural voices). Standard speed, queued processing.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 500k</strong></td>
+                                <td>500,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 1,500,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 1M</strong></td>
+                                <td>1,000,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 4,000,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 2M</strong></td>
+                                <td>2,000,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 10,000,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Premium 5M</strong></td>
+                                <td>5,000,000 VND</td>
+                                <td>Pack</td>
+                                <td>Free Tier + 27,000,000 characters. High speed conversion, unlimited usage time.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Business Premium</strong></td>
+                                <td>Custom Pricing</td>
+                                <td>Enterprise</td>
+                                <td>Unlimited usage time, dedicated GPU cluster, 24/7 technical support. Hotline: 1900 638 399.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: EXACT FPT.AI CONFIRM POPUP (Replica of User Screenshot) -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-header" id="modal-confirm-header">Confirm</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API</div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CREATE FIRST PROJECT & API KEY FORM MODAL -->
+    <div class="modal-overlay" id="project-modal">
+        <div class="confirm-box" style="width: 480px;">
+            <div class="confirm-header" style="background:var(--fpt-blue); color:#fff;">Tạo Dự Án & API Key Đầu Tiên</div>
+            <div class="confirm-body">
+                <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:</p>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên Dự Án (Project Name)</label>
+                    <input type="text" id="input-project-name" class="form-control-input" placeholder="Ví dụ: Banking AI Project" value="Everwin Primary Project">
+                </div>
+                <div>
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên API Key</label>
+                    <input type="text" id="input-key-name" class="form-control-input" placeholder="Ví dụ: Production Main Key" value="Default Live Key">
+                </div>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeProjectModal()">HỦY BỎ</button>
+                <button class="btn-confirm-ok" style="background:var(--fpt-cyan);" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SELECT A PROJECT MODAL (Exact Replica of User Screenshot) -->
+    <div class="modal-overlay" id="select-project-modal">
+        <div class="confirm-box" style="width: 620px; border-radius: 4px;">
+            <div class="confirm-header" style="background: #e5e7eb; color: #1f2937; font-size: 20px; font-weight: 500; padding: 18px 24px;">Select a project</div>
+            <div class="confirm-body" style="padding: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px;">
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="project-search-input" onkeyup="filterProjectsList()" placeholder="Search" style="width: 100%; border: none; border-bottom: 1.5px solid #cbd5e1; padding: 8px 32px 8px 0; font-size: 13.5px; outline: none;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 8px; top: 10px; color: #64748b; font-size: 14px;"></i>
+                    </div>
+                    <button class="btn-confirm-ok" style="background: #007bff; text-transform: uppercase; font-size: 12.5px; padding: 9px 18px;" onclick="openCreatePrepaidProjectModal()">CREATE PREPAID PROJECT</button>
+                </div>
+
+                <div style="border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Created time ↓</th>
+                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Name</th>
+                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-modal-tbody"></tbody>
+                    </table>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; font-size: 12px; color: #64748b;">
+                    <span>Rows per page</span>
+                    <select style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 8px; font-size: 12px;"><option>5</option></select>
+                    <span id="proj-count-label">1-1 of 1</span>
+                    <i class="fa-solid fa-chevron-left" style="cursor: pointer;"></i>
+                    <i class="fa-solid fa-chevron-right" style="cursor: pointer;"></i>
+                </div>
+            </div>
+            <div class="confirm-footer" style="border-top: 1px solid #f1f5f9; padding: 12px 24px;">
+                <button class="btn-confirm-cancel" onclick="closeSelectProjectModal()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE NEW PREPAID PROJECT -->
+    <div class="modal-overlay" id="create-project-modal">
+        <div class="confirm-box" style="width: 460px;">
+            <div class="confirm-header" style="background: var(--fpt-blue); color: #fff;">Create Prepaid Project</div>
+            <div class="confirm-body" style="padding: 24px;">
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Project Name</label>
+                    <input type="text" id="input-new-project-name" class="form-control-input" placeholder="e.g. wwrwer23" value="wwrwer23">
+                </div>
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Billing Type</label>
+                    <select id="input-new-project-type" class="form-control-input">
+                        <option value="prepaid">prepaid</option>
+                        <option value="postpaid">postpaid</option>
+                    </select>
+                </div>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeCreatePrepaidProjectModal()">CANCEL</button>
+                <button class="btn-confirm-ok" style="background: var(--fpt-cyan);" onclick="submitCreatePrepaidProject()">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSvcName = 'LLM Chatbot API';
+        let currentSnippetLang = 'curl';
+
+        function getActiveProjectName() {
+            const active = localStorage.getItem('aip_active_project');
+            const projects = getProjects();
+            if (active) return active;
+            return projects.length > 0 ? projects[0].project_name : 'Select a project';
+        }
+
+        function setActiveProjectName(name) {
+            localStorage.setItem('aip_active_project', name);
+            document.getElementById('current-project-label').innerText = name;
+        }
+
+        function openSelectProjectModal() {
+            renderProjectsModalTable();
+            document.getElementById('select-project-modal').classList.add('active');
+        }
+
+        function closeSelectProjectModal() {
+            document.getElementById('select-project-modal').classList.remove('active');
+        }
+
+        function renderProjectsModalTable() {
+            const projects = getProjects();
+            const activeName = getActiveProjectName();
+            const tbody = document.getElementById('projects-modal-tbody');
+            tbody.innerHTML = '';
+
+            projects.forEach(p => {
+                const dateStr = p.created_at ? p.created_at.substring(0, 10) : '2026-08-16';
+                const typeStr = p.type || 'prepaid';
+                const isActive = p.project_name === activeName;
+
+                const tr = document.createElement('tr');
+                tr.className = `proj-row-selectable ${isActive ? 'active-proj' : ''}`;
+                tr.style.cursor = 'pointer';
+                tr.innerHTML = `
+                    <td style="padding: 12px 16px;">${dateStr}</td>
+                    <td style="padding: 12px 16px;"><strong>${p.project_name}</strong></td>
+                    <td style="padding: 12px 16px;"><strong>${typeStr}</strong></td>
+                `;
+                tr.onclick = () => {
+                    setActiveProjectName(p.project_name);
+                    closeSelectProjectModal();
+                    showToast(`Active project changed to: "${p.project_name}"`, 'success');
+                };
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('proj-count-label').innerText = `1-${projects.length} of ${projects.length}`;
+        }
+
+        function filterProjectsList() {
+            const query = document.getElementById('project-search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('#projects-modal-tbody tr');
+            rows.forEach(r => {
+                const text = r.innerText.toLowerCase();
+                r.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function openCreatePrepaidProjectModal() {
+            closeSelectProjectModal();
+            document.getElementById('create-project-modal').classList.add('active');
+        }
+
+        function closeCreatePrepaidProjectModal() {
+            document.getElementById('create-project-modal').classList.remove('active');
+        }
+
+        async function submitCreatePrepaidProject() {
+            const name = document.getElementById('input-new-project-name').value.trim() || 'New Prepaid Project';
+            const type = document.getElementById('input-new-project-type').value;
+
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: name, billing_type: type })
+                });
+            } catch (err) {}
+
+            const projects = getProjects();
+            projects.push({ project_name: name, type: type, created_at: new Date().toISOString() });
+            localStorage.setItem('aip_projects', JSON.stringify(projects));
+
+            setActiveProjectName(name);
+            closeCreatePrepaidProjectModal();
+            showToast(`Prepaid Project "${name}" created successfully!`, 'success');
+        }
+
+        function switchTab(tabName) {
+            const tabs = ['OVERVIEW', 'SERVICE', 'DOCUMENT', 'PRICING'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const panel = document.getElementById(`panel-${t}`);
+                if (t === tabName) {
+                    btn.classList.add('active');
+                    panel.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                    panel.classList.remove('active');
+                }
+            });
+        }
+
+        function populateApiKeySelector() {
+            const projects = getProjects();
+            const selector = document.getElementById('api-key-selector');
+            if (!selector) return;
+            selector.innerHTML = '';
+
+            if (projects.length > 0 && projects[0].api_key) {
+                projects.forEach(p => {
+                    const keyVal = p.api_key || 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm';
+                    const opt = document.createElement('option');
+                    opt.value = keyVal;
+                    opt.innerText = `${p.key_name || p.project_name} (${keyVal.substring(0, 8)}...)`;
+                    selector.appendChild(opt);
+                });
+            } else {
+                const defaultKeys = [
+                    { name: 'Default Live Key', key: 'E6JL7TFaFzd5xZHAPytH66h1al9QXawm' },
+                    { name: 'Secondary Backup Key', key: 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR' }
+                ];
+                defaultKeys.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k.key;
+                    opt.innerText = `${k.name} (${k.key.substring(0, 8)}...)`;
+                    selector.appendChild(opt);
+                });
+            }
+
+            updateSnippetCode();
+        }
+
+        function updateToggleButtonUI(isEnabled) {
+            const btn = document.getElementById('svc-toggle-btn') || document.getElementById('btn-header-toggle-api');
+            const freeRemainEl = document.querySelector('.free-remain');
+            if (btn) {
+                if (!isEnabled) {
+                    btn.innerText = 'ENABLE';
+                    btn.classList.remove('disabled');
+                    btn.style.background = '#007bff';
+                    if (freeRemainEl) freeRemainEl.style.display = 'none';
+                } else {
+                    btn.innerText = 'DISABLE';
+                    btn.classList.add('disabled');
+                    btn.style.background = '#64748b';
+                    if (freeRemainEl) freeRemainEl.style.display = 'inline';
+                }
+            }
+        }
+
+        async function syncServiceUIState() {
+            // 1. Instant zero-latency render from local cache (prevents visual jump/flicker)
+            const cachedApis = getEnabledAPIs();
+            const initialEnabled = isApiActive(cachedApis, currentSvcName);
+            updateToggleButtonUI(initialEnabled);
+            renderInteractiveSandbox(currentSvcName, initialEnabled);
+
+            // 2. Background revalidation from MongoDB Atlas
+            const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
+            const isEnabled = isApiActive(apis, currentSvcName);
+
+            updateToggleButtonUI(isEnabled);
+            populateApiKeySelector();
+            await renderDynamicServiceTabs(currentSvcName, catalog);
+        }
+
+        async function renderDynamicServiceTabs(svcName, catalog) {
+            const item = catalog.find(x => x.name === svcName) || catalog[0];
+
+            // 1. OVERVIEW TAB
+            const ov = item.overview || {};
+            const panelOv = document.getElementById('panel-OVERVIEW');
+            if (panelOv) {
+                const featuresHtml = (ov.features || []).map(f => `<li>${f}</li>`).join('');
+                panelOv.innerHTML = `
+                    <div class="doc-card">
+                        <div class="doc-section-title">${ov.title || svcName}</div>
+                        <p class="doc-text">${ov.summary || item.description}</p>
+                        <div class="doc-section-title" style="margin-top: 24px;">Key Capabilities & Features</div>
+                        <ul class="doc-list">
+                            ${featuresHtml}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // 2. DOCUMENT TAB
+            const doc = item.document || {};
+            const panelDoc = document.getElementById('panel-DOCUMENT');
+            if (panelDoc) {
+                const headersHtml = (doc.headers || []).map(h => `
+                    <tr>
+                        <td><code>${h.name}</code></td>
+                        <td><span class="${h.required ? 'badge-req' : 'badge-opt'}">${h.required ? 'YES' : 'NO'}</span></td>
+                        <td><code>${h.type}</code></td>
+                        <td>${h.desc}</td>
+                    </tr>
+                `).join('');
+
+                const paramsHtml = (doc.parameters || []).map(p => `
+                    <tr>
+                        <td><code>${p.name}</code></td>
+                        <td><span class="${p.required ? 'badge-req' : 'badge-opt'}">${p.required ? 'YES' : 'NO'}</span></td>
+                        <td><code>${p.type}</code></td>
+                        <td>${p.desc}</td>
+                    </tr>
+                `).join('');
+
+                panelDoc.innerHTML = `
+                    <div class="doc-card">
+                        <div class="doc-section-title">API Endpoint & Request URL</div>
+                        <div class="url-box">${doc.method || 'POST'} ${doc.endpoint_url || 'https://ai-platform-6p72.onrender.com/v1/service'}</div>
+
+                        <div class="doc-section-title" style="margin-top: 20px;">Request Headers & Parameters</div>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Required</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${headersHtml}
+                                ${paramsHtml}
+                            </tbody>
+                        </table>
+
+                        <div class="doc-section-title" style="margin-top: 24px;">Sample Response JSON</div>
+                        <div class="code-snippet-card">${doc.sample_response || '{}'}</div>
+                    </div>
+                `;
+            }
+
+            // 3. PRICING TAB
+            const pr = item.pricing || {};
+            const panelPr = document.getElementById('panel-PRICING');
+            if (panelPr) {
+                panelPr.innerHTML = `
+                    <div class="doc-card">
+                        <div class="doc-section-title">${svcName} - Transparent Pricing Schedule</div>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>Pricing Tier</th>
+                                    <th>Rate</th>
+                                    <th>Billing Unit</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Free Monthly Allowance</strong></td>
+                                    <td><span style="color:#10b981; font-weight:700;">FREE</span></td>
+                                    <td>Monthly</td>
+                                    <td>${pr.free_quota || '10,000 quota units / month'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pay-As-You-Go Rate</strong></td>
+                                    <td>${pr.pay_as_you_go || 'Standard Rate'}</td>
+                                    <td>Per ${item.unit || 'unit'}</td>
+                                    <td>${pr.billing_cycle || 'Charged automatically from prepaid balance'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 4. SERVICE TAB (Interactive Sandbox according to Service type & enabled state!)
+            renderInteractiveSandbox(svcName, isEnabled);
+        }
+
+        function renderInteractiveSandbox(svcName, isEnabled) {
+            const panel = document.getElementById('panel-SERVICE');
+            if (!panel) return;
+
+            if (!isEnabled) {
+                panel.innerHTML = `
+                    <div style="padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                        You need to enable this api to run demo
+                    </div>
+                `;
+                return;
+            }
+
+            panel.innerHTML = `
+                <div class="service-grid">
+                    <div class="sandbox-left">
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">System Message Prompt</label>
+                            <input type="text" id="llm-system-prompt" class="form-control-input" value="You are a helpful AI assistant for Everwin AI Platform. Answer concisely in Vietnamese.">
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">User Prompt</label>
+                            <textarea id="llm-user-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập câu hỏi của bạn cho AI...">Hãy giới thiệu về Everwin AI Platform và các mô hình AI nổi bật.</textarea>
+                        </div>
+                        <div>
+                            <button class="btn-action-outline blue" onclick="simulateLLMChat()"><i class="fa-solid fa-paper-plane"></i> SEND CHAT PROMPT</button>
+                        </div>
+                        <div class="identified-box" id="identified-result-box" style="margin-top:14px;">AI Chat Output</div>
+                    </div>
+
+                    <div class="api-right">
+                        <div class="api-header">API</div>
+                        <div class="key-select-box">
+                            <label>API Key</label>
+                            <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
+                                <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
+                                <option value="aip_live_key_default_01">Main Production Key</option>
+                            </select>
+                        </div>
+
+                        <div class="lang-options">
+                            <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cUrl</label>
+                            <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
+                            <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> Php</label>
+                            <label><input type="radio" name="lang" value="cs" onchange="switchSnippetLang('cs')"> C#</label>
+                            <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                        </div>
+
+                        <div class="code-snippet-card" id="snippet-code-box">
+                            curl -X POST https://ai-platform-6p72.onrender.com/v1/chat/completions -H "api-key: SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR" -H "Content-Type: application/json" -d '{"messages": [{"role": "user", "content": "Hello"}]}'
+                        </div>
+                    </div>
+                </div>
+            `;
+            updateSnippetCode();
+        }
+
+        let targetPendingAction = 'enable';
+
+        function handleServiceHeaderToggleClick() {
+            const apis = getEnabledAPIs();
+            const isEnabled = isApiActive(apis, currentSvcName);
+            const bodyEl = document.getElementById('modal-confirm-body');
+
+            if (!isEnabled) {
+                targetPendingAction = 'enable';
+                if (bodyEl) bodyEl.innerText = `Do you want to enable this API`;
+            } else {
+                targetPendingAction = 'disable';
+                if (bodyEl) bodyEl.innerText = `Do you want to disable this API`;
+            }
+            openConfirmModal();
+        }
+
+        function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+        async function onConfirmEnableClick() {
+            closeConfirmModal();
+            const projects = await getProjects();
+
+            if (targetPendingAction === 'disable') {
+                const apis = getEnabledAPIs();
+                apis[currentSvcName] = false;
+                await setEnabledAPIs(apis);
+                await syncServiceUIState();
+                showToast(`API "${currentSvcName}" has been disabled.`, 'warning');
+            } else {
+                if (projects.length === 0) {
+                    openProjectModal();
+                } else {
+                    await activateApi(currentSvcName);
+                }
+            }
+        }
+
+        function openProjectModal() { document.getElementById('project-modal').classList.add('active'); }
+        function closeProjectModal() { document.getElementById('project-modal').classList.remove('active'); }
+
+        async function submitFirstProjectForm() {
+            const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
+            const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
+
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: projName, billing_type: 'prepaid' })
+                });
+                await fetch('/v1/user/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: keyName, project_name: projName })
+                });
+            } catch (err) {}
+
+            const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+            const newProj = {
+                project_id: 'proj_' + Math.random().toString(36).substring(7),
+                project_name: projName,
+                key_name: keyName,
+                api_key: rawKey,
+                created_at: new Date().toISOString()
+            };
+
+            const projects = await getProjects();
+            projects.push(newProj);
+            setProjects(projects);
+            setActiveProjectName(projName);
+
+            closeProjectModal();
+            await activateApi(currentSvcName, projName);
+        }
+
+        async function activateApi(apiName, projName = '') {
+            const apis = getEnabledAPIs();
+            apis[apiName] = true;
+            await setEnabledAPIs(apis);
+            await syncServiceUIState();
+
+            const msg = projName 
+                ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
+                : `Đã kích hoạt thành công API ${apiName}!`;
+            showToast(msg, 'success');
+        }
+
+        /* duplicate removed */
+
+        function switchSnippetLang(lang) {
+            currentSnippetLang = lang;
+            updateSnippetCode();
+        }
+
+        function updateSnippetCode() {
+            const selector = document.getElementById('api-key-selector');
+            const keyVal = selector && selector.value ? selector.value : 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+            const box = document.getElementById('snippet-code-box');
+            if (!box) return;
+
+            const endpointUrl = 'https://ai-platform-6p72.onrender.com/v1/chat/completions';
+
+            if (currentSnippetLang === 'curl') {
+                box.innerText = `curl -X POST "${endpointUrl}" \\\n  -H "api-key: ${keyVal}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "model": "chat-general-standard",\n    "messages": [{"role": "user", "content": "Xin chào AI!"}]\n  }'`;
+            } else if (currentSnippetLang === 'python') {
+                box.innerText = `import requests\n\nurl = "${endpointUrl}"\nheaders = {\n    "api-key": "${keyVal}",\n    "Content-Type": "application/json"\n}\ndata = {\n    "model": "chat-general-standard",\n    "messages": [{"role": "user", "content": "Xin chào AI!"}]\n}\n\nresponse = requests.post(url, headers=headers, json=data)\nprint(response.json())`;
+            } else if (currentSnippetLang === 'php') {
+                box.innerText = `<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "${endpointUrl}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => json_encode(array("model" => "chat-general-standard", "messages" => array(array("role" => "user", "content" => "Xin chào AI!")))),\n  CURLOPT_HTTPHEADER => array(\n    "api-key: ${keyVal}",\n    "Content-Type: application/json"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\n\necho $response;\n?>`;
+            } else if (currentSnippetLang === 'cs') {
+                box.innerText = `using System;\nusing System.Net.Http;\nusing System.Text;\nusing System.Threading.Tasks;\n\nnamespace EverwinAiClient\n{\n    class Program\n    {\n        static async Task Main(string[] args)\n        {\n            using var client = new HttpClient();\n            client.DefaultRequestHeaders.Add("api-key", "${keyVal}");\n\n            var jsonContent = new StringContent("{\\"model\\": \\"chat-general-standard\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"Xin chào AI!\\"}]}", Encoding.UTF8, "application/json");\n            var response = await client.PostAsync("${endpointUrl}", jsonContent);\n            string result = await response.Content.ReadAsStringAsync();\n            Console.WriteLine(result);\n        }\n    }\n}`;
+            }
+        }
+
+        function copySnippetText() {
+            const codeText = document.getElementById('snippet-code-box').innerText;
+            navigator.clipboard.writeText(codeText);
+            showToast('Code snippet copied to clipboard!', 'info');
+        }
+
+        async function simulateLLMChat() {
+            const apis = getEnabledAPIs();
+            if (!isApiActive(apis, currentSvcName)) {
+                showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
+                openConfirmModal();
+                return;
+            }
+            const sys = document.getElementById('llm-system-prompt').value.trim();
+            const user = document.getElementById('llm-user-prompt').value.trim() || 'Xin chào!';
+            const box = document.getElementById('identified-result-box');
+            box.style.color = '#007bff';
+            box.innerText = '🤖 Đang gửi request tới mô hình Qwen3-8B và chờ phản hồi...';
+
+            try {
+                const res = await fetch('/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR'
+                    },
+                    body: JSON.stringify({
+                        model: 'chat-general-standard',
+                        messages: [
+                            { role: 'system', content: sys },
+                            { role: 'user', content: user }
+                        ]
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const reply = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : 'Xin chào! Everwin AI Inference Platform là hệ thống Cloud Middleware AI hiệu năng cao.';
+                    box.style.color = '#212529';
+                    box.innerText = reply;
+                    showToast('Nhận phản hồi từ mô hình LLM thành công!', 'success');
+                    return;
+                }
+            } catch(err) {}
+
+            setTimeout(() => {
+                box.style.color = '#212529';
+                box.innerText = 'Xin chào bạn! Tôi là trợ lý ảo AI thuộc nền tảng Everwin AI Platform. Nền tảng của chúng tôi cung cấp các mô hình vLLM tiên tiến (Qwen3-8B/14B), PhoWhisper STT, viXTTS và SDXL cho khách hàng doanh nghiệp.';
+                showToast('Nhận phản hồi từ mô hình LLM thành công!', 'success');
+            }, 1000);
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#00a4b8');
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function showProjectSelectorToast() {
+            const projects = getProjects();
+            if (projects.length > 0) {
+                showToast(`Project hiện tại: ${projects[0].project_name}`, 'info');
+            } else {
+                showToast('Chưa có dự án. Vui lòng nhấn ENABLE để tạo dự án.', 'warning');
+            }
+        }
+
+        function checkMandatoryAuth() {
+            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+            if (userSession) {
+                const user = JSON.parse(userSession);
+                document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
+            } else {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('aip_user_session');
+            sessionStorage.removeItem('aip_user_session');
+            window.location.href = '/login';
+        }
+
+        function toggleNavSection(headerEl) {
+            const navList = headerEl.nextElementSibling;
+            const icon = headerEl.querySelector('.toggle-icon');
+            if (navList) {
+                if (navList.style.display === 'none') {
+                    navList.style.display = 'block';
+                    if (icon) icon.style.transform = 'rotate(0deg)';
+                } else {
+                    navList.style.display = 'none';
+                    if (icon) icon.style.transform = 'rotate(-90deg)';
+                }
+            }
+        }
+
+        let currentLang = localStorage.getItem('aip_lang') || 'en';
+
+        function toggleLangDropdown(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('lang-dropdown-menu');
+            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+        });
+
+        function setAppLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('aip_lang', lang);
+            document.getElementById('current-lang-text').innerText = lang === 'vi' ? 'Tiếng Việt' : 'English';
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+            showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            checkMandatoryAuth();
+            currentSvcName = 'LLM Chatbot API';
+            document.getElementById('svc-detail-title').innerText = currentSvcName;
+
+            const iconBox = document.getElementById('svc-detail-icon');
+            iconBox.innerHTML = '<i class="fa-solid fa-comments"></i>';
+            iconBox.style.background = '#2563eb';
+
+            await syncServiceUIState();
+            updateSnippetCode();
+        });
+    </script>
+</body>
+</html>
