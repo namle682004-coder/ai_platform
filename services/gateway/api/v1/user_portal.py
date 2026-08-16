@@ -205,12 +205,11 @@ DEFAULT_API_CATALOG = [
         "status": "active",
         "overview": {
             "title": "PhoWhisper Speech-to-Text Large v3 Engine",
-            "summary": "Dịch vụ chuyển đổi giọng nói thành văn bản tiếng Việt chuẩn xác nhất, hỗ trợ nhận dạng tiếng địa phương 3 miền (Bắc, Trung, Nam) và lọc nhiễu môi trường đỉnh cao.",
+            "summary": "Speech synthesis & recognition is the fundamental component of modern artificial intelligence systems. With high ambition, Everwin Technology Innovation Department has launched Everwin AI Speech Synthesis & PhoWhisper ASR.",
             "features": [
-                "Độ chính xác nhận dạng WER (Word Error Rate) dưới 3.5%",
-                "Hỗ trợ ghi âm trực tiếp hoặc tải tệp âm thanh (WAV, MP3, FLAC, M4A)",
-                "Tự động ngắt câu và thêm dấu câu thông minh (Punctuation)",
-                "Tốc độ xử lý siêu nhanh Real-time Factor (RTF) < 0.15"
+                "Building automatic communication system: automated call center, serving machine, maid robot",
+                "Enhance user's experience: reading content for users when unable to monitor screen",
+                "Service for language interaction for visually impaired people"
             ]
         },
         "document": {
@@ -242,34 +241,34 @@ DEFAULT_API_CATALOG = [
         "unit": "character",
         "status": "active",
         "overview": {
-            "title": "viXTTS Neural Speech Synthesis Engine",
-            "summary": "Công nghệ tổng hợp giọng đọc AI mang cảm xúc tự nhiên như người thật, hỗ trợ nhiều giọng đọc Nam/Nữ vùng miền đa dạng.",
+            "title": "FPT.AI Speech - Text to Speech",
+            "summary": "Speech synthesis is the fundamental component of many artificial intelligence systems. With our own ambition, FPT Technology Innovation Department has launched FPT Speech Synthesis. Being considered as the best integrated system of Vietnamese language voice in the market today.",
             "features": [
-                "Giọng đọc truyền cảm, ngắt nghỉ theo ngữ cảnh tự nhiên",
-                "Hỗ trợ 6 giọng đọc tiêu chuẩn (Nam/Nữ Hà Nội, Huế, Sài Gòn)",
-                "Tùy chỉnh tốc độ đọc, cao độ và định dạng file đầu ra (MP3, WAV)",
-                "Thời gian phản hồi siêu thấp thích hợp cho trợ lý ảo Voicebot"
+                "Building automatic communication system: automated call center, serving machine, maid robot",
+                "Enhance user's experience: reading content for users when unable to monitor screen, book reading apps",
+                "Service for language interaction for visually impaired people"
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/audio/speech",
+            "endpoint_url": "https://api.fpt.ai/hmi/tts/v5",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
-                {"name": "api-key", "type": "string", "required": True, "desc": "Khóa API Key của bạn"},
-                {"name": "Content-Type", "type": "string", "required": True, "desc": "application/json"}
+                {"name": "api_key", "type": "string", "required": True, "desc": "Your API key (get from console.fpt.ai)"},
+                {"name": "voice", "type": "string", "required": False, "desc": "banmai (female northern), lannhi (female southern), leminh (male northern), myan (female middle)"},
+                {"name": "speed", "type": "number", "required": False, "desc": "Adjust speed of voice (-3 slowest to +3 fastest, default 0)"},
+                {"name": "format", "type": "string", "required": False, "desc": "Output format: mp3 or wav (default mp3)"},
+                {"name": "callback_url", "type": "string", "required": False, "desc": "URL provided by customer to receive async notification"}
             ],
             "parameters": [
-                {"name": "input", "type": "string", "required": True, "desc": "Văn bản tiếng Việt cần đọc"},
-                {"name": "voice", "type": "string", "required": False, "desc": "Giọng đọc (hanoi_female, saigon_male, etc.)"},
-                {"name": "response_format", "type": "string", "required": False, "desc": "mp3 hoặc wav"}
+                {"name": "body", "type": "string", "required": True, "desc": "Text content to convert (Limit: 3 to 5,000 characters per request)"}
             ],
-            "sample_response": '{\n  "audio_url": "https://ai-platform-6p72.onrender.com/v1/audio/output_speech.mp3",\n  "characters_processed": 48,\n  "status": "success"\n}'
+            "sample_response": '{\n  "async": "https://s3-ap-southeast-1.amazonaws.com/text2speech-v4/male.0.pro.4b5b15285847e83acbb3beb945434453.mp3",\n  "error": 0,\n  "message": "The content will be returned after a few seconds under the async link.",\n  "request_id": "4b5b15285847e83acbb3beb945434453"\n}'
         },
         "pricing": {
-            "free_quota": "100,000 ký tự miễn phí mỗi tháng",
-            "pay_as_you_go": "1 VNĐ / ký tự văn bản",
-            "billing_cycle": "Thanh toán theo lượng ký tự tiêu thụ"
+            "free_quota": "Free Tier: 100,000 characters / month (Low speed, queued requests)",
+            "pay_as_you_go": "Premium Pack 1,500,000 chars (500k VNĐ) | 4,000,000 chars (1M VNĐ) | 10,000,000 chars (2M VNĐ)",
+            "billing_cycle": "Business Premium: Unlimited speed & usage time with standard technical support"
         }
     },
     {
