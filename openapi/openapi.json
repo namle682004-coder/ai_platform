@@ -738,6 +738,50 @@
         ]
       }
     },
+    "/v1/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Authentication & Staff Accounts"
+        ],
+        "summary": "Reset Account Password",
+        "operationId": "forgot_password_v1_auth_forgot_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/mcp/sse": {
       "get": {
         "tags": [
@@ -1977,6 +2021,26 @@
           "status"
         ],
         "title": "EndpointStatusUpdateRequest"
+      },
+      "ForgotPasswordRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "example": "dev_namle@company.com"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password",
+            "example": "newsecret123"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "new_password"
+        ],
+        "title": "ForgotPasswordRequest"
       },
       "HTTPValidationError": {
         "properties": {

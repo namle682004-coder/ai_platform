@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPT.AI Platform - Service Sandbox</title>
+    <title>Everwin AI Platform - Service Sandbox</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -74,31 +74,11 @@
 </head>
 <body>
 
-    <div id="mandatory-auth-gate">
-        <div class="auth-gate-card">
-            <div class="auth-gate-logo"><i class="fa-solid fa-network-wired"></i> FPT.AI Platform</div>
-            <div class="auth-gate-title">Đăng Nhập Hoặc Đăng Ký Tài Khoản</div>
-            <p style="color:var(--text-sub); font-size:12.5px; margin-bottom:20px;">Bạn bắt buộc phải Đăng Nhập hoặc Đăng Ký tài khoản Developer trước khi truy cập FPT.AI Console.</p>
 
-            <form onsubmit="handleGateAuthSubmit(event)">
-                <div class="form-group">
-                    <label>Developer Email</label>
-                    <input type="email" id="gate-email" class="form-control" value="dev_namle@company.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="gate-password" class="form-control" value="secret123" required>
-                </div>
-                <button type="submit" class="btn-explore" style="width:100%; margin-top:8px;">
-                    <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Developer
-                </button>
-            </form>
-        </div>
-    </div>
 
     <div class="top-header">
         <div class="header-left">
-            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> FPT.AI Platform</a>
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
             <div class="project-selector"><i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
@@ -133,7 +113,7 @@
 
         <div class="main-content">
             <div class="notice-bar">
-                <div><i class="fa-solid fa-certificate"></i> Thông báo quan trọng FPT.AI Console cung cấp dịch vụ cho khách hàng doanh nghiệp. Xem thêm tại đây <a href="#" style="color:#fff; text-decoration:underline;">Link</a></div>
+                <div><i class="fa-solid fa-certificate"></i> Thông báo quan trọng Everwin AI Console cung cấp dịch vụ cho khách hàng doanh nghiệp. Xem thêm tại đây <a href="#" style="color:#fff; text-decoration:underline;">Link</a></div>
                 <i class="fa-solid fa-xmark" style="cursor:pointer;"></i>
             </div>
 
@@ -193,37 +173,19 @@
         let currentLang = 'curl';
 
         function checkMandatoryAuth() {
-            const userSession = localStorage.getItem('aip_user_session');
+            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
             if (userSession) {
                 const user = JSON.parse(userSession);
-                document.getElementById('mandatory-auth-gate').style.display = 'none';
                 document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
             } else {
-                document.getElementById('mandatory-auth-gate').style.display = 'flex';
-            }
-        }
-
-        async function handleGateAuthSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('gate-email').value;
-            const password = document.getElementById('gate-password').value;
-            const res = await fetch('/v1/auth/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                localStorage.setItem('aip_user_session', JSON.stringify(data.user));
-                checkMandatoryAuth();
-            } else {
-                alert('Login failed: ' + data.detail);
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
             }
         }
 
         function logoutUser() {
             localStorage.removeItem('aip_user_session');
-            checkMandatoryAuth();
+            sessionStorage.removeItem('aip_user_session');
+            window.location.href = '/login';
         }
 
         function switchSnippetLang(lang) {
@@ -262,7 +224,7 @@
             box.innerText = '🔴 Recording speech audio... Speak into microphone...';
             setTimeout(() => {
                 box.style.color = '#212529';
-                box.innerText = 'Xin chào FPT.AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
+                box.innerText = 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
             }, 2500);
         }
 

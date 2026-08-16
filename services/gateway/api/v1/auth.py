@@ -65,3 +65,26 @@ async def login(request: LoginRequest, http_req: Request):
         "user": user,
         "access_token": f"aip_session_{user['user_id']}",
     }
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(..., json_schema_extra={"example": "dev_namle@company.com"})
+    new_password: str = Field(..., json_schema_extra={"example": "newsecret123"})
+
+
+@router.post("/forgot-password", summary="Reset Account Password")
+async def forgot_password(request: ForgotPasswordRequest, http_req: Request):
+    success = await auth_service.reset_password(email=request.email, new_password=request.new_password)
+    if not success:
+        raise HTTPException(status_code=404, detail="User account with this email not found.")
+
+    client_ip = http_req.client.host if http_req.client else "127.0.0.1"
+    await audit_service.log_event(
+        actor=request.email,
+        action="USER_PASSWORD_RESET",
+        resource="Account Security",
+        details=f"Password reset completed for '{request.email}'.",
+        ip_address=client_ip,
+    )
+
+    return {"message": "Password updated successfully. Please log in with your new password."}

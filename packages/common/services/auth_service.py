@@ -85,6 +85,22 @@ class AuthService:
 
         return None
 
+    async def reset_password(self, email: str, new_password: str) -> bool:
+        hashed = self._hash_password(new_password)
+        db = mongo_manager.get_database()
+        if db is not None:
+            try:
+                res = await db.users.update_one({"email": email}, {"$set": {"hashed_password": hashed}})
+                if res.modified_count > 0:
+                    return True
+            except Exception:
+                pass
+
+        if email in self._users_cache:
+            self._users_cache[email]["hashed_password"] = hashed
+            return True
+        return False
+
     async def list_users(self) -> List[Dict[str, Any]]:
         db = mongo_manager.get_database()
         if db is not None:

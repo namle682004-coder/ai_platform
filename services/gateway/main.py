@@ -102,6 +102,19 @@ async def serve_admin_dashboard():
     return FileResponse(dashboard_path)
 
 
+# Auth Login & Signup Dedicated Web UI Pages
+@app.get("/login", include_in_schema=False)
+async def serve_login():
+    login_path = os.path.join(current_dir, "static", "login.html")
+    return FileResponse(login_path)
+
+
+@app.get("/signup", include_in_schema=False)
+async def serve_signup():
+    signup_path = os.path.join(current_dir, "static", "signup.html")
+    return FileResponse(signup_path)
+
+
 # Staff Developer Portal Web UI Endpoints (Clean Architecture Split Pages)
 @app.get("/staff", include_in_schema=False)
 @app.get("/staff/dashboard", include_in_schema=False)

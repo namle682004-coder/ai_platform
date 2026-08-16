@@ -466,6 +466,35 @@
       }
     },
     {
+      "name": "Reset Account Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/auth/forgot-password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "forgot-password"
+          ]
+        }
+      }
+    },
+    {
       "name": "MCP Server-Sent Events (SSE) Stream",
       "request": {
         "method": "GET",
