@@ -187,6 +187,12 @@ async def serve_staff_payment():
     return FileResponse(payment_path)
 
 
+@app.get("/staff/contact", include_in_schema=False)
+async def serve_staff_contact():
+    contact_path = os.path.join(current_dir, "static", "staff_contact.html")
+    return FileResponse(contact_path)
+
+
 # Public Status Page Endpoint (/status)
 @app.get("/status", include_in_schema=False)
 async def serve_status_page():
