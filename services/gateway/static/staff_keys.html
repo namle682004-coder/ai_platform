@@ -77,7 +77,18 @@
             <div class="project-selector"><i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
-            <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
+            <div style="position:relative; cursor:pointer;" onclick="toggleLangDropdown(event)">
+                <i class="fa-solid fa-globe"></i> <span id="current-lang-text">English</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                <div id="lang-dropdown-menu" style="display:none; position:absolute; top:35px; right:0; background:#fff; color:#0f172a; border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,0.15); border:1px solid #cbd5e1; width:140px; z-index:10000; overflow:hidden;">
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;" onclick="setAppLanguage('en'); event.stopPropagation();">
+                        🇬🇧 English
+                    </div>
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; border-top:1px solid #f1f5f9;" onclick="setAppLanguage('vi'); event.stopPropagation();">
+                        🇻🇳 Tiếng Việt
+                    </div>
+                </div>
+            </div>
             <div class="user-menu">
                 <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
                 <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left:6px; cursor:pointer;" onclick="logoutUser()"></i>
@@ -253,6 +264,28 @@
                     if (icon) icon.style.transform = 'rotate(-90deg)';
                 }
             }
+        }
+
+        let currentLang = localStorage.getItem('aip_lang') || 'en';
+
+        function toggleLangDropdown(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('lang-dropdown-menu');
+            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+        });
+
+        function setAppLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('aip_lang', lang);
+            document.getElementById('current-lang-text').innerText = lang === 'vi' ? 'Tiếng Việt' : 'English';
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+            showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
         }
 
         window.addEventListener('DOMContentLoaded', () => {

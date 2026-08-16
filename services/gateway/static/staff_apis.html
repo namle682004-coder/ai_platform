@@ -73,7 +73,7 @@
         input:checked + .slider { background-color: #00a4b8; }
         input:checked + .slider:before { transform: translateX(22px); }
 
-        /* FPT.AI CONFIRM POPUP MODAL (Exact Replica of User Screenshot) */
+        /* FPT.AI CONFIRM POPUP MODAL */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
         .modal-overlay.active { display: flex; }
         .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
@@ -85,9 +85,7 @@
         .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
         .btn-confirm-ok:hover { background: #0056b3; }
 
-        /* Form Modal for Creating First Project */
         .form-control-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; margin-top: 6px; outline: none; }
-        .form-control-input:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,0.15); }
 
         /* Toast Container */
         #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
@@ -104,7 +102,18 @@
             <div class="project-selector" onclick="showProjectSelectorToast()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
-            <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
+            <div style="position:relative; cursor:pointer;" onclick="toggleLangDropdown(event)">
+                <i class="fa-solid fa-globe"></i> <span id="current-lang-text">English</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                <div id="lang-dropdown-menu" style="display:none; position:absolute; top:35px; right:0; background:#fff; color:#0f172a; border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,0.15); border:1px solid #cbd5e1; width:140px; z-index:10000; overflow:hidden;">
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;" onclick="setAppLanguage('en'); event.stopPropagation();">
+                        🇬🇧 English
+                    </div>
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; border-top:1px solid #f1f5f9;" onclick="setAppLanguage('vi'); event.stopPropagation();">
+                        🇻🇳 Tiếng Việt
+                    </div>
+                </div>
+            </div>
             <div class="user-menu">
                 <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
                 <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left:6px; cursor:pointer;" onclick="logoutUser()"></i>
@@ -116,19 +125,19 @@
         <div class="sidebar">
             <div class="nav-section">
                 <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span>Console</span>
+                    <span id="txt-nav-console">Console</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/dashboard">Dashboard</a></li>
-                    <li class="nav-item active"><a href="/staff/apis">APIs</a></li>
-                    <li class="nav-item"><a href="/staff/keys">API Keys</a></li>
-                    <li class="nav-item"><a href="/staff/report">API report</a></li>
+                    <li class="nav-item"><a href="/staff/dashboard" id="txt-nav-dashboard">Dashboard</a></li>
+                    <li class="nav-item active"><a href="/staff/apis" id="txt-nav-apis">APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys" id="txt-nav-keys">API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report" id="txt-nav-report">API report</a></li>
                 </ul>
             </div>
             <div class="nav-section">
                 <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span>Applications</span>
+                    <span id="txt-nav-apps">Applications</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
@@ -142,11 +151,11 @@
         <div class="main-content">
             <div class="welcome-banner">
                 <h1 id="welcome-title">Welcome, Nam Lê</h1>
-                <p>Thông báo quan trọng Everwin AI Console cung cấp hạ tầng AI Cloud Middleware chuẩn Enterprise cho doanh nghiệp. Xem thêm tại đây <a href="/docs" style="color:#fff; text-decoration:underline;">Link</a></p>
-                <a href="#apis-anchor" class="btn-explore">EXPLORE</a>
+                <p id="welcome-desc">Important notice: Everwin AI Console provides Enterprise-grade AI Cloud Middleware infrastructure for businesses. Read more here <a href="/docs" style="color:#fff; text-decoration:underline;">Link</a></p>
+                <a href="#apis-anchor" class="btn-explore" id="btn-explore-text">EXPLORE</a>
             </div>
 
-            <div id="apis-anchor" class="page-title">APIs Catalog</div>
+            <div id="apis-anchor" class="page-title" id="txt-catalog-title">APIs Catalog</div>
 
             <div class="api-grid">
                 <!-- Speech to Text Card -->
@@ -194,14 +203,14 @@
         </div>
     </div>
 
-    <!-- MODAL 1: EXACT FPT.AI CONFIRM POPUP (Replica of User Screenshot) -->
+    <!-- MODAL 1: EXACT FPT.AI CONFIRM POPUP -->
     <div class="modal-overlay" id="confirm-modal">
         <div class="confirm-box">
-            <div class="confirm-header">Confirm</div>
-            <div class="confirm-body">Do you want to enable this API</div>
+            <div class="confirm-header" id="modal-confirm-header">Confirm</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API</div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
-                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+                <button class="btn-confirm-cancel" id="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-ok" id="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
             </div>
         </div>
     </div>
@@ -209,27 +218,132 @@
     <!-- MODAL 2: CREATE FIRST PROJECT & API KEY FORM MODAL -->
     <div class="modal-overlay" id="project-modal">
         <div class="confirm-box" style="width: 480px;">
-            <div class="confirm-header" style="background:var(--fpt-blue); color:#fff;">Tạo Dự Án & API Key Đầu Tiên</div>
+            <div class="confirm-header" style="background:var(--fpt-blue); color:#fff;" id="modal-proj-header">Tạo Dự Án & API Key Đầu Tiên</div>
             <div class="confirm-body">
-                <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:</p>
+                <p style="font-size:13px; color:#64748b; margin-bottom:14px;" id="modal-proj-desc">Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:</p>
                 <div style="margin-bottom:12px;">
-                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên Dự Án (Project Name)</label>
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;" id="lbl-proj-name">Tên Dự Án (Project Name)</label>
                     <input type="text" id="input-project-name" class="form-control-input" placeholder="Ví dụ: Banking AI Project" value="Everwin Primary Project">
                 </div>
                 <div>
-                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên API Key</label>
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;" id="lbl-key-name">Tên API Key</label>
                     <input type="text" id="input-key-name" class="form-control-input" placeholder="Ví dụ: Production Main Key" value="Default Live Key">
                 </div>
             </div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" onclick="closeProjectModal()">HỦY BỎ</button>
-                <button class="btn-confirm-ok" style="background:var(--fpt-cyan);" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
+                <button class="btn-confirm-cancel" id="btn-proj-cancel" onclick="closeProjectModal()">HỦY BỎ</button>
+                <button class="btn-confirm-ok" style="background:var(--fpt-cyan);" id="btn-proj-submit" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
             </div>
         </div>
     </div>
 
     <script>
         let targetPendingApi = null;
+        let currentLang = localStorage.getItem('aip_lang') || 'en';
+
+        const i18nDict = {
+            en: {
+                langText: "English",
+                selectProj: "Select a project",
+                console: "Console",
+                dashboard: "Dashboard",
+                apis: "APIs",
+                keys: "API Keys",
+                report: "API report",
+                apps: "Applications",
+                welcomeTitle: "Welcome, ",
+                welcomeDesc: "Important notice: Everwin AI Console provides Enterprise-grade AI Cloud Middleware infrastructure for businesses. Read more here ",
+                explore: "EXPLORE",
+                catalogTitle: "APIs Catalog",
+                confirmHeader: "Confirm",
+                confirmBody: "Do you want to enable this API",
+                btnCancel: "CANCEL",
+                btnConfirm: "CONFIRM",
+                btnEnable: "ENABLE",
+                btnEnabled: "ENABLED",
+                projHeader: "Create First Project & API Key",
+                projDesc: "You don't have a project yet. Please enter Project Name and API Key Name to enable service:",
+                projNameLbl: "Project Name",
+                keyNameLbl: "API Key Name",
+                btnProjCancel: "CANCEL",
+                btnProjSubmit: "ENABLE SERVICE"
+            },
+            vi: {
+                langText: "Tiếng Việt",
+                selectProj: "Chọn một dự án",
+                console: "Bảng điều khiển",
+                dashboard: "Bảng điều khiển",
+                apis: "Danh mục APIs",
+                keys: "Mã API Keys",
+                report: "Báo cáo API",
+                apps: "Ứng dụng AI",
+                welcomeTitle: "Xin chào, ",
+                welcomeDesc: "Thông báo quan trọng: Everwin AI Console cung cấp hạ tầng AI Cloud Middleware chuẩn Enterprise cho doanh nghiệp. Xem thêm tại đây ",
+                explore: "KHÁM PHÁ",
+                catalogTitle: "Danh Mục APIs",
+                confirmHeader: "Xác nhận",
+                confirmBody: "Bạn có muốn kích hoạt API này không?",
+                btnCancel: "HỦY BỎ",
+                btnConfirm: "XÁC NHẬN",
+                btnEnable: "KÍCH HOẠT",
+                btnEnabled: "ĐÃ KÍCH HOẠT",
+                projHeader: "Tạo Dự Án & API Key Đầu Tiên",
+                projDesc: "Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:",
+                projNameLbl: "Tên Dự Án (Project Name)",
+                keyNameLbl: "Tên API Key",
+                btnProjCancel: "HỦY BỎ",
+                btnProjSubmit: "KÍCH HOẠT DỊCH VỤ"
+            }
+        };
+
+        function toggleLangDropdown(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('lang-dropdown-menu');
+            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+        });
+
+        function setAppLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('aip_lang', lang);
+            applyLanguage();
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+        }
+
+        function applyLanguage() {
+            const t = i18nDict[currentLang] || i18nDict.en;
+            document.getElementById('current-lang-text').innerText = t.langText;
+            document.getElementById('txt-nav-console').innerText = t.console;
+            document.getElementById('txt-nav-dashboard').innerText = t.dashboard;
+            document.getElementById('txt-nav-apis').innerText = t.apis;
+            document.getElementById('txt-nav-keys').innerText = t.keys;
+            document.getElementById('txt-nav-report').innerText = t.report;
+            document.getElementById('txt-nav-apps').innerText = t.apps;
+
+            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+            const userName = userSession ? JSON.parse(userSession).full_name : 'Nam Lê';
+            document.getElementById('welcome-title').innerText = t.welcomeTitle + userName;
+            document.getElementById('btn-explore-text').innerText = t.explore;
+
+            document.getElementById('modal-confirm-header').innerText = t.confirmHeader;
+            document.getElementById('modal-confirm-body').innerText = t.confirmBody;
+            document.getElementById('btn-confirm-cancel').innerText = t.btnCancel;
+            document.getElementById('btn-confirm-ok').innerText = t.btnConfirm;
+
+            document.getElementById('modal-proj-header').innerText = t.projHeader;
+            document.getElementById('modal-proj-desc').innerText = t.projDesc;
+            document.getElementById('lbl-proj-name').innerText = t.projNameLbl;
+            document.getElementById('lbl-key-name').innerText = t.keyNameLbl;
+            document.getElementById('btn-proj-cancel').innerText = t.btnProjCancel;
+            document.getElementById('btn-proj-submit').innerText = t.btnProjSubmit;
+
+            syncUIState();
+        }
 
         function getEnabledAPIs() {
             const data = localStorage.getItem('aip_enabled_apis');
@@ -252,24 +366,22 @@
         function syncUIState() {
             const apis = getEnabledAPIs();
             const projects = getProjects();
+            const t = i18nDict[currentLang] || i18nDict.en;
 
             if (projects.length > 0) {
                 document.getElementById('current-project-label').innerText = projects[0].project_name;
             } else {
-                document.getElementById('current-project-label').innerText = 'Select a project';
+                document.getElementById('current-project-label').innerText = t.selectProj;
             }
 
-            // Sync STT
             const sttState = !!apis["Speech to Text"];
             document.getElementById('toggle-stt').checked = sttState;
             updateBtnState('btn-stt', sttState);
 
-            // Sync TTS
             const ttsState = !!apis["Text to Speech"];
             document.getElementById('toggle-tts').checked = ttsState;
             updateBtnState('btn-tts', ttsState);
 
-            // Sync LLM
             const llmState = !!apis["LLM Chatbot API"];
             document.getElementById('toggle-llm').checked = llmState;
             updateBtnState('btn-llm', llmState);
@@ -277,11 +389,12 @@
 
         function updateBtnState(btnId, isEnabled) {
             const btn = document.getElementById(btnId);
+            const t = i18nDict[currentLang] || i18nDict.en;
             if (isEnabled) {
-                btn.innerText = 'ENABLED';
+                btn.innerText = t.btnEnabled;
                 btn.classList.add('active');
             } else {
-                btn.innerText = 'ENABLE';
+                btn.innerText = t.btnEnable;
                 btn.classList.remove('active');
             }
         }
@@ -291,12 +404,10 @@
             const currentState = !!apis[apiName];
 
             if (!currentState) {
-                // Currently OFF -> User wants to ENABLE -> Open Confirm Modal
-                checkboxEl.checked = false; // keep unchecked until confirmed
+                checkboxEl.checked = false;
                 targetPendingApi = apiName;
                 openConfirmModal();
             } else {
-                // Currently ON -> User wants to DISABLE
                 apis[apiName] = false;
                 setEnabledAPIs(apis);
                 syncUIState();
@@ -312,10 +423,8 @@
             const projects = getProjects();
 
             if (projects.length === 0) {
-                // First API activation and NO project exists -> Open Project Creation Modal
                 openProjectModal();
             } else {
-                // Project already exists -> Directly enable API!
                 activateApi(targetPendingApi);
             }
         }
@@ -360,42 +469,6 @@
             window.location.href = `/staff/service?name=${encodeURIComponent(apiName)}`;
         }
 
-        function showToast(msg, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast-msg ${type}`;
-            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#00a4b8');
-            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 3500);
-        }
-
-        function showProjectSelectorToast() {
-            const projects = getProjects();
-            if (projects.length > 0) {
-                showToast(`Project hiện tại: ${projects[0].project_name}`, 'info');
-            } else {
-                showToast('Chưa có dự án. Vui lòng kích hoạt một API để khởi tạo dự án.', 'warning');
-            }
-        }
-
-        function checkMandatoryAuth() {
-            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
-            if (userSession) {
-                const user = JSON.parse(userSession);
-                document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
-                document.getElementById('welcome-title').innerText = `Welcome, ${user.full_name || 'Nam Lê'}`;
-            } else {
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
-            }
-        }
-
-        function logoutUser() {
-            localStorage.removeItem('aip_user_session');
-            sessionStorage.removeItem('aip_user_session');
-            window.location.href = '/login';
-        }
-
         function toggleNavSection(headerEl) {
             const navList = headerEl.nextElementSibling;
             const icon = headerEl.querySelector('.toggle-icon');
@@ -410,9 +483,45 @@
             }
         }
 
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#00a4b8');
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function showProjectSelectorToast() {
+            const projects = getProjects();
+            if (projects.length > 0) {
+                showToast(`Project: ${projects[0].project_name}`, 'info');
+            } else {
+                const t = i18nDict[currentLang] || i18nDict.en;
+                showToast(t.selectProj, 'warning');
+            }
+        }
+
+        function checkMandatoryAuth() {
+            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+            if (userSession) {
+                const user = JSON.parse(userSession);
+                document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
+            } else {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('aip_user_session');
+            sessionStorage.removeItem('aip_user_session');
+            window.location.href = '/login';
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             checkMandatoryAuth();
-            syncUIState();
+            applyLanguage();
         });
     </script>
 </body>
