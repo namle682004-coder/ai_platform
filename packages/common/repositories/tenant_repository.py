@@ -63,5 +63,35 @@ class MongoTenantRepository(ITenantRepository):
                 pass
         return [dict(t) for t in self._tenants_cache.values()]
 
+    def save_payment(self, payment_record: Dict[str, Any]) -> Dict[str, Any]:
+        if not hasattr(self, "_payments_cache"):
+            self._payments_cache = []
+        rec = dict(payment_record)
+        rec.pop("_id", None)
+        self._payments_cache.insert(0, rec)
+        db = mongo_manager.get_database()
+        if db is not None:
+            try:
+                db.payments.insert_one(dict(rec))
+            except Exception:
+                pass
+        return rec
+
+    def list_payments(self) -> List[Dict[str, Any]]:
+        if not hasattr(self, "_payments_cache"):
+            self._payments_cache = []
+        db = mongo_manager.get_database()
+        if db is not None:
+            try:
+                cursor = db.payments.find({}, {"_id": 0})
+                payments = list(cursor)
+                if payments:
+                    for p in payments:
+                        p.pop("_id", None)
+                    return payments
+            except Exception:
+                pass
+        return [dict(p) for p in self._payments_cache]
+
 
 tenant_repository = MongoTenantRepository()

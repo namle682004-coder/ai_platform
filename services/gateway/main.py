@@ -181,12 +181,26 @@ async def serve_staff_service():
     return FileResponse(service_path)
 
 
+@app.get("/staff/payment", include_in_schema=False)
+async def serve_staff_payment():
+    payment_path = os.path.join(current_dir, "static", "staff_payment.html")
+    return FileResponse(payment_path)
+
+
+@app.get("/staff/contact", include_in_schema=False)
+async def serve_staff_contact():
+    contact_path = os.path.join(current_dir, "static", "staff_contact.html")
+    return FileResponse(contact_path)
+
+
 # Public Status Page Endpoint (/status)
 @app.get("/status", include_in_schema=False)
 async def serve_status_page():
     status_path = os.path.join(current_dir, "static", "status.html")
     return FileResponse(status_path)
 
+
+from gateway.api.v1.user_portal import router as user_portal_router
 
 # Register Public /v1 Routers
 app.include_router(chat_router)
@@ -201,6 +215,7 @@ app.include_router(jobs_router)
 app.include_router(models_router)
 app.include_router(auth_router)
 app.include_router(mcp_router)
+app.include_router(user_portal_router)
 
 # Register Admin /admin/v1 Routers
 app.include_router(admin_keys_router)

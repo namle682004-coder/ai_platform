@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Everwin AI Platform - API Keys</title>
+    <title>Everwin AI Platform - Contact Us & Feedback</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="alternate icon" type="image/png" href="/static/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -47,26 +47,33 @@
 
         .main-content { flex: 1; padding: 28px 36px; overflow-y: auto; }
 
-        .page-title-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
-        .page-title { font-family: var(--font-heading); font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-        .page-subtitle { font-size: 13px; color: var(--text-sub); max-width: 600px; line-height: 1.5; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
 
-        .btn-create-blue { background: #007bff; color: #ffffff; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 700; font-size: 12.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s ease; }
-        .btn-create-blue:hover { background: #0056b3; }
+        .card-box { background: #ffffff; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); padding: 32px; }
+        .card-header-title { font-family: var(--font-heading); font-size: 30px; font-weight: 500; color: #1e293b; margin-bottom: 24px; }
 
-        .table-card { background: #ffffff; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th { color: var(--text-sub); font-weight: 600; font-size: 11.5px; padding: 14px 18px; border-bottom: 1px solid var(--border-color); background: #ffffff; }
-        td { padding: 16px 18px; border-bottom: 1px solid var(--border-color); color: var(--text-dark); }
-        tr:hover td { background: #f8fafc; }
+        .info-list { display: flex; flex-direction: column; gap: 20px; font-size: 13.5px; color: #334155; }
+        .info-item { display: flex; align-items: flex-start; gap: 16px; line-height: 1.5; }
+        .info-item i { font-size: 16px; color: #64748b; margin-top: 2px; width: 20px; }
+        .info-label { width: 70px; font-weight: 500; color: #475569; }
+        .info-value { flex: 1; }
 
-        .table-footer { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 12px 24px; font-size: 12px; color: var(--text-sub); background: #ffffff; border-top: 1px solid var(--border-color); }
-        .table-footer select { padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; outline: none; }
+        .btn-map { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 14px; font-size: 12px; font-weight: 700; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; }
+        .btn-map:hover { background: #e2e8f0; }
 
-        /* MODAL OVERLAY & BOX */
+        /* MATERIAL FORM STYLING MATCHING USER SCREENSHOT */
+        .material-group { margin-bottom: 24px; position: relative; }
+        .material-input-line { width: 100%; border: none; border-bottom: 1.5px solid #cbd5e1; padding: 8px 0; font-size: 14px; outline: none; transition: border-color 0.2s; font-family: var(--font-body); color: #0f172a; }
+        .material-input-line:focus { border-bottom-color: #007bff; }
+
+        .btn-blue-submit { background: #007bff; color: #ffffff; border: none; padding: 9px 24px; border-radius: 4px; font-weight: 700; font-size: 12.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s; }
+        .btn-blue-submit:hover { background: #0056b3; }
+
+        .char-counter { font-size: 12px; color: #94a3b8; text-align: right; margin-top: 4px; }
+
+        /* MODAL OVERLAY */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
         .modal-overlay.active { display: flex; }
-
         .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
         .confirm-header { background: #e5e7eb; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1f2937; }
         .confirm-body { padding: 24px 20px; font-size: 14px; color: #374151; }
@@ -77,15 +84,9 @@
         .btn-confirm-ok:hover { background: #0056b3; }
 
         .form-control-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; margin-top: 6px; outline: none; }
-        .form-control-input:focus { border-color: #007bff; }
-
-        .proj-row-selectable { cursor: pointer; transition: background 0.15s; }
-        .proj-row-selectable:hover td { background: #f1f5f9 !important; }
-        .proj-row-selectable.active-proj td { background: rgba(0, 123, 255, 0.08) !important; font-weight: 700; }
 
         /* Toast Container */
         #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
-        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
     </style>
 </head>
 <body>
@@ -127,7 +128,7 @@
                 <ul class="nav-list">
                     <li class="nav-item"><a href="/staff/dashboard">Dashboard</a></li>
                     <li class="nav-item"><a href="/staff/apis">APIs</a></li>
-                    <li class="nav-item active"><a href="/staff/keys">API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/keys">API Keys</a></li>
                     <li class="nav-item"><a href="/staff/report">API report</a></li>
                 </ul>
             </div>
@@ -142,54 +143,96 @@
                     <li class="nav-item"><a href="/staff/service?name=LLM%20Chatbot%20API">LLM Chatbot</a></li>
                 </ul>
             </div>
-            <div class="nav-section"><div class="section-title"><span>Payment history</span></div></div>
-            <div class="nav-section"><div class="section-title"><span>Contact us</span></div></div>
+            <div class="nav-section"><div class="section-title"><a href="/staff/payment" style="color:#475569; text-decoration:none;">Payment history</a></div></div>
+            <div class="nav-section"><div class="section-title active"><a href="/staff/contact" style="color: var(--fpt-cyan); font-weight:700; text-decoration:none;">Contact us</a></div></div>
         </div>
 
         <div class="main-content">
-            <div class="page-title-row">
-                <div>
-                    <div class="page-title">API Keys</div>
-                    <div class="page-subtitle">Create credentials to access your enabled APIs. For more information, see the authentication documentation.</div>
+            <!-- ROW 1: CONTACT US & DROP US A LINE (Exact Replica of Screenshot 1) -->
+            <div class="contact-grid">
+                <!-- CARD 1: CONTACT US -->
+                <div class="card-box">
+                    <div class="card-header-title">Contact us</div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <i class="fa-solid fa-phone"></i>
+                            <div class="info-label">Hotline</div>
+                            <div class="info-value"><strong>1900 638 399</strong></div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div class="info-label">Email</div>
+                            <div class="info-value"><a href="mailto:support@everwin.ai" style="color:#007bff; text-decoration:none;">support@everwin.ai</a></div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <div class="info-label">Address</div>
+                            <div class="info-value">
+                                Hanoi: No 10, Pham Van Bach street, Dich Vong ward, Cau Giay district<br>
+                                Ho Chi Minh City: 3rd floor, PJICO building, 186 Dien Bien Phu street, district 3<br>
+                                <button class="btn-map" onclick="showToast('Opening Google Maps location...', 'info')"><i class="fa-solid fa-map-location-dot"></i> MAP</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn-create-blue" onclick="openCreateApiKeyModal()">CREATE API KEY</button>
+
+                <!-- CARD 2: DROP US A LINE -->
+                <div class="card-box">
+                    <div class="card-header-title">Drop us a line</div>
+                    <form onsubmit="submitDropUsLine(event)">
+                        <div class="material-group">
+                            <input type="text" class="material-input-line" placeholder="Name" required>
+                        </div>
+                        <div class="material-group">
+                            <input type="text" class="material-input-line" placeholder="Phone number" required>
+                        </div>
+                        <div class="material-group">
+                            <input type="email" class="material-input-line" placeholder="Email" required>
+                        </div>
+                        <div class="material-group">
+                            <textarea class="material-input-line" placeholder="Message" rows="2" style="resize: vertical;" required></textarea>
+                        </div>
+                        <div style="text-align: right;">
+                            <button type="submit" class="btn-blue-submit">SEND MESSAGE</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            <div class="table-card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Created date ↓</th>
-                            <th>Name</th>
-                            <th>Key</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="api-keys-tbody">
-                        <tr>
-                            <td>2026/08/16 07:15</td>
-                            <td><strong>hello</strong></td>
-                            <td><code>SSAm****************************</code></td>
-                            <td>
-                                <i class="fa-regular fa-copy" title="Copy Key" style="cursor:pointer; color:#64748b; font-size:16px; margin-right:12px;" onclick="copyKeyText('SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR')"></i>
-                                <i class="fa-regular fa-trash-can" title="Delete Key" style="cursor:pointer; color:#dc3545; font-size:16px;" onclick="deleteApiKeyRow(this)"></i>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- ROW 2: FEEDBACK (Exact Replica of Screenshot 2) -->
+            <div class="card-box" style="margin-bottom: 28px;">
+                <div class="card-header-title">Feedback</div>
+                <form onsubmit="submitFeedback(event)">
+                    <div style="margin-bottom: 24px;">
+                        <div style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight: 500;">Category</div>
+                        <div style="display: flex; gap: 24px; font-size: 14px; color: #334155;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="fb_category" value="feature" checked> Request feature
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="fb_category" value="error"> Report error
+                            </label>
+                        </div>
+                    </div>
 
-                <div class="table-footer">
-                    <span>rows per page</span>
-                    <select><option>10</option><option>25</option></select>
-                    <span>1-1 of 1</span>
-                    <i class="fa-solid fa-chevron-left"></i>
-                    <i class="fa-solid fa-chevron-right"></i>
-                </div>
+                    <div class="material-group">
+                        <input type="text" class="material-input-line" placeholder="Title" required>
+                    </div>
+
+                    <div class="material-group" style="margin-bottom: 8px;">
+                        <textarea id="fb-description-input" class="material-input-line" placeholder="Description" rows="3" onkeyup="updateCharCounter(this)" maxlength="1000" style="resize: vertical;" required></textarea>
+                        <div class="char-counter" id="char-counter-text">0 / 1000</div>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                        <button type="submit" class="btn-blue-submit" style="padding: 8px 28px;">SEND</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- SELECT A PROJECT MODAL (Exact Replica of User Screenshot) -->
+    <!-- SELECT A PROJECT MODAL -->
     <div class="modal-overlay" id="select-project-modal">
         <div class="confirm-box" style="width: 620px; border-radius: 4px;">
             <div class="confirm-header" style="background: #e5e7eb; color: #1f2937; font-size: 20px; font-weight: 500; padding: 18px 24px;">Select a project</div>
@@ -211,15 +254,13 @@
                                 <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Type</th>
                             </tr>
                         </thead>
-                        <tbody id="projects-modal-tbody">
-                            <!-- Injected dynamically via JS -->
-                        </tbody>
+                        <tbody id="projects-modal-tbody"></tbody>
                     </table>
                 </div>
 
                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; font-size: 12px; color: #64748b;">
                     <span>Rows per page</span>
-                    <select style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 8px; font-size: 12px;"><option>5</option><option>10</option></select>
+                    <select style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 8px; font-size: 12px;"><option>5</option></select>
                     <span id="proj-count-label">1-1 of 1</span>
                     <i class="fa-solid fa-chevron-left" style="cursor: pointer;"></i>
                     <i class="fa-solid fa-chevron-right" style="cursor: pointer;"></i>
@@ -255,106 +296,146 @@
         </div>
     </div>
 
-    <!-- MODAL: CREATE API KEY -->
-    <div class="modal-overlay" id="modal-create-api-key">
-        <div class="confirm-box" style="width: 440px;">
-            <div class="confirm-header">Create API Key</div>
-            <div class="confirm-body">
-                <div style="margin-bottom: 14px;">
-                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Key Name</label>
-                    <input type="text" id="new-key-name" class="form-control-input" placeholder="e.g. Production Main Key" value="Production Main Key">
-                </div>
-            </div>
-            <div class="confirm-footer">
-                <button class="btn-confirm-cancel" onclick="closeModal('modal-create-api-key')">CANCEL</button>
-                <button class="btn-confirm-ok" onclick="handleCreateApiKeySubmit(event)">CREATE</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        let currentLang = localStorage.getItem('aip_lang') || 'en';
+        function updateCharCounter(el) {
+            const count = el.value.length;
+            document.getElementById('char-counter-text').innerText = `${count} / 1000`;
+        }
 
-        async function getProjects() {
+        async function submitDropUsLine(e) {
+            e.preventDefault();
+            const inputs = e.target.querySelectorAll('input, textarea');
+            const data = {
+                name: inputs[0].value,
+                phone: inputs[1].value,
+                email: inputs[2].value,
+                message: inputs[3].value
+            };
             try {
-                const res = await fetch('/v1/user/projects');
-                if (res.ok) {
-                    const data = await res.json();
-                    localStorage.setItem('aip_projects', JSON.stringify(data));
-                    return data;
-                }
+                await fetch('/v1/user/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
             } catch (err) {}
+            showToast('Cảm ơn bạn đã gửi lời nhắn! Đội ngũ hỗ trợ sẽ liên hệ lại trong ít phút.', 'success');
+            e.target.reset();
+        }
+
+        async function submitFeedback(e) {
+            e.preventDefault();
+            const cat = e.target.querySelector('input[name="fb_category"]:checked').value;
+            const title = e.target.querySelector('input[placeholder="Title"]').value;
+            const desc = document.getElementById('fb-description-input').value;
+            try {
+                await fetch('/v1/user/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: cat, title: title, description: desc })
+                });
+            } catch (err) {}
+            showToast('Phản hồi của bạn đã được gửi thành công! Cảm ơn đóng góp của bạn.', 'success');
+            e.target.reset();
+            document.getElementById('char-counter-text').innerText = '0 / 1000';
+        }
+
+        function getProjects() {
             const data = localStorage.getItem('aip_projects');
             return data ? JSON.parse(data) : [
                 { project_id: 'proj_default', project_name: 'wwrwer23', created_at: '2026-08-16', type: 'prepaid' }
             ];
         }
 
-        async function getApiKeys() {
-            try {
-                const res = await fetch('/v1/user/api-keys');
-                if (res.ok) {
-                    const data = await res.json();
-                    renderApiKeysTable(data);
-                    return data;
-                }
-            } catch (err) {}
-            return [];
+        function setProjects(projList) {
+            localStorage.setItem('aip_projects', JSON.stringify(projList));
         }
 
-        function renderApiKeysTable(keys) {
-            const tbody = document.getElementById('api-keys-tbody');
-            if (!tbody) return;
+        function getActiveProjectName() {
+            const active = localStorage.getItem('aip_active_project');
+            const projects = getProjects();
+            if (active) return active;
+            return projects.length > 0 ? projects[0].project_name : 'Select a project';
+        }
+
+        function setActiveProjectName(name) {
+            localStorage.setItem('aip_active_project', name);
+            document.getElementById('current-project-label').innerText = name;
+        }
+
+        function openSelectProjectModal() {
+            renderProjectsModalTable();
+            document.getElementById('select-project-modal').classList.add('active');
+        }
+
+        function closeSelectProjectModal() {
+            document.getElementById('select-project-modal').classList.remove('active');
+        }
+
+        function renderProjectsModalTable() {
+            const projects = getProjects();
+            const activeName = getActiveProjectName();
+            const tbody = document.getElementById('projects-modal-tbody');
             tbody.innerHTML = '';
-            if (keys.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">No API Keys created yet</td></tr>`;
-                return;
-            }
-            keys.forEach(k => {
-                const rawVal = k.value || k.api_key || 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
-                const masked = maskApiKey(rawVal);
+
+            projects.forEach(p => {
+                const dateStr = p.created_at ? p.created_at.substring(0, 10) : '2026-08-16';
+                const typeStr = p.type || 'prepaid';
+                const isActive = p.project_name === activeName;
+
                 const tr = document.createElement('tr');
+                tr.className = `proj-row-selectable ${isActive ? 'active-proj' : ''}`;
+                tr.style.cursor = 'pointer';
                 tr.innerHTML = `
-                    <td>${k.created_at || '2026/08/16 07:15'}</td>
-                    <td><strong>${k.name || 'Key'}</strong></td>
-                    <td><code>${masked}</code></td>
-                    <td>
-                        <i class="fa-regular fa-copy" title="Copy Key" style="cursor:pointer; color:#64748b; font-size:16px; margin-right:12px;" onclick="copyKeyText('${rawVal}')"></i>
-                        <i class="fa-regular fa-trash-can" title="Delete Key" style="cursor:pointer; color:#dc3545; font-size:16px;" onclick="deleteApiKeyRow(this, '${k.key_id || ''}')"></i>
-                    </td>
+                    <td style="padding: 12px 16px;">${dateStr}</td>
+                    <td style="padding: 12px 16px;"><strong>${p.project_name}</strong></td>
+                    <td style="padding: 12px 16px;"><strong>${typeStr}</strong></td>
                 `;
+                tr.onclick = () => {
+                    setActiveProjectName(p.project_name);
+                    closeSelectProjectModal();
+                    showToast(`Active project changed to: "${p.project_name}"`, 'success');
+                };
                 tbody.appendChild(tr);
+            });
+
+            document.getElementById('proj-count-label').innerText = `1-${projects.length} of ${projects.length}`;
+        }
+
+        function filterProjectsList() {
+            const query = document.getElementById('project-search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('#projects-modal-tbody tr');
+            rows.forEach(r => {
+                const text = r.innerText.toLowerCase();
+                r.style.display = text.includes(query) ? '' : 'none';
             });
         }
 
-        async function handleCreateApiKeySubmit(e) {
-            if (e) e.preventDefault();
-            const name = document.getElementById('new-key-name').value.trim() || 'Production Key';
-            try {
-                const res = await fetch('/v1/user/api-keys', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: name, project_name: getActiveProjectName() })
-                });
-                if (res.ok) {
-                    closeModal('modal-create-api-key');
-                    showToast(`Tạo thành công API Key "${name}"!`, 'success');
-                    getApiKeys();
-                    return;
-                }
-            } catch (err) {}
-            showToast(`Tạo thành công API Key "${name}"!`, 'success');
-            closeModal('modal-create-api-key');
+        function openCreatePrepaidProjectModal() {
+            closeSelectProjectModal();
+            document.getElementById('create-project-modal').classList.add('active');
         }
 
-        async function deleteApiKeyRow(icon, keyId) {
-            if (keyId) {
-                try {
-                    await fetch(`/v1/user/api-keys/${keyId}`, { method: 'DELETE' });
-                } catch (err) {}
-            }
-            icon.closest('tr').remove();
-            showToast('Đã xóa API Key.', 'warning');
+        function closeCreatePrepaidProjectModal() {
+            document.getElementById('create-project-modal').classList.remove('active');
+        }
+
+        function submitCreatePrepaidProject() {
+            const name = document.getElementById('input-new-project-name').value.trim() || 'New Prepaid Project';
+            const type = document.getElementById('input-new-project-type').value;
+
+            const projects = getProjects();
+            const newProj = {
+                project_id: 'proj_' + Math.random().toString(36).substring(7),
+                project_name: name,
+                type: type,
+                created_at: new Date().toISOString().substring(0, 10)
+            };
+            projects.push(newProj);
+            setProjects(projects);
+
+            setActiveProjectName(name);
+            closeCreatePrepaidProjectModal();
+            showToast(`Prepaid Project "${name}" created successfully!`, 'success');
         }
 
         function toggleNavSection(headerEl) {
@@ -371,16 +452,13 @@
             }
         }
 
+        let currentLang = localStorage.getItem('aip_lang') || 'en';
+
         function toggleLangDropdown(e) {
             if (e) e.stopPropagation();
             const menu = document.getElementById('lang-dropdown-menu');
             menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
         }
-
-        document.addEventListener('click', () => {
-            const menu = document.getElementById('lang-dropdown-menu');
-            if (menu) menu.style.display = 'none';
-        });
 
         function setAppLanguage(lang) {
             currentLang = lang;
@@ -396,7 +474,6 @@
             if (!container) {
                 container = document.createElement('div');
                 container.id = 'toast-container';
-                container.style.cssText = 'position:fixed; top:24px; right:24px; z-index:10000; display:flex; flex-direction:column; gap:10px;';
                 document.body.appendChild(container);
             }
             const toast = document.createElement('div');

@@ -857,6 +857,435 @@
         ]
       }
     },
+    "/v1/user/projects": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "List User Projects",
+        "description": "Fetch user projects from MongoDB Atlas.",
+        "operationId": "list_user_projects_v1_user_projects_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List User Projects V1 User Projects Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Create User Project",
+        "description": "Create a new project in MongoDB Atlas.",
+        "operationId": "create_user_project_v1_user_projects_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/api-keys": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "List User Api Keys",
+        "description": "Fetch active API keys from MongoDB Atlas.",
+        "operationId": "list_user_api_keys_v1_user_api_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List User Api Keys V1 User Api Keys Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Create User Api Key",
+        "description": "Generate and store a new API Key in MongoDB Atlas.",
+        "operationId": "create_user_api_key_v1_user_api_keys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/api-keys/{key_id}": {
+      "delete": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Delete User Api Key",
+        "description": "Revoke an API key in MongoDB Atlas.",
+        "operationId": "delete_user_api_key_v1_user_api_keys__key_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/user/payments": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "List User Payments",
+        "description": "Fetch payment history transactions from MongoDB Atlas.",
+        "operationId": "list_user_payments_v1_user_payments_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List User Payments V1 User Payments Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Record User Payment",
+        "description": "Record a completed VNPAY payment transaction in MongoDB Atlas.",
+        "operationId": "record_user_payment_v1_user_payments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/apis-state": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Get User Apis State",
+        "description": "Get active API states for user from MongoDB Atlas.",
+        "operationId": "get_user_apis_state_v1_user_apis_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Update User Apis State",
+        "description": "Update active API states for user in MongoDB Atlas.",
+        "operationId": "update_user_apis_state_v1_user_apis_state_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApisStateUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/feedback": {
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Submit User Feedback",
+        "description": "Save user feedback into MongoDB Atlas notifications collection.",
+        "operationId": "submit_user_feedback_v1_user_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/contact": {
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Submit User Contact",
+        "description": "Save user contact inquiry into MongoDB Atlas notifications collection.",
+        "operationId": "submit_user_contact_v1_user_contact_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/admin/v1/keys": {
       "get": {
         "tags": [
@@ -1641,6 +2070,48 @@
         ],
         "title": "AliasStatusUpdateRequest"
       },
+      "ApiKeyCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Name / Label for the API key"
+          },
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name",
+            "default": "Default Project"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ApiKeyCreateRequest"
+      },
+      "ApisStateUpdateRequest": {
+        "properties": {
+          "enabled_apis": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Enabled Apis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled_apis"
+        ],
+        "title": "ApisStateUpdateRequest"
+      },
       "Body_create_transcription_v1_audio_transcriptions_post": {
         "properties": {
           "file": {
@@ -1866,6 +2337,34 @@
         ],
         "title": "CompletionRequest"
       },
+      "ContactMessageRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "phone",
+          "email",
+          "message"
+        ],
+        "title": "ContactMessageRequest"
+      },
       "CreateAPIKeyRequest": {
         "properties": {
           "tenant_id": {
@@ -2021,6 +2520,29 @@
           "status"
         ],
         "title": "EndpointStatusUpdateRequest"
+      },
+      "FeedbackRequest": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": "feature"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description"
+        ],
+        "title": "FeedbackRequest"
       },
       "ForgotPasswordRequest": {
         "properties": {
@@ -2315,6 +2837,38 @@
         ],
         "title": "ModerationRequest"
       },
+      "PaymentCreateRequest": {
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Payment amount in VND"
+          },
+          "package": {
+            "type": "string",
+            "title": "Package",
+            "description": "Selected package name"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project",
+            "default": "Default Project"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "package"
+        ],
+        "title": "PaymentCreateRequest"
+      },
       "PredictionRequest": {
         "properties": {
           "alias_name": {
@@ -2333,6 +2887,26 @@
           "alias_name"
         ],
         "title": "PredictionRequest"
+      },
+      "ProjectCreateRequest": {
+        "properties": {
+          "project_name": {
+            "type": "string",
+            "title": "Project Name",
+            "description": "Name of the project"
+          },
+          "billing_type": {
+            "type": "string",
+            "title": "Billing Type",
+            "description": "Billing type: prepaid or postpaid",
+            "default": "prepaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_name"
+        ],
+        "title": "ProjectCreateRequest"
       },
       "RejectRequestPayload": {
         "properties": {

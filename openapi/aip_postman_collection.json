@@ -582,6 +582,326 @@
       }
     },
     {
+      "name": "List User Projects",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/projects",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "projects"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create User Project",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/projects",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "projects"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List User Api Keys",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/api-keys",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "api-keys"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create User Api Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/api-keys",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "api-keys"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete User Api Key",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/api-keys/{key_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "api-keys",
+            "{key_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List User Payments",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/payments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "payments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Record User Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/payments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "payments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get User Apis State",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/apis-state",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "apis-state"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update User Apis State",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/apis-state",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "apis-state"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Submit User Feedback",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/feedback",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "feedback"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Submit User Contact",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/contact",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "contact"
+          ]
+        }
+      }
+    },
+    {
       "name": "List All API Keys and Quotas from MongoDB Atlas",
       "request": {
         "method": "GET",
