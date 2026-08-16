@@ -158,30 +158,42 @@
     <div class="layout-body">
         <div class="sidebar">
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span id="txt-nav-console">Console</span>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                    <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> Console</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/dashboard">Dashboard</a></li>
-                    <li class="nav-item"><a href="/staff/apis">APIs</a></li>
-                    <li class="nav-item"><a href="/staff/keys">API Keys</a></li>
-                    <li class="nav-item"><a href="/staff/report">API report</a></li>
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
                 </ul>
             </div>
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span id="txt-nav-apps">Applications</span>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                    <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/service?name=Speech%20to%20Text">Speech to Text</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=Text%20to%20Speech">Text to Speech</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=LLM%20Chatbot%20API">LLM Chatbot</a></li>
+                    <li class="nav-item" id="nav-stt"><a href="/staff/service?name=Speech%20to%20Text"><i class="fa-solid fa-microphone" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
+                    <li class="nav-item" id="nav-tts"><a href="/staff/service?name=Text%20to%20Speech"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
+                    <li class="nav-item" id="nav-llm"><a href="/staff/service?name=LLM%20Chatbot%20API"><i class="fa-solid fa-robot" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
                 </ul>
             </div>
-            <div class="nav-section"><div class="section-title"><a href="/staff/payment" style="color:#475569; text-decoration:none;">Payment history</a></div></div>
-            <div class="nav-section"><div class="section-title"><a href="/staff/contact" style="color:#475569; text-decoration:none;">Contact us</a></div></div>
+            <div class="nav-section">
+                <div class="section-title">
+                    <a href="/staff/payment" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-credit-card" style="width: 14px;"></i> Payment history
+                    </a>
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="section-title">
+                    <a href="/staff/contact" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-headset" style="width: 14px;"></i> Contact us
+                    </a>
+                </div>
+            </div>
         </div>
 
         <div class="main-content">
