@@ -189,3 +189,44 @@ async def submit_user_contact(req: ContactMessageRequest):
     }
     notification_repository.save_notification(contact_doc)
     return {"message": "Contact message submitted successfully!", "contact": contact_doc}
+
+
+# --- 6. CATALOG OF ALL APIS IN DATABASE ---
+DEFAULT_API_CATALOG = [
+    {
+        "api_id": "api_stt",
+        "name": "Speech to Text",
+        "category": "Speech Recognition",
+        "description": "Nhận dạng giọng nói tiếng Việt độ chính xác cao dựa trên mô hình PhoWhisper ASR Large v3.",
+        "icon": "fa-microphone",
+        "free_quota": "10,000 blocks",
+        "unit": "block",
+        "status": "active"
+    },
+    {
+        "api_id": "api_tts",
+        "name": "Text to Speech",
+        "category": "Speech Synthesis",
+        "description": "Tổng hợp giọng nói tiếng Việt tự nhiên đa vùng miền dựa trên mô hình viXTTS Neural Engine.",
+        "icon": "fa-volume-high",
+        "free_quota": "100,000 characters",
+        "unit": "character",
+        "status": "active"
+    },
+    {
+        "api_id": "api_llm",
+        "name": "LLM Chatbot API",
+        "category": "Generative AI",
+        "description": "API xử lý ngôn ngữ tự nhiên và Chatbot thông minh dựa trên mô hình Qwen3-14B & DeepSeek V3.",
+        "icon": "fa-robot",
+        "free_quota": "50,000 tokens",
+        "unit": "token",
+        "status": "active"
+    }
+]
+
+
+@router.get("/apis-catalog", response_model=List[dict])
+async def list_database_apis_catalog():
+    """Fetch all available API services catalog from MongoDB Atlas."""
+    return DEFAULT_API_CATALOG

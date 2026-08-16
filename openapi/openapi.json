@@ -1286,6 +1286,38 @@
         ]
       }
     },
+    "/v1/user/apis-catalog": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "List Database Apis Catalog",
+        "description": "Fetch all available API services catalog from MongoDB Atlas.",
+        "operationId": "list_database_apis_catalog_v1_user_apis_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Database Apis Catalog V1 User Apis Catalog Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/admin/v1/keys": {
       "get": {
         "tags": [

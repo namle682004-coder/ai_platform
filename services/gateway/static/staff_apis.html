@@ -172,7 +172,7 @@
 
             <div id="apis-anchor" class="page-title" id="txt-catalog-title">APIs Catalog</div>
 
-            <div class="api-grid">
+            <div class="api-grid" id="api-cards-grid-container">
                 <!-- Speech to Text Card -->
                 <div class="api-card" onclick="navigateToService('Speech to Text')">
                     <div class="card-top">
@@ -535,6 +535,7 @@
 
         async function syncUIState() {
             const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
             const projects = await getProjects();
             const t = i18nDict[currentLang] || i18nDict.en;
 
@@ -544,13 +545,31 @@
                 document.getElementById('current-project-label').innerText = t.selectProj;
             }
 
-            const stt = document.getElementById('toggle-stt');
-            const tts = document.getElementById('toggle-tts');
-            const llm = document.getElementById('toggle-llm');
+            const grid = document.getElementById('api-cards-grid-container');
+            if (grid) {
+                grid.innerHTML = '';
+                catalog.forEach(item => {
+                    const isChecked = !!apis[item.name];
+                    const iconClass = item.icon || (item.name === 'Speech to Text' ? 'fa-microphone' : (item.name === 'Text to Speech' ? 'fa-volume-high' : 'fa-comments'));
+                    const desc = item.description || (item.name === 'Speech to Text' ? 'Convert your voice into text using PhoWhisper STT model' : (item.name === 'Text to Speech' ? 'Convert text to natural-sounding voices with viXTTS synthesis' : 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints'));
 
-            if (stt) stt.checked = !!apis["Speech to Text"];
-            if (tts) tts.checked = !!apis["Text to Speech"];
-            if (llm) llm.checked = !!apis["LLM Chatbot API"];
+                    const card = document.createElement('div');
+                    card.className = 'api-card';
+                    card.onclick = () => navigateToService(item.name);
+                    card.innerHTML = `
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid ${iconClass}"></i></div>
+                            <label class="switch" onclick="event.stopPropagation()">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${item.name}', this, event)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="card-title">${item.name}</div>
+                        <div class="card-desc">${desc}</div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
         }
 
         let targetPendingAction = 'enable';

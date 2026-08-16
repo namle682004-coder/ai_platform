@@ -902,6 +902,35 @@
       }
     },
     {
+      "name": "List Database Apis Catalog",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/apis-catalog",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "apis-catalog"
+          ]
+        }
+      }
+    },
+    {
       "name": "List All API Keys and Quotas from MongoDB Atlas",
       "request": {
         "method": "GET",

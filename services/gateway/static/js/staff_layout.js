@@ -109,6 +109,23 @@ async function setEnabledAPIs(apiObj) {
     } catch(err) {}
 }
 
+async function fetchApiCatalogFromBackend() {
+    try {
+        const res = await fetch('/v1/user/apis-catalog');
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('aip_catalog', JSON.stringify(data));
+            return data;
+        }
+    } catch(err) {}
+    const cached = localStorage.getItem('aip_catalog');
+    return cached ? JSON.parse(cached) : [
+        { name: "Speech to Text", unit: "block", free_quota: "10,000 blocks" },
+        { name: "Text to Speech", unit: "character", free_quota: "100,000 characters" },
+        { name: "LLM Chatbot API", unit: "token", free_quota: "50,000 tokens" }
+    ];
+}
+
 function getActiveProjectName() {
     const active = localStorage.getItem('aip_active_project');
     if (active) return active;
