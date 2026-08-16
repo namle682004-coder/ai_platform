@@ -34,6 +34,7 @@ from gateway.api.v1.predictions import router as predictions_router
 from gateway.api.v1.jobs import router as jobs_router
 from gateway.api.v1.models import router as models_router
 from gateway.api.v1.auth import router as auth_router
+from gateway.api.v1.mcp import router as mcp_router
 
 # Admin Routers
 from gateway.api.admin.keys import router as admin_keys_router
@@ -41,6 +42,8 @@ from gateway.api.admin.aliases import router as admin_aliases_router
 from gateway.api.admin.audit import router as admin_audit_router
 from gateway.api.admin.endpoints import router as admin_endpoints_router
 from gateway.api.admin.metrics import router as admin_metrics_router
+from gateway.api.admin.maintenance import router as admin_maintenance_router
+from gateway.api.admin.users import router as admin_users_router
 
 
 @asynccontextmanager
@@ -107,6 +110,13 @@ async def serve_staff_portal():
     return FileResponse(portal_path)
 
 
+# Public Status Page Endpoint (/status)
+@app.get("/status", include_in_schema=False)
+async def serve_status_page():
+    status_path = os.path.join(current_dir, "static", "status.html")
+    return FileResponse(status_path)
+
+
 # Register Public /v1 Routers
 app.include_router(chat_router)
 app.include_router(completions_router)
@@ -119,6 +129,7 @@ app.include_router(predictions_router)
 app.include_router(jobs_router)
 app.include_router(models_router)
 app.include_router(auth_router)
+app.include_router(mcp_router)
 
 # Register Admin /admin/v1 Routers
 app.include_router(admin_keys_router)
@@ -126,6 +137,8 @@ app.include_router(admin_aliases_router)
 app.include_router(admin_audit_router)
 app.include_router(admin_endpoints_router)
 app.include_router(admin_metrics_router)
+app.include_router(admin_maintenance_router)
+app.include_router(admin_users_router)
 
 
 @app.get("/health", tags=["Health"])
@@ -142,8 +155,12 @@ async def health_check():
             "admin_cidr_allowlist": "active",
             "admin_dashboard_ui": "active (/admin)",
             "staff_developer_portal": "active (/staff)",
+            "public_status_page": "active (/status)",
             "audit_logs": "active (/admin/v1/audit-logs)",
             "auth_system": "active (/v1/auth)",
+            "mcp_gateway_bridge": "active (/v1/mcp/sse)",
+            "maintenance_circuit_breaker": "active (/admin/v1/maintenance)",
+            "users_rbac_governance": "active (/admin/v1/users)",
             "mongodb_atlas": "active (ai_platform)",
         }
     }

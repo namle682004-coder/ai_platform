@@ -466,6 +466,93 @@
       }
     },
     {
+      "name": "MCP Server-Sent Events (SSE) Stream",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/mcp/sse",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "mcp",
+            "sse"
+          ]
+        }
+      }
+    },
+    {
+      "name": "MCP JSON-RPC Tool Execution Message Endpoint",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/mcp/messages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "mcp",
+            "messages"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Available MCP Tools",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/mcp/tools",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "mcp",
+            "tools"
+          ]
+        }
+      }
+    },
+    {
       "name": "List All API Keys and Quotas from MongoDB Atlas",
       "request": {
         "method": "GET",
@@ -875,6 +962,157 @@
             "admin",
             "v1",
             "metrics"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get System Maintenance Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/maintenance/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "maintenance",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Toggle System Maintenance Mode (Emergency Circuit Breaker)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/maintenance/toggle",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "maintenance",
+            "toggle"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Registered Users (Admin Only)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "users"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Lock or Unlock User Account (Admin Only)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/users/{user_id}/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "users",
+            "{user_id}",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update User Role / RBAC Permission (Admin Only)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/users/{user_id}/role",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "users",
+            "{user_id}",
+            "role"
           ]
         }
       }

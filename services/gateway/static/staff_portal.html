@@ -108,6 +108,14 @@
 
         .copy-btn:hover { background: var(--primary); }
 
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
+        th { color: var(--text-sub); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; padding: 12px 14px; border-bottom: 1px solid var(--panel-border); background: #f8fafc; }
+        td { padding: 14px; border-bottom: 1px solid var(--panel-border); vertical-align: middle; color: #1e293b; }
+        tr:hover td { background: #f8fafc; }
+
+        code { font-family: var(--font-code); font-size: 12.5px; color: #6d28d9; background: #f3e8ff; padding: 3px 7px; border-radius: 5px; border: 1px solid #e9d5ff; }
+
         .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
         .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25); }
         .btn-primary:hover { background: #059669; }
@@ -123,6 +131,9 @@
         .form-group label { display: block; font-size: 12.5px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; }
         .form-control { width: 100%; padding: 10px 14px; border-radius: 8px; background: #ffffff; border: 1px solid var(--panel-border); color: var(--text-main); font-size: 13.5px; outline: none; }
         .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+
+        .progress-bar-bg { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; width: 120px; }
+        .progress-bar-fill { background: var(--primary); height: 100%; width: 25%; }
 
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
@@ -141,10 +152,14 @@
 
         <ul class="nav-menu">
             <li class="nav-item active"><button onclick="switchTab('endpoints')"><i class="fa-solid fa-network-wired"></i> Exported APIs</button></li>
+            <li class="nav-item"><button onclick="switchTab('playground')"><i class="fa-solid fa-flask"></i> AI Playground Sandbox</button></li>
+            <li class="nav-item"><button onclick="switchTab('my-keys')"><i class="fa-solid fa-key"></i> My Approved API Keys</button></li>
+            <li class="nav-item"><button onclick="switchTab('my-jobs')"><i class="fa-solid fa-bolt"></i> My Async Jobs Tracker</button></li>
             <li class="nav-item"><button onclick="switchTab('request-key')"><i class="fa-solid fa-paper-plane"></i> Request API Key</button></li>
             <li class="nav-item"><button onclick="switchTab('aliases')"><i class="fa-solid fa-cubes"></i> Model Aliases Catalog</button></li>
             <li class="nav-item"><button onclick="switchTab('snippets')"><i class="fa-solid fa-terminal"></i> SDK Code Generator</button></li>
             <li class="nav-item"><button onclick="switchTab('docs')"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
+            <li class="nav-item"><button onclick="window.open('/status', '_blank')"><i class="fa-solid fa-globe"></i> Public Status Page</button></li>
         </ul>
 
         <div class="vpn-badge">
@@ -169,6 +184,102 @@
             <div class="glass-panel">
                 <div class="panel-title"><i class="fa-solid fa-plug" style="color: var(--primary);"></i> Exported Production APIs (Active)</div>
                 <div id="endpoints-list"></div>
+            </div>
+        </div>
+
+        <!-- TAB: DEVELOPER AI PLAYGROUND SANDBOX -->
+        <div id="tab-playground" class="tab-pane">
+            <div class="glass-panel">
+                <div class="panel-title"><i class="fa-solid fa-flask" style="color: var(--primary);"></i> Developer AI Model Testing Sandbox</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                    <div>
+                        <div class="form-group">
+                            <label>Target Model Alias</label>
+                            <select id="staff-pg-alias" class="form-control">
+                                <option value="chat-general-standard">chat-general-standard (Qwen3-8B)</option>
+                                <option value="chat-general-high-quality">chat-general-high-quality (Qwen3-14B)</option>
+                                <option value="embed-standard">embed-standard (Qwen3-Embedding-8B)</option>
+                                <option value="moderation-multimodal">moderation-multimodal (Llama Guard 4)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prompt Content</label>
+                            <textarea id="staff-pg-prompt" class="form-control" rows="5" placeholder="Enter prompt to test model response...">Xin chào! Thử nghiệm gọi API từ Staff Developer Portal.</textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="runStaffPlaygroundTest()"><i class="fa-solid fa-paper-plane"></i> Test API Response</button>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>JSON Response Output</label>
+                            <pre id="staff-pg-output" style="background: #0f172a; color: #34d399; padding: 14px; border-radius: 8px; font-family: var(--font-code); font-size: 12.5px; height: 210px; overflow-y: auto;">Click "Test API Response" to test API endpoint...</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: MY APPROVED KEYS & QUOTA -->
+        <div id="tab-my-keys" class="tab-pane">
+            <div class="glass-panel">
+                <div class="panel-title"><i class="fa-solid fa-key" style="color: var(--primary);"></i> My Approved API Keys & Quota Metering</div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Key ID</th>
+                                <th>Tenant / Team</th>
+                                <th>RPM Quota Limit</th>
+                                <th>TPM Token Quota</th>
+                                <th>Usage Progress</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>key_01HXDEFAULT</code></td>
+                                <td><strong>TENANT_RETAIL_BANK</strong></td>
+                                <td>120 req/min</td>
+                                <td>200,000 tpm</td>
+                                <td>
+                                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 25%;"></div></div>
+                                    <span style="font-size:11px; color:var(--text-sub);">25% Used</span>
+                                </td>
+                                <td><span style="color:var(--primary); font-weight:700;">active</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: MY ASYNC JOBS TRACKER -->
+        <div id="tab-my-jobs" class="tab-pane">
+            <div class="glass-panel">
+                <div class="panel-title"><i class="fa-solid fa-bolt" style="color: var(--purple);"></i> My Async Processing Jobs Tracker</div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Job ID</th>
+                                <th>Job Type</th>
+                                <th>Model Alias</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Output Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>job_01HXVIDEO</code></td>
+                                <td>video_generation</td>
+                                <td>video-gen-standard</td>
+                                <td><span style="color:var(--primary); font-weight:700;">completed</span></td>
+                                <td>100%</td>
+                                <td><a href="#" style="color:var(--accent); text-decoration:none; font-weight:600;"><i class="fa-solid fa-download"></i> Download Video Result</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -318,6 +429,25 @@ Console.WriteLine(response.Text);</pre>
             navigator.clipboard.writeText(pre.innerText);
             btn.innerText = 'Copied!';
             setTimeout(() => btn.innerText = 'Copy', 2000);
+        }
+
+        async function runStaffPlaygroundTest() {
+            const alias = document.getElementById('staff-pg-alias').value;
+            const prompt = document.getElementById('staff-pg-prompt').value;
+            const output = document.getElementById('staff-pg-output');
+            output.innerText = 'Executing model request...';
+
+            try {
+                const res = await fetch('/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer aip_live_test_key'},
+                    body: JSON.stringify({ model: alias, messages: [{role: 'user', content: prompt}] })
+                });
+                const data = await res.json();
+                output.innerText = JSON.stringify(data, null, 2);
+            } catch (err) {
+                output.innerText = 'Error testing API: ' + err;
+            }
         }
 
         async function handleStaffKeyRequest(e) {

@@ -1,4 +1,4 @@
-.PHONY: setup dev-env dev-env-down dev-gateway test export lint clean
+.PHONY: setup dev-env dev-env-down dev-gateway test export context lint clean
 
 UV ?= $(shell which uv 2>/dev/null || echo /home/namle/.local/bin/uv)
 
@@ -26,6 +26,10 @@ test:
 export:
 	@echo "Exporting OpenAPI JSON, Postman Collection, and Redoc HTML..."
 	PYTHONPATH=services:packages:packages/sdk-py $(UV) run python scripts/export_api_assets.py
+
+context:
+	@echo "Exporting Repomix Codebase Context for AI Agents..."
+	PYTHONPATH=services:packages:packages/sdk-py $(UV) run python scripts/export_repo_context.py
 
 lint:
 	@echo "Running ruff check with uv..."

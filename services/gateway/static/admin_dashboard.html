@@ -43,24 +43,15 @@
             display: flex;
         }
 
-        /* Sidebar Navigation Drawer */
         .sidebar {
-            width: 270px;
-            background: var(--sidebar-bg);
+            width: 270px; background: var(--sidebar-bg);
             border-right: 1px solid var(--panel-border);
-            display: flex;
-            flex-direction: column;
-            padding: 24px 16px;
-            z-index: 10;
+            display: flex; flex-direction: column; padding: 24px 16px; z-index: 10;
         }
 
         .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--panel-border);
-            margin-bottom: 24px;
+            display: flex; align-items: center; gap: 12px;
+            padding-bottom: 20px; border-bottom: 1px solid var(--panel-border); margin-bottom: 24px;
         }
 
         .brand-logo {
@@ -97,7 +88,6 @@
             display: flex; align-items: center; justify-content: space-between;
         }
 
-        /* Top Workspace Bar */
         .main-workspace { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         .top-bar {
@@ -123,14 +113,12 @@
 
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); }
 
-        /* Scrollable Content Body */
         .content-body { flex: 1; padding: 32px; overflow-y: auto; }
 
         .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .page-header h1 { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: #0f172a; }
         .page-header p { font-size: 13.5px; color: var(--text-sub); margin-top: 2px; }
 
-        /* Bright Metric Cards */
         .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 24px; }
 
         .stat-card {
@@ -143,18 +131,15 @@
 
         .stat-title { font-size: 12.5px; color: var(--text-sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-value { font-family: var(--font-heading); font-size: 26px; font-weight: 700; margin: 8px 0 4px 0; color: #0f172a; }
-
         .stat-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 12px; }
         .badge-green { background: var(--emerald-light); color: var(--emerald); }
 
         .stat-icon { position: absolute; right: 18px; top: 18px; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
 
-        /* Glass Panel Container */
         .glass-panel { background: #ffffff; border: 1px solid var(--panel-border); border-radius: 14px; padding: 22px; margin-bottom: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
         .panel-title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
 
-        /* Data Tables */
         .table-responsive { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
         th { color: var(--text-sub); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; padding: 12px 14px; border-bottom: 1px solid var(--panel-border); background: #f8fafc; }
@@ -163,19 +148,14 @@
 
         code { font-family: var(--font-code); font-size: 12.5px; color: #6d28d9; background: #f3e8ff; padding: 3px 7px; border-radius: 5px; border: 1px solid #e9d5ff; }
 
-        /* Compact Buttons */
         .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
         .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25); }
         .btn-primary:hover { background: #1d4ed8; }
         .btn-success { background: var(--emerald); color: #fff; }
-        .btn-success:hover { background: #059669; }
         .btn-danger { background: var(--rose); color: #fff; }
-        .btn-danger:hover { background: #e11d48; }
         .btn-secondary { background: #e2e8f0; color: #334155; }
-        .btn-secondary:hover { background: #cbd5e1; }
         .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
 
-        /* Switches */
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .25s; border-radius: 22px; }
@@ -183,7 +163,6 @@
         input:checked + .slider { background-color: var(--emerald); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
         .modal-content { background: #ffffff; border: 1px solid var(--panel-border); border-radius: 16px; width: 460px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
@@ -202,7 +181,6 @@
 </head>
 <body>
 
-    <!-- Sidebar Drawer -->
     <div class="sidebar">
         <div class="brand">
             <div class="brand-logo"><i class="fa-solid fa-brain"></i></div>
@@ -215,7 +193,9 @@
         <div class="menu-category">Main Console</div>
         <ul class="nav-menu">
             <li class="nav-item active"><button onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-line"></i> Analytics Overview</button></li>
+            <li class="nav-item"><button onclick="switchTab('playground')"><i class="fa-solid fa-flask"></i> AI Model Playground</button></li>
             <li class="nav-item"><button onclick="switchTab('keys')"><i class="fa-solid fa-key"></i> API Keys & Approvals</button></li>
+            <li class="nav-item"><button onclick="switchTab('users')"><i class="fa-solid fa-users-gear"></i> User & RBAC Control</button></li>
             <li class="nav-item"><button onclick="switchTab('aliases')"><i class="fa-solid fa-cubes"></i> Model Aliases Registry</button></li>
             <li class="nav-item"><button onclick="switchTab('endpoints')"><i class="fa-solid fa-network-wired"></i> Export Endpoints</button></li>
             <li class="nav-item"><button onclick="switchTab('jobs')"><i class="fa-solid fa-bolt"></i> Async Job Queue</button></li>
@@ -226,6 +206,7 @@
         <ul class="nav-menu">
             <li class="nav-item"><button onclick="switchTab('staff')"><i class="fa-solid fa-code"></i> Staff Developer Portal</button></li>
             <li class="nav-item"><button onclick="switchTab('docs')"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
+            <li class="nav-item"><button onclick="window.open('/status', '_blank')"><i class="fa-solid fa-globe"></i> Public Status Page</button></li>
         </ul>
 
         <div class="user-profile-card">
@@ -240,7 +221,6 @@
         </div>
     </div>
 
-    <!-- Main Workspace -->
     <div class="main-workspace">
         <div class="top-bar">
             <div class="search-box">
@@ -249,12 +229,11 @@
             </div>
 
             <div class="top-actions">
+                <button class="btn btn-sm btn-danger" onclick="toggleCircuitBreaker()"><i class="fa-solid fa-power-off"></i> Circuit Breaker: <span id="cb-label">OFF</span></button>
                 <div class="pill-status">
                     <div class="status-dot"></div>
                     MongoDB Atlas: ai_platform
                 </div>
-                <div style="width: 1px; height: 20px; background: var(--panel-border);"></div>
-                <div style="font-size: 12.5px; color: var(--text-sub); font-weight: 600;"><i class="fa-solid fa-shield-halved" style="color: var(--emerald);"></i> VPN CIDR Protected</div>
             </div>
         </div>
 
@@ -263,12 +242,11 @@
             <div class="page-header">
                 <div>
                     <h1 id="page-title">Analytics Overview</h1>
-                    <p>Real-time AI Inference Health, Throughput & Action Audit Logs</p>
+                    <p>Real-time AI Inference Health, Playground Testing & RBAC Governance</p>
                 </div>
                 <button class="btn btn-primary" onclick="openModal('modal-create-key')"><i class="fa-solid fa-key"></i> Direct Key Create</button>
             </div>
 
-            <!-- SaaS Bright Metric Cards -->
             <div class="metrics-grid">
                 <div class="stat-card">
                     <div class="stat-title">In-Flight Requests</div>
@@ -308,7 +286,65 @@
                 </div>
             </div>
 
-            <!-- TAB 2: API KEYS & APPROVAL WORKFLOW -->
+            <!-- TAB: AI PLAYGROUND SANDBOX -->
+            <div id="tab-playground" class="tab-pane">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><i class="fa-solid fa-flask" style="color: var(--primary);"></i> AI Model Sandbox Testing Playground</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                        <div>
+                            <div class="form-group">
+                                <label>Target Model Alias</label>
+                                <select id="pg-alias" class="form-control">
+                                    <option value="chat-general-standard">chat-general-standard (Qwen3-8B)</option>
+                                    <option value="chat-general-high-quality">chat-general-high-quality (Qwen3-14B)</option>
+                                    <option value="embed-standard">embed-standard (Qwen3-Embedding-8B)</option>
+                                    <option value="moderation-multimodal">moderation-multimodal (Llama Guard 4)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>User Prompt Input</label>
+                                <textarea id="pg-prompt" class="form-control" rows="5" placeholder="Enter prompt to test model response...">Xin chào! Giới thiệu về hệ thống AI Platform doanh nghiệp.</textarea>
+                            </div>
+                            <button class="btn btn-primary" onclick="runPlaygroundTest()"><i class="fa-solid fa-paper-plane"></i> Send Test Request</button>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label>Real-Time Model Response JSON Output</label>
+                                <pre id="pg-output" style="background: #0f172a; color: #34d399; padding: 14px; border-radius: 8px; font-family: var(--font-code); font-size: 12.5px; height: 210px; overflow-y: auto;">Click "Send Test Request" to execute model inference sandbox test...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: USER & RBAC GOVERNANCE -->
+            <div id="tab-users" class="tab-pane">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div class="panel-title"><i class="fa-solid fa-users-gear" style="color: var(--primary);"></i> User Accounts & RBAC Role Governance</div>
+                        <button class="btn btn-sm btn-secondary" onclick="fetchUsers()"><i class="fa-solid fa-rotate-right"></i> Refresh Users</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Corporate Email</th>
+                                    <th>Full Name</th>
+                                    <th>Role / Permission</th>
+                                    <th>Account Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: API KEYS & APPROVAL WORKFLOW -->
             <div id="tab-keys" class="tab-pane">
                 <div class="glass-panel" style="border-color: #fde68a;">
                     <div class="panel-header">
@@ -431,7 +467,6 @@
                 </div>
             </div>
 
-            <!-- TAB 6: SECURITY AUDIT LOGS -->
             <div id="tab-audit" class="tab-pane">
                 <div class="glass-panel">
                     <div class="panel-header">
@@ -570,8 +605,10 @@
 
     <script>
         let isSignupMode = false;
+        let isCbActive = false;
         let apiKeysData = [];
         let pendingRequestsData = [];
+        let usersData = [];
         let aliasesData = {};
         let endpointsData = {};
         let auditLogsData = [];
@@ -587,6 +624,76 @@
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        async function toggleCircuitBreaker() {
+            isCbActive = !isCbActive;
+            const res = await fetch('/admin/v1/maintenance/toggle', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ is_maintenance: isCbActive, reason: 'Admin Emergency Switch' })
+            });
+            document.getElementById('cb-label').innerText = isCbActive ? 'ON (ACTIVE)' : 'OFF';
+            alert(`Emergency Circuit Breaker set to ${isCbActive ? 'ON (System Blocked)' : 'OFF (Normal Operation)'}`);
+        }
+
+        async function runPlaygroundTest() {
+            const alias = document.getElementById('pg-alias').value;
+            const prompt = document.getElementById('pg-prompt').value;
+            const output = document.getElementById('pg-output');
+            output.innerText = 'Executing model inference request...';
+
+            try {
+                const res = await fetch('/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer aip_live_test_key'},
+                    body: JSON.stringify({ model: alias, messages: [{role: 'user', content: prompt}] })
+                });
+                const data = await res.json();
+                output.innerText = JSON.stringify(data, null, 2);
+            } catch (err) {
+                output.innerText = 'Error executing playground request: ' + err;
+            }
+        }
+
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/admin/v1/users');
+                const json = await res.json();
+                usersData = json.data || [];
+                renderUsersTable();
+            } catch (err) { console.error('Failed to fetch users:', err); }
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-table-body');
+            if (usersData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-sub);">No users found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = usersData.map(u => `
+                <tr>
+                    <td><code>${u.user_id}</code></td>
+                    <td><strong>${u.email}</strong></td>
+                    <td>${u.full_name || 'N/A'}</td>
+                    <td><span style="color:var(--primary); font-weight:700;">${u.role.toUpperCase()}</span></td>
+                    <td><span style="color:${u.status === 'active' ? 'var(--emerald)' : 'var(--rose)'}; font-weight:700;">${u.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleUserLock('${u.user_id}', '${u.status}')"><i class="fa-solid fa-lock"></i> ${u.status === 'active' ? 'Lock' : 'Unlock'}</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function toggleUserLock(userId, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'locked' : 'active';
+            await fetch(`/admin/v1/users/${userId}/status`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status: newStatus })
+            });
+            fetchUsers();
+            fetchAuditLogs();
+        }
 
         function toggleAuthMode() {
             isSignupMode = !isSignupMode;
@@ -900,6 +1007,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             fetchAPIKeys();
             fetchPendingKeyRequests();
+            fetchUsers();
             fetchAliases();
             fetchEndpoints();
             fetchAuditLogs();
