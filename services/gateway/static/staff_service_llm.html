@@ -499,7 +499,7 @@
 
     <script>
         let currentSvcName = 'Speech to Text';
-        let currentLang = 'curl';
+        let currentSnippetLang = 'curl';
 
         function getActiveProjectName() {
             const active = localStorage.getItem('aip_active_project');
@@ -950,6 +950,12 @@
                 openConfirmModal();
                 return;
             }
+            const box = document.getElementById('identified-result-box');
+            if (!box) return;
+            box.style.color = '#007bff';
+            box.innerText = 'Uploading and processing file...';
+            setTimeout(() => {
+                box.style.color = '#212529';
                 box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
             }, 1200);
         }
