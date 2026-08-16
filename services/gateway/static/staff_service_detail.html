@@ -606,50 +606,10 @@
             });
         }
 
-        function getEnabledAPIs() {
-            const data = localStorage.getItem('aip_enabled_apis');
-            return data ? JSON.parse(data) : { "Speech to Text": false, "Text to Speech": false, "LLM Chatbot API": false };
-        }
-
-        function setEnabledAPIs(apisObj) {
-            localStorage.setItem('aip_enabled_apis', JSON.stringify(apisObj));
-        }
-
-        function getProjects() {
-            const data = localStorage.getItem('aip_projects');
-            return data ? JSON.parse(data) : [];
-        }
-
-        function setProjects(projList) {
-            localStorage.setItem('aip_projects', JSON.stringify(projList));
-        }
-
-        function syncServiceUIState() {
-            const apis = getEnabledAPIs();
-            const projects = getProjects();
-
-            if (projects.length > 0) {
-                document.getElementById('current-project-label').innerText = projects[0].project_name;
-            } else {
-                document.getElementById('current-project-label').innerText = 'Select a project';
-            }
-
-            const isEnabled = !!apis[currentSvcName];
-            const btn = document.getElementById('svc-toggle-btn');
-            if (isEnabled) {
-                btn.innerText = 'DISABLE';
-                btn.classList.add('disabled');
-            } else {
-                btn.innerText = 'ENABLE';
-                btn.classList.remove('disabled');
-            }
-
-            populateApiKeySelector();
-        }
-
         function populateApiKeySelector() {
             const projects = getProjects();
             const selector = document.getElementById('api-key-selector');
+            if (!selector) return;
             selector.innerHTML = '';
 
             if (projects.length > 0 && projects[0].api_key) {
@@ -1084,7 +1044,7 @@
             showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             checkMandatoryAuth();
             const urlParams = new URLSearchParams(window.location.search);
             currentSvcName = urlParams.get('name') || 'Speech to Text';
@@ -1100,7 +1060,7 @@
                 iconBox.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>';
             }
 
-            syncServiceUIState();
+            await syncServiceUIState();
             updateSnippetCode();
         });
     </script>
