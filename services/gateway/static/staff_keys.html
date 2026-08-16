@@ -11,21 +11,32 @@
     
     <style>
         :root {
-            --fpt-cyan: #00a4b8; --fpt-cyan-dark: #008496; --fpt-blue-btn: #007bff; --bg-body: #f4f6f8;
-            --sidebar-bg: #ffffff; --text-dark: #1e293b; --text-sub: #64748b; --border-color: #e2e8f0;
-            --card-shadow: 0 1px 3px rgba(0,0,0,0.05); --font-heading: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif; --font-code: 'Fira Code', monospace;
+            --fpt-blue: #0f4c81;
+            --fpt-cyan: #00a4b8;
+            --fpt-orange: #f97316;
+            --bg-page: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-body); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
 
-        .top-header { height: 56px; background: linear-gradient(90deg, #0096aa, #00b4cf); color: #ffffff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
-        .header-left { display: flex; align-items: center; gap: 24px; }
-        .brand-logo { display: flex; align-items: center; gap: 10px; font-family: var(--font-heading); font-weight: 800; font-size: 19px; color: #ffffff; text-decoration: none; }
-        .project-selector { background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; padding: 5px 12px; border-radius: 4px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; }
-        .header-right { display: flex; align-items: center; gap: 20px; font-size: 12.5px; }
-        .user-menu { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 12px; border-radius: 20px; background: rgba(255, 255, 255, 0.18); }
+        .top-header { background: var(--fpt-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .project-selector:hover { background: rgba(255, 255, 255, 0.25); }
 
-        .layout-body { display: flex; flex: 1; min-height: calc(100vh - 56px); }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+        .layout-body { display: flex; flex: 1; }
 
         .sidebar { width: 230px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
         .nav-section { margin-bottom: 6px; }
@@ -37,44 +48,55 @@
 
         .main-content { flex: 1; padding: 28px 36px; overflow-y: auto; }
 
-        .page-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-        .page-title { font-family: var(--font-heading); font-size: 26px; font-weight: 700; color: #0f172a; }
-        .page-subtitle { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
+        .page-title-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
+        .page-title { font-family: var(--font-heading); font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .page-subtitle { font-size: 13px; color: var(--text-sub); max-width: 600px; line-height: 1.5; }
 
-        .btn-create-blue { background: var(--fpt-blue-btn); color: #ffffff; border: none; padding: 10px 24px; border-radius: 4px; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; cursor: pointer; text-transform: uppercase; }
+        .btn-create-blue { background: #007bff; color: #ffffff; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 700; font-size: 12.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s ease; }
+        .btn-create-blue:hover { background: #0056b3; }
 
         .table-card { background: #ffffff; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
         th { color: var(--text-sub); font-weight: 600; font-size: 11.5px; padding: 14px 18px; border-bottom: 1px solid var(--border-color); background: #ffffff; }
         td { padding: 16px 18px; border-bottom: 1px solid var(--border-color); color: var(--text-dark); }
-        code { font-family: var(--font-code); font-size: 12px; color: #0062d6; background: #eef5ff; padding: 2px 6px; border-radius: 4px; }
+        tr:hover td { background: #f8fafc; }
 
         .table-footer { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 12px 24px; font-size: 12px; color: var(--text-sub); background: #ffffff; border-top: 1px solid var(--border-color); }
         .table-footer select { padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; outline: none; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal.active { display: flex; }
-        .modal-content { background: #ffffff; border-radius: 8px; width: 440px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .material-input { width: 100%; border: none; border-bottom: 1px solid #94a3b8; padding: 10px 0; font-size: 14px; outline: none; }
+        /* MODAL OVERLAY & BOX */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .modal-overlay.active { display: flex; }
 
-        #mandatory-auth-gate { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 150, 170, 0.95), rgba(0, 180, 207, 0.95)); z-index: 9999; align-items: center; justify-content: center; }
-        .auth-gate-card { background: #ffffff; border-radius: 12px; width: 420px; padding: 32px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); text-align: center; }
-        .auth-gate-logo { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--fpt-cyan); margin-bottom: 6px; }
-        .auth-gate-title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 16px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; font-weight: 600; text-align: left; }
-        .form-control { width: 100%; padding: 9px 12px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; }
-        .btn-explore { background: var(--fpt-cyan); color: #ffffff; border: none; padding: 9px 24px; border-radius: 4px; font-weight: 700; font-size: 12.5px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
+        .confirm-header { background: #e5e7eb; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1f2937; }
+        .confirm-body { padding: 24px 20px; font-size: 14px; color: #374151; }
+        .confirm-footer { padding: 12px 20px 16px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
+        .btn-confirm-cancel:hover { background: #f3f4f6; }
+        .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
+        .btn-confirm-ok:hover { background: #0056b3; }
+
+        .form-control-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; margin-top: 6px; outline: none; }
+        .form-control-input:focus { border-color: #007bff; }
+
+        .proj-row-selectable { cursor: pointer; transition: background 0.15s; }
+        .proj-row-selectable:hover td { background: #f1f5f9 !important; }
+        .proj-row-selectable.active-proj td { background: rgba(0, 123, 255, 0.08) !important; font-weight: 700; }
+
+        /* Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
     </style>
 </head>
 <body>
 
-
+    <div id="toast-container"></div>
 
     <div class="top-header">
         <div class="header-left">
             <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
-            <div class="project-selector"><i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="project-selector" onclick="openSelectProjectModal()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
             <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
@@ -100,7 +122,7 @@
         <div class="sidebar">
             <div class="nav-section">
                 <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span>Console</span>
+                    <span id="txt-nav-console">Console</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
@@ -112,7 +134,7 @@
             </div>
             <div class="nav-section">
                 <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-                    <span>Applications</span>
+                    <span id="txt-nav-apps">Applications</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
                 <ul class="nav-list">
@@ -129,7 +151,7 @@
                     <div class="page-title">API Keys</div>
                     <div class="page-subtitle">Create credentials to access your enabled APIs. For more information, see the authentication documentation.</div>
                 </div>
-                <button class="btn-create-blue" onclick="openModal('modal-create-api-key')">CREATE API KEY</button>
+                <button class="btn-create-blue" onclick="openCreateApiKeyModal()">CREATE API KEY</button>
             </div>
 
             <div class="table-card">
@@ -166,42 +188,191 @@
         </div>
     </div>
 
-    <!-- MODAL: CREATE API KEY -->
-    <div class="modal" id="modal-create-api-key">
-        <div class="modal-content" style="padding: 0; overflow: hidden; border-radius: 4px;">
-            <div style="background: #e0e0e0; padding: 20px 24px;">
-                <h3 style="font-family: var(--font-heading); font-size: 22px; font-weight: 500; color: #212121;">Create API Key</h3>
+    <!-- SELECT A PROJECT MODAL (Exact Replica of User Screenshot) -->
+    <div class="modal-overlay" id="select-project-modal">
+        <div class="confirm-box" style="width: 620px; border-radius: 4px;">
+            <div class="confirm-header" style="background: #e5e7eb; color: #1f2937; font-size: 20px; font-weight: 500; padding: 18px 24px;">Select a project</div>
+            <div class="confirm-body" style="padding: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px;">
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="project-search-input" onkeyup="filterProjectsList()" placeholder="Search" style="width: 100%; border: none; border-bottom: 1.5px solid #cbd5e1; padding: 8px 32px 8px 0; font-size: 13.5px; outline: none;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 8px; top: 10px; color: #64748b; font-size: 14px;"></i>
+                    </div>
+                    <button class="btn-confirm-ok" style="background: #007bff; text-transform: uppercase; font-size: 12.5px; padding: 9px 18px;" onclick="openCreatePrepaidProjectModal()">CREATE PREPAID PROJECT</button>
+                </div>
+
+                <div style="border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Created time ↓</th>
+                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Name</th>
+                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-modal-tbody">
+                            <!-- Injected dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; font-size: 12px; color: #64748b;">
+                    <span>Rows per page</span>
+                    <select style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 8px; font-size: 12px;"><option>5</option><option>10</option></select>
+                    <span id="proj-count-label">1-1 of 1</span>
+                    <i class="fa-solid fa-chevron-left" style="cursor: pointer;"></i>
+                    <i class="fa-solid fa-chevron-right" style="cursor: pointer;"></i>
+                </div>
             </div>
-            <form onsubmit="handleCreateApiKeySubmit(event)" style="padding: 24px;">
-                <div style="margin-bottom: 36px;">
-                    <input type="text" id="new-key-name" class="material-input" placeholder="Key name" required>
+            <div class="confirm-footer" style="border-top: 1px solid #f1f5f9; padding: 12px 24px;">
+                <button class="btn-confirm-cancel" onclick="closeSelectProjectModal()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE NEW PREPAID PROJECT -->
+    <div class="modal-overlay" id="create-project-modal">
+        <div class="confirm-box" style="width: 460px;">
+            <div class="confirm-header" style="background: var(--fpt-blue); color: #fff;">Create Prepaid Project</div>
+            <div class="confirm-body" style="padding: 24px;">
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Project Name</label>
+                    <input type="text" id="input-new-project-name" class="form-control-input" placeholder="e.g. wwrwer23" value="wwrwer23">
                 </div>
-                <div style="text-align: right; border-top: 1px solid #eee; padding-top: 16px; margin-top: 16px;">
-                    <button type="button" class="btn" style="background: #f5f5f5; color: #333; margin-right: 8px; padding: 8px 20px;" onclick="closeModal('modal-create-api-key')">CANCEL</button>
-                    <button type="submit" class="btn-create-blue" style="padding: 8px 24px;">CREATE</button>
+                <div>
+                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Billing Type</label>
+                    <select id="input-new-project-type" class="form-control-input">
+                        <option value="prepaid">prepaid</option>
+                        <option value="postpaid">postpaid</option>
+                    </select>
                 </div>
-            </form>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeCreatePrepaidProjectModal()">CANCEL</button>
+                <button class="btn-confirm-ok" style="background: var(--fpt-cyan);" onclick="submitCreatePrepaidProject()">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE API KEY -->
+    <div class="modal-overlay" id="modal-create-api-key">
+        <div class="confirm-box" style="width: 440px;">
+            <div class="confirm-header">Create API Key</div>
+            <div class="confirm-body">
+                <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Key Name</label>
+                    <input type="text" id="new-key-name" class="form-control-input" placeholder="e.g. Production Main Key" value="Production Main Key">
+                </div>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeModal('modal-create-api-key')">CANCEL</button>
+                <button class="btn-confirm-ok" onclick="handleCreateApiKeySubmit(event)">CREATE</button>
+            </div>
         </div>
     </div>
 
     <script>
-        function checkMandatoryAuth() {
-            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
-            if (userSession) {
-                const user = JSON.parse(userSession);
-                document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
-            } else {
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
-            }
+        let currentLang = localStorage.getItem('aip_lang') || 'en';
+
+        function getProjects() {
+            const data = localStorage.getItem('aip_projects');
+            return data ? JSON.parse(data) : [
+                { project_id: 'proj_default', project_name: 'wwrwer23', created_at: '2026-08-16', type: 'prepaid' }
+            ];
         }
 
-        function logoutUser() {
-            localStorage.removeItem('aip_user_session');
-            sessionStorage.removeItem('aip_user_session');
-            window.location.href = '/login';
+        function setProjects(projList) {
+            localStorage.setItem('aip_projects', JSON.stringify(projList));
         }
 
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function getActiveProjectName() {
+            const active = localStorage.getItem('aip_active_project');
+            const projects = getProjects();
+            if (active) return active;
+            return projects.length > 0 ? projects[0].project_name : 'Select a project';
+        }
+
+        function setActiveProjectName(name) {
+            localStorage.setItem('aip_active_project', name);
+            document.getElementById('current-project-label').innerText = name;
+        }
+
+        function openSelectProjectModal() {
+            renderProjectsModalTable();
+            document.getElementById('select-project-modal').classList.add('active');
+        }
+
+        function closeSelectProjectModal() {
+            document.getElementById('select-project-modal').classList.remove('active');
+        }
+
+        function renderProjectsModalTable() {
+            const projects = getProjects();
+            const activeName = getActiveProjectName();
+            const tbody = document.getElementById('projects-modal-tbody');
+            tbody.innerHTML = '';
+
+            projects.forEach(p => {
+                const dateStr = p.created_at ? p.created_at.substring(0, 10) : '2026-08-16';
+                const typeStr = p.type || 'prepaid';
+                const isActive = p.project_name === activeName;
+
+                const tr = document.createElement('tr');
+                tr.className = `proj-row-selectable ${isActive ? 'active-proj' : ''}`;
+                tr.innerHTML = `
+                    <td style="padding: 12px 16px;">${dateStr}</td>
+                    <td style="padding: 12px 16px;"><strong>${p.project_name}</strong></td>
+                    <td style="padding: 12px 16px;"><strong>${typeStr}</strong></td>
+                `;
+                tr.onclick = () => {
+                    setActiveProjectName(p.project_name);
+                    closeSelectProjectModal();
+                    showToast(`Active project changed to: "${p.project_name}"`, 'success');
+                };
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('proj-count-label').innerText = `1-${projects.length} of ${projects.length}`;
+        }
+
+        function filterProjectsList() {
+            const query = document.getElementById('project-search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('#projects-modal-tbody tr');
+            rows.forEach(r => {
+                const text = r.innerText.toLowerCase();
+                r.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function openCreatePrepaidProjectModal() {
+            closeSelectProjectModal();
+            document.getElementById('create-project-modal').classList.add('active');
+        }
+
+        function closeCreatePrepaidProjectModal() {
+            document.getElementById('create-project-modal').classList.remove('active');
+        }
+
+        function submitCreatePrepaidProject() {
+            const name = document.getElementById('input-new-project-name').value.trim() || 'New Prepaid Project';
+            const type = document.getElementById('input-new-project-type').value;
+
+            const projects = getProjects();
+            const newProj = {
+                project_id: 'proj_' + Math.random().toString(36).substring(7),
+                project_name: name,
+                type: type,
+                created_at: new Date().toISOString().substring(0, 10)
+            };
+            projects.push(newProj);
+            setProjects(projects);
+
+            setActiveProjectName(name);
+            closeCreatePrepaidProjectModal();
+            showToast(`Prepaid Project "${name}" created successfully!`, 'success');
+        }
+
+        function openCreateApiKeyModal() { document.getElementById('modal-create-api-key').classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
         function maskApiKey(keyStr) {
@@ -211,8 +382,8 @@
         }
 
         function handleCreateApiKeySubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('new-key-name').value;
+            if (e) e.preventDefault();
+            const name = document.getElementById('new-key-name').value.trim() || 'Production Key';
             const fullKeyVal = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR_' + Math.random().toString(36).substring(7);
             const maskedKey = maskApiKey(fullKeyVal);
             const now = new Date().toISOString().replace('T', ' ').substring(0, 16).replace(/-/g, '/');
@@ -243,22 +414,6 @@
             showToast('Đã xóa API Key.', 'warning');
         }
 
-        function showToast(msg, type = 'info') {
-            let container = document.getElementById('toast-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'toast-container';
-                container.style.cssText = 'position:fixed; top:24px; right:24px; z-index:10000; display:flex; flex-direction:column; gap:10px;';
-                document.body.appendChild(container);
-            }
-            const toast = document.createElement('div');
-            toast.style.cssText = 'min-width:280px; padding:12px 18px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); opacity:0.96;';
-            toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#00a4b8'));
-            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 3500);
-        }
-
         function toggleNavSection(headerEl) {
             const navList = headerEl.nextElementSibling;
             const icon = headerEl.querySelector('.toggle-icon');
@@ -272,8 +427,6 @@
                 }
             }
         }
-
-        let currentLang = localStorage.getItem('aip_lang') || 'en';
 
         function toggleLangDropdown(e) {
             if (e) e.stopPropagation();
@@ -295,8 +448,41 @@
             showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
         }
 
+        function showToast(msg, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed; top:24px; right:24px; z-index:10000; display:flex; flex-direction:column; gap:10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = 'min-width:280px; padding:12px 18px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); opacity:0.96;';
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#00a4b8'));
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function checkMandatoryAuth() {
+            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+            if (userSession) {
+                const user = JSON.parse(userSession);
+                document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
+            } else {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('aip_user_session');
+            sessionStorage.removeItem('aip_user_session');
+            window.location.href = '/login';
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             checkMandatoryAuth();
+            document.getElementById('current-project-label').innerText = getActiveProjectName();
         });
     </script>
 </body>
