@@ -417,7 +417,7 @@
                     : `<span style="background: #94a3b8; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${item.name}', false)">DISABLED</span>`;
 
                 const paidStr = isEnabled
-                    ? (item.paidUnit === 1 ? paidBal.toLocaleString() : (paidBal > 0 ? Math.floor(paidBal / item.paidUnit).toLocaleString() : '0'))
+                    ? (paidUnit === 1 ? paidBal.toLocaleString() : (paidBal > 0 ? Math.floor(paidBal / paidUnit).toLocaleString() : '0'))
                     : '0 (OFF)';
 
                 const tr = document.createElement('tr');
@@ -426,7 +426,7 @@
                     <td>${statusBadge}</td>
                     <td>0</td>
                     <td>0</td>
-                    <td>${isEnabled ? item.free : '0 (OFF)'}</td>
+                    <td>${isEnabled ? freeVal : '0 (OFF)'}</td>
                     <td>${paidStr}</td>
                     <td>${item.unit}</td>
                     <td><button class="btn-buy-link" onclick="openPricingModalFor('${item.name}')">buy more</button></td>
