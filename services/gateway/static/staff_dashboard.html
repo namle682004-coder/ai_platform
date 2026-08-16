@@ -415,6 +415,22 @@
                 closeVNPAYModal();
                 const newBal = getPaidBalance() + selectedAddChars;
                 setPaidBalance(newBal);
+
+                // Record payment transaction
+                const rawHist = localStorage.getItem('aip_payment_history');
+                const hist = rawHist ? JSON.parse(rawHist) : [];
+                const txnId = 'VNP' + Math.floor(10000000 + Math.random() * 90000000);
+                hist.unshift({
+                    txn_ref: txnId,
+                    date: new Date().toISOString().replace('T', ' ').substring(0, 16).replace(/-/g, '/'),
+                    status: 'SUCCESS',
+                    amount: selectedPackCost.replace(/[^0-9]/g, '') || 500000,
+                    package: `Premium ${currentTargetApi}`,
+                    project: getActiveProjectName(),
+                    txn_no: Math.floor(10000000 + Math.random() * 90000000).toString()
+                });
+                localStorage.setItem('aip_payment_history', JSON.stringify(hist));
+
                 renderApisSummaryTable();
                 showToast(`🎉 Thanh toán VNPAY ${selectedPackCost} thành công! Đã cộng ${selectedAddChars.toLocaleString()} vào tài khoản.`, 'success');
             }, 1500);
