@@ -86,7 +86,7 @@ function getEnabledAPIs() {
 
 async function fetchEnabledAPIsFromBackend() {
     try {
-        const res = await fetch('/v1/user/apis-state');
+        const res = await fetch('/v1/user/apis-state?t=' + new Date().getTime());
         if (res.ok) {
             const data = await res.json();
             if (data && data.enabled_apis && Object.keys(data.enabled_apis).length > 0) {
@@ -111,7 +111,7 @@ async function setEnabledAPIs(apiObj) {
 
 async function fetchApiCatalogFromBackend() {
     try {
-        const res = await fetch('/v1/user/apis-catalog');
+        const res = await fetch('/v1/user/apis-catalog?t=' + new Date().getTime());
         if (res.ok) {
             const data = await res.json();
             localStorage.setItem('aip_catalog', JSON.stringify(data));
