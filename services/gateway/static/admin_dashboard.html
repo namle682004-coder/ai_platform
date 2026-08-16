@@ -635,7 +635,23 @@
                 body: JSON.stringify({ is_maintenance: isCbActive, reason: 'Admin Emergency Switch' })
             });
             document.getElementById('cb-label').innerText = isCbActive ? 'ON (ACTIVE)' : 'OFF';
-            alert(`Emergency Circuit Breaker set to ${isCbActive ? 'ON (System Blocked)' : 'OFF (Normal Operation)'}`);
+            showToast(`Emergency Circuit Breaker set to ${isCbActive ? 'ON (System Blocked)' : 'OFF (Normal Operation)'}`, isCbActive ? 'warning' : 'success');
+        }
+
+        function showToast(msg, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed; top:24px; right:24px; z-index:10000; display:flex; flex-direction:column; gap:10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = 'min-width:300px; padding:14px 20px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-between:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.25); opacity:0.96;';
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#00a4b8'));
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
         }
 
         async function runPlaygroundTest() {
@@ -719,8 +735,8 @@
                     body: JSON.stringify({ email, password, full_name: fullName, role })
                 });
                 const data = await res.json();
-                alert(data.message);
-                closeModal('modal-auth');
+                showToast(data.message, res.ok ? 'success' : 'error');
+                toggleAuthMode();
             } else {
                 const res = await fetch('/v1/auth/login', {
                     method: 'POST',
@@ -729,12 +745,10 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    document.getElementById('user-display-email').innerText = data.user.email;
-                    document.getElementById('user-display-role').innerText = data.user.role.toUpperCase();
-                    alert(`Login Successful! Welcome ${data.user.full_name || data.user.email}`);
+                    showToast(`Login Successful! Welcome ${data.user.full_name || data.user.email}`, 'success');
                     closeModal('modal-auth');
                 } else {
-                    alert('Login Failed: ' + data.detail);
+                    showToast('Login Failed: ' + data.detail, 'error');
                 }
             }
         }
@@ -802,7 +816,7 @@
         async function approveKeyRequest(reqId) {
             const res = await fetch(`/admin/v1/key-requests/${reqId}/approve`, { method: 'POST' });
             const data = await res.json();
-            alert(`Key Request Approved Successfully!\nGenerated Plaintext API Key: ${data.api_key_plaintext}`);
+            showToast(`Key Request Approved! Generated API Key: ${data.api_key_plaintext}`, 'success');
             fetchPendingKeyRequests();
             fetchAPIKeys();
             fetchAuditLogs();
@@ -862,7 +876,7 @@
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            alert(`API Key Generated and Saved in MongoDB Atlas!\nPlaintext Key: ${data.api_key_plaintext}`);
+            showToast(`API Key Generated! Plaintext Key: ${data.api_key_plaintext}`, 'success');
             closeModal('modal-create-key');
             fetchAPIKeys();
             fetchAuditLogs();

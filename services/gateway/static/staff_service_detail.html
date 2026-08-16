@@ -217,7 +217,23 @@
         function copySnippetText() {
             const codeText = document.getElementById('snippet-code-box').innerText;
             navigator.clipboard.writeText(codeText);
-            alert('Code snippet copied to clipboard!');
+            showToast('Code snippet copied to clipboard!', 'info');
+        }
+
+        function showToast(msg, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = 'position:fixed; top:24px; right:24px; z-index:10000; display:flex; flex-direction:column; gap:10px;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = 'min-width:280px; padding:12px 18px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-between:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); opacity:0.96;';
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#00a4b8'));
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
         }
 
         function simulateRecord() {

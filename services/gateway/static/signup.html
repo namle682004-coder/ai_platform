@@ -57,7 +57,6 @@
         }
 
         .auth-title { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
-        .auth-subtitle { font-size: 13.5px; color: var(--text-sub); }
 
         .form-group { margin-bottom: 18px; }
         .form-label { display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 6px; }
@@ -75,8 +74,6 @@
 
         .form-control:focus { border-color: var(--fpt-cyan); box-shadow: 0 0 0 3px rgba(0, 164, 184, 0.15); }
 
-        select.form-control { padding-right: 14px; cursor: pointer; }
-
         .auth-meta { font-size: 12.5px; margin-bottom: 20px; color: #475569; }
         .terms-checkbox { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
         .terms-checkbox input { accent-color: var(--fpt-cyan); width: 16px; height: 16px; margin-top: 2px; cursor: pointer; }
@@ -93,9 +90,23 @@
         .auth-footer { text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--text-sub); border-top: 1px solid var(--border-color); padding-top: 20px; }
         .auth-footer a { color: var(--fpt-cyan); font-weight: 700; text-decoration: none; }
         .auth-footer a:hover { text-decoration: underline; }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg {
+            min-width: 300px; padding: 14px 20px; border-radius: 8px; color: #ffffff; font-size: 13.5px; font-weight: 500;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: slideIn 0.3s ease forwards; opacity: 0.96;
+        }
+        .toast-msg.success { background: #10b981; border-left: 5px solid #059669; }
+        .toast-msg.error { background: #ef4444; border-left: 5px solid #dc2626; }
+        .toast-msg.info { background: #00a4b8; border-left: 5px solid #008496; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
+
+    <div id="toast-container"></div>
 
     <div class="auth-container">
         <div class="auth-header">
@@ -156,6 +167,16 @@
     </div>
 
     <script>
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info');
+            toast.innerHTML = `<div><i class="fa-solid ${icon}"></i> &nbsp; ${msg}</div><span style="cursor:pointer;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
         function togglePasswordVisibility(inputId, iconId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(iconId);
@@ -179,7 +200,7 @@
             const role = 'staff';
 
             if (password !== confirmPwd) {
-                alert('Mật khẩu xác nhận không trùng khớp!');
+                showToast('Mật khẩu xác nhận không trùng khớp!', 'error');
                 return;
             }
 
@@ -192,13 +213,13 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert('Đăng ký thành công! Hãy đăng nhập để truy cập Console.');
-                    window.location.href = '/login';
+                    showToast('Tạo tài khoản thành công! Đang chuyển hướng sang Đăng nhập...', 'success');
+                    setTimeout(() => { window.location.href = '/login'; }, 1200);
                 } else {
-                    alert('Đăng ký thất bại: ' + (data.detail || 'Có lỗi xảy ra'));
+                    showToast('Đăng ký thất bại: ' + (data.detail || 'Có lỗi xảy ra'), 'error');
                 }
             } catch (err) {
-                alert('Lỗi kết nối server: ' + err.message);
+                showToast('Lỗi kết nối server: ' + err.message, 'error');
             }
         }
     </script>
