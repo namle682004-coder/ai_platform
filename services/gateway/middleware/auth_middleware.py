@@ -13,7 +13,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if not path.startswith("/v1/") or path in ["/health", "/docs", "/openapi.json", "/redoc"]:
+        if (
+            not path.startswith("/v1/")
+            or path.startswith("/v1/auth/")
+            or path.startswith("/v1/mcp")
+            or path in ["/health", "/docs", "/openapi.json", "/redoc"]
+        ):
             return await call_next(request)
 
         # 1. Dynamic Export Check: Verify if Admin has disabled this API endpoint

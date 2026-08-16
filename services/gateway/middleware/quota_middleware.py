@@ -18,7 +18,12 @@ class QuotaMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if not path.startswith("/v1/") or path in ["/health", "/docs", "/openapi.json"]:
+        if (
+            not path.startswith("/v1/")
+            or path.startswith("/v1/auth/")
+            or path.startswith("/v1/mcp")
+            or path in ["/health", "/docs", "/openapi.json"]
+        ):
             return await call_next(request)
 
         tenant_id = getattr(request.state, "tenant_id", "TENANT_DEFAULT")
