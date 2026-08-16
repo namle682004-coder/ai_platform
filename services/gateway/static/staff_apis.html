@@ -576,9 +576,52 @@
             showToast(`Prepaid Project "${name}" created successfully!`, 'success');
         }
 
+        function renderCardsGrid(catalog, apis) {
+            const grid = document.getElementById('api-cards-grid-container');
+            if (!grid) return;
+            grid.innerHTML = '';
+            catalog.forEach(item => {
+                const isChecked = isApiActive(apis, item.name);
+                let iconClass = 'fa-plug';
+                let bgColor = '#64748b';
+                let desc = item.description || '';
+                
+                if (item.name.includes('Speech to Text')) {
+                    iconClass = 'fa-microphone-lines'; bgColor = '#10b981';
+                    desc = 'Convert your voice into text using PhoWhisper STT model';
+                } else if (item.name.includes('Text to Speech')) {
+                    iconClass = 'fa-volume-high'; bgColor = '#10b981';
+                    desc = 'Convert text to natural-sounding voices with viXTTS synthesis';
+                } else if (item.name.includes('LLM') || item.name.includes('Chatbot')) {
+                    iconClass = 'fa-robot'; bgColor = '#3b82f6';
+                    desc = 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints';
+                } else if (item.name.includes('Image')) {
+                    iconClass = 'fa-image'; bgColor = '#8b5cf6';
+                    desc = 'Generate images from text using Stable Diffusion XL';
+                } else if (item.name.includes('Moderation')) {
+                    iconClass = 'fa-shield-halved'; bgColor = '#ef4444';
+                    desc = 'Scan and filter bad language / toxic text content';
+                }
+
+                const card = document.createElement('div');
+                card.className = 'api-card';
+                card.onclick = () => navigateToService(item.name);
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="api-icon" style="background:${bgColor};"><i class="fa-solid ${iconClass}"></i></div>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${item.name}', this, event)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-title">${item.name}</div>
+                    <div class="card-desc">${desc}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
         async function syncUIState() {
-            const apis = await fetchEnabledAPIsFromBackend();
-            const catalog = await fetchApiCatalogFromBackend();
             const projects = await getProjects();
             const t = i18nDict[currentLang] || i18nDict.en;
 
@@ -588,49 +631,21 @@
                 document.getElementById('current-project-label').innerText = t.selectProj;
             }
 
-            const grid = document.getElementById('api-cards-grid-container');
-            if (grid) {
-                grid.innerHTML = '';
-                catalog.forEach(item => {
-                    const isChecked = isApiActive(apis, item.name);
-                    let iconClass = 'fa-plug';
-                    let bgColor = '#64748b';
-                    let desc = item.description || '';
-                    
-                    if (item.name === 'Speech to Text' || item.name === 'Speech to Text API') {
-                        iconClass = 'fa-microphone-lines'; bgColor = '#10b981';
-                        desc = 'Convert your voice into text using PhoWhisper STT model';
-                    } else if (item.name === 'Text to Speech' || item.name === 'Text to Speech API') {
-                        iconClass = 'fa-volume-high'; bgColor = '#10b981';
-                        desc = 'Convert text to natural-sounding voices with viXTTS synthesis';
-                    } else if (item.name === 'LLM Chatbot API' || item.name === 'LLM Chatbot') {
-                        iconClass = 'fa-robot'; bgColor = '#3b82f6';
-                        desc = 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints';
-                    } else if (item.name === 'Image Generation API' || item.name === 'Image Generation') {
-                        iconClass = 'fa-image'; bgColor = '#8b5cf6';
-                        desc = 'Generate images from text using Stable Diffusion XL';
-                    } else if (item.name === 'Content Moderation API' || item.name === 'Content Moderation') {
-                        iconClass = 'fa-shield-halved'; bgColor = '#ef4444';
-                        desc = 'Scan and filter bad language / toxic text content';
-                    }
+            // 1. Instant zero-latency render (prevents toggle jump/flicker)
+            const cachedApis = getEnabledAPIs();
+            const defaultCatalog = [
+                { name: "Speech to Text API" },
+                { name: "Text to Speech API" },
+                { name: "LLM Chatbot API" },
+                { name: "Image Generation API" },
+                { name: "Content Moderation API" }
+            ];
+            renderCardsGrid(defaultCatalog, cachedApis);
 
-                    const card = document.createElement('div');
-                    card.className = 'api-card';
-                    card.onclick = () => navigateToService(item.name);
-                    card.innerHTML = `
-                        <div class="card-top">
-                            <div class="api-icon" style="background:${bgColor};"><i class="fa-solid ${iconClass}"></i></div>
-                            <label class="switch" onclick="event.stopPropagation()">
-                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${item.name}', this, event)">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="card-title">${item.name}</div>
-                        <div class="card-desc">${desc}</div>
-                    `;
-                    grid.appendChild(card);
-                });
-            }
+            // 2. Background revalidation from MongoDB Atlas
+            const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
+            renderCardsGrid(catalog && catalog.length ? catalog : defaultCatalog, apis);
         }
 
         let targetPendingAction = 'enable';

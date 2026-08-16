@@ -642,11 +642,7 @@
             updateSnippetCode();
         }
 
-        async function syncServiceUIState() {
-            const apis = await fetchEnabledAPIsFromBackend();
-            const catalog = await fetchApiCatalogFromBackend();
-            const isEnabled = !!apis[currentSvcName];
-
+        function updateToggleButtonUI(isEnabled) {
             const btn = document.getElementById('svc-toggle-btn') || document.getElementById('btn-header-toggle-api');
             if (btn) {
                 if (!isEnabled) {
@@ -659,7 +655,21 @@
                     btn.style.background = '#64748b';
                 }
             }
+        }
 
+        async function syncServiceUIState() {
+            // 1. Instant zero-latency render from local cache (prevents visual jump/flicker)
+            const cachedApis = getEnabledAPIs();
+            const initialEnabled = isApiActive(cachedApis, currentSvcName);
+            updateToggleButtonUI(initialEnabled);
+            renderInteractiveSandbox(currentSvcName, initialEnabled);
+
+            // 2. Background revalidation from MongoDB Atlas
+            const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
+            const isEnabled = isApiActive(apis, currentSvcName);
+
+            updateToggleButtonUI(isEnabled);
             populateApiKeySelector();
             await renderDynamicServiceTabs(currentSvcName, catalog);
         }

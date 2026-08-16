@@ -372,16 +372,7 @@
             localStorage.setItem('aip_paid_balance', val.toString());
         }
 
-        async function renderApisSummaryTable() {
-            const projects = await getProjects();
-            if (projects.length > 0) {
-                document.getElementById('current-project-label').innerText = projects[0].project_name;
-            }
-
-            const paidBal = getPaidBalance();
-            const apis = await fetchEnabledAPIsFromBackend();
-            const catalog = await fetchApiCatalogFromBackend();
-
+        function renderDashboardRows(catalog, apis, paidBal) {
             const hasAnyActiveApi = Object.keys(apis).some(k => isApiActive(apis, k));
             const banner = document.getElementById('no-api-notice-banner');
             const chartGrid = document.querySelector('.chart-grid');
@@ -401,6 +392,7 @@
             }
 
             const tbody = document.getElementById('apis-summary-tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             catalog.forEach(item => {
@@ -415,7 +407,7 @@
                     ? (paidUnit === 1 ? paidBal.toLocaleString() : (paidBal > 0 ? Math.floor(paidBal / paidUnit).toLocaleString() : '0'))
                     : '0 (OFF)';
 
-                const svcUrl = (item.name === 'Text to Speech' || item.name === 'Text to Speech API') ? '/staff/service-tts' : ((item.name === 'LLM Chatbot API' || item.name === 'LLM Chatbot') ? '/staff/service-llm' : ((item.name === 'Image Generation API' || item.name === 'Image Generation') ? '/staff/service-image' : ((item.name === 'Content Moderation API' || item.name === 'Content Moderation') ? '/staff/service-moderation' : '/staff/service-stt')));
+                const svcUrl = (item.name.includes('Text to Speech')) ? '/staff/service-tts' : ((item.name.includes('LLM') || item.name.includes('Chatbot')) ? '/staff/service-llm' : ((item.name.includes('Image')) ? '/staff/service-image' : ((item.name.includes('Moderation')) ? '/staff/service-moderation' : '/staff/service-stt')));
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${item.name}</strong></td>
@@ -424,11 +416,36 @@
                     <td>0</td>
                     <td>${isEnabled ? freeVal : '0 (OFF)'}</td>
                     <td>${paidStr}</td>
-                    <td>${item.unit}</td>
+                    <td>${item.unit || 'request'}</td>
                     <td><button class="btn-buy-link" onclick="openPricingModalFor('${item.name}')">buy more</button></td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        async function renderApisSummaryTable() {
+            const projects = await getProjects();
+            if (projects.length > 0) {
+                document.getElementById('current-project-label').innerText = projects[0].project_name;
+            }
+
+            const paidBal = getPaidBalance();
+            const defaultCatalog = [
+                { name: "Speech to Text API", unit: "block", free_quota: "10,000 blocks" },
+                { name: "Text to Speech API", unit: "character", free_quota: "100,000 characters" },
+                { name: "LLM Chatbot API", unit: "token", free_quota: "50,000 tokens" },
+                { name: "Image Generation API", unit: "image", free_quota: "100 images" },
+                { name: "Content Moderation API", unit: "request", free_quota: "10,000 requests" }
+            ];
+
+            // 1. Instant zero-latency render (prevents table flickering/jerking)
+            const cachedApis = getEnabledAPIs();
+            renderDashboardRows(defaultCatalog, cachedApis, paidBal);
+
+            // 2. Background revalidation from MongoDB Atlas
+            const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
+            renderDashboardRows(catalog && catalog.length ? catalog : defaultCatalog, apis, paidBal);
         }
 
         function toggleDashboardApiStatus(apiName, isCurrentlyEnabled) {
