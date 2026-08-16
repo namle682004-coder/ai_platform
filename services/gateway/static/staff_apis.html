@@ -141,10 +141,12 @@
                     <span id="txt-nav-applications"><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
                     <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
                 </div>
-                <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/service?name=Speech%20to%20Text"><i class="fa-solid fa-microphone" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=Text%20to%20Speech"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
-                    <li class="nav-item"><a href="/staff/service?name=LLM%20Chatbot%20API"><i class="fa-solid fa-robot" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
+                                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone-lines" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
+                    <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
+                    <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
+                    <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image" style="width: 16px; text-align: center;"></i> Image Gen API</a></li>
+                    <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield-halved" style="width: 16px; text-align: center;"></i> Moderation API</a></li>
                 </ul>
             </div>
             <div class="nav-section">
@@ -210,6 +212,32 @@
                     </div>
                     <div class="card-title">LLM Chatbot API</div>
                     <div class="card-desc">Qwen3-8B & 14B High Quality LLM Reasoning Endpoints</div>
+                </div>
+            </div>
+                <!-- Image Generation Card -->
+                <div class="api-card" onclick="navigateToService('Image Generation API')">
+                    <div class="card-top">
+                        <div class="api-icon" style="background:#8b5cf6;"><i class="fa-solid fa-image"></i></div>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="toggle-image" onchange="handleApiToggleClick('Image Generation API', this, event)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-title">Image Generation API</div>
+                    <div class="card-desc">Generate images from text using Stable Diffusion XL</div>
+                </div>
+
+                <!-- Content Moderation Card -->
+                <div class="api-card" onclick="navigateToService('Content Moderation API')">
+                    <div class="card-top">
+                        <div class="api-icon" style="background:#ef4444;"><i class="fa-solid fa-shield-halved"></i></div>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="toggle-moderation" onchange="handleApiToggleClick('Content Moderation API', this, event)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-title">Content Moderation API</div>
+                    <div class="card-desc">Scan and filter bad language / toxic text content</div>
                 </div>
             </div>
         </div>

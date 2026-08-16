@@ -122,7 +122,9 @@ async function fetchApiCatalogFromBackend() {
     return cached ? JSON.parse(cached) : [
         { name: "Speech to Text", unit: "block", free_quota: "10,000 blocks" },
         { name: "Text to Speech", unit: "character", free_quota: "100,000 characters" },
-        { name: "LLM Chatbot API", unit: "token", free_quota: "50,000 tokens" }
+        { name: "LLM Chatbot API", unit: "token", free_quota: "50,000 tokens" },
+        { name: "Image Generation API", unit: "image", free_quota: "100 images" },
+        { name: "Content Moderation API", unit: "request", free_quota: "10,000 requests" }
     ];
 }
 
