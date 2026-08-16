@@ -455,8 +455,23 @@
             return data ? JSON.parse(data) : { "Speech to Text": false, "Text to Speech": false, "LLM Chatbot API": false };
         }
 
-        function setEnabledAPIs(apisObj) {
-            localStorage.setItem('aip_enabled_apis', JSON.stringify(apisObj));
+        async function setEnabledAPIs(apiObj) {
+            localStorage.setItem('aip_enabled_apis', JSON.stringify(apiObj));
+            try {
+                const res = await fetch('/v1/user/apis-state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled_apis: apiObj })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.enabled_apis) {
+                        localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
+                    }
+                }
+            } catch(err) {
+                console.error("Failed to update API state on backend:", err);
+            }
         }
 
         function getProjects() {
@@ -541,11 +556,21 @@
             document.getElementById('create-project-modal').classList.remove('active');
         }
 
-        function submitCreatePrepaidProject() {
+        async function submitCreatePrepaidProject() {
             const name = document.getElementById('input-new-project-name').value.trim() || 'New Prepaid Project';
             const type = document.getElementById('input-new-project-type').value;
 
-            const projects = getProjects();
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: name, billing_type: type })
+                });
+            } catch(err) {
+                console.error("Failed to persist prepaid project to backend:", err);
+            }
+
+            const projects = await getProjects();
             const newProj = {
                 project_id: 'proj_' + Math.random().toString(36).substring(7),
                 project_name: name,
@@ -692,6 +717,21 @@
             const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
             const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
 
+            try {
+                await fetch('/v1/user/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_name: projName, billing_type: 'prepaid' })
+                });
+                await fetch('/v1/user/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: keyName, project_name: projName })
+                });
+            } catch (err) {
+                console.error("Failed to persist project & key to backend:", err);
+            }
+
             const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
             const newProj = {
                 project_id: 'proj_' + Math.random().toString(36).substring(7),
@@ -704,6 +744,7 @@
             const projects = await getProjects();
             projects.push(newProj);
             setProjects(projects);
+            setActiveProjectName(projName);
 
             closeProjectModal();
             await activateApi(targetPendingApi, projName);
