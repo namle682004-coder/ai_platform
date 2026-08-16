@@ -38,13 +38,12 @@
 
         .layout-body { display: flex; flex: 1; }
 
-        .sidebar { width: 230px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
-        .nav-section { margin-bottom: 6px; }
-        .section-title { padding: 8px 20px; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sidebar { width: 220px; background: #ffffff; border-right: 1px solid var(--border-color); padding: 20px 0; }
+        .nav-section { margin-bottom: 24px; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 0 20px 8px 20px; letter-spacing: 0.5px; }
         .nav-list { list-style: none; }
-        .nav-item a { width: 100%; text-align: left; padding: 9px 20px 9px 32px; border: none; background: transparent; color: var(--text-sub); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: block; text-decoration: none; }
-        .nav-item a:hover { background: #f8fafc; color: var(--fpt-cyan); }
-        .nav-item.active a { background: #f0fafb; color: var(--fpt-cyan); font-weight: 600; border-left: 3px solid var(--fpt-cyan); padding-left: 29px; }
+        .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.15s ease; border-left: 3px solid transparent; }
+        .nav-item.active a, .nav-item a:hover { background: #f1f5f9; color: var(--fpt-cyan); border-left-color: var(--fpt-cyan); }
 
         .main-content { flex: 1; padding: 28px 36px; overflow-y: auto; }
 
@@ -143,6 +142,8 @@
                     <li class="nav-item"><a href="/staff/service?name=LLM%20Chatbot%20API">LLM Chatbot</a></li>
                 </ul>
             </div>
+            <div class="nav-section"><div class="section-title"><span>Payment history</span></div></div>
+            <div class="nav-section"><div class="section-title"><span>Contact us</span></div></div>
         </div>
 
         <div class="main-content">
