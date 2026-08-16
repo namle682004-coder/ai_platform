@@ -676,6 +676,184 @@
             updateSnippetCode();
         }
 
+        async function syncServiceUIState() {
+            const apis = await fetchEnabledAPIsFromBackend();
+            const catalog = await fetchApiCatalogFromBackend();
+            const isEnabled = !!apis[currentSvcName];
+
+            const btn = document.getElementById('btn-header-toggle-api');
+            if (btn) {
+                if (!isEnabled) {
+                    btn.innerText = 'ENABLE';
+                    btn.classList.remove('disabled');
+                } else {
+                    btn.innerText = 'DISABLE';
+                    btn.classList.add('disabled');
+                }
+            }
+
+            populateApiKeySelector();
+            await renderDynamicServiceTabs(currentSvcName, catalog);
+        }
+
+        async function renderDynamicServiceTabs(svcName, catalog) {
+            const item = catalog.find(x => x.name === svcName) || catalog[0];
+
+            // 1. OVERVIEW TAB
+            const ov = item.overview || {};
+            const panelOv = document.getElementById('panel-OVERVIEW');
+            if (panelOv) {
+                const featuresHtml = (ov.features || []).map(f => `<li>${f}</li>`).join('');
+                panelOv.innerHTML = `
+                    <div class="doc-card">
+                        <div class="doc-section-title">${ov.title || svcName}</div>
+                        <p class="doc-text">${ov.summary || item.description}</p>
+                        <div class="doc-section-title" style="margin-top: 24px;">Key Capabilities & Features</div>
+                        <ul class="doc-list">
+                            ${featuresHtml}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // 2. DOCUMENT TAB
+            const doc = item.document || {};
+            const panelDoc = document.getElementById('panel-DOCUMENT');
+            if (panelDoc) {
+                const headersHtml = (doc.headers || []).map(h => `
+                    <tr>
+                        <td><code>${h.name}</code></td>
+                        <td><span class="${h.required ? 'badge-req' : 'badge-opt'}">${h.required ? 'YES' : 'NO'}</span></td>
+                        <td><code>${h.type}</code></td>
+                        <td>${h.desc}</td>
+                    </tr>
+                `).join('');
+
+                const paramsHtml = (doc.parameters || []).map(p => `
+                    <tr>
+                        <td><code>${p.name}</code></td>
+                        <td><span class="${p.required ? 'badge-req' : 'badge-opt'}">${p.required ? 'YES' : 'NO'}</span></td>
+                        <td><code>${p.type}</code></td>
+                        <td>${p.desc}</td>
+                    </tr>
+                `).join('');
+
+                panelDoc.innerHTML = `
+                    <div class="doc-card">
+                        <div class="doc-section-title">API Endpoint & Request URL</div>
+                        <div class="url-box">${doc.method || 'POST'} ${doc.endpoint_url || 'https://ai-platform-6p72.onrender.com/v1/service'}</div>
+
+                        <div class="doc-section-title" style="margin-top: 20px;">Request Headers & Parameters</div>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Required</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${headersHtml}
+                                ${paramsHtml}
+                            </tbody>
+                        </table>
+
+                        <div class="doc-section-title" style="margin-top: 24px;">Sample Response JSON</div>
+                        <div class="code-snippet-card">${doc.sample_response || '{}'}</div>
+                    </div>
+                `;
+            }
+
+            // 3. PRICING TAB
+            const pr = item.pricing || {};
+            const panelPr = document.getElementById('panel-PRICING');
+            if (panelPr) {
+                panelPr.innerHTML = `
+                    <div class="doc-card">
+                        <div class="doc-section-title">${svcName} - Transparent Pricing Schedule</div>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>Pricing Tier</th>
+                                    <th>Rate</th>
+                                    <th>Billing Unit</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Free Monthly Allowance</strong></td>
+                                    <td><span style="color:#10b981; font-weight:700;">FREE</span></td>
+                                    <td>Monthly</td>
+                                    <td>${pr.free_quota || '10,000 quota units / month'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pay-As-You-Go Rate</strong></td>
+                                    <td>${pr.pay_as_you_go || 'Standard Rate'}</td>
+                                    <td>Per ${item.unit || 'unit'}</td>
+                                    <td>${pr.billing_cycle || 'Charged automatically from prepaid balance'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 4. SERVICE TAB (Interactive Sandbox according to Service type!)
+            renderInteractiveSandbox(svcName);
+        }
+
+        function renderInteractiveSandbox(svcName) {
+            const leftBox = document.querySelector('.sandbox-left');
+            if (!leftBox) return;
+
+            if (svcName === 'Text to Speech') {
+                leftBox.innerHTML = `
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Voice Selector</label>
+                        <select id="tts-voice-select" class="select-input" style="width:100%; border:none; border-bottom:1.5px solid #cbd5e1;">
+                            <option value="banmai">Nữ Hà Nội - Ban Mai (Khuyên dùng)</option>
+                            <option value="leminh">Nam Hà Nội - Lê Minh</option>
+                            <option value="lannhi">Nữ Sài Gòn - Lan Nhi</option>
+                            <option value="myan">Nữ Huế - Mỹ An</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Input Text Prompt</label>
+                        <textarea id="tts-text-input" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập đoạn văn bản tiếng Việt cần chuyển thành giọng nói...">Chào mừng bạn đến với Everwin AI Platform! Hệ thống tổng hợp giọng nói viXTTS sẵn sàng phục vụ.</textarea>
+                    </div>
+                    <div>
+                        <button class="btn-action-outline blue" onclick="simulateTTS()"><i class="fa-solid fa-play"></i> GENERATE AUDIO SPEECH</button>
+                    </div>
+                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">Audio Output Status</div>
+                `;
+            } else if (svcName === 'LLM Chatbot API') {
+                leftBox.innerHTML = `
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">System Message Prompt</label>
+                        <input type="text" id="llm-system-prompt" class="form-control-input" value="You are a helpful AI assistant for Everwin AI Platform. Answer concisely in Vietnamese.">
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">User Prompt</label>
+                        <textarea id="llm-user-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập câu hỏi của bạn cho AI...">Hãy giới thiệu về Everwin AI Platform và các mô hình AI nổi bật.</textarea>
+                    </div>
+                    <div>
+                        <button class="btn-action-outline blue" onclick="simulateLLMChat()"><i class="fa-solid fa-paper-plane"></i> SEND CHAT PROMPT</button>
+                    </div>
+                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">AI Chat Output</div>
+                `;
+            } else {
+                leftBox.innerHTML = `
+                    <div>
+                        <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
+                        <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
+                    </div>
+                    <div class="identified-box" id="identified-result-box">Identified Text</div>
+                `;
+            }
+        }
+
         let targetPendingAction = 'enable';
 
         function handleServiceHeaderToggleClick() {
@@ -831,31 +1009,6 @@
                 openConfirmModal();
                 return;
             }
-            const box = document.getElementById('identified-result-box');
-            box.style.color = '#007bff';
-            box.innerText = '📤 Uploading audio file to AIP inference cluster...';
-
-            try {
-                const formData = new FormData();
-                const dummyBlob = new Blob(['RIFF....WAVEfmt '], { type: 'audio/wav' });
-                formData.append('file', dummyBlob, 'sample_audio.wav');
-                formData.append('model', 'PhoWhisper-STT-v1');
-
-                const res = await fetch('/v1/audio/transcriptions', {
-                    method: 'POST',
-                    body: formData
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    box.style.color = '#10b981';
-                    box.innerText = `✅ File Audio Inference Result: "${data.text || 'Welcome to Enterprise AI Inference Middleware Solution.'}"`;
-                    showToast('File âm thanh đã được nhận dạng thành công!', 'success');
-                    return;
-                }
-            } catch (err) {}
-
-            setTimeout(() => {
-                box.style.color = '#212529';
                 box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
             }, 1200);
         }
