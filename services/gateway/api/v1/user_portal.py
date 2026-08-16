@@ -150,16 +150,15 @@ async def record_user_payment(req: PaymentCreateRequest):
 @router.get("/apis-state")
 async def get_user_apis_state():
     """Get active API states for user from MongoDB Atlas."""
-    user = user_repository.get_user("user_staff") if hasattr(user_repository, "get_user") else None
-    enabled = user.get("enabled_apis", {}) if user else {}
+    user = await user_repository.get_user_by_id("user_staff_01")
+    enabled = user.get("enabled_apis", {"Speech to Text": True, "Text to Speech": False, "LLM Chatbot API": False}) if user else {"Speech to Text": True, "Text to Speech": False, "LLM Chatbot API": False}
     return {"enabled_apis": enabled}
 
 
 @router.post("/apis-state")
 async def update_user_apis_state(req: ApisStateUpdateRequest):
     """Update active API states for user in MongoDB Atlas."""
-    if hasattr(user_repository, "update_enabled_apis"):
-        user_repository.update_enabled_apis("user_staff", req.enabled_apis)
+    await user_repository.update_user("user_staff_01", {"enabled_apis": req.enabled_apis})
     return {"message": "API states updated successfully", "enabled_apis": req.enabled_apis}
 
 
