@@ -9,7 +9,7 @@ from common.repositories.key_repository import key_repository
 from common.repositories.notification_repository import notification_repository
 from common.repositories.tenant_repository import tenant_repository
 from common.repositories.user_repository import user_repository
-from common.repositories.service_catalog_repository import service_catalog_repository
+from common.repositories.endpoint_repository import endpoint_repository
 
 router = APIRouter(prefix="/v1/user", tags=["User Portal & Console API"])
 
@@ -197,5 +197,6 @@ async def submit_user_contact(req: ContactMessageRequest):
 
 @router.get("/apis-catalog", response_model=List[dict])
 async def list_database_apis_catalog():
-    """Fetch all available API services catalog from MongoDB Atlas."""
-    return await service_catalog_repository.list_services()
+    """Fetch all available API services catalog from MongoDB Atlas endpoints."""
+    endpoints_map = await endpoint_repository.list_endpoints()
+    return list(endpoints_map.values())

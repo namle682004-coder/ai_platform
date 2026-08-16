@@ -652,10 +652,14 @@
         }
 
         function navigateToService(apiName) {
-            if (apiName === 'Text to Speech') {
+            if (apiName === 'Text to Speech' || apiName === 'Text to Speech API') {
                 window.location.href = '/staff/service-tts';
             } else if (apiName === 'LLM Chatbot API') {
                 window.location.href = '/staff/service-llm';
+            } else if (apiName === 'Image Generation API') {
+                window.location.href = '/staff/service-image';
+            } else if (apiName === 'Content Moderation API') {
+                window.location.href = '/staff/service-moderation';
             } else {
                 window.location.href = '/staff/service-stt';
             }

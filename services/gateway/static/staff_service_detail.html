@@ -814,6 +814,28 @@
                     </div>
                     <div class="identified-box" id="identified-result-box" style="margin-top:14px;">AI Chat Output</div>
                 `;
+            } else if (svcName === 'Image Generation API') {
+                leftBox.innerHTML = `
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Image Prompt</label>
+                        <textarea id="img-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập mô tả bức ảnh bạn muốn tạo (Ví dụ: Một phi hành gia đang cưỡi ngựa trên sao hỏa)...">Một thành phố tương lai cyberpunk với nhiều neon sáng rực.</textarea>
+                    </div>
+                    <div>
+                        <button class="btn-action-outline blue" style="background:#8b5cf6; color:white; border:none;" onclick="simulateImageGen()"><i class="fa-solid fa-image"></i> GENERATE IMAGE</button>
+                    </div>
+                    <div class="identified-box" id="identified-result-box" style="margin-top:14px; min-height: 200px; display: flex; align-items: center; justify-content: center;">[Image Output Will Appear Here]</div>
+                `;
+            } else if (svcName === 'Content Moderation API') {
+                leftBox.innerHTML = `
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Text to Moderate</label>
+                        <textarea id="mod-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập nội dung cần kiểm duyệt vào đây..."></textarea>
+                    </div>
+                    <div>
+                        <button class="btn-action-outline red" onclick="simulateModeration()"><i class="fa-solid fa-shield-halved"></i> SCAN CONTENT</button>
+                    </div>
+                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">[Moderation Result Will Appear Here]</div>
+                `;
             } else {
                 leftBox.innerHTML = `
                     <div>
@@ -1059,23 +1081,33 @@
             checkMandatoryAuth();
             const pathname = window.location.pathname;
             if (pathname.includes('/staff/service-tts')) {
-                currentSvcName = 'Text to Speech';
+                currentSvcName = 'Text to Speech API';
             } else if (pathname.includes('/staff/service-llm')) {
                 currentSvcName = 'LLM Chatbot API';
+            } else if (pathname.includes('/staff/service-image')) {
+                currentSvcName = 'Image Generation API';
+            } else if (pathname.includes('/staff/service-moderation')) {
+                currentSvcName = 'Content Moderation API';
             } else if (pathname.includes('/staff/service-stt')) {
-                currentSvcName = 'Speech to Text';
+                currentSvcName = 'Speech to Text API';
             } else {
                 const urlParams = new URLSearchParams(window.location.search);
-                currentSvcName = urlParams.get('name') || 'Speech to Text';
+                currentSvcName = urlParams.get('name') || 'Speech to Text API';
             }
             document.getElementById('svc-detail-title').innerText = currentSvcName;
 
             const iconBox = document.getElementById('svc-detail-icon');
-            if (currentSvcName === 'Text to Speech') {
+            if (currentSvcName === 'Text to Speech API') {
                 iconBox.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
             } else if (currentSvcName === 'LLM Chatbot API') {
                 iconBox.innerHTML = '<i class="fa-solid fa-comments"></i>';
                 iconBox.style.background = '#2563eb';
+            } else if (currentSvcName === 'Image Generation API') {
+                iconBox.innerHTML = '<i class="fa-solid fa-image"></i>';
+                iconBox.style.background = '#8b5cf6';
+            } else if (currentSvcName === 'Content Moderation API') {
+                iconBox.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
+                iconBox.style.background = '#ef4444';
             } else {
                 iconBox.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>';
             }
