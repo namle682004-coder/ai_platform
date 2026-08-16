@@ -779,72 +779,16 @@
                 return;
             }
 
-            if (svcName === 'Text to Speech') {
-                leftBox.innerHTML = `
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Voice Selector</label>
-                        <select id="tts-voice-select" class="select-input" style="width:100%; border:none; border-bottom:1.5px solid #cbd5e1;">
-                            <option value="banmai">Nữ Hà Nội - Ban Mai (Khuyên dùng)</option>
-                            <option value="leminh">Nam Hà Nội - Lê Minh</option>
-                            <option value="lannhi">Nữ Sài Gòn - Lan Nhi</option>
-                            <option value="myan">Nữ Huế - Mỹ An</option>
-                        </select>
-                    </div>
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Input Text Prompt</label>
-                        <textarea id="tts-text-input" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập đoạn văn bản tiếng Việt cần chuyển thành giọng nói...">Chào mừng bạn đến với Everwin AI Platform! Hệ thống tổng hợp giọng nói viXTTS sẵn sàng phục vụ.</textarea>
-                    </div>
-                    <div>
-                        <button class="btn-action-outline blue" onclick="simulateTTS()"><i class="fa-solid fa-play"></i> GENERATE AUDIO SPEECH</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">Audio Output Status</div>
-                `;
-            } else if (svcName === 'LLM Chatbot API') {
-                leftBox.innerHTML = `
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">System Message Prompt</label>
-                        <input type="text" id="llm-system-prompt" class="form-control-input" value="You are a helpful AI assistant for Everwin AI Platform. Answer concisely in Vietnamese.">
-                    </div>
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">User Prompt</label>
-                        <textarea id="llm-user-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập câu hỏi của bạn cho AI...">Hãy giới thiệu về Everwin AI Platform và các mô hình AI nổi bật.</textarea>
-                    </div>
-                    <div>
-                        <button class="btn-action-outline blue" onclick="simulateLLMChat()"><i class="fa-solid fa-paper-plane"></i> SEND CHAT PROMPT</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">AI Chat Output</div>
-                `;
-            } else if (svcName === 'Image Generation API') {
-                leftBox.innerHTML = `
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Image Prompt</label>
-                        <textarea id="img-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập mô tả bức ảnh bạn muốn tạo (Ví dụ: Một phi hành gia đang cưỡi ngựa trên sao hỏa)...">Một thành phố tương lai cyberpunk với nhiều neon sáng rực.</textarea>
-                    </div>
-                    <div>
-                        <button class="btn-action-outline blue" style="background:#8b5cf6; color:white; border:none;" onclick="simulateImageGen()"><i class="fa-solid fa-image"></i> GENERATE IMAGE</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box" style="margin-top:14px; min-height: 200px; display: flex; align-items: center; justify-content: center;">[Image Output Will Appear Here]</div>
-                `;
-            } else if (svcName === 'Content Moderation API') {
-                leftBox.innerHTML = `
-                    <div style="margin-bottom:14px;">
-                        <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Text to Moderate</label>
-                        <textarea id="mod-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập nội dung cần kiểm duyệt vào đây..."></textarea>
-                    </div>
-                    <div>
-                        <button class="btn-action-outline red" onclick="simulateModeration()"><i class="fa-solid fa-shield-halved"></i> SCAN CONTENT</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box" style="margin-top:14px;">[Moderation Result Will Appear Here]</div>
-                `;
-            } else {
-                leftBox.innerHTML = `
-                    <div>
-                        <button class="btn-action-outline red" onclick="simulateRecord()"><i class="fa-solid fa-circle" style="color:#dc3545;"></i> START RECORD</button>
-                        <button class="btn-action-outline blue" onclick="simulateUpload()"><i class="fa-solid fa-upload"></i> UPLOAD FILE AUDIO</button>
-                    </div>
-                    <div class="identified-box" id="identified-result-box">Identified Text</div>
-                `;
-            }
+            leftBox.innerHTML = `
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:12.5px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Image Prompt</label>
+                    <textarea id="img-prompt" style="width:100%; height:80px; border:1px solid #cbd5e1; border-radius:6px; padding:10px; font-size:13px;" placeholder="Nhập mô tả bức ảnh bạn muốn tạo (Ví dụ: Một phi hành gia đang cưỡi ngựa trên sao hỏa)...">Một thành phố tương lai cyberpunk với nhiều neon sáng rực.</textarea>
+                </div>
+                <div>
+                    <button class="btn-action-outline blue" style="background:#8b5cf6; color:white; border:none;" onclick="simulateImageGen()"><i class="fa-solid fa-image"></i> GENERATE IMAGE</button>
+                </div>
+                <div class="identified-box" id="identified-result-box" style="margin-top:14px; min-height: 200px; display: flex; align-items: center; justify-content: center;">[Image Output Will Appear Here]</div>
+            `;
         }
 
         let targetPendingAction = 'enable';
@@ -1079,38 +1023,12 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             checkMandatoryAuth();
-            const pathname = window.location.pathname;
-            if (pathname.includes('/staff/service-tts')) {
-                currentSvcName = 'Text to Speech API';
-            } else if (pathname.includes('/staff/service-llm')) {
-                currentSvcName = 'LLM Chatbot API';
-            } else if (pathname.includes('/staff/service-image')) {
-                currentSvcName = 'Image Generation API';
-            } else if (pathname.includes('/staff/service-moderation')) {
-                currentSvcName = 'Content Moderation API';
-            } else if (pathname.includes('/staff/service-stt')) {
-                currentSvcName = 'Speech to Text API';
-            } else {
-                const urlParams = new URLSearchParams(window.location.search);
-                currentSvcName = urlParams.get('name') || 'Speech to Text API';
-            }
+            currentSvcName = 'Image Generation API';
             document.getElementById('svc-detail-title').innerText = currentSvcName;
 
             const iconBox = document.getElementById('svc-detail-icon');
-            if (currentSvcName === 'Text to Speech API') {
-                iconBox.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-            } else if (currentSvcName === 'LLM Chatbot API') {
-                iconBox.innerHTML = '<i class="fa-solid fa-comments"></i>';
-                iconBox.style.background = '#2563eb';
-            } else if (currentSvcName === 'Image Generation API') {
-                iconBox.innerHTML = '<i class="fa-solid fa-image"></i>';
-                iconBox.style.background = '#8b5cf6';
-            } else if (currentSvcName === 'Content Moderation API') {
-                iconBox.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
-                iconBox.style.background = '#ef4444';
-            } else {
-                iconBox.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>';
-            }
+            iconBox.innerHTML = '<i class="fa-solid fa-image"></i>';
+            iconBox.style.background = '#8b5cf6';
 
             await syncServiceUIState();
             updateSnippetCode();
