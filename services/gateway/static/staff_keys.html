@@ -77,7 +77,18 @@
             <div class="project-selector"><i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
-            <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
+            <div style="position:relative; cursor:pointer;" onclick="toggleLangDropdown(event)">
+                <i class="fa-solid fa-globe"></i> <span id="current-lang-text">English</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                <div id="lang-dropdown-menu" style="display:none; position:absolute; top:35px; right:0; background:#fff; color:#0f172a; border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,0.15); border:1px solid #cbd5e1; width:140px; z-index:10000; overflow:hidden;">
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;" onclick="setAppLanguage('en'); event.stopPropagation();">
+                        🇬🇧 English
+                    </div>
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; border-top:1px solid #f1f5f9;" onclick="setAppLanguage('vi'); event.stopPropagation();">
+                        🇻🇳 Tiếng Việt
+                    </div>
+                </div>
+            </div>
             <div class="user-menu">
                 <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
                 <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left:6px; cursor:pointer;" onclick="logoutUser()"></i>
@@ -88,7 +99,10 @@
     <div class="layout-body">
         <div class="sidebar">
             <div class="nav-section">
-                <div class="section-title"><span>Console</span></div>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+                    <span>Console</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                </div>
                 <ul class="nav-list">
                     <li class="nav-item"><a href="/staff/dashboard">Dashboard</a></li>
                     <li class="nav-item"><a href="/staff/apis">APIs</a></li>
@@ -97,7 +111,10 @@
                 </ul>
             </div>
             <div class="nav-section">
-                <div class="section-title"><span>Applications</span></div>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+                    <span>Applications</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                </div>
                 <ul class="nav-list">
                     <li class="nav-item"><a href="/staff/service?name=Speech%20to%20Text">Speech to Text</a></li>
                     <li class="nav-item"><a href="/staff/service?name=Text%20to%20Speech">Text to Speech</a></li>
@@ -129,7 +146,7 @@
                         <tr>
                             <td>2026/08/16 07:15</td>
                             <td><strong>hello</strong></td>
-                            <td><code>SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR</code></td>
+                            <td><code>SSAm****************************</code></td>
                             <td>
                                 <i class="fa-regular fa-copy" title="Copy Key" style="cursor:pointer; color:#64748b; font-size:16px; margin-right:12px;" onclick="copyKeyText('SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR')"></i>
                                 <i class="fa-regular fa-trash-can" title="Delete Key" style="cursor:pointer; color:#dc3545; font-size:16px;" onclick="deleteApiKeyRow(this)"></i>
@@ -187,10 +204,17 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+        function maskApiKey(keyStr) {
+            if (!keyStr) return '****';
+            if (keyStr.length <= 4) return keyStr;
+            return keyStr.substring(0, 4) + '*'.repeat(keyStr.length - 4);
+        }
+
         function handleCreateApiKeySubmit(e) {
             e.preventDefault();
             const name = document.getElementById('new-key-name').value;
-            const keyVal = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR_' + Math.random().toString(36).substring(7);
+            const fullKeyVal = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR_' + Math.random().toString(36).substring(7);
+            const maskedKey = maskApiKey(fullKeyVal);
             const now = new Date().toISOString().replace('T', ' ').substring(0, 16).replace(/-/g, '/');
 
             const tbody = document.getElementById('api-keys-tbody');
@@ -198,25 +222,25 @@
             row.innerHTML = `
                 <td>${now}</td>
                 <td><strong>${name}</strong></td>
-                <td><code>${keyVal}</code></td>
+                <td><code>${maskedKey}</code></td>
                 <td>
-                    <i class="fa-regular fa-copy" title="Copy Key" style="cursor:pointer; color:#64748b; font-size:16px; margin-right:12px;" onclick="copyKeyText('${keyVal}')"></i>
+                    <i class="fa-regular fa-copy" title="Copy Key" style="cursor:pointer; color:#64748b; font-size:16px; margin-right:12px;" onclick="copyKeyText('${fullKeyVal}')"></i>
                     <i class="fa-regular fa-trash-can" title="Delete Key" style="cursor:pointer; color:#dc3545; font-size:16px;" onclick="deleteApiKeyRow(this)"></i>
                 </td>
             `;
             tbody.appendChild(row);
             closeModal('modal-create-api-key');
-            showToast(`API Key "${name}" Created Successfully!`, 'success');
+            showToast(`Tạo thành công API Key "${name}"!`, 'success');
         }
 
         function copyKeyText(text) {
             navigator.clipboard.writeText(text);
-            showToast('API Key copied to clipboard!', 'info');
+            showToast('API Key đã được sao chép vào bộ nhớ tạm!', 'success');
         }
 
         function deleteApiKeyRow(icon) {
             icon.closest('tr').remove();
-            showToast('API Key removed.', 'warning');
+            showToast('Đã xóa API Key.', 'warning');
         }
 
         function showToast(msg, type = 'info') {
@@ -228,11 +252,47 @@
                 document.body.appendChild(container);
             }
             const toast = document.createElement('div');
-            toast.style.cssText = 'min-width:280px; padding:12px 18px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-between:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); opacity:0.96;';
+            toast.style.cssText = 'min-width:280px; padding:12px 18px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); opacity:0.96;';
             toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#00a4b8'));
             toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
             container.appendChild(toast);
             setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function toggleNavSection(headerEl) {
+            const navList = headerEl.nextElementSibling;
+            const icon = headerEl.querySelector('.toggle-icon');
+            if (navList) {
+                if (navList.style.display === 'none') {
+                    navList.style.display = 'block';
+                    if (icon) icon.style.transform = 'rotate(0deg)';
+                } else {
+                    navList.style.display = 'none';
+                    if (icon) icon.style.transform = 'rotate(-90deg)';
+                }
+            }
+        }
+
+        let currentLang = localStorage.getItem('aip_lang') || 'en';
+
+        function toggleLangDropdown(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('lang-dropdown-menu');
+            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', () => {
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+        });
+
+        function setAppLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('aip_lang', lang);
+            document.getElementById('current-lang-text').innerText = lang === 'vi' ? 'Tiếng Việt' : 'English';
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+            showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
         }
 
         window.addEventListener('DOMContentLoaded', () => {
