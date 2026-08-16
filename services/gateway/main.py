@@ -95,11 +95,11 @@ async def serve_favicon_ico():
     return FileResponse(fav_path, media_type="image/svg+xml")
 
 
-@app.get("/static/{file_name}", include_in_schema=False)
-async def serve_static_files(file_name: str):
-    file_path = os.path.join(current_dir, "static", file_name)
-    if os.path.exists(file_path):
-        return FileResponse(file_path)
+@app.get("/static/{file_path:path}", include_in_schema=False)
+async def serve_static_files(file_path: str):
+    full_path = os.path.join(current_dir, "static", file_path)
+    if os.path.exists(full_path) and os.path.isfile(full_path):
+        return FileResponse(full_path)
     return FileResponse(os.path.join(current_dir, "static", "favicon.svg"))
 
 
