@@ -507,17 +507,20 @@
             updateSnippetCode();
         }
 
+        let targetPendingAction = 'enable';
+
         function handleServiceHeaderToggleClick() {
             const apis = getEnabledAPIs();
             const isEnabled = !!apis[currentSvcName];
 
             if (!isEnabled) {
+                targetPendingAction = 'enable';
+                document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${currentSvcName}"?`;
                 openConfirmModal();
             } else {
-                apis[currentSvcName] = false;
-                setEnabledAPIs(apis);
-                syncServiceUIState();
-                showToast(`API "${currentSvcName}" has been disabled.`, 'warning');
+                targetPendingAction = 'disable';
+                document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${currentSvcName}"?`;
+                openConfirmModal();
             }
         }
 
@@ -528,10 +531,18 @@
             closeConfirmModal();
             const projects = getProjects();
 
-            if (projects.length === 0) {
-                openProjectModal();
+            if (targetPendingAction === 'disable') {
+                const apis = getEnabledAPIs();
+                apis[currentSvcName] = false;
+                setEnabledAPIs(apis);
+                syncServiceUIState();
+                showToast(`API "${currentSvcName}" has been disabled.`, 'warning');
             } else {
-                activateApi(currentSvcName);
+                if (projects.length === 0) {
+                    openProjectModal();
+                } else {
+                    activateApi(currentSvcName);
+                }
             }
         }
 

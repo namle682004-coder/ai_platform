@@ -536,20 +536,24 @@
             document.getElementById('toggle-llm').checked = !!apis["LLM Chatbot API"];
         }
 
+        let targetPendingAction = 'enable';
+
         function handleApiToggleClick(apiName, checkboxEl, e) {
             if (e) e.stopPropagation();
             const apis = getEnabledAPIs();
             const currentState = !!apis[apiName];
 
+            targetPendingApi = apiName;
             if (!currentState) {
+                targetPendingAction = 'enable';
                 checkboxEl.checked = false;
-                targetPendingApi = apiName;
+                document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${apiName}"?`;
                 openConfirmModal();
             } else {
-                apis[apiName] = false;
-                setEnabledAPIs(apis);
-                syncUIState();
-                showToast(`API "${apiName}" has been disabled.`, 'warning');
+                targetPendingAction = 'disable';
+                checkboxEl.checked = true;
+                document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${apiName}"?`;
+                openConfirmModal();
             }
         }
 
@@ -560,10 +564,18 @@
             closeConfirmModal();
             const projects = getProjects();
 
-            if (projects.length === 0) {
-                openProjectModal();
+            if (targetPendingAction === 'disable') {
+                const apis = getEnabledAPIs();
+                apis[targetPendingApi] = false;
+                setEnabledAPIs(apis);
+                syncUIState();
+                showToast(`API "${targetPendingApi}" has been disabled.`, 'warning');
             } else {
-                activateApi(targetPendingApi);
+                if (projects.length === 0) {
+                    openProjectModal();
+                } else {
+                    activateApi(targetPendingApi);
+                }
             }
         }
 

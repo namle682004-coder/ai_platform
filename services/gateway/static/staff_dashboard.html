@@ -197,6 +197,7 @@
                     <thead>
                         <tr>
                             <th>API</th>
+                            <th>Status</th>
                             <th>Requests</th>
                             <th>Requests error</th>
                             <th>Free remain</th>
@@ -311,14 +312,37 @@
         </div>
     </div>
 
+    <!-- MODAL: CONFIRM TOGGLE API -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="confirm-box" style="width: 440px;">
+            <div class="confirm-header">Confirm</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to change this API state?</div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentTargetApi = 'Text to Speech';
         let selectedPackCost = '500,000 VNĐ';
         let selectedAddChars = 1500000;
+        let targetPendingApi = '';
+        let targetPendingAction = 'enable';
 
         function getProjects() {
             const data = localStorage.getItem('aip_projects');
             return data ? JSON.parse(data) : [];
+        }
+
+        function getEnabledAPIs() {
+            const data = localStorage.getItem('aip_enabled_apis');
+            return data ? JSON.parse(data) : {};
+        }
+
+        function setEnabledAPIs(apiObj) {
+            localStorage.setItem('aip_enabled_apis', JSON.stringify(apiObj));
         }
 
         function getPaidBalance() {
@@ -336,37 +360,71 @@
             }
 
             const paidBal = getPaidBalance();
+            const apis = getEnabledAPIs();
+
+            const apiList = [
+                { name: 'Speech to Text', free: '10,000', paidUnit: 150, unit: 'block' },
+                { name: 'Text to Speech', free: '100,000', paidUnit: 1, unit: 'character' },
+                { name: 'LLM Chatbot API', free: '50,000', paidUnit: 10, unit: 'token' }
+            ];
 
             const tbody = document.getElementById('apis-summary-tbody');
-            tbody.innerHTML = `
-                <tr>
-                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='/staff/service?name=Speech%20to%20Text'">Speech to Text</strong></td>
+            tbody.innerHTML = '';
+
+            apiList.forEach(item => {
+                const isEnabled = !!apis[item.name];
+                const statusBadge = isEnabled
+                    ? `<span style="background: #10b981; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${item.name}', true)">ACTIVE</span>`
+                    : `<span style="background: #94a3b8; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${item.name}', false)">DISABLED</span>`;
+
+                const paidStr = isEnabled
+                    ? (item.paidUnit === 1 ? paidBal.toLocaleString() : (paidBal > 0 ? Math.floor(paidBal / item.paidUnit).toLocaleString() : '0'))
+                    : '0 (OFF)';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='/staff/service?name=${encodeURIComponent(item.name)}'">${item.name}</strong></td>
+                    <td>${statusBadge}</td>
                     <td>0</td>
                     <td>0</td>
-                    <td>10,000</td>
-                    <td>${paidBal > 0 ? (paidBal / 150).toLocaleString() : '0'}</td>
-                    <td>block</td>
-                    <td><button class="btn-buy-link" onclick="openPricingModalFor('Speech to Text')">buy more</button></td>
-                </tr>
-                <tr>
-                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='/staff/service?name=Text%20to%20Speech'">Text to Speech</strong></td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>100,000</td>
-                    <td>${paidBal.toLocaleString()}</td>
-                    <td>character</td>
-                    <td><button class="btn-buy-link" onclick="openPricingModalFor('Text to Speech')">buy more</button></td>
-                </tr>
-                <tr>
-                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='/staff/service?name=LLM%20Chatbot%20API'">LLM Chatbot API</strong></td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>50,000</td>
-                    <td>${paidBal > 0 ? (paidBal / 10).toLocaleString() : '0'}</td>
-                    <td>token</td>
-                    <td><button class="btn-buy-link" onclick="openPricingModalFor('LLM Chatbot API')">buy more</button></td>
-                </tr>
-            `;
+                    <td>${isEnabled ? item.free : '0 (OFF)'}</td>
+                    <td>${paidStr}</td>
+                    <td>${item.unit}</td>
+                    <td><button class="btn-buy-link" onclick="openPricingModalFor('${item.name}')">buy more</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleDashboardApiStatus(apiName, isCurrentlyEnabled) {
+            targetPendingApi = apiName;
+            if (isCurrentlyEnabled) {
+                targetPendingAction = 'disable';
+                document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${apiName}"?`;
+            } else {
+                targetPendingAction = 'enable';
+                document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${apiName}"?`;
+            }
+            openConfirmModal();
+        }
+
+        function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+        function onConfirmEnableClick() {
+            closeConfirmModal();
+            const apis = getEnabledAPIs();
+            if (targetPendingAction === 'disable') {
+                apis[targetPendingApi] = false;
+                setEnabledAPIs(apis);
+                renderApisSummaryTable();
+                showToast(`API "${targetPendingApi}" has been disabled.`, 'warning');
+            } else {
+                apis[targetPendingApi] = true;
+                setEnabledAPIs(apis);
+                renderApisSummaryTable();
+                showToast(`API "${targetPendingApi}" has been enabled!`, 'success');
+            }
         }
 
         function openPricingModalFor(apiName) {
