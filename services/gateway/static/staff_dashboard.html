@@ -240,60 +240,94 @@
         </div>
     </div>
 
-    <!-- STEP 1: PRICING & INVOICE SELECTION MODAL (Exact Replica of User Screenshot) -->
+    <!-- STEP 1 & STEP 2: PRICING & INVOICE SELECTION MODAL (Compact 2-Step Flow) -->
     <div class="modal-overlay" id="pricing-modal">
-        <div class="pricing-modal-box">
-            <div class="pricing-modal-header" id="pricing-modal-title">Text to Speech - Pricing</div>
-            <div class="pricing-modal-body">
-                <div class="price-badge-row">
-                    <span class="price-free-title" id="pack-price-display">FREE 100,000</span>
-                    <span class="price-sub-text" id="pack-unit-display">characters / month</span>
-                </div>
-
-                <div style="margin-bottom:18px;">
-                    <div class="pack-option-card active" id="opt-pack-1" onclick="selectPackOption(1, 'FREE 100,000', '0 VNĐ', 100000)">
-                        <div>
-                            <strong style="font-size:13.5px;">Gói Miễn Phí (Free Tier)</strong>
-                            <div style="font-size:12px; color:#64748b;">100,000 ký tự / tháng</div>
-                        </div>
-                        <span style="font-weight:700; color:#007bff;">FREE</span>
+        <div class="pricing-modal-box" style="width: 480px;">
+            <!-- STEP 1: CHỌN GÓI CƯỚC -->
+            <div id="pricing-step-1">
+                <div class="pricing-modal-header" id="pricing-modal-title">LLM Chatbot API - Pricing</div>
+                <div class="pricing-modal-body" style="padding: 20px 24px 16px 24px;">
+                    <div class="price-badge-row" style="margin-bottom: 14px;">
+                        <span class="price-free-title" id="pack-price-display">FREE 100,000</span>
+                        <span class="price-sub-text" id="pack-unit-display">characters / month</span>
                     </div>
 
-                    <div class="pack-option-card" id="opt-pack-2" onclick="selectPackOption(2, 'PREMIUM 1.5M', '500,000 VNĐ', 1500000)">
-                        <div>
-                            <strong style="font-size:13.5px;">Gói Premium 500k</strong>
-                            <div style="font-size:12px; color:#64748b;">1,500,000 ký tự + Tốc độ cao</div>
+                    <div style="margin-bottom: 16px;">
+                        <div class="pack-option-card active" id="opt-pack-1" onclick="selectPackOption(1, 'FREE 100,000', '0 VNĐ', 100000, 'Free Tier')">
+                            <div>
+                                <strong style="font-size:13.5px;">Gói Miễn Phí (Free Tier)</strong>
+                                <div style="font-size:12px; color:#64748b;">100,000 ký tự / tháng</div>
+                            </div>
+                            <span style="font-weight:700; color:#007bff;">FREE</span>
                         </div>
-                        <span style="font-weight:700; color:#10b981;">500,000 VNĐ</span>
+
+                        <div class="pack-option-card" id="opt-pack-2" onclick="selectPackOption(2, 'PREMIUM 1.5M', '500,000 VNĐ', 1500000, 'Premium 500k')">
+                            <div>
+                                <strong style="font-size:13.5px;">Gói Premium 500k</strong>
+                                <div style="font-size:12px; color:#64748b;">1,500,000 ký tự + Tốc độ cao</div>
+                            </div>
+                            <span style="font-weight:700; color:#10b981;">500,000 VNĐ</span>
+                        </div>
+
+                        <div class="pack-option-card" id="opt-pack-3" onclick="selectPackOption(3, 'PREMIUM 4.0M', '1,000,000 VNĐ', 4000000, 'Enterprise 1M')">
+                            <div>
+                                <strong style="font-size:13.5px;">Gói Enterprise 1M</strong>
+                                <div style="font-size:12px; color:#64748b;">4,000,000 ký tự + Ưu tiên GPU</div>
+                            </div>
+                            <span style="font-weight:700; color:#7c3aed;">1,000,000 VNĐ</span>
+                        </div>
                     </div>
 
-                    <div class="pack-option-card" id="opt-pack-3" onclick="selectPackOption(3, 'PREMIUM 4.0M', '1,000,000 VNĐ', 4000000)">
-                        <div>
-                            <strong style="font-size:13.5px;">Gói Enterprise 1M</strong>
-                            <div style="font-size:12px; color:#64748b;">4,000,000 ký tự + Ưu tiên GPU</div>
-                        </div>
-                        <span style="font-weight:700; color:#7c3aed;">1,000,000 VNĐ</span>
+                    <!-- Compact 1-line Invoice Checkbox -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#334155; cursor:pointer;">
+                            <input type="checkbox" id="chk-need-invoice" style="width:16px; height:16px; accent-color:#007bff; cursor:pointer;">
+                            <span>Yêu cầu xuất hóa đơn GTGT (VAT Invoice)</span>
+                        </label>
+                        <i class="fa-solid fa-file-invoice-dollar" style="color: #007bff; font-size: 16px;"></i>
                     </div>
                 </div>
 
-                <div class="invoice-question-title">Would you like us to issue an invoice?</div>
-                <div class="invoice-radio-group">
-                    <label><input type="radio" name="invoice" value="no" onchange="toggleInvoiceFields(false)"> No</label>
-                    <label><input type="radio" name="invoice" value="yes" checked onchange="toggleInvoiceFields(true)"> Yes</label>
-                </div>
-
-                <div class="invoice-fields-box active" id="invoice-fields">
-                    <label style="font-size:11.5px; font-weight:600; color:#475569;">Mã số thuế doanh nghiệp (Tax Code)</label>
-                    <input type="text" class="form-input-sm" id="inv-tax-code" value="0101234567-99">
-                    <label style="font-size:11.5px; font-weight:600; color:#475569;">Tên Công Ty (Company Name)</label>
-                    <input type="text" class="form-input-sm" id="inv-company-name" value="Everwin Technology Solutions Ltd">
+                <div class="pricing-modal-footer">
+                    <span class="redirect-notice">Chuyển tiếp đến cổng VNPAY</span>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn-modal-cancel" onclick="closePricingModal()">HỦY</button>
+                        <button class="btn-modal-next" onclick="handlePricingNextStep()">TIẾP TỤC <i class="fa-solid fa-arrow-right" style="font-size:11px; margin-left:4px;"></i></button>
+                    </div>
                 </div>
             </div>
-            <div class="pricing-modal-footer">
-                <span class="redirect-notice">You will be redirected to VNPAY payment portal</span>
-                <div>
-                    <button class="btn-modal-cancel" onclick="closePricingModal()">CANCEL</button>
-                    <button class="btn-modal-next" onclick="openVNPAYModal()">NEXT</button>
+
+            <!-- STEP 2: THÔNG TIN XUẤT HÓA ĐƠN VAT -->
+            <div id="pricing-step-2" style="display: none;">
+                <div class="pricing-modal-header" style="background:#0f4c81; color:#fff; display:flex; justify-content:space-between; align-items:center;">
+                    <span>Thông Tin Xuất Hóa Đơn VAT</span>
+                    <span style="font-size:12px; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px;">Bước 2 / 2</span>
+                </div>
+                <div class="pricing-modal-body" style="padding: 20px 24px 16px 24px;">
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12.5px; color: #1e40af; font-weight: 500;" id="step2-pack-summary">Gói chọn: Free Tier</span>
+                        <strong style="color: #ed1c24; font-size: 14px;" id="step2-cost-summary">0 VNĐ</strong>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #334155; display:block; margin-bottom:4px;">Mã số thuế doanh nghiệp (Tax Code) *</label>
+                        <input type="text" class="form-input-sm" id="inv-tax-code" placeholder="Ví dụ: 0101234567-99" value="0101234567-99">
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #334155; display:block; margin-bottom:4px;">Tên Công Ty (Company Name) *</label>
+                        <input type="text" class="form-input-sm" id="inv-company-name" placeholder="Tên công ty trên GPKD..." value="Everwin Technology Solutions Ltd">
+                    </div>
+
+                    <div>
+                        <label style="font-size: 12px; font-weight: 600; color: #334155; display:block; margin-bottom:4px;">Địa chỉ xuất hóa đơn (Company Address)</label>
+                        <input type="text" class="form-input-sm" id="inv-address" placeholder="Địa chỉ theo hóa đơn GTGT..." value="Tầng 12, Tòa nhà Everwin, Hà Nội">
+                    </div>
+                </div>
+
+                <div class="pricing-modal-footer">
+                    <button class="btn-modal-cancel" onclick="goBackToStep1()"><i class="fa-solid fa-arrow-left" style="font-size:11px; margin-right:4px;"></i> QUAY LẠI</button>
+                    <button class="btn-modal-next" onclick="openVNPAYModal()"><i class="fa-solid fa-credit-card" style="font-size:11px; margin-right:4px;"></i> THANH TOÁN VNPAY</button>
                 </div>
             </div>
         </div>
@@ -479,9 +513,16 @@
             }
         }
 
+        let selectedPackName = 'Free Tier';
+
         function openPricingModalFor(apiName) {
             currentTargetApi = apiName;
             document.getElementById('pricing-modal-title').innerText = `${apiName} - Pricing`;
+            // Reset to Step 1
+            document.getElementById('pricing-step-1').style.display = 'block';
+            document.getElementById('pricing-step-2').style.display = 'none';
+            const chk = document.getElementById('chk-need-invoice');
+            if (chk) chk.checked = false;
             document.getElementById('pricing-modal').classList.add('active');
         }
 
@@ -489,21 +530,37 @@
             document.getElementById('pricing-modal').classList.remove('active');
         }
 
-        function selectPackOption(optIndex, titleText, costText, addChars) {
+        function selectPackOption(optIndex, titleText, costText, addChars, packName = '') {
             [1, 2, 3].forEach(i => {
                 const el = document.getElementById(`opt-pack-${i}`);
-                if (i === optIndex) el.classList.add('active');
-                else el.classList.remove('active');
+                if (el) {
+                    if (i === optIndex) el.classList.add('active');
+                    else el.classList.remove('active');
+                }
             });
             document.getElementById('pack-price-display').innerText = titleText;
             selectedPackCost = costText;
             selectedAddChars = addChars;
+            selectedPackName = packName || titleText;
         }
 
-        function toggleInvoiceFields(show) {
-            const box = document.getElementById('invoice-fields');
-            if (show) box.classList.add('active');
-            else box.classList.remove('active');
+        function handlePricingNextStep() {
+            const chk = document.getElementById('chk-need-invoice');
+            if (chk && chk.checked) {
+                // Switch to Step 2 (Invoice Info)
+                document.getElementById('step2-pack-summary').innerText = `Gói: ${selectedPackName} (${currentTargetApi})`;
+                document.getElementById('step2-cost-summary').innerText = selectedPackCost;
+                document.getElementById('pricing-step-1').style.display = 'none';
+                document.getElementById('pricing-step-2').style.display = 'block';
+            } else {
+                // Direct to VNPAY Payment
+                openVNPAYModal();
+            }
+        }
+
+        function goBackToStep1() {
+            document.getElementById('pricing-step-1').style.display = 'block';
+            document.getElementById('pricing-step-2').style.display = 'none';
         }
 
         function openVNPAYModal() {
