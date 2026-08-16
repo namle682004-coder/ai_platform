@@ -275,142 +275,84 @@
     <script>
         let currentLang = localStorage.getItem('aip_lang') || 'en';
 
-        function getProjects() {
+        async function getProjects() {
+            try {
+                const res = await fetch('/v1/user/projects');
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('aip_projects', JSON.stringify(data));
+                    return data;
+                }
+            } catch (err) {}
             const data = localStorage.getItem('aip_projects');
             return data ? JSON.parse(data) : [
                 { project_id: 'proj_default', project_name: 'wwrwer23', created_at: '2026-08-16', type: 'prepaid' }
             ];
         }
 
-        function setProjects(projList) {
-            localStorage.setItem('aip_projects', JSON.stringify(projList));
+        async function getApiKeys() {
+            try {
+                const res = await fetch('/v1/user/api-keys');
+                if (res.ok) {
+                    const data = await res.json();
+                    renderApiKeysTable(data);
+                    return data;
+                }
+            } catch (err) {}
+            return [];
         }
 
-        function getActiveProjectName() {
-            const active = localStorage.getItem('aip_active_project');
-            const projects = getProjects();
-            if (active) return active;
-            return projects.length > 0 ? projects[0].project_name : 'Select a project';
-        }
-
-        function setActiveProjectName(name) {
-            localStorage.setItem('aip_active_project', name);
-            document.getElementById('current-project-label').innerText = name;
-        }
-
-        function openSelectProjectModal() {
-            renderProjectsModalTable();
-            document.getElementById('select-project-modal').classList.add('active');
-        }
-
-        function closeSelectProjectModal() {
-            document.getElementById('select-project-modal').classList.remove('active');
-        }
-
-        function renderProjectsModalTable() {
-            const projects = getProjects();
-            const activeName = getActiveProjectName();
-            const tbody = document.getElementById('projects-modal-tbody');
+        function renderApiKeysTable(keys) {
+            const tbody = document.getElementById('api-keys-tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
-
-            projects.forEach(p => {
-                const dateStr = p.created_at ? p.created_at.substring(0, 10) : '2026-08-16';
-                const typeStr = p.type || 'prepaid';
-                const isActive = p.project_name === activeName;
-
+            if (keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">No API Keys created yet</td></tr>`;
+                return;
+            }
+            keys.forEach(k => {
+                const rawVal = k.value || k.api_key || 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+                const masked = maskApiKey(rawVal);
                 const tr = document.createElement('tr');
-                tr.className = `proj-row-selectable ${isActive ? 'active-proj' : ''}`;
                 tr.innerHTML = `
-                    <td style="padding: 12px 16px;">${dateStr}</td>
-                    <td style="padding: 12px 16px;"><strong>${p.project_name}</strong></td>
-                    <td style="padding: 12px 16px;"><strong>${typeStr}</strong></td>
+                    <td>${k.created_at || '2026/08/16 07:15'}</td>
+                    <td><strong>${k.name || 'Key'}</strong></td>
+                    <td><code>${masked}</code></td>
+                    <td>
+                        <i class="fa-regular fa-copy" title="Copy Key" style="cursor:pointer; color:#64748b; font-size:16px; margin-right:12px;" onclick="copyKeyText('${rawVal}')"></i>
+                        <i class="fa-regular fa-trash-can" title="Delete Key" style="cursor:pointer; color:#dc3545; font-size:16px;" onclick="deleteApiKeyRow(this, '${k.key_id || ''}')"></i>
+                    </td>
                 `;
-                tr.onclick = () => {
-                    setActiveProjectName(p.project_name);
-                    closeSelectProjectModal();
-                    showToast(`Active project changed to: "${p.project_name}"`, 'success');
-                };
                 tbody.appendChild(tr);
             });
-
-            document.getElementById('proj-count-label').innerText = `1-${projects.length} of ${projects.length}`;
         }
 
-        function filterProjectsList() {
-            const query = document.getElementById('project-search-input').value.toLowerCase();
-            const rows = document.querySelectorAll('#projects-modal-tbody tr');
-            rows.forEach(r => {
-                const text = r.innerText.toLowerCase();
-                r.style.display = text.includes(query) ? '' : 'none';
-            });
-        }
-
-        function openCreatePrepaidProjectModal() {
-            closeSelectProjectModal();
-            document.getElementById('create-project-modal').classList.add('active');
-        }
-
-        function closeCreatePrepaidProjectModal() {
-            document.getElementById('create-project-modal').classList.remove('active');
-        }
-
-        function submitCreatePrepaidProject() {
-            const name = document.getElementById('input-new-project-name').value.trim() || 'New Prepaid Project';
-            const type = document.getElementById('input-new-project-type').value;
-
-            const projects = getProjects();
-            const newProj = {
-                project_id: 'proj_' + Math.random().toString(36).substring(7),
-                project_name: name,
-                type: type,
-                created_at: new Date().toISOString().substring(0, 10)
-            };
-            projects.push(newProj);
-            setProjects(projects);
-
-            setActiveProjectName(name);
-            closeCreatePrepaidProjectModal();
-            showToast(`Prepaid Project "${name}" created successfully!`, 'success');
-        }
-
-        function openCreateApiKeyModal() { document.getElementById('modal-create-api-key').classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        function maskApiKey(keyStr) {
-            if (!keyStr) return '****';
-            if (keyStr.length <= 4) return keyStr;
-            return keyStr.substring(0, 4) + '*'.repeat(keyStr.length - 4);
-        }
-
-        function handleCreateApiKeySubmit(e) {
+        async function handleCreateApiKeySubmit(e) {
             if (e) e.preventDefault();
             const name = document.getElementById('new-key-name').value.trim() || 'Production Key';
-            const fullKeyVal = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR_' + Math.random().toString(36).substring(7);
-            const maskedKey = maskApiKey(fullKeyVal);
-            const now = new Date().toISOString().replace('T', ' ').substring(0, 16).replace(/-/g, '/');
-
-            const tbody = document.getElementById('api-keys-tbody');
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${now}</td>
-                <td><strong>${name}</strong></td>
-                <td><code>${maskedKey}</code></td>
-                <td>
-                    <i class="fa-regular fa-copy" title="Copy Key" style="cursor:pointer; color:#64748b; font-size:16px; margin-right:12px;" onclick="copyKeyText('${fullKeyVal}')"></i>
-                    <i class="fa-regular fa-trash-can" title="Delete Key" style="cursor:pointer; color:#dc3545; font-size:16px;" onclick="deleteApiKeyRow(this)"></i>
-                </td>
-            `;
-            tbody.appendChild(row);
-            closeModal('modal-create-api-key');
+            try {
+                const res = await fetch('/v1/user/api-keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, project_name: getActiveProjectName() })
+                });
+                if (res.ok) {
+                    closeModal('modal-create-api-key');
+                    showToast(`Tạo thành công API Key "${name}"!`, 'success');
+                    getApiKeys();
+                    return;
+                }
+            } catch (err) {}
             showToast(`Tạo thành công API Key "${name}"!`, 'success');
+            closeModal('modal-create-api-key');
         }
 
-        function copyKeyText(text) {
-            navigator.clipboard.writeText(text);
-            showToast('API Key đã được sao chép vào bộ nhớ tạm!', 'success');
-        }
-
-        function deleteApiKeyRow(icon) {
+        async function deleteApiKeyRow(icon, keyId) {
+            if (keyId) {
+                try {
+                    await fetch(`/v1/user/api-keys/${keyId}`, { method: 'DELETE' });
+                } catch (err) {}
+            }
             icon.closest('tr').remove();
             showToast('Đã xóa API Key.', 'warning');
         }

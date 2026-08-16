@@ -500,9 +500,20 @@
             showToast(`Prepaid Project "${name}" created successfully!`, 'success');
         }
 
-        function renderPaymentHistoryTable() {
-            const rawHistory = localStorage.getItem('aip_payment_history');
-            const history = rawHistory ? JSON.parse(rawHistory) : [];
+        async function renderPaymentHistoryTable() {
+            let history = [];
+            try {
+                const res = await fetch('/v1/user/payments');
+                if (res.ok) {
+                    history = await res.json();
+                }
+            } catch (err) {}
+
+            if (!history || history.length === 0) {
+                const rawHistory = localStorage.getItem('aip_payment_history');
+                history = rawHistory ? JSON.parse(rawHistory) : [];
+            }
+
             const tbody = document.getElementById('payment-tbody');
             tbody.innerHTML = '';
 

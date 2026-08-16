@@ -200,6 +200,8 @@ async def serve_status_page():
     return FileResponse(status_path)
 
 
+from gateway.api.v1.user_portal import router as user_portal_router
+
 # Register Public /v1 Routers
 app.include_router(chat_router)
 app.include_router(completions_router)
@@ -213,6 +215,7 @@ app.include_router(jobs_router)
 app.include_router(models_router)
 app.include_router(auth_router)
 app.include_router(mcp_router)
+app.include_router(user_portal_router)
 
 # Register Admin /admin/v1 Routers
 app.include_router(admin_keys_router)

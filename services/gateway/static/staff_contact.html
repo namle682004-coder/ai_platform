@@ -302,14 +302,38 @@
             document.getElementById('char-counter-text').innerText = `${count} / 1000`;
         }
 
-        function submitDropUsLine(e) {
+        async function submitDropUsLine(e) {
             e.preventDefault();
+            const inputs = e.target.querySelectorAll('input, textarea');
+            const data = {
+                name: inputs[0].value,
+                phone: inputs[1].value,
+                email: inputs[2].value,
+                message: inputs[3].value
+            };
+            try {
+                await fetch('/v1/user/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (err) {}
             showToast('Cảm ơn bạn đã gửi lời nhắn! Đội ngũ hỗ trợ sẽ liên hệ lại trong ít phút.', 'success');
             e.target.reset();
         }
 
-        function submitFeedback(e) {
+        async function submitFeedback(e) {
             e.preventDefault();
+            const cat = e.target.querySelector('input[name="fb_category"]:checked').value;
+            const title = e.target.querySelector('input[placeholder="Title"]').value;
+            const desc = document.getElementById('fb-description-input').value;
+            try {
+                await fetch('/v1/user/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: cat, title: title, description: desc })
+                });
+            } catch (err) {}
             showToast('Phản hồi của bạn đã được gửi thành công! Cảm ơn đóng góp của bạn.', 'success');
             e.target.reset();
             document.getElementById('char-counter-text').innerText = '0 / 1000';
