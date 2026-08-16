@@ -618,13 +618,16 @@
         }
 
         let targetPendingAction = 'enable';
+        let targetPendingApi = '';
+        let pendingCheckboxEl = null;
 
-        async function handleApiToggleClick(apiName, checkboxEl, e) {
+        function handleApiToggleClick(apiName, checkboxEl, e) {
             if (e) e.stopPropagation();
-            const apis = await fetchEnabledAPIsFromBackend();
+            const apis = getEnabledAPIs();
             const currentState = !!apis[apiName];
 
             targetPendingApi = apiName;
+            pendingCheckboxEl = checkboxEl;
             if (!currentState) {
                 targetPendingAction = 'enable';
                 checkboxEl.checked = true;
@@ -644,7 +647,10 @@
         }
         function cancelConfirmModal() {
             closeConfirmModal();
-            syncUIState();
+            if (pendingCheckboxEl) {
+                const apis = getEnabledAPIs();
+                pendingCheckboxEl.checked = !!apis[targetPendingApi];
+            }
         }
 
         async function onConfirmEnableClick() {
@@ -655,13 +661,18 @@
                 const apis = getEnabledAPIs();
                 apis[targetPendingApi] = false;
                 await setEnabledAPIs(apis);
-                await syncUIState();
+                if (pendingCheckboxEl) {
+                    pendingCheckboxEl.checked = false;
+                }
                 showToast(`API "${targetPendingApi}" has been disabled.`, 'warning');
             } else {
                 if (projects.length === 0) {
                     openProjectModal();
                 } else {
                     await activateApi(targetPendingApi);
+                    if (pendingCheckboxEl) {
+                        pendingCheckboxEl.checked = true;
+                    }
                 }
             }
         }
@@ -672,7 +683,10 @@
         }
         function cancelProjectModal() {
             closeProjectModal();
-            syncUIState();
+            if (pendingCheckboxEl) {
+                const apis = getEnabledAPIs();
+                pendingCheckboxEl.checked = !!apis[targetPendingApi];
+            }
         }
 
         async function submitFirstProjectForm() {
@@ -694,13 +708,15 @@
 
             closeProjectModal();
             await activateApi(targetPendingApi, projName);
+            if (pendingCheckboxEl) {
+                pendingCheckboxEl.checked = true;
+            }
         }
 
         async function activateApi(apiName, projName = '') {
             const apis = getEnabledAPIs();
             apis[apiName] = true;
             await setEnabledAPIs(apis);
-            await syncUIState();
 
             const msg = projName 
                 ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
