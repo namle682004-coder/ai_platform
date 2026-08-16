@@ -56,13 +56,15 @@ class AuthService:
         db = mongo_manager.get_database()
         if db is not None:
             try:
-                await db.users.insert_one(record)
+                await db.users.insert_one(dict(record))
             except Exception:
                 pass
 
+        record.pop("_id", None)
         self._users_cache[email] = record
         res = dict(record)
         res.pop("hashed_password", None)
+        res.pop("_id", None)
         return res
 
     async def authenticate_user(self, email: str, password: str) -> Optional[Dict[str, Any]]:
@@ -73,6 +75,7 @@ class AuthService:
             try:
                 user = await db.users.find_one({"email": email, "hashed_password": hashed, "status": "active"}, {"_id": 0, "hashed_password": 0})
                 if user:
+                    user.pop("_id", None)
                     return user
             except Exception:
                 pass
@@ -81,6 +84,7 @@ class AuthService:
         if cached and cached.get("hashed_password") == hashed and cached.get("status") == "active":
             user_copy = dict(cached)
             user_copy.pop("hashed_password", None)
+            user_copy.pop("_id", None)
             return user_copy
 
         return None

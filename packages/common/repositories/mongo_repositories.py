@@ -49,13 +49,14 @@ class MongoKeyRepository(IKeyRepository):
         self._key_requests_cache: Dict[str, Dict[str, Any]] = {}
 
     async def create_key(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        self._keys_cache[record["key_id"]] = record
         db = mongo_manager.get_database()
         if db is not None:
             try:
-                await db.api_keys.insert_one(record)
+                await db.api_keys.insert_one(dict(record))
             except Exception:
                 pass
+        record.pop("_id", None)
+        self._keys_cache[record["key_id"]] = record
         return record
 
     async def list_keys(self) -> List[Dict[str, Any]]:
@@ -96,13 +97,14 @@ class MongoKeyRepository(IKeyRepository):
         return True
 
     async def create_key_request(self, request_record: Dict[str, Any]) -> Dict[str, Any]:
-        self._key_requests_cache[request_record["request_id"]] = request_record
         db = mongo_manager.get_database()
         if db is not None:
             try:
-                await db.key_requests.insert_one(request_record)
+                await db.key_requests.insert_one(dict(request_record))
             except Exception:
                 pass
+        request_record.pop("_id", None)
+        self._key_requests_cache[request_record["request_id"]] = request_record
         return request_record
 
     async def list_pending_key_requests(self) -> List[Dict[str, Any]]:
@@ -262,13 +264,14 @@ class MongoJobRepository(IJobRepository):
         self._jobs_cache: Dict[str, Dict[str, Any]] = {}
 
     async def create_job(self, job_record: Dict[str, Any]) -> Dict[str, Any]:
-        self._jobs_cache[job_record["job_id"]] = job_record
         db = mongo_manager.get_database()
         if db is not None:
             try:
-                await db.jobs.insert_one(job_record)
+                await db.jobs.insert_one(dict(job_record))
             except Exception:
                 pass
+        job_record.pop("_id", None)
+        self._jobs_cache[job_record["job_id"]] = job_record
         return job_record
 
     async def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
