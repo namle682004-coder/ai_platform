@@ -11,77 +11,106 @@
     
     <style>
         :root {
-            --fpt-cyan: #00a4b8; --fpt-cyan-dark: #008496; --fpt-blue: #0062d6; --fpt-orange: #ff8c00;
-            --bg-body: #f4f6f8; --sidebar-bg: #ffffff; --text-dark: #1e293b; --text-sub: #64748b;
-            --border-color: #e2e8f0; --font-heading: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif; --font-code: 'Fira Code', monospace;
+            --fpt-blue: #0f4c81;
+            --fpt-cyan: #00a4b8;
+            --fpt-orange: #f97316;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-body); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
 
-        .top-header { height: 56px; background: linear-gradient(90deg, #0096aa, #00b4cf); color: #ffffff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
-        .header-left { display: flex; align-items: center; gap: 24px; }
-        .brand-logo { display: flex; align-items: center; gap: 10px; font-family: var(--font-heading); font-weight: 800; font-size: 19px; color: #ffffff; text-decoration: none; }
-        .project-selector { background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; padding: 5px 12px; border-radius: 4px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; }
-        .header-right { display: flex; align-items: center; gap: 20px; font-size: 12.5px; }
-        .user-menu { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 12px; border-radius: 20px; background: rgba(255, 255, 255, 0.18); }
+        .top-header { background: var(--fpt-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 
-        .layout-body { display: flex; flex: 1; min-height: calc(100vh - 56px); }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 
-        .sidebar { width: 230px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
-        .nav-section { margin-bottom: 6px; }
-        .section-title { padding: 8px 20px; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .layout-body { display: flex; flex: 1; }
+
+        .sidebar { width: 220px; background: #ffffff; border-right: 1px solid var(--border-color); padding: 20px 0; }
+        .nav-section { margin-bottom: 24px; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 0 20px 8px 20px; letter-spacing: 0.5px; }
         .nav-list { list-style: none; }
-        .nav-item a { width: 100%; text-align: left; padding: 9px 20px 9px 32px; border: none; background: transparent; color: var(--text-sub); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: block; text-decoration: none; }
-        .nav-item a:hover { background: #f8fafc; color: var(--fpt-cyan); }
+        .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.15s ease; border-left: 3px solid transparent; }
+        .nav-item.active a, .nav-item a:hover { background: #f1f5f9; color: var(--fpt-cyan); border-left-color: var(--fpt-cyan); }
 
-        .main-content { flex: 1; padding: 28px 36px; overflow-y: auto; }
+        .main-content { flex: 1; padding: 24px 32px; background: #f8fafc; }
 
-        .notice-bar { background: #0056b3; color: #ffffff; padding: 10px 18px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; border-radius: 4px; margin-bottom: 20px; }
-        .service-header-card { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+        .notice-bar { background: #1e3a8a; color: #fff; padding: 10px 16px; border-radius: 6px; font-size: 12.5px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+
+        .service-header-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; margin-bottom: 20px; }
         .service-title-box { display: flex; align-items: center; gap: 16px; }
-        .service-icon-lg { width: 56px; height: 56px; border-radius: 10px; background: var(--fpt-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; }
-        .service-name { font-family: var(--font-heading); font-size: 28px; font-weight: 500; color: #334155; }
-        .btn-status-disable { background: var(--fpt-orange); color: #fff; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; }
-        .btn-buy { background: #007bff; color: #fff; border: none; padding: 8px 24px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; margin-left: 10px; }
-        .free-remain { font-size: 13px; color: var(--text-sub); margin-left: 16px; }
+        .service-icon-lg { width: 56px; height: 56px; border-radius: 12px; background: var(--fpt-cyan); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+        .service-name { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #0f172a; }
 
-        .service-nav-tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; }
-        .tab-btn { padding: 10px 20px; border: none; background: transparent; color: var(--text-sub); font-size: 12.5px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
-        .tab-btn.active { color: #ffffff; background: var(--fpt-cyan); border-radius: 4px 4px 0 0; }
+        .btn-status-toggle { background: #007bff; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: background 0.15s; }
+        .btn-status-toggle:hover { background: #0056b3; }
+        .btn-status-toggle.active { background: #10b981; }
 
-        .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-        .sandbox-left { background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; padding: 20px; }
-        .btn-action-outline { background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 9px 18px; border-radius: 4px; font-weight: 700; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; }
-        .btn-action-outline.red { color: #dc3545; }
-        .btn-action-outline.blue { color: #007bff; }
+        .btn-buy { background: #004085; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; }
+        .free-remain { font-size: 12.5px; color: var(--text-sub); margin-left: auto; }
 
-        .identified-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; min-height: 160px; padding: 14px; margin-top: 20px; color: #94a3b8; font-size: 13px; }
+        .service-nav-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; gap: 8px; }
+        .tab-btn { padding: 10px 20px; font-size: 13px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; position: relative; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+        .tab-btn.active { color: var(--fpt-cyan); border-bottom-color: var(--fpt-cyan); background: #ffffff; }
 
-        .api-right { background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; padding: 20px; }
-        .api-header { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 16px; }
-        .select-input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; outline: none; }
-        .lang-options { display: flex; align-items: center; gap: 18px; margin: 16px 0; font-size: 13px; color: #334155; }
-        .btn-copy-blue { background: #007bff; color: #fff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 11.5px; cursor: pointer; float: right; display: flex; align-items: center; gap: 6px; }
-        .code-snippet-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 14px; font-family: var(--font-code); font-size: 12px; color: #dc3545; font-weight: 600; line-height: 1.6; margin-top: 14px; clear: both; word-break: break-all; }
+        .service-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+        .sandbox-left { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .btn-action-outline { padding: 9px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; background: #fff; display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; }
+        .btn-action-outline.red { border: 1px solid #dc3545; color: #dc3545; }
+        .btn-action-outline.blue { border: 1px solid #007bff; color: #007bff; }
 
-        #mandatory-auth-gate { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 150, 170, 0.95), rgba(0, 180, 207, 0.95)); z-index: 9999; align-items: center; justify-content: center; }
-        .auth-gate-card { background: #ffffff; border-radius: 12px; width: 420px; padding: 32px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); text-align: center; }
-        .auth-gate-logo { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--fpt-cyan); margin-bottom: 6px; }
-        .auth-gate-title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 16px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; font-weight: 600; text-align: left; }
-        .form-control { width: 100%; padding: 9px 12px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; }
-        .btn-explore { background: var(--fpt-cyan); color: #ffffff; border: none; padding: 9px 24px; border-radius: 4px; font-weight: 700; font-size: 12.5px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .identified-box { flex: 1; min-height: 200px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; font-size: 13.5px; color: #475569; line-height: 1.6; }
+
+        .api-right { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; }
+        .api-header { font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 16px; }
+
+        .key-select-box { margin-bottom: 18px; }
+        .key-select-box label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; }
+        .select-input { width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; background: #fff; }
+
+        .lang-options { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; font-size: 13px; font-weight: 600; color: #334155; }
+        .btn-copy-blue { margin-left: auto; background: #007bff; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+
+        .code-snippet-card { background: #0f172a; color: #38bdf8; padding: 16px; border-radius: 8px; font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; word-break: break-all; white-space: pre-wrap; }
+
+        /* FPT.AI CONFIRM POPUP MODAL (Exact Replica of User Screenshot) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
+        .confirm-header { background: #e5e7eb; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1f2937; }
+        .confirm-body { padding: 24px 20px; font-size: 14px; color: #374151; }
+        .confirm-footer { padding: 12px 20px 16px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
+        .btn-confirm-cancel:hover { background: #f3f4f6; }
+        .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
+        .btn-confirm-ok:hover { background: #0056b3; }
+
+        /* Form Modal for Creating First Project */
+        .form-control-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; margin-top: 6px; outline: none; }
+
+        /* Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
     </style>
 </head>
 <body>
 
-
+    <div id="toast-container"></div>
 
     <div class="top-header">
         <div class="header-left">
             <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
-            <div class="project-selector"><i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="project-selector" onclick="showProjectSelectorToast()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
             <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
@@ -123,7 +152,7 @@
                 <div class="service-title-box">
                     <div class="service-icon-lg" id="svc-detail-icon"><i class="fa-solid fa-microphone-lines"></i></div>
                     <div class="service-name" id="svc-detail-title">Speech to Text</div>
-                    <button class="btn-status-disable">DISABLE</button>
+                    <button class="btn-status-toggle" id="svc-toggle-btn" onclick="handleServiceHeaderToggleClick()">ENABLE</button>
                     <button class="btn-buy">BUY</button>
                     <span class="free-remain">Free remain: 10,000 blocks / year &nbsp;&nbsp;( 1 block = 15 seconds )</span>
                 </div>
@@ -149,7 +178,7 @@
                     <div class="api-header">API</div>
                     <div class="key-select-box">
                         <label>API Key</label>
-                        <select class="select-input" id="api-key-selector" onchange="updateSnippetKey()">
+                        <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()">
                             <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">hello (SSAmMKZJ...)</option>
                             <option value="aip_live_key_default_01">Main Production Key</option>
                         </select>
@@ -171,8 +200,227 @@
         </div>
     </div>
 
+    <!-- MODAL 1: EXACT FPT.AI CONFIRM POPUP (Replica of User Screenshot) -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-header">Confirm</div>
+            <div class="confirm-body">Do you want to enable this API</div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CREATE FIRST PROJECT & API KEY FORM MODAL -->
+    <div class="modal-overlay" id="project-modal">
+        <div class="confirm-box" style="width: 480px;">
+            <div class="confirm-header" style="background:var(--fpt-blue); color:#fff;">Tạo Dự Án & API Key Đầu Tiên</div>
+            <div class="confirm-body">
+                <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:</p>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên Dự Án (Project Name)</label>
+                    <input type="text" id="input-project-name" class="form-control-input" placeholder="Ví dụ: Banking AI Project" value="Everwin Primary Project">
+                </div>
+                <div>
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên API Key</label>
+                    <input type="text" id="input-key-name" class="form-control-input" placeholder="Ví dụ: Production Main Key" value="Default Live Key">
+                </div>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeProjectModal()">HỦY BỎ</button>
+                <button class="btn-confirm-ok" style="background:var(--fpt-cyan);" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentSvcName = 'Speech to Text';
         let currentLang = 'curl';
+
+        function getEnabledAPIs() {
+            const data = localStorage.getItem('aip_enabled_apis');
+            return data ? JSON.parse(data) : { "Speech to Text": false, "Text to Speech": false, "LLM Chatbot API": false };
+        }
+
+        function setEnabledAPIs(apisObj) {
+            localStorage.setItem('aip_enabled_apis', JSON.stringify(apisObj));
+        }
+
+        function getProjects() {
+            const data = localStorage.getItem('aip_projects');
+            return data ? JSON.parse(data) : [];
+        }
+
+        function setProjects(projList) {
+            localStorage.setItem('aip_projects', JSON.stringify(projList));
+        }
+
+        function syncServiceUIState() {
+            const apis = getEnabledAPIs();
+            const projects = getProjects();
+
+            if (projects.length > 0) {
+                document.getElementById('current-project-label').innerText = projects[0].project_name;
+            } else {
+                document.getElementById('current-project-label').innerText = 'Select a project';
+            }
+
+            const isEnabled = !!apis[currentSvcName];
+            const btn = document.getElementById('svc-toggle-btn');
+            if (isEnabled) {
+                btn.innerText = 'ENABLED';
+                btn.classList.add('active');
+            } else {
+                btn.innerText = 'ENABLE';
+                btn.classList.remove('active');
+            }
+        }
+
+        function handleServiceHeaderToggleClick() {
+            const apis = getEnabledAPIs();
+            const isEnabled = !!apis[currentSvcName];
+
+            if (!isEnabled) {
+                // Currently DISABLED -> User wants to ENABLE -> Open Confirm Modal
+                openConfirmModal();
+            } else {
+                // Currently ENABLED -> Disable directly
+                apis[currentSvcName] = false;
+                setEnabledAPIs(apis);
+                syncServiceUIState();
+                showToast(`API "${currentSvcName}" has been disabled.`, 'warning');
+            }
+        }
+
+        function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+        function onConfirmEnableClick() {
+            closeConfirmModal();
+            const projects = getProjects();
+
+            if (projects.length === 0) {
+                // First API activation and NO project exists -> Open Project Creation Modal
+                openProjectModal();
+            } else {
+                // Project already exists -> Directly enable API!
+                activateApi(currentSvcName);
+            }
+        }
+
+        function openProjectModal() { document.getElementById('project-modal').classList.add('active'); }
+        function closeProjectModal() { document.getElementById('project-modal').classList.remove('active'); }
+
+        async function submitFirstProjectForm() {
+            const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
+            const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
+
+            const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+            const newProj = {
+                project_id: 'proj_' + Math.random().toString(36).substring(7),
+                project_name: projName,
+                key_name: keyName,
+                api_key: rawKey,
+                created_at: new Date().toISOString()
+            };
+
+            const projects = getProjects();
+            projects.push(newProj);
+            setProjects(projects);
+
+            closeProjectModal();
+            activateApi(currentSvcName, projName);
+        }
+
+        function activateApi(apiName, projName = '') {
+            const apis = getEnabledAPIs();
+            apis[apiName] = true;
+            setEnabledAPIs(apis);
+            syncServiceUIState();
+
+            const msg = projName 
+                ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
+                : `Đã kích hoạt thành công API ${apiName}!`;
+            showToast(msg, 'success');
+        }
+
+        function switchSnippetLang(lang) {
+            currentLang = lang;
+            updateSnippetCode();
+        }
+
+        function updateSnippetCode() {
+            const keyVal = document.getElementById('api-key-selector').value;
+            const box = document.getElementById('snippet-code-box');
+
+            if (currentLang === 'curl') {
+                box.innerText = `curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: ${keyVal}" -T "speech.wav"`;
+            } else if (currentLang === 'python') {
+                box.innerText = `import requests\n\nheaders = {'api-key': '${keyVal}'}\nfiles = {'file': open('speech.wav', 'rb')}\nres = requests.post('https://ai-platform-6p72.onrender.com/v1/audio/transcriptions', headers=headers, files=files)\nprint(res.json())`;
+            } else if (currentLang === 'php') {
+                box.innerText = `$ch = curl_init('https://ai-platform-6p72.onrender.com/v1/audio/transcriptions');\ncurl_setopt($ch, CURLOPT_HTTPHEADER, array('api-key: ${keyVal}'));\n$result = curl_exec($ch);`;
+            } else if (currentLang === 'cs') {
+                box.innerText = `var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("api-key", "${keyVal}");\nvar response = await client.PostAsync("https://ai-platform-6p72.onrender.com/v1/audio/transcriptions", null);`;
+            }
+        }
+
+        function copySnippetText() {
+            const codeText = document.getElementById('snippet-code-box').innerText;
+            navigator.clipboard.writeText(codeText);
+            showToast('Code snippet copied to clipboard!', 'info');
+        }
+
+        function simulateRecord() {
+            const apis = getEnabledAPIs();
+            if (!apis[currentSvcName]) {
+                showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
+                openConfirmModal();
+                return;
+            }
+            const box = document.getElementById('identified-result-box');
+            box.style.color = '#007bff';
+            box.innerText = '🔴 Recording speech audio... Speak into microphone...';
+            setTimeout(() => {
+                box.style.color = '#212529';
+                box.innerText = 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
+            }, 2500);
+        }
+
+        function simulateUpload() {
+            const apis = getEnabledAPIs();
+            if (!apis[currentSvcName]) {
+                showToast(`Vui lòng kích hoạt (ENABLE) API "${currentSvcName}" trước khi sử dụng Sandbox.`, 'warning');
+                openConfirmModal();
+                return;
+            }
+            const box = document.getElementById('identified-result-box');
+            box.style.color = '#007bff';
+            box.innerText = '📤 Uploading audio file to AIP vLLM Cluster...';
+            setTimeout(() => {
+                box.style.color = '#212529';
+                box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
+            }, 2000);
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#00a4b8');
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function showProjectSelectorToast() {
+            const projects = getProjects();
+            if (projects.length > 0) {
+                showToast(`Project hiện tại: ${projects[0].project_name}`, 'info');
+            } else {
+                showToast('Chưa có dự án. Vui lòng nhấn ENABLE để tạo dự án.', 'warning');
+            }
+        }
 
         function checkMandatoryAuth() {
             const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
@@ -190,77 +438,23 @@
             window.location.href = '/login';
         }
 
-        function switchSnippetLang(lang) {
-            currentLang = lang;
-            updateSnippetCode();
-        }
-
-        function updateSnippetKey() {
-            updateSnippetCode();
-        }
-
-        function updateSnippetCode() {
-            const keyVal = document.getElementById('api-key-selector').value;
-            const box = document.getElementById('snippet-code-box');
-
-            if (currentLang === 'curl') {
-                box.innerText = `curl -X POST https://ai-platform-6p72.onrender.com/v1/audio/transcriptions -H "api-key: ${keyVal}" -T ""`;
-            } else if (currentLang === 'python') {
-                box.innerText = `import requests\n\nurl = "https://ai-platform-6p72.onrender.com/v1/audio/transcriptions"\nheaders = {"api-key": "${keyVal}"}\nresponse = requests.post(url, headers=headers)\nprint(response.json())`;
-            } else if (currentLang === 'php') {
-                box.innerText = `$ch = curl_init('https://ai-platform-6p72.onrender.com/v1/audio/transcriptions');\ncurl_setopt($ch, CURLOPT_HTTPHEADER, array('api-key: ${keyVal}'));\n$result = curl_exec($ch);`;
-            } else if (currentLang === 'cs') {
-                box.innerText = `var client = new HttpClient();\nclient.DefaultRequestHeaders.Add("api-key", "${keyVal}");\nvar response = await client.PostAsync("https://ai-platform-6p72.onrender.com/v1/audio/transcriptions", null);`;
-            }
-        }
-
-        function copySnippetText() {
-            const codeText = document.getElementById('snippet-code-box').innerText;
-            navigator.clipboard.writeText(codeText);
-            showToast('Code snippet copied to clipboard!', 'info');
-        }
-
-        function showToast(msg, type = 'info') {
-            let container = document.getElementById('toast-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'toast-container';
-                container.style.cssText = 'position:fixed; top:24px; right:24px; z-index:10000; display:flex; flex-direction:column; gap:10px;';
-                document.body.appendChild(container);
-            }
-            const toast = document.createElement('div');
-            toast.style.cssText = 'min-width:280px; padding:12px 18px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-between:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); opacity:0.96;';
-            toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#00a4b8'));
-            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 3500);
-        }
-
-        function simulateRecord() {
-            const box = document.getElementById('identified-result-box');
-            box.style.color = '#007bff';
-            box.innerText = '🔴 Recording speech audio... Speak into microphone...';
-            setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT realtime.';
-            }, 2500);
-        }
-
-        function simulateUpload() {
-            const box = document.getElementById('identified-result-box');
-            box.style.color = '#007bff';
-            box.innerText = '📤 Uploading audio file to AIP vLLM Cluster...';
-            setTimeout(() => {
-                box.style.color = '#212529';
-                box.innerText = 'File âm thanh đã được nhận dạng thành công: "Welcome to Enterprise AI Inference Middleware Solution."';
-            }, 2000);
-        }
-
         window.addEventListener('DOMContentLoaded', () => {
             checkMandatoryAuth();
             const urlParams = new URLSearchParams(window.location.search);
-            const svcName = urlParams.get('name') || 'Speech to Text';
-            document.getElementById('svc-detail-title').innerText = svcName;
+            currentSvcName = urlParams.get('name') || 'Speech to Text';
+            document.getElementById('svc-detail-title').innerText = currentSvcName;
+
+            const iconBox = document.getElementById('svc-detail-icon');
+            if (currentSvcName === 'Text to Speech') {
+                iconBox.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+            } else if (currentSvcName === 'LLM Chatbot API') {
+                iconBox.innerHTML = '<i class="fa-solid fa-comments"></i>';
+                iconBox.style.background = '#2563eb';
+            } else {
+                iconBox.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>';
+            }
+
+            syncServiceUIState();
             updateSnippetCode();
         });
     </script>

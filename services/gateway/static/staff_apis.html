@@ -11,71 +11,97 @@
     
     <style>
         :root {
-            --fpt-cyan: #00a4b8; --fpt-cyan-dark: #008496; --fpt-blue: #0062d6; --bg-body: #f4f6f8;
-            --sidebar-bg: #ffffff; --text-dark: #1e293b; --text-sub: #64748b; --border-color: #e2e8f0;
-            --card-shadow: 0 1px 3px rgba(0,0,0,0.05); --font-heading: 'Outfit', sans-serif; --font-body: 'Inter', sans-serif;
+            --fpt-blue: #0f4c81;
+            --fpt-blue-light: #2563eb;
+            --fpt-cyan: #00a4b8;
+            --fpt-orange: #f97316;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg-body); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
 
-        .top-header { height: 56px; background: linear-gradient(90deg, #0096aa, #00b4cf); color: #ffffff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
-        .header-left { display: flex; align-items: center; gap: 24px; }
-        .brand-logo { display: flex; align-items: center; gap: 10px; font-family: var(--font-heading); font-weight: 800; font-size: 19px; color: #ffffff; text-decoration: none; }
-        .project-selector { background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.3); color: #ffffff; padding: 5px 12px; border-radius: 4px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; }
-        .header-right { display: flex; align-items: center; gap: 20px; font-size: 12.5px; }
-        .user-menu { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 12px; border-radius: 20px; background: rgba(255, 255, 255, 0.18); }
+        .top-header { background: var(--fpt-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 
-        .layout-body { display: flex; flex: 1; min-height: calc(100vh - 56px); }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 
-        .sidebar { width: 230px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
-        .nav-section { margin-bottom: 6px; }
-        .section-title { padding: 8px 20px; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .layout-body { display: flex; flex: 1; }
+
+        .sidebar { width: 220px; background: #ffffff; border-right: 1px solid var(--border-color); padding: 20px 0; }
+        .nav-section { margin-bottom: 24px; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 0 20px 8px 20px; letter-spacing: 0.5px; }
         .nav-list { list-style: none; }
-        .nav-item a { width: 100%; text-align: left; padding: 9px 20px 9px 32px; border: none; background: transparent; color: var(--text-sub); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: block; text-decoration: none; }
-        .nav-item a:hover { background: #f8fafc; color: var(--fpt-cyan); }
-        .nav-item.active a { background: #f0fafb; color: var(--fpt-cyan); font-weight: 600; border-left: 3px solid var(--fpt-cyan); padding-left: 29px; }
+        .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.15s ease; border-left: 3px solid transparent; }
+        .nav-item.active a, .nav-item a:hover { background: #f1f5f9; color: var(--fpt-cyan); border-left-color: var(--fpt-cyan); }
 
-        .main-content { flex: 1; padding: 28px 36px; overflow-y: auto; }
+        .main-content { flex: 1; padding: 24px 32px; background: #f8fafc; }
 
-        .welcome-banner { background: #ffffff; border-radius: 8px; padding: 28px 32px; margin-bottom: 24px; box-shadow: var(--card-shadow); border: 1px solid var(--border-color); text-align: center; }
-        .welcome-banner h1 { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
-        .welcome-banner p { color: var(--text-sub); font-size: 13.5px; margin-bottom: 16px; }
-        .btn-explore { background: var(--fpt-cyan); color: #ffffff; border: none; padding: 9px 24px; border-radius: 4px; font-weight: 700; font-size: 12.5px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .welcome-banner { background: linear-gradient(135deg, #0b2545 0%, #134074 100%); border-radius: 12px; padding: 24px 28px; color: #ffffff; margin-bottom: 24px; }
+        .welcome-banner h1 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        .welcome-banner p { font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px; }
+        .btn-explore { background: var(--fpt-cyan); color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
 
-        .page-title { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
+        .page-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
 
-        .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; }
-        .api-card { background: #ffffff; border-radius: 8px; border: 1px solid var(--border-color); padding: 22px; box-shadow: var(--card-shadow); cursor: pointer; transition: transform 0.15s ease; }
-        .api-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-        .api-icon { width: 50px; height: 50px; border-radius: 10px; background: var(--fpt-blue); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-        .card-title { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-        .card-desc { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
+        .api-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .api-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 20px; transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+        .api-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08); border-color: var(--fpt-cyan); }
 
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .api-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--fpt-cyan); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .card-title { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+        .card-desc { font-size: 12.5px; color: var(--text-sub); line-height: 1.4; margin-bottom: 16px; }
+
+        .btn-enable-api { background: #007bff; color: #ffffff; border: none; padding: 6px 16px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+        .btn-enable-api:hover { background: #0056b3; }
+        .btn-enable-api.active { background: #10b981; }
+
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .25s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .25s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--fpt-cyan); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #00a4b8; }
+        input:checked + .slider:before { transform: translateX(22px); }
 
-        #mandatory-auth-gate { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 150, 170, 0.95), rgba(0, 180, 207, 0.95)); z-index: 9999; align-items: center; justify-content: center; }
-        .auth-gate-card { background: #ffffff; border-radius: 12px; width: 420px; padding: 32px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); text-align: center; }
-        .auth-gate-logo { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--fpt-cyan); margin-bottom: 6px; }
-        .auth-gate-title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 16px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; font-weight: 600; text-align: left; }
-        .form-control { width: 100%; padding: 9px 12px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; }
+        /* FPT.AI CONFIRM POPUP MODAL (Exact Replica of User Screenshot) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
+        .confirm-header { background: #e5e7eb; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1f2937; }
+        .confirm-body { padding: 24px 20px; font-size: 14px; color: #374151; }
+        .confirm-footer { padding: 12px 20px 16px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
+        .btn-confirm-cancel:hover { background: #f3f4f6; }
+        .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
+        .btn-confirm-ok:hover { background: #0056b3; }
+
+        /* Form Modal for Creating First Project */
+        .form-control-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; margin-top: 6px; outline: none; }
+        .form-control-input:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,0.15); }
+
+        /* Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
     </style>
 </head>
 <body>
 
-
+    <div id="toast-container"></div>
 
     <div class="top-header">
         <div class="header-left">
             <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
-            <div class="project-selector"><i class="fa-solid fa-folder-tree"></i> Select a project <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <div class="project-selector" onclick="showProjectSelectorToast()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
             <div><i class="fa-solid fa-globe"></i> English <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
@@ -110,44 +136,243 @@
         <div class="main-content">
             <div class="welcome-banner">
                 <h1 id="welcome-title">Welcome, Nam Lê</h1>
-                <p>Thông báo quan trọng Everwin AI Console cung cấp hạ tầng AI Cloud Middleware chuẩn Enterprise cho doanh nghiệp. Xem thêm tại đây <a href="/docs">Link</a></p>
+                <p>Thông báo quan trọng Everwin AI Console cung cấp hạ tầng AI Cloud Middleware chuẩn Enterprise cho doanh nghiệp. Xem thêm tại đây <a href="/docs" style="color:#fff; text-decoration:underline;">Link</a></p>
                 <a href="#apis-anchor" class="btn-explore">EXPLORE</a>
             </div>
 
             <div id="apis-anchor" class="page-title">APIs Catalog</div>
 
             <div class="api-grid">
-                <div class="api-card" onclick="location.href='/staff/service?name=Speech%20to%20Text'">
+                <!-- Speech to Text Card -->
+                <div class="api-card">
                     <div class="card-top">
                         <div class="api-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-                        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-stt" onchange="handleApiToggleClick('Speech to Text', this)">
+                            <span class="slider"></span>
+                        </label>
                     </div>
-                    <div class="card-title">Speech to Text</div>
+                    <div class="card-title" onclick="navigateToService('Speech to Text')">Speech to Text</div>
                     <div class="card-desc">Convert your voice into text using PhoWhisper STT model</div>
+                    <button class="btn-enable-api" id="btn-stt" onclick="handleApiToggleClick('Speech to Text', document.getElementById('toggle-stt'))">ENABLE</button>
                 </div>
 
-                <div class="api-card" onclick="location.href='/staff/service?name=Text%20to%20Speech'">
+                <!-- Text to Speech Card -->
+                <div class="api-card">
                     <div class="card-top">
                         <div class="api-icon"><i class="fa-solid fa-volume-high"></i></div>
-                        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-tts" onchange="handleApiToggleClick('Text to Speech', this)">
+                            <span class="slider"></span>
+                        </label>
                     </div>
-                    <div class="card-title">Text to Speech</div>
+                    <div class="card-title" onclick="navigateToService('Text to Speech')">Text to Speech</div>
                     <div class="card-desc">Convert text to natural-sounding voices with viXTTS synthesis</div>
+                    <button class="btn-enable-api" id="btn-tts" onclick="handleApiToggleClick('Text to Speech', document.getElementById('toggle-tts'))">ENABLE</button>
                 </div>
 
-                <div class="api-card" onclick="location.href='/staff/service?name=LLM%20Chatbot%20API'">
+                <!-- LLM Chatbot Card -->
+                <div class="api-card">
                     <div class="card-top">
                         <div class="api-icon" style="background:#2563eb;"><i class="fa-solid fa-comments"></i></div>
-                        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-llm" onchange="handleApiToggleClick('LLM Chatbot API', this)">
+                            <span class="slider"></span>
+                        </label>
                     </div>
-                    <div class="card-title">LLM Chatbot API</div>
+                    <div class="card-title" onclick="navigateToService('LLM Chatbot API')">LLM Chatbot API</div>
                     <div class="card-desc">Qwen3-8B & 14B High Quality LLM Reasoning Endpoints</div>
+                    <button class="btn-enable-api" id="btn-llm" onclick="handleApiToggleClick('LLM Chatbot API', document.getElementById('toggle-llm'))">ENABLE</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- MODAL 1: EXACT FPT.AI CONFIRM POPUP (Replica of User Screenshot) -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-header">Confirm</div>
+            <div class="confirm-body">Do you want to enable this API</div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CREATE FIRST PROJECT & API KEY FORM MODAL -->
+    <div class="modal-overlay" id="project-modal">
+        <div class="confirm-box" style="width: 480px;">
+            <div class="confirm-header" style="background:var(--fpt-blue); color:#fff;">Tạo Dự Án & API Key Đầu Tiên</div>
+            <div class="confirm-body">
+                <p style="font-size:13px; color:#64748b; margin-bottom:14px;">Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:</p>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên Dự Án (Project Name)</label>
+                    <input type="text" id="input-project-name" class="form-control-input" placeholder="Ví dụ: Banking AI Project" value="Everwin Primary Project">
+                </div>
+                <div>
+                    <label style="font-size:12.5px; font-weight:600; color:#334155;">Tên API Key</label>
+                    <input type="text" id="input-key-name" class="form-control-input" placeholder="Ví dụ: Production Main Key" value="Default Live Key">
+                </div>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeProjectModal()">HỦY BỎ</button>
+                <button class="btn-confirm-ok" style="background:var(--fpt-cyan);" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let targetPendingApi = null;
+
+        function getEnabledAPIs() {
+            const data = localStorage.getItem('aip_enabled_apis');
+            return data ? JSON.parse(data) : { "Speech to Text": false, "Text to Speech": false, "LLM Chatbot API": false };
+        }
+
+        function setEnabledAPIs(apisObj) {
+            localStorage.setItem('aip_enabled_apis', JSON.stringify(apisObj));
+        }
+
+        function getProjects() {
+            const data = localStorage.getItem('aip_projects');
+            return data ? JSON.parse(data) : [];
+        }
+
+        function setProjects(projList) {
+            localStorage.setItem('aip_projects', JSON.stringify(projList));
+        }
+
+        function syncUIState() {
+            const apis = getEnabledAPIs();
+            const projects = getProjects();
+
+            if (projects.length > 0) {
+                document.getElementById('current-project-label').innerText = projects[0].project_name;
+            } else {
+                document.getElementById('current-project-label').innerText = 'Select a project';
+            }
+
+            // Sync STT
+            const sttState = !!apis["Speech to Text"];
+            document.getElementById('toggle-stt').checked = sttState;
+            updateBtnState('btn-stt', sttState);
+
+            // Sync TTS
+            const ttsState = !!apis["Text to Speech"];
+            document.getElementById('toggle-tts').checked = ttsState;
+            updateBtnState('btn-tts', ttsState);
+
+            // Sync LLM
+            const llmState = !!apis["LLM Chatbot API"];
+            document.getElementById('toggle-llm').checked = llmState;
+            updateBtnState('btn-llm', llmState);
+        }
+
+        function updateBtnState(btnId, isEnabled) {
+            const btn = document.getElementById(btnId);
+            if (isEnabled) {
+                btn.innerText = 'ENABLED';
+                btn.classList.add('active');
+            } else {
+                btn.innerText = 'ENABLE';
+                btn.classList.remove('active');
+            }
+        }
+
+        function handleApiToggleClick(apiName, checkboxEl) {
+            const apis = getEnabledAPIs();
+            const currentState = !!apis[apiName];
+
+            if (!currentState) {
+                // Currently OFF -> User wants to ENABLE -> Open Confirm Modal
+                checkboxEl.checked = false; // keep unchecked until confirmed
+                targetPendingApi = apiName;
+                openConfirmModal();
+            } else {
+                // Currently ON -> User wants to DISABLE
+                apis[apiName] = false;
+                setEnabledAPIs(apis);
+                syncUIState();
+                showToast(`API "${apiName}" has been disabled.`, 'warning');
+            }
+        }
+
+        function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+        function onConfirmEnableClick() {
+            closeConfirmModal();
+            const projects = getProjects();
+
+            if (projects.length === 0) {
+                // First API activation and NO project exists -> Open Project Creation Modal
+                openProjectModal();
+            } else {
+                // Project already exists -> Directly enable API!
+                activateApi(targetPendingApi);
+            }
+        }
+
+        function openProjectModal() { document.getElementById('project-modal').classList.add('active'); }
+        function closeProjectModal() { document.getElementById('project-modal').classList.remove('active'); }
+
+        async function submitFirstProjectForm() {
+            const projName = document.getElementById('input-project-name').value.trim() || 'Everwin Main Project';
+            const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
+
+            const rawKey = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+            const newProj = {
+                project_id: 'proj_' + Math.random().toString(36).substring(7),
+                project_name: projName,
+                key_name: keyName,
+                api_key: rawKey,
+                created_at: new Date().toISOString()
+            };
+
+            const projects = getProjects();
+            projects.push(newProj);
+            setProjects(projects);
+
+            closeProjectModal();
+            activateApi(targetPendingApi, projName);
+        }
+
+        function activateApi(apiName, projName = '') {
+            const apis = getEnabledAPIs();
+            apis[apiName] = true;
+            setEnabledAPIs(apis);
+            syncUIState();
+
+            const msg = projName 
+                ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
+                : `Đã kích hoạt thành công API ${apiName}!`;
+            showToast(msg, 'success');
+        }
+
+        function navigateToService(apiName) {
+            window.location.href = `/staff/service?name=${encodeURIComponent(apiName)}`;
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#00a4b8');
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function showProjectSelectorToast() {
+            const projects = getProjects();
+            if (projects.length > 0) {
+                showToast(`Project hiện tại: ${projects[0].project_name}`, 'info');
+            } else {
+                showToast('Chưa có dự án. Vui lòng kích hoạt một API để khởi tạo dự án.', 'warning');
+            }
+        }
+
         function checkMandatoryAuth() {
             const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
             if (userSession) {
@@ -167,6 +392,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             checkMandatoryAuth();
+            syncUIState();
         });
     </script>
 </body>
