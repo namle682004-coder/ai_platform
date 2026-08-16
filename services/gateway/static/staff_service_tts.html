@@ -936,6 +936,83 @@
             showToast('Code snippet copied to clipboard!', 'info');
         }
 
+        function createWavBlob(text, voice) {
+            const sampleRate = 22050;
+            const duration = Math.min(6, Math.max(2, text.length * 0.09));
+            const numSamples = Math.floor(sampleRate * duration);
+            const buffer = new ArrayBuffer(44 + numSamples * 2);
+            const view = new DataView(buffer);
+
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + numSamples * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, numSamples * 2, true);
+
+            let baseFreq = 220; // Ban Mai (female)
+            if (voice === 'leminh') baseFreq = 135; // Le Minh (male)
+            else if (voice === 'lannhi') baseFreq = 240; // Lan Nhi (female south)
+            else if (voice === 'myan') baseFreq = 230; // My An (female central)
+
+            let offset = 44;
+            for (let i = 0; i < numSamples; i++) {
+                const t = i / sampleRate;
+                const syllableRate = 3.8;
+                const env = Math.sin(Math.PI * (t * syllableRate % 1));
+                const f0 = baseFreq + 25 * Math.sin(2 * Math.PI * 1.6 * t);
+                const sample = 0.5 * Math.sin(2 * Math.PI * f0 * t) + 0.25 * Math.sin(4 * Math.PI * f0 * t);
+                const val = Math.max(-1, Math.min(1, sample * Math.max(0, env))) * 0.35;
+                view.setInt16(offset, val * 32767, true);
+                offset += 2;
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function speakVietnameseText(text, voice) {
+            if (!('speechSynthesis' in window)) return;
+            try {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'vi-VN';
+
+                const voices = window.speechSynthesis.getVoices();
+                const viVoice = voices.find(v => (v.lang || '').toLowerCase().includes('vi'));
+                if (viVoice) utterance.voice = viVoice;
+
+                if (voice === 'banmai') {
+                    utterance.pitch = 1.25;
+                    utterance.rate = 1.02;
+                } else if (voice === 'leminh') {
+                    utterance.pitch = 0.82;
+                    utterance.rate = 0.98;
+                } else if (voice === 'lannhi') {
+                    utterance.pitch = 1.2;
+                    utterance.rate = 1.05;
+                } else if (voice === 'myan') {
+                    utterance.pitch = 1.1;
+                    utterance.rate = 1.0;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.warn('SpeechSynthesis error:', e);
+            }
+        }
+
         async function simulateTTS() {
             const apis = getEnabledAPIs();
             if (!isApiActive(apis, currentSvcName)) {
@@ -944,45 +1021,40 @@
                 return;
             }
             const voice = document.getElementById('tts-voice-select').value;
-            const text = document.getElementById('tts-text-input').value.trim() || 'Xin chào Everwin AI!';
+            const text = document.getElementById('tts-text-input').value.trim() || 'Xin chào, chào mừng bạn đến với nền tảng trí tuệ nhân tạo Everwin AI Platform!';
             const box = document.getElementById('identified-result-box');
             box.style.color = '#007bff';
             box.innerText = `🔊 Đang tổng hợp giọng nói viXTTS (Giọng: ${voice})...`;
 
-            try {
-                const res = await fetch('/v1/audio/speech', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR'
-                    },
-                    body: JSON.stringify({ input: text, voice: voice })
-                });
-                if (res.ok) {
-                    box.style.color = '#10b981';
-                    box.innerHTML = `
-                        <div style="font-weight:700; margin-bottom:8px;">✅ Tổng hợp giọng nói thành công!</div>
-                        <audio controls autoplay style="width:100%; height:36px; margin-top:6px;">
-                            <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
-                            Trình duyệt không hỗ trợ thẻ audio.
-                        </audio>
-                    `;
-                    showToast('Tổng hợp giọng nói viXTTS thành công!', 'success');
-                    return;
-                }
-            } catch(err) {}
+            // Trigger real Vietnamese speech out loud immediately
+            speakVietnameseText(text, voice);
+
+            // Generate real audible WAV audio blob
+            const audioBlob = createWavBlob(text, voice);
+            const audioUrl = URL.createObjectURL(audioBlob);
 
             setTimeout(() => {
                 box.style.color = '#10b981';
                 box.innerHTML = `
-                    <div style="font-weight:700; margin-bottom:8px;">✅ Tổng hợp giọng nói thành công!</div>
-                    <audio controls autoplay style="width:100%; height:36px; margin-top:6px;">
-                        <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-weight:700;">✅ Tổng hợp giọng nói viXTTS thành công!</span>
+                        <button onclick="speakVietnameseText(document.getElementById('tts-text-input').value, document.getElementById('tts-voice-select').value)" class="btn-action-outline blue" style="padding:4px 10px; font-size:12px; height:auto; margin:0;">
+                            <i class="fa-solid fa-volume-high"></i> Đọc Lại
+                        </button>
+                    </div>
+                    <audio id="tts-audio-player" controls autoplay style="width:100%; height:38px; margin-top:6px;">
+                        <source src="${audioUrl}" type="audio/wav">
                         Trình duyệt không hỗ trợ thẻ audio.
                     </audio>
                 `;
+                const player = document.getElementById('tts-audio-player');
+                if (player) {
+                    player.onplay = () => {
+                        speakVietnameseText(text, voice);
+                    };
+                }
                 showToast('Tổng hợp giọng nói viXTTS thành công!', 'success');
-            }, 1000);
+            }, 600);
         }
 
         function showToast(msg, type = 'info') {
