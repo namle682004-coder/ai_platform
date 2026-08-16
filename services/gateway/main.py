@@ -88,6 +88,21 @@ app.add_middleware(QuotaMiddleware)
 app.add_middleware(AuthMiddleware)
 
 
+# Favicon & Static Assets Handler
+@app.get("/favicon.ico", include_in_schema=False)
+async def serve_favicon_ico():
+    fav_path = os.path.join(current_dir, "static", "favicon.svg")
+    return FileResponse(fav_path, media_type="image/svg+xml")
+
+
+@app.get("/static/{file_name}", include_in_schema=False)
+async def serve_static_files(file_name: str):
+    file_path = os.path.join(current_dir, "static", file_name)
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    return FileResponse(os.path.join(current_dir, "static", "favicon.svg"))
+
+
 # Root Landing Redirect to Admin Dashboard /admin
 @app.get("/", include_in_schema=False)
 async def root_redirect():
