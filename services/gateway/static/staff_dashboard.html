@@ -130,7 +130,10 @@
     <div class="layout-body">
         <div class="sidebar">
             <div class="nav-section">
-                <div class="section-title"><span>Console</span></div>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+                    <span>Console</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                </div>
                 <ul class="nav-list">
                     <li class="nav-item active"><a href="/staff/dashboard">Dashboard</a></li>
                     <li class="nav-item"><a href="/staff/apis">APIs</a></li>
@@ -139,7 +142,10 @@
                 </ul>
             </div>
             <div class="nav-section">
-                <div class="section-title"><span>Applications</span></div>
+                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+                    <span>Applications</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                </div>
                 <ul class="nav-list">
                     <li class="nav-item"><a href="/staff/service?name=Speech%20to%20Text">Speech to Text</a></li>
                     <li class="nav-item"><a href="/staff/service?name=Text%20to%20Speech">Text to Speech</a></li>
@@ -455,6 +461,20 @@
             localStorage.removeItem('aip_user_session');
             sessionStorage.removeItem('aip_user_session');
             window.location.href = '/login';
+        }
+
+        function toggleNavSection(headerEl) {
+            const navList = headerEl.nextElementSibling;
+            const icon = headerEl.querySelector('.toggle-icon');
+            if (navList) {
+                if (navList.style.display === 'none') {
+                    navList.style.display = 'block';
+                    if (icon) icon.style.transform = 'rotate(0deg)';
+                } else {
+                    navList.style.display = 'none';
+                    if (icon) icon.style.transform = 'rotate(-90deg)';
+                }
+            }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
