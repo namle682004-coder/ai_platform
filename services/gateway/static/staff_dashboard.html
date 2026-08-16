@@ -77,28 +77,7 @@
 </head>
 <body>
 
-    <!-- MANDATORY AUTH GATE OVERLAY -->
-    <div id="mandatory-auth-gate">
-        <div class="auth-gate-card">
-            <div class="auth-gate-logo"><i class="fa-solid fa-network-wired"></i> FPT.AI Platform</div>
-            <div class="auth-gate-title" id="gate-card-title">Đăng Nhập Hoặc Đăng Ký Tài Khoản</div>
-            <p style="color:var(--text-sub); font-size:12.5px; margin-bottom:20px;">Bạn bắt buộc phải Đăng Nhập hoặc Đăng Ký tài khoản Developer trước khi truy cập FPT.AI Console.</p>
 
-            <form onsubmit="handleGateAuthSubmit(event)">
-                <div class="form-group">
-                    <label>Developer Email</label>
-                    <input type="email" id="gate-email" class="form-control" value="dev_namle@company.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="gate-password" class="form-control" value="secret123" required>
-                </div>
-                <button type="submit" class="btn-explore" style="width:100%; margin-top:8px;">
-                    <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Developer
-                </button>
-            </form>
-        </div>
-    </div>
 
     <!-- Top Header Bar -->
     <div class="top-header">
@@ -204,13 +183,12 @@
 
     <script>
         function checkMandatoryAuth() {
-            const userSession = localStorage.getItem('aip_user_session');
+            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
             if (userSession) {
                 const user = JSON.parse(userSession);
-                document.getElementById('mandatory-auth-gate').style.display = 'none';
                 document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
             } else {
-                document.getElementById('mandatory-auth-gate').style.display = 'flex';
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
             }
         }
 
@@ -234,7 +212,8 @@
 
         function logoutUser() {
             localStorage.removeItem('aip_user_session');
-            checkMandatoryAuth();
+            sessionStorage.removeItem('aip_user_session');
+            window.location.href = '/login';
         }
 
         function initCharts() {
