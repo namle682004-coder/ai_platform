@@ -159,8 +159,8 @@ async def get_user_apis_state():
 @router.post("/apis-state")
 async def update_user_apis_state(req: ApisStateUpdateRequest):
     """Update active API states for user in MongoDB Atlas api_subscriptions collection."""
-    await api_subscription_repository.update_user_subscriptions("user_staff_01", req.enabled_apis)
-    return {"message": "API states updated successfully", "enabled_apis": req.enabled_apis}
+    updated = await api_subscription_repository.update_user_subscriptions("user_staff_01", req.enabled_apis)
+    return {"message": "API states updated successfully", "enabled_apis": updated}
 
 
 # --- 5. CONTACT & FEEDBACK REST ENDPOINTS ---

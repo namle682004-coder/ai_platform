@@ -76,12 +76,37 @@ async function getProjects() {
     ];
 }
 
+function toCanonicalApiName(name) {
+    if (!name) return "";
+    const trimmed = name.trim();
+    const low = trimmed.toLowerCase();
+    if (low.includes("speech to text")) return "Speech to Text API";
+    if (low.includes("text to speech")) return "Text to Speech API";
+    if (low.includes("llm") || low.includes("chatbot")) return "LLM Chatbot API";
+    if (low.includes("image")) return "Image Generation API";
+    if (low.includes("moderation")) return "Content Moderation API";
+    return trimmed.endsWith(" API") ? trimmed : (trimmed + " API");
+}
+
 function getEnabledAPIs() {
     const data = localStorage.getItem('aip_enabled_apis');
     if (data) {
-        try { return JSON.parse(data); } catch(e) {}
+        try {
+            const parsed = JSON.parse(data);
+            const sanitized = {};
+            for (const [k, v] of Object.entries(parsed)) {
+                sanitized[toCanonicalApiName(k)] = Boolean(v);
+            }
+            return sanitized;
+        } catch(e) {}
     }
-    return { "Speech to Text": true, "Text to Speech": false, "LLM Chatbot API": false };
+    return {
+        "Speech to Text API": true,
+        "Text to Speech API": false,
+        "LLM Chatbot API": false,
+        "Image Generation API": false,
+        "Content Moderation API": false
+    };
 }
 
 async function fetchEnabledAPIsFromBackend() {
@@ -90,8 +115,12 @@ async function fetchEnabledAPIsFromBackend() {
         if (res.ok) {
             const data = await res.json();
             if (data && data.enabled_apis && Object.keys(data.enabled_apis).length > 0) {
-                localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
-                return data.enabled_apis;
+                const sanitized = {};
+                for (const [k, v] of Object.entries(data.enabled_apis)) {
+                    sanitized[toCanonicalApiName(k)] = Boolean(v);
+                }
+                localStorage.setItem('aip_enabled_apis', JSON.stringify(sanitized));
+                return sanitized;
             }
         }
     } catch(err) {}
@@ -100,34 +129,36 @@ async function fetchEnabledAPIsFromBackend() {
 
 function isApiActive(apis, name) {
     if (!apis || !name) return false;
-    if (apis[name] !== undefined) return !!apis[name];
-    if (apis[name + ' API'] !== undefined) return !!apis[name + ' API'];
-    const withoutApi = name.replace(/\s+API$/i, '');
-    if (apis[withoutApi] !== undefined) return !!apis[withoutApi];
+    const canon = toCanonicalApiName(name);
+    if (apis[canon] !== undefined) return Boolean(apis[canon]);
+    if (apis[name] !== undefined) return Boolean(apis[name]);
     return false;
 }
 
 async function setEnabledAPIs(apiObj) {
-    const synced = { ...apiObj };
-    for (const key of Object.keys(apiObj)) {
-        const val = apiObj[key];
-        if (key.endsWith(' API')) {
-            synced[key.replace(/\s+API$/, '')] = val;
-        } else {
-            synced[key + ' API'] = val;
-        }
+    const current = getEnabledAPIs();
+    const cleanUpdated = { ...current };
+
+    // Directly update only the canonical keys that changed
+    for (const [key, val] of Object.entries(apiObj)) {
+        cleanUpdated[toCanonicalApiName(key)] = Boolean(val);
     }
-    localStorage.setItem('aip_enabled_apis', JSON.stringify(synced));
+
+    localStorage.setItem('aip_enabled_apis', JSON.stringify(cleanUpdated));
     try {
         const res = await fetch('/v1/user/apis-state', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ enabled_apis: synced })
+            body: JSON.stringify({ enabled_apis: cleanUpdated })
         });
         if (res.ok) {
             const data = await res.json();
             if (data && data.enabled_apis) {
-                localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
+                const backendClean = {};
+                for (const [k, v] of Object.entries(data.enabled_apis)) {
+                    backendClean[toCanonicalApiName(k)] = Boolean(v);
+                }
+                localStorage.setItem('aip_enabled_apis', JSON.stringify(backendClean));
             }
         }
     } catch(err) {

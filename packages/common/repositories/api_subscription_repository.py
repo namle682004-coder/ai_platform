@@ -1,12 +1,57 @@
 from typing import Optional, Dict, Any
 from common.database.mongodb import mongo_manager
 
+CANONICAL_APIS = [
+    "Speech to Text API",
+    "Text to Speech API",
+    "LLM Chatbot API",
+    "Image Generation API",
+    "Content Moderation API"
+]
+
+def normalize_api_name(name: str) -> str:
+    if not name:
+        return ""
+    n = name.strip()
+    low = n.lower()
+    if "speech to text" in low:
+        return "Speech to Text API"
+    if "text to speech" in low:
+        return "Text to Speech API"
+    if "llm" in low or "chatbot" in low:
+        return "LLM Chatbot API"
+    if "image" in low:
+        return "Image Generation API"
+    if "moderation" in low:
+        return "Content Moderation API"
+    return n if n.endswith(" API") else f"{n} API"
+
 class MongoApiSubscriptionRepository:
     """MongoDB Atlas implementation for User API Subscriptions."""
 
     def __init__(self):
-        # In-memory cache fallback
+        # In-memory cache fallback with clean canonical keys
         self._subscriptions_cache: Dict[str, Dict[str, Any]] = {}
+
+    def _sanitize_api_dict(self, apis: Dict[str, Any]) -> Dict[str, bool]:
+        """Normalize any legacy dictionary down to strictly the 5 canonical API keys."""
+        cleaned: Dict[str, bool] = {
+            "Speech to Text API": False,
+            "Text to Speech API": False,
+            "LLM Chatbot API": False,
+            "Image Generation API": False,
+            "Content Moderation API": False
+        }
+        if not apis:
+            cleaned["Speech to Text API"] = True
+            return cleaned
+
+        for k, v in apis.items():
+            norm = normalize_api_name(k)
+            if norm in cleaned:
+                cleaned[norm] = bool(v)
+
+        return cleaned
 
     async def get_user_subscriptions(self, user_id: str) -> Dict[str, Any]:
         """Fetch user API toggle state from MongoDB or fallback to default."""
@@ -15,8 +60,9 @@ class MongoApiSubscriptionRepository:
             try:
                 sub = await db.api_subscriptions.find_one({"user_id": user_id}, {"_id": 0})
                 if sub and "enabled_apis" in sub:
-                    self._subscriptions_cache[user_id] = sub["enabled_apis"]
-                    return sub["enabled_apis"]
+                    sanitized = self._sanitize_api_dict(sub["enabled_apis"])
+                    self._subscriptions_cache[user_id] = sanitized
+                    return sanitized
             except Exception:
                 pass
         
@@ -25,25 +71,37 @@ class MongoApiSubscriptionRepository:
             return self._subscriptions_cache[user_id]
             
         default_state = {
-            "Speech to Text": True,
-            "Text to Speech": False,
-            "LLM Chatbot API": False
+            "Speech to Text API": True,
+            "Text to Speech API": False,
+            "LLM Chatbot API": False,
+            "Image Generation API": False,
+            "Content Moderation API": False
         }
         return default_state
 
     async def update_user_subscriptions(self, user_id: str, enabled_apis: Dict[str, bool]) -> Dict[str, Any]:
-        """Upsert the user's API toggle state to MongoDB."""
-        self._subscriptions_cache[user_id] = enabled_apis
+        """Directly update / upsert the user's API toggle state to MongoDB without duplicate keys."""
+        # Get existing state first to ensure we merge cleanly
+        current_state = await self.get_user_subscriptions(user_id)
+        
+        # Merge only updated fields
+        for k, v in enabled_apis.items():
+            norm = normalize_api_name(k)
+            if norm in current_state:
+                current_state[norm] = bool(v)
+
+        self._subscriptions_cache[user_id] = current_state
         db = mongo_manager.get_database()
         if db is not None:
             try:
+                # Replace enabled_apis with strictly the 5 clean canonical keys (eliminates duplicates in DB)
                 await db.api_subscriptions.update_one(
                     {"user_id": user_id},
-                    {"$set": {"enabled_apis": enabled_apis}},
+                    {"$set": {"enabled_apis": current_state}},
                     upsert=True
                 )
             except Exception:
                 pass
-        return enabled_apis
+        return current_state
 
 api_subscription_repository = MongoApiSubscriptionRepository()

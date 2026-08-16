@@ -455,29 +455,7 @@
             syncUIState();
         }
 
-        function getEnabledAPIs() {
-            const data = localStorage.getItem('aip_enabled_apis');
-            return data ? JSON.parse(data) : { "Speech to Text": false, "Text to Speech": false, "LLM Chatbot API": false };
-        }
-
-        async function setEnabledAPIs(apiObj) {
-            localStorage.setItem('aip_enabled_apis', JSON.stringify(apiObj));
-            try {
-                const res = await fetch('/v1/user/apis-state', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enabled_apis: apiObj })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.enabled_apis) {
-                        localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
-                    }
-                }
-            } catch(err) {
-                console.error("Failed to update API state on backend:", err);
-            }
-        }
+        /* Centralized getEnabledAPIs and setEnabledAPIs from staff_layout.js */
 
         function getProjects() {
             const data = localStorage.getItem('aip_projects');
