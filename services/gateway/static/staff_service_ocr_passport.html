@@ -241,6 +241,19 @@
                             <div class="json-viewer" id="json-viewer-box">{ "status": "Waiting for execution..." }</div>
                         </div>
 
+                        <!-- API Key selector -->
+                        <div class="integration-card" style="margin-bottom:20px; padding: 18px 24px;">
+                            <div class="playground-header" style="color:#0f172a; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                                <span>API KEY SELECTOR</span>
+                            </div>
+                            <div class="form-group" style="margin-top:4px;">
+                                <label style="font-size:12px; font-weight:700; color:#475569;">SELECT API KEY FOR INTEGRATION</label>
+                                <select class="input-text-field" id="api-key-selector" onchange="updateSnippetCode()" style="margin-top:6px; cursor:pointer;">
+                                    <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">Sandbox Default (SSAmMKZJ...)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Integration snippet codes -->
                         <div class="integration-card">
                             <div class="playground-header" style="color:#0f172a; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
@@ -596,11 +609,34 @@
             }
         }
 
+        function populateApiKeySelector() {
+            const selector = document.getElementById('api-key-selector');
+            if (!selector) return;
+            selector.innerHTML = '';
+            
+            const rawKeys = localStorage.getItem('aip_api_keys');
+            const keys = rawKeys ? JSON.parse(rawKeys) : [];
+            
+            const defOpt = document.createElement('option');
+            defOpt.value = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+            defOpt.innerText = 'Sandbox Default (SSAmMKZJ...)';
+            selector.appendChild(defOpt);
+            
+            keys.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k.api_key;
+                opt.innerText = `${k.name} (${k.api_key.substring(0, 8)}...)`;
+                selector.appendChild(opt);
+            });
+            updateSnippetCode();
+        }
+
         async function syncServiceUIState() {
             const apis = await fetchEnabledAPIsFromBackend();
             const isEnabled = isApiActive(apis, currentSvcName);
 
             updateToggleButtonUI(isEnabled);
+            populateApiKeySelector();
 
             // Show or hide playground content based on enabled state
             const disabledMsg = document.getElementById('playground-disabled-message');
@@ -787,12 +823,15 @@
             const params = currentSvcData.document?.parameters || [];
             const isMultipart = params.some(p => p.type === 'file');
 
+            const selector = document.getElementById('api-key-selector');
+            const apiKey = selector ? selector.value : 'SSAmMKZJHIgM...';
+
             let curlStr = "";
             let pyStr = "";
             let phpStr = "";
 
             if (currentSnippetLang === 'curl') {
-                curlStr = `curl -X POST "https://ai-platform-6p72.onrender.com${epId}" \\\n  -H "api-key: SSAmMKZJHIgM..."`;
+                curlStr = `curl -X POST "https://ai-platform-6p72.onrender.com${epId}" \\\n  -H "api-key: ${apiKey}"`;
                 if (isMultipart) {
                     params.forEach(p => {
                         if (p.type === 'file') curlStr += ` \\\n  -F "${p.name}=@your_file.jpg"`;
@@ -807,7 +846,7 @@
                 }
                 box.innerText = curlStr;
             } else if (currentSnippetLang === 'python') {
-                pyStr = `import requests\n\nurl = "https://ai-platform-6p72.onrender.com${epId}"\nheaders = {\n    "api-key": "SSAmMKZJHIgM..."\n}\n`;
+                pyStr = `import requests\n\nurl = "https://ai-platform-6p72.onrender.com${epId}"\nheaders = {\n    "api-key": "${apiKey}"\n}\n`;
                 if (isMultipart) {
                     pyStr += `files = {\n`;
                     params.forEach(p => {
@@ -842,7 +881,7 @@
                     });
                     phpStr += `  )),\n`;
                 }
-                phpStr += `  CURLOPT_HTTPHEADER => array(\n    "api-key: SSAmMKZJHIgM...",\n    "Content-Type: ${isMultipart ? 'multipart/form-data' : 'application/json'}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\necho $response;\n?>`;
+                phpStr += `  CURLOPT_HTTPHEADER => array(\n    "api-key: ${apiKey}",\n    "Content-Type: ${isMultipart ? 'multipart/form-data' : 'application/json'}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\necho $response;\n?>`;
                 box.innerText = phpStr;
             }
         }
