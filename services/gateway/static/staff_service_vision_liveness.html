@@ -71,15 +71,18 @@
         .service-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
         .sandbox-left { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 18px; }
         
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label { font-size: 12.5px; font-weight: 700; color: #334155; }
-        .input-text-field { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: #fff; font-family: var(--font-body); }
-        .input-text-field:focus { border-color: var(--fpt-cyan); }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; }
+        .input-text-field { width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; background: #ffffff; color: var(--text-dark); font-family: var(--font-body); transition: all 0.2s ease-in-out; }
+        .input-text-field:focus { border-color: var(--fpt-cyan); box-shadow: 0 0 0 3px rgba(0, 164, 184, 0.15); }
+        .input-text-field::placeholder { color: #94a3b8; font-size: 12.5px; }
 
-        .file-upload-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; background: #f8fafc; position: relative; }
+        .file-upload-zone { border: 1.5px dashed #cbd5e1; border-radius: 6px; padding: 14px 20px; text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s ease-in-out; display: flex; align-items: center; justify-content: center; gap: 12px; position: relative; }
         .file-upload-zone:hover { border-color: var(--fpt-cyan); background: #f0fdfa; }
         .file-upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .file-name-preview { margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #0d9488; }
+        .file-upload-icon { font-size: 20px; color: var(--fpt-cyan); }
+        .file-upload-text { font-size: 13px; font-weight: 600; color: #475569; }
+        .file-name-preview { font-size: 12.5px; font-weight: 700; color: #0d9488; }
 
         .btn-run-inference { background: var(--fpt-cyan); color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s; }
         .btn-run-inference:hover { background: #008fa0; }
@@ -563,20 +566,28 @@
                 const group = document.createElement('div');
                 group.className = 'form-group';
                 
+                const nameLow = p.name.toLowerCase();
+                const isShortParam = nameLow.includes('ratio') || nameLow.includes('lang') || nameLow.includes('type') || nameLow.includes('model') || p.type === 'number' || p.type === 'float';
+
                 if (p.type === 'file') {
                     group.innerHTML = `
                         <label>${p.name.toUpperCase()} (${p.desc})</label>
-                        <div class="file-upload-zone" onclick="this.querySelector('input').click()">
-                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: var(--fpt-cyan); margin-bottom: 6px;"></i>
-                            <div style="font-size: 12.5px; font-weight:600; color: #475569;">Chọn ảnh hoặc kéo thả vào đây</div>
+                        <div class="file-upload-zone">
+                            <span class="file-upload-icon" id="icon-${p.name}"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+                            <span class="file-upload-text" id="text-${p.name}">Chọn ảnh hoặc kéo thả vào đây</span>
                             <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)">
-                            <div class="file-name-preview" id="preview-${p.name}"></div>
+                            <span class="file-name-preview" id="preview-${p.name}"></span>
                         </div>
+                    `;
+                } else if (isShortParam) {
+                    group.innerHTML = `
+                        <label>${p.name.toUpperCase()} (${p.desc})</label>
+                        <input type="text" class="input-text-field" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} placeholder="Nhập ${p.desc.toLowerCase()}...">
                     `;
                 } else {
                     group.innerHTML = `
                         <label>${p.name.toUpperCase()} (${p.desc})</label>
-                        <textarea class="input-text-field" id="param-${p.name}" name="${p.name}" rows="3" ${p.required ? 'required' : ''} placeholder="Nhập nội dung..."></textarea>
+                        <textarea class="input-text-field" id="param-${p.name}" name="${p.name}" rows="2" style="resize: vertical;" ${p.required ? 'required' : ''} placeholder="Nhập ${p.desc.toLowerCase()}..."></textarea>
                     `;
                 }
                 container.appendChild(group);
@@ -586,9 +597,15 @@
 
         function handleFileSelected(name, inputEl) {
             const preview = document.getElementById(`preview-${name}`);
+            const textEl = document.getElementById(`text-${name}`);
+            const iconEl = document.getElementById(`icon-${name}`);
             if (inputEl.files && inputEl.files.length > 0) {
+                if (textEl) textEl.style.display = 'none';
+                if (iconEl) iconEl.innerHTML = `<i class="fa-solid fa-file-circle-check" style="color: #0d9488;"></i>`;
                 preview.innerText = `📎 Selected: ${inputEl.files[0].name}`;
             } else {
+                if (textEl) textEl.style.display = 'inline-block';
+                if (iconEl) iconEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i>`;
                 preview.innerText = '';
             }
         }
