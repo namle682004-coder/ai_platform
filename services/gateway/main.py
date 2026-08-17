@@ -175,7 +175,6 @@ async def serve_staff_report():
     return FileResponse(report_path)
 
 
-@app.get("/staff/service", include_in_schema=False)
 @app.get("/staff/service-stt", include_in_schema=False)
 async def serve_staff_service_stt():
     return FileResponse(os.path.join(current_dir, "static", "staff_service_stt.html"))
@@ -195,6 +194,17 @@ async def serve_staff_service_image():
 @app.get("/staff/service-moderation", include_in_schema=False)
 async def serve_staff_service_moderation():
     return FileResponse(os.path.join(current_dir, "static", "staff_service_moderation.html"))
+
+@app.get("/staff/service-ocr-dl", include_in_schema=False)
+@app.get("/staff/service-ocr-id", include_in_schema=False)
+@app.get("/staff/service-ocr-passport", include_in_schema=False)
+@app.get("/staff/service-vision-facematch", include_in_schema=False)
+@app.get("/staff/service-vision-liveness", include_in_schema=False)
+@app.get("/staff/service-nlp-embeddings", include_in_schema=False)
+@app.get("/staff/service-nlp-summarization", include_in_schema=False)
+@app.get("/staff/service-nlp-translation", include_in_schema=False)
+async def serve_staff_dynamic_service():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_detail.html"))
 
 
 @app.get("/staff/payment", include_in_schema=False)
@@ -216,6 +226,8 @@ async def serve_status_page():
     return FileResponse(status_path)
 
 
+# Public Routers
+from gateway.api.v1.ocr_vision import router as ocr_vision_router
 from gateway.api.v1.user_portal import router as user_portal_router
 
 # Register Public /v1 Routers
@@ -232,6 +244,7 @@ app.include_router(models_router)
 app.include_router(auth_router)
 app.include_router(mcp_router)
 app.include_router(user_portal_router)
+app.include_router(ocr_vision_router)
 
 # Register Admin /admin/v1 Routers
 app.include_router(admin_keys_router)

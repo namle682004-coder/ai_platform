@@ -458,7 +458,36 @@
                     ? (paidUnit === 1 ? paidBal.toLocaleString() : (paidBal > 0 ? Math.floor(paidBal / paidUnit).toLocaleString() : '0'))
                     : '0 (OFF)';
 
-                const svcUrl = (item.name.includes('Text to Speech')) ? '/staff/service-tts' : ((item.name.includes('LLM') || item.name.includes('Chatbot')) ? '/staff/service-llm' : ((item.name.includes('Image')) ? '/staff/service-image' : ((item.name.includes('Moderation')) ? '/staff/service-moderation' : '/staff/service-stt')));
+                let svcUrl = '/staff/service-stt';
+                const nameLow = item.name.toLowerCase();
+                if (nameLow.includes('speech to text')) {
+                    svcUrl = '/staff/service-stt';
+                } else if (nameLow.includes('text to speech')) {
+                    svcUrl = '/staff/service-tts';
+                } else if (nameLow.includes('llm') || nameLow.includes('chatbot')) {
+                    svcUrl = '/staff/service-llm';
+                } else if (nameLow.includes('image')) {
+                    svcUrl = '/staff/service-image';
+                } else if (nameLow.includes('moderation')) {
+                    svcUrl = '/staff/service-moderation';
+                } else if (nameLow.includes('driver')) {
+                    svcUrl = '/staff/service-ocr-dl';
+                } else if (nameLow.includes('id recognition') || nameLow.includes('identity')) {
+                    svcUrl = '/staff/service-ocr-id';
+                } else if (nameLow.includes('passport')) {
+                    svcUrl = '/staff/service-ocr-passport';
+                } else if (nameLow.includes('facematch')) {
+                    svcUrl = '/staff/service-vision-facematch';
+                } else if (nameLow.includes('liveness')) {
+                    svcUrl = '/staff/service-vision-liveness';
+                } else if (nameLow.includes('embedding')) {
+                    svcUrl = '/staff/service-nlp-embeddings';
+                } else if (nameLow.includes('summariz')) {
+                    svcUrl = '/staff/service-nlp-summarization';
+                } else if (nameLow.includes('translat')) {
+                    svcUrl = '/staff/service-nlp-translation';
+                }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${item.name}</strong></td>
