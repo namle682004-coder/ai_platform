@@ -399,7 +399,6 @@
         let currentSvcData = null;
         let currentSnippetLang = "curl";
 
-        // Map pathnames to canonical service names
         function getSvcNameFromPath() {
             const path = window.location.pathname;
             if (path.includes('ocr-dl')) return "Driver's license recognition";
@@ -410,6 +409,11 @@
             if (path.includes('nlp-embeddings')) return "Text Embedding API";
             if (path.includes('nlp-summarization')) return "Text Summarization API";
             if (path.includes('nlp-translation')) return "Translation API";
+            if (path.includes('service-llm')) return "LLM Chatbot API";
+            if (path.includes('service-image')) return "Image Generation API";
+            if (path.includes('service-stt')) return "Speech to Text API";
+            if (path.includes('service-tts')) return "Text to Speech API";
+            if (path.includes('service-moderation')) return "Content Moderation API";
             return "Speech to Text API";
         }
 
