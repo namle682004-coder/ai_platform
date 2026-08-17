@@ -38,6 +38,13 @@ class GatewaySettings(BaseSettings):
     # Admin CIDR Protection
     admin_allowed_cidrs: str = Field("116.101.7.0/24,127.0.0.1/32,::1/128", validation_alias="ADMIN_ALLOWED_CIDRS")
 
+    # Microservice Target Backend URLs
+    stt_server_url: str = Field("http://localhost:8002", validation_alias="STT_SERVER_URL")
+    translation_server_url: str = Field("http://localhost:8003", validation_alias="TRANSLATION_SERVER_URL")
+    ocr_server_url: str = Field("http://localhost:8004", validation_alias="OCR_SERVER_URL")
+    moderation_server_url: str = Field("http://localhost:8006", validation_alias="MODERATION_SERVER_URL")
+    tts_server_url: str = Field("http://localhost:8007", validation_alias="TTS_SERVER_URL")
+
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env"),
         env_file_encoding="utf-8",
