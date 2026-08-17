@@ -76,11 +76,15 @@
         .input-text-field:focus { border-color: var(--fpt-cyan); box-shadow: 0 0 0 3px rgba(0, 164, 184, 0.15); }
         .input-text-field::placeholder { color: #94a3b8; font-size: 13.5px; }
 
-        .file-upload-zone { border: 1.5px dashed #cbd5e1; border-radius: 6px; padding: 16px; text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s ease-in-out; display: flex; align-items: center; justify-content: center; gap: 10px; position: relative; min-height: 56px; }
-        .file-upload-zone:hover { border-color: var(--fpt-cyan); background: #f0fdfa; }
-        .file-upload-icon { font-size: 18px; color: #64748b; display: flex; align-items: center; }
-        .file-upload-text { font-size: 13px; font-weight: 500; color: #64748b; }
-        .file-name-preview { font-size: 13px; font-weight: 600; color: #0f766e; }
+        /* Frame-based file upload zone */
+        .doc-upload-frame { border: 1.5px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; box-sizing: border-box; padding: 16px; }
+        .doc-upload-frame:hover { border-color: var(--fpt-cyan); background: #f0fdfa; }
+        .doc-upload-skeleton { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #64748b; text-align: center; }
+        .doc-upload-skeleton i { font-size: 32px; color: #94a3b8; }
+        .doc-upload-skeleton span { font-size: 12.5px; font-weight: 500; }
+        .doc-upload-preview { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 2; }
+        .doc-upload-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); color: #fff; font-size: 12.5px; font-weight: 600; align-items: center; justify-content: center; z-index: 3; gap: 6px; }
+        .doc-upload-frame:hover .doc-upload-overlay { display: flex; }
 
         .btn-run-inference { background: var(--fpt-cyan); color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s; }
         .btn-run-inference:hover { background: #008fa0; }
@@ -565,10 +569,12 @@
                 group.className = 'form-group';
                 
                 const nameLow = p.name.toLowerCase();
-                // ONLY large text block parameters use <textarea>. Rest use standard clean text <input>.
                 const isLargeText = nameLow === 'document' || nameLow === 'text' || nameLow === 'content' || nameLow === 'narrative';
 
-                // Elegant subtext label layout: parameters title is clear, description is clean subtitle
+                // 1. Detect if it is a select/choice parameter
+                const choices = detectChoicesForParam(p);
+
+                // Elegant subtext label layout
                 const labelHtml = `
                     <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 2px;">
                         <span style="font-size: 13.5px; font-weight: 600; color: #1e293b; letter-spacing: 0.3px;">${p.name}</span>
@@ -577,14 +583,29 @@
                 `;
 
                 if (p.type === 'file') {
+                    // Get customized frame dimensions and icon for document type
+                    const frameInfo = getFrameStyleForParam(p.name);
                     group.innerHTML = `
                         ${labelHtml}
-                        <div class="file-upload-zone" onclick="this.querySelector('input').click()">
-                            <span class="file-upload-icon" id="icon-${p.name}" style="margin-right: 4px;"><i class="fa-solid fa-cloud-arrow-up"></i></span>
-                            <span class="file-upload-text" id="text-${p.name}">Chọn tệp hoặc kéo thả vào đây</span>
+                        <div class="doc-upload-frame" id="frame-${p.name}" style="${frameInfo.style}" onclick="this.querySelector('input').click()">
+                            <div class="doc-upload-skeleton" id="skeleton-${p.name}">
+                                <i class="fa-solid ${frameInfo.bgIcon}"></i>
+                                <span>${frameInfo.text}</span>
+                            </div>
+                            <div class="doc-upload-preview" id="preview-cont-${p.name}"></div>
+                            <div class="doc-upload-overlay" id="overlay-${p.name}">
+                                <i class="fa-solid fa-arrows-rotate"></i> Thay đổi tệp tải lên
+                            </div>
                             <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)" style="display: none;">
-                            <span class="file-name-preview" id="preview-${p.name}"></span>
                         </div>
+                    `;
+                } else if (choices) {
+                    // Render beautiful dropdown select box instead of text input
+                    group.innerHTML = `
+                        ${labelHtml}
+                        <select class="select-input" id="param-${p.name}" name="${p.name}" style="margin-top: 6px; cursor:pointer;">
+                            ${choices.map(c => `<option value="${c}">${c.toUpperCase()}</option>`).join('')}
+                        </select>
                     `;
                 } else if (isLargeText) {
                     group.innerHTML = `
@@ -602,18 +623,82 @@
             updateSnippetCode();
         }
 
+        function getFrameStyleForParam(paramName) {
+            const name = paramName.toLowerCase();
+            if (name.includes('passport')) {
+                return {
+                    bgIcon: 'fa-passport',
+                    text: 'Tải lên ảnh Hộ chiếu (Passport)',
+                    style: 'width: 100%; height: 210px;'
+                };
+            }
+            if (name.includes('selfie') || name.includes('face') || name.includes('avatar') || name.includes('portrait')) {
+                return {
+                    bgIcon: 'fa-user-check',
+                    text: 'Ảnh chân dung / selfie',
+                    style: 'width: 180px; height: 180px; margin: 0 auto; border-radius: 50%;' // Circular portrait frame
+                };
+            }
+            if (name.includes('video')) {
+                return {
+                    bgIcon: 'fa-video',
+                    text: 'Tải lên video xác thực',
+                    style: 'width: 100%; height: 200px;'
+                };
+            }
+            // ID Card / CCCD / Driver license format
+            return {
+                bgIcon: 'fa-address-card',
+                text: `Tải lên ảnh thẻ / giấy tờ`,
+                style: 'width: 100%; height: 200px;'
+            };
+        }
+
+        function detectChoicesForParam(p) {
+            const name = p.name.toLowerCase();
+            const desc = p.desc.toLowerCase();
+
+            if (name === 'mode' || desc.includes('passive hoặc active') || desc.includes('passive or active')) {
+                return ['passive', 'active'];
+            }
+            if (name === 'source_lang' || name === 'target_lang' || desc.includes('ngôn ngữ')) {
+                if (name === 'source_lang') return ['vi', 'en', 'ja', 'ko', 'zh'];
+                if (name === 'target_lang') return ['en', 'vi', 'ja', 'ko', 'zh'];
+                return ['vi', 'en', 'ja', 'ko', 'zh'];
+            }
+            if (desc.includes('vi/en') || desc.includes('vi|en')) return ['vi', 'en'];
+            if (desc.includes('en/vi') || desc.includes('en|vi')) return ['en', 'vi'];
+            
+            const match = p.desc.match(/\[([^\]]+)\]/);
+            if (match) {
+                const parts = match[1].split(/[,|/]/).map(x => x.trim().toLowerCase());
+                if (parts.length > 1) return parts;
+            }
+            return null;
+        }
+
         function handleFileSelected(name, inputEl) {
-            const preview = document.getElementById(`preview-${name}`);
-            const textEl = document.getElementById(`text-${name}`);
-            const iconEl = document.getElementById(`icon-${name}`);
+            const skeleton = document.getElementById(`skeleton-${name}`);
+            const previewCont = document.getElementById(`preview-cont-${name}`);
+
             if (inputEl.files && inputEl.files.length > 0) {
-                if (textEl) textEl.innerText = `Selected file:`;
-                if (iconEl) iconEl.innerHTML = `<i class="fa-solid fa-file-circle-check" style="color: #0d9488;"></i>`;
-                preview.innerText = inputEl.files[0].name;
+                const file = inputEl.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    skeleton.style.display = 'none';
+                    previewCont.style.display = 'block';
+                    
+                    if (file.type.startsWith('video/')) {
+                        previewCont.innerHTML = `<video src="${e.target.result}" autoplay loop muted style="width:100%; height:100%; object-fit:cover;"></video>`;
+                    } else {
+                        previewCont.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                    }
+                };
+                reader.readAsDataURL(file);
             } else {
-                if (textEl) textEl.innerText = 'Chọn tệp hoặc kéo thả vào đây';
-                if (iconEl) iconEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i>`;
-                preview.innerText = '';
+                skeleton.style.display = 'flex';
+                previewCont.style.display = 'none';
+                previewCont.innerHTML = '';
             }
         }
 
