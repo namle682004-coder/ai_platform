@@ -658,6 +658,17 @@
 
             // 1. Instant zero-latency render (prevents toggle jump/flicker)
             const cachedApis = getEnabledAPIs();
+            
+            // Immediately clean cached state for non-hosted APIs
+            let cacheNeedsSync = false;
+            for (const apiName of Object.keys(cachedApis)) {
+                if (cachedApis[apiName] && !apiName.toLowerCase().includes('translation')) {
+                    cachedApis[apiName] = false;
+                    cacheNeedsSync = true;
+                }
+            }
+            if (cacheNeedsSync) setEnabledAPIs(cachedApis);
+            
             const defaultCatalog = [
                 { name: "Speech to Text API" },
                 { name: "Text to Speech API" },

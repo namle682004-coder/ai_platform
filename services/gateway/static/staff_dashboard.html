@@ -512,6 +512,15 @@
             // 1. Instant zero-latency render with local cache
             let paidBal = getPaidBalance();
             const cachedApis = getEnabledAPIs();
+            
+            // Immediately clean cached state for non-hosted APIs
+            for (const apiName of Object.keys(cachedApis)) {
+                if (cachedApis[apiName] && !apiName.toLowerCase().includes('translation')) {
+                    cachedApis[apiName] = false;
+                }
+            }
+            setEnabledAPIs(cachedApis);
+            
             const defaultCatalog = [
                 { name: "Speech to Text API", unit: "block", free_quota: "10,000 blocks" },
                 { name: "Text to Speech API", unit: "character", free_quota: "100,000 characters" },
