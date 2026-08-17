@@ -875,6 +875,12 @@
             const isEnabled = btn.innerText === 'DISABLE';
             
             targetPendingAction = isEnabled ? 'disable' : 'enable';
+            
+            if (targetPendingAction === 'enable' && isApiHeavyFor4G(currentSvcName)) {
+                showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt môi trường Sandbox cho dịch vụ này. Hệ thống sẽ sớm mở lại sau khi hoàn thành nâng cấp hạ tầng.", "warning");
+                return;
+            }
+
             document.getElementById('modal-confirm-body').innerText = isEnabled
                 ? `Bạn có chắc chắn muốn TẮT dịch vụ "${currentSvcName}"?`
                 : `Bạn có muốn BẬT dịch vụ "${currentSvcName}"?`;
