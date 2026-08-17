@@ -336,7 +336,8 @@
 
             // Sync UI metadata
             document.getElementById('svc-title-text').innerText = currentSvcData.name;
-            document.getElementById('svc-desc-text').innerText = currentSvcData.description || "";
+            const descEl = document.getElementById('svc-desc-text');
+            if (descEl) descEl.innerText = currentSvcData.description || "";
 
             // Dynamic Icons based on service name
             let iconClass = 'fa-plug';
