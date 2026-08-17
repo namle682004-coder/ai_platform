@@ -631,11 +631,12 @@
                 const card = document.createElement('div');
                 card.className = 'api-card';
                 card.onclick = () => navigateToService(item.name);
+                const safeName = item.name.replace(/'/g, "\\'");
                 card.innerHTML = `
                     <div class="card-top">
                         <div class="api-icon" style="background:${bgColor};"><i class="fa-solid ${iconClass}"></i></div>
                         <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${item.name}', this, event)">
+                            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${safeName}', this, event)">
                             <span class="slider"></span>
                         </label>
                     </div>
