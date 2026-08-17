@@ -21,7 +21,7 @@ def is_endpoint_enabled(endpoint_id: str) -> bool:
     endpoint = cache.get(endpoint_id)
     if not endpoint:
         return True
-    return endpoint.get("status") == "enabled"
+    return endpoint.get("status") in ["enabled", "active"]
 
 
 @router.get("/endpoints", summary="List All Exported API Endpoints from MongoDB Atlas")
