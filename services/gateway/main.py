@@ -313,29 +313,59 @@ async def get_gpu_status():
             "name": "No NVIDIA GPU detected",
             "vram_used_mb": 0,
             "vram_total_mb": 0,
-            "vram_percentage": 0.0
+            "vram_percentage": 0.0,
+            "temperature_c": 0,
+            "gpu_utilization_pct": 0,
+            "power_draw_w": 0.0
         }
     
     try:
         res = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,memory.used,memory.total", "--format=csv,noheader,nounits"],
+            ["nvidia-smi", "--query-gpu=name,memory.used,memory.total,temperature.gpu,utilization.gpu,power.draw", "--format=csv,noheader,nounits"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             check=True
         )
-        parts = res.stdout.strip().split(",")
-        if len(parts) >= 3:
-            name = parts[0].strip()
-            used = int(parts[1].strip())
-            total = int(parts[2].strip())
-            pct = round((used / total) * 100, 1)
+        parts = [x.strip() for x in res.stdout.strip().split(",")]
+        if len(parts) >= 6:
+            name = parts[0]
+            
+            try:
+                used = int(parts[1])
+            except ValueError:
+                used = 0
+                
+            try:
+                total = int(parts[2])
+            except ValueError:
+                total = 0
+                
+            try:
+                temp = int(parts[3])
+            except ValueError:
+                temp = 0
+                
+            try:
+                util = int(parts[4])
+            except ValueError:
+                util = 0
+                
+            try:
+                power = float(parts[5])
+            except ValueError:
+                power = 0.0
+                
+            pct = round((used / total) * 100, 1) if total > 0 else 0.0
             return {
                 "gpu_detected": True,
                 "name": name,
                 "vram_used_mb": used,
                 "vram_total_mb": total,
-                "vram_percentage": pct
+                "vram_percentage": pct,
+                "temperature_c": temp,
+                "gpu_utilization_pct": util,
+                "power_draw_w": power
             }
     except Exception:
         pass
@@ -345,7 +375,10 @@ async def get_gpu_status():
         "name": "Failed to query GPU",
         "vram_used_mb": 0,
         "vram_total_mb": 0,
-        "vram_percentage": 0.0
+        "vram_percentage": 0.0,
+        "temperature_c": 0,
+        "gpu_utilization_pct": 0,
+        "power_draw_w": 0.0
     }
 
 

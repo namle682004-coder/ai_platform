@@ -177,8 +177,11 @@
         .form-control { width: 100%; padding: 10px 14px; border-radius: 8px; background: #ffffff; border: 1px solid var(--panel-border); color: var(--text-main); font-size: 13.5px; outline: none; }
         .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
     </style>
 </head>
 <body>
@@ -279,12 +282,48 @@
                 </div>
             </div>
 
-            <div id="tab-dashboard" class="tab-pane active">
+            <div id="tab-dashboard" class="tab-pane active" style="display: block;">
                 <div class="glass-panel">
                     <div class="panel-header">
                         <div class="panel-title"><i class="fa-solid fa-wave-square" style="color: var(--primary);"></i> Real-Time Inference Traffic Throughput (RPS)</div>
                     </div>
                     <canvas id="trafficChart" height="90"></canvas>
+                </div>
+
+                <!-- GPU NODE INFRASTRUCTURE HEALTH & METRICS -->
+                <div class="glass-panel" style="margin-top: 24px;">
+                    <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="panel-title"><i class="fa-solid fa-server" style="color: var(--primary);"></i> GPU Node Infrastructure Health & Metrics</div>
+                        <div style="font-size:12.5px; color:var(--text-sub); display:flex; align-items:center; gap:6px; font-weight: 500;">
+                            <span class="live-dot" style="width:8px; height:8px; border-radius:50%; background:var(--emerald); display:inline-block; animation: pulse 1.5s infinite;"></span>
+                            Live Node Connection
+                        </div>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 10px;">
+                        <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none; hover: none; transform: none;">
+                            <div class="stat-title">GPU Device Name</div>
+                            <div class="stat-value" id="gpu-health-name" style="font-size: 14.5px; margin: 12px 0 6px 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0f172a;">Querying...</div>
+                            <div class="stat-badge badge-green" id="gpu-health-status-badge" style="margin-top: 4px;"><i class="fa-solid fa-circle-check"></i> Connected</div>
+                        </div>
+                        <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none; hover: none; transform: none;">
+                            <div class="stat-title">VRAM Usage</div>
+                            <div class="stat-value" id="gpu-health-vram-text" style="font-size: 16px; margin: 12px 0 6px 0; font-weight: 700; color: #0f172a;">- / - MB</div>
+                            <div style="margin-top: 10px; width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                                <div id="gpu-health-vram-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none; hover: none; transform: none;">
+                            <div class="stat-title">GPU Core Temp</div>
+                            <div class="stat-value" id="gpu-health-temp" style="font-size: 22px; margin: 12px 0 6px 0; font-weight: 700; color: #0f172a;">-°C</div>
+                            <div class="stat-badge" id="gpu-health-temp-badge" style="background:#e0f2fe; color:#0369a1; margin-top: 4px;"><i class="fa-solid fa-temperature-half"></i> Normal</div>
+                        </div>
+                        <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none; hover: none; transform: none;">
+                            <div class="stat-title">Utilization & Power</div>
+                            <div class="stat-value" id="gpu-health-util" style="font-size: 14px; margin: 12px 0 6px 0; font-weight: 700; color: #0f172a;">Util: -% | Power: -W</div>
+                            <div class="stat-badge badge-green" id="gpu-health-util-badge" style="margin-top: 4px;"><i class="fa-solid fa-bolt"></i> Operational</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -994,6 +1033,85 @@
             fetchAuditLogs();
         }
 
+        async function updateGpuStatus() {
+            try {
+                const res = await fetch('/v1/user/gpu-status');
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    const nameEl = document.getElementById('gpu-health-name');
+                    const vramTextEl = document.getElementById('gpu-health-vram-text');
+                    const vramBarEl = document.getElementById('gpu-health-vram-bar');
+                    const tempEl = document.getElementById('gpu-health-temp');
+                    const tempBadgeEl = document.getElementById('gpu-health-temp-badge');
+                    const utilEl = document.getElementById('gpu-health-util');
+                    const utilBadgeEl = document.getElementById('gpu-health-util-badge');
+                    const statusBadgeEl = document.getElementById('gpu-health-status-badge');
+                    
+                    if (data.gpu_detected) {
+                        nameEl.innerText = data.name;
+                        nameEl.title = data.name;
+                        vramTextEl.innerText = `${data.vram_used_mb.toLocaleString()} / ${data.vram_total_mb.toLocaleString()} MB (${data.vram_percentage}%)`;
+                        vramBarEl.style.width = `${data.vram_percentage}%`;
+                        
+                        // VRAM warning color
+                        if (data.vram_percentage > 85) {
+                            vramBarEl.style.background = 'var(--rose)';
+                        } else if (data.vram_percentage > 60) {
+                            vramBarEl.style.background = 'var(--amber)';
+                        } else {
+                            vramBarEl.style.background = 'var(--primary)';
+                        }
+                        
+                        tempEl.innerText = `${data.temperature_c}°C`;
+                        // Temperature badge warning
+                        if (data.temperature_c > 82) {
+                            tempBadgeEl.innerHTML = `<i class="fa-solid fa-temperature-arrow-up"></i> Critical Hot`;
+                            tempBadgeEl.style.background = 'var(--rose-light)';
+                            tempBadgeEl.style.color = 'var(--rose)';
+                        } else if (data.temperature_c > 75) {
+                            tempBadgeEl.innerHTML = `<i class="fa-solid fa-temperature-three-quarters"></i> Warm`;
+                            tempBadgeEl.style.background = 'var(--amber-light)';
+                            tempBadgeEl.style.color = 'var(--amber)';
+                        } else {
+                            tempBadgeEl.innerHTML = `<i class="fa-solid fa-temperature-half"></i> Normal`;
+                            tempBadgeEl.style.background = '#e0f2fe';
+                            tempBadgeEl.style.color = '#0369a1';
+                        }
+                        
+                        utilEl.innerText = `Util: ${data.gpu_utilization_pct}% | Power: ${data.power_draw_w}W`;
+                        statusBadgeEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Connected`;
+                        statusBadgeEl.style.background = 'var(--emerald-light)';
+                        statusBadgeEl.style.color = 'var(--emerald)';
+                        
+                        if (utilBadgeEl) {
+                            utilBadgeEl.innerHTML = `<i class="fa-solid fa-bolt"></i> Operational`;
+                            utilBadgeEl.style.background = 'var(--emerald-light)';
+                            utilBadgeEl.style.color = 'var(--emerald)';
+                        }
+                    } else {
+                        nameEl.innerText = "No NVIDIA GPU Detected";
+                        vramTextEl.innerText = "N/A";
+                        vramBarEl.style.width = '0%';
+                        tempEl.innerText = "-°C";
+                        utilEl.innerText = "Util: -% | Power: -W";
+                        
+                        statusBadgeEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Disconnected`;
+                        statusBadgeEl.style.background = 'var(--rose-light)';
+                        statusBadgeEl.style.color = 'var(--rose)';
+                        
+                        if (utilBadgeEl) {
+                            utilBadgeEl.innerHTML = `<i class="fa-solid fa-xmark"></i> Inactive`;
+                            utilBadgeEl.style.background = '#f1f5f9';
+                            utilBadgeEl.style.color = '#475569';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to update GPU status:", err);
+            }
+        }
+
         function initChart() {
             const ctx = document.getElementById('trafficChart').getContext('2d');
             new Chart(ctx, {
@@ -1028,6 +1146,8 @@
             fetchEndpoints();
             fetchAuditLogs();
             initChart();
+            updateGpuStatus();
+            setInterval(updateGpuStatus, 5000);
         });
     </script>
 </body>
