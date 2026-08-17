@@ -198,6 +198,14 @@ function getActiveProjectName() {
     return 'wwrwer23';
 }
 
+function getPaidBalance() {
+    return parseInt(localStorage.getItem('aip_paid_balance') || '0');
+}
+
+function setPaidBalance(val) {
+    localStorage.setItem('aip_paid_balance', val.toString());
+}
+
 async function fetchPaidBalanceFromBackend() {
     try {
         const res = await fetch('/v1/user/balance?t=' + new Date().getTime());
