@@ -539,6 +539,13 @@
                 document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${apiName}"?`;
             } else {
                 targetPendingAction = 'enable';
+                
+                const name = apiName.toLowerCase();
+                if (!name.includes('translation')) {
+                    showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt môi trường Sandbox cho dịch vụ này. Hệ thống sẽ sớm mở lại sau khi hoàn thành nâng cấp hạ tầng.", "warning");
+                    return;
+                }
+                
                 document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${apiName}"?`;
             }
             openConfirmModal();
