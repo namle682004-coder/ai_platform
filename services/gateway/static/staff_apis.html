@@ -686,7 +686,10 @@
                     needsSync = true;
                 }
             }
-            if (needsSync) await setEnabledAPIs(apis);
+            if (needsSync) {
+                await setEnabledAPIs(apis);
+                showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt một số dịch vụ. Các dịch vụ chưa sẵn sàng đã được tự động vô hiệu hóa.", "warning");
+            }
             
             const catalog = await fetchApiCatalogFromBackend();
             renderCardsGrid(catalog && catalog.length ? catalog : defaultCatalog, apis);

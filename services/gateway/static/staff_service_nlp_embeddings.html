@@ -818,6 +818,7 @@
             if (isApiHeavyFor4G(currentSvcName) && isApiActive(apis, currentSvcName)) {
                 apis[currentSvcName] = false;
                 await setEnabledAPIs(apis);
+                showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt dịch vụ này. Dịch vụ đã được tự động vô hiệu hóa.", "warning");
             }
             
             const isEnabled = isApiActive(apis, currentSvcName);
