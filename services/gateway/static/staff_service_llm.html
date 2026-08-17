@@ -813,6 +813,13 @@
 
         async function syncServiceUIState() {
             const apis = await fetchEnabledAPIsFromBackend();
+            
+            // Auto-disable non-hosted APIs that were previously enabled
+            if (isApiHeavyFor4G(currentSvcName) && isApiActive(apis, currentSvcName)) {
+                apis[currentSvcName] = false;
+                await setEnabledAPIs(apis);
+            }
+            
             const isEnabled = isApiActive(apis, currentSvcName);
 
             updateToggleButtonUI(isEnabled);
