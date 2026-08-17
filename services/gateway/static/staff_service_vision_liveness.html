@@ -586,17 +586,23 @@
                     // Get customized frame dimensions and icon for document type
                     const frameInfo = getFrameStyleForParam(p.name);
                     group.innerHTML = `
-                        ${labelHtml}
-                        <div class="doc-upload-frame" id="frame-${p.name}" style="${frameInfo.style}" onclick="this.querySelector('input').click()">
-                            <div class="doc-upload-skeleton" id="skeleton-${p.name}">
-                                <i class="fa-solid ${frameInfo.bgIcon}"></i>
-                                <span>${frameInfo.text}</span>
+                        <div class="file-group-header" onclick="toggleFileGroupCollapse('${p.name}')" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom: 6px; border-bottom: 1.5px solid #f1f5f9; margin-bottom: 8px; margin-top: 6px;">
+                            ${labelHtml}
+                            <i class="fa-solid fa-chevron-down collapse-chevron" id="chevron-${p.name}" style="font-size: 12px; color: #94a3b8; transition: transform 0.2s; padding-left: 8px;"></i>
+                        </div>
+                        
+                        <div class="file-group-content" id="content-${p.name}" style="transition: max-height 0.25s ease-out; overflow:hidden; max-height: 500px;">
+                            <div class="doc-upload-frame" id="frame-${p.name}" style="${frameInfo.style}" onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-skeleton" id="skeleton-${p.name}">
+                                    <i class="fa-solid ${frameInfo.bgIcon}"></i>
+                                    <span>${frameInfo.text}</span>
+                                </div>
+                                <div class="doc-upload-preview" id="preview-cont-${p.name}"></div>
+                                <div class="doc-upload-overlay" id="overlay-${p.name}">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Thay đổi tệp tải lên
+                                </div>
+                                <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)" style="display: none;">
                             </div>
-                            <div class="doc-upload-preview" id="preview-cont-${p.name}"></div>
-                            <div class="doc-upload-overlay" id="overlay-${p.name}">
-                                <i class="fa-solid fa-arrows-rotate"></i> Thay đổi tệp tải lên
-                            </div>
-                            <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)" style="display: none;">
                         </div>
                     `;
                 } else if (choices) {
@@ -677,9 +683,28 @@
             return null;
         }
 
+        function toggleFileGroupCollapse(name) {
+            const content = document.getElementById(`content-${name}`);
+            const chevron = document.getElementById(`chevron-${name}`);
+            if (!content || !chevron) return;
+            
+            const isCollapsed = content.classList.contains('collapsed');
+            if (isCollapsed) {
+                content.classList.remove('collapsed');
+                content.style.maxHeight = '500px';
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('collapsed');
+                content.style.maxHeight = '0px';
+                chevron.style.transform = 'rotate(-90deg)';
+            }
+        }
+
         function handleFileSelected(name, inputEl) {
             const skeleton = document.getElementById(`skeleton-${name}`);
             const previewCont = document.getElementById(`preview-cont-${name}`);
+            const content = document.getElementById(`content-${name}`);
+            const chevron = document.getElementById(`chevron-${name}`);
 
             if (inputEl.files && inputEl.files.length > 0) {
                 const file = inputEl.files[0];
@@ -687,6 +712,13 @@
                 reader.onload = function(e) {
                     skeleton.style.display = 'none';
                     previewCont.style.display = 'block';
+                    
+                    // Auto-expand group to display preview
+                    if (content && content.classList.contains('collapsed')) {
+                        content.classList.remove('collapsed');
+                        content.style.maxHeight = '500px';
+                        if (chevron) chevron.style.transform = 'rotate(0deg)';
+                    }
                     
                     if (file.type.startsWith('video/')) {
                         previewCont.innerHTML = `<video src="${e.target.result}" autoplay loop muted style="width:100%; height:100%; object-fit:cover;"></video>`;
@@ -696,9 +728,11 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                skeleton.style.display = 'flex';
-                previewCont.style.display = 'none';
-                previewCont.innerHTML = '';
+                if (skeleton) skeleton.style.display = 'flex';
+                if (previewCont) {
+                    previewCont.style.display = 'none';
+                    previewCont.innerHTML = '';
+                }
             }
         }
 
