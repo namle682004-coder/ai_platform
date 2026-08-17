@@ -71,18 +71,16 @@
         .service-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
         .sandbox-left { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 18px; }
         
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
-        .form-group label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; }
-        .input-text-field { width: 100%; padding: 10px 14px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; background: #ffffff; color: var(--text-dark); font-family: var(--font-body); transition: all 0.2s ease-in-out; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .input-text-field { width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13.5px; outline: none; background: #ffffff; color: var(--text-dark); font-family: var(--font-body); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
         .input-text-field:focus { border-color: var(--fpt-cyan); box-shadow: 0 0 0 3px rgba(0, 164, 184, 0.15); }
-        .input-text-field::placeholder { color: #94a3b8; font-size: 12.5px; }
+        .input-text-field::placeholder { color: #94a3b8; font-size: 13.5px; }
 
-        .file-upload-zone { border: 1.5px dashed #cbd5e1; border-radius: 6px; padding: 14px 20px; text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s ease-in-out; display: flex; align-items: center; justify-content: center; gap: 12px; position: relative; }
+        .file-upload-zone { border: 1.5px dashed #cbd5e1; border-radius: 6px; padding: 16px; text-align: center; cursor: pointer; background: #f8fafc; transition: all 0.2s ease-in-out; display: flex; align-items: center; justify-content: center; gap: 10px; position: relative; min-height: 56px; }
         .file-upload-zone:hover { border-color: var(--fpt-cyan); background: #f0fdfa; }
-        .file-upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .file-upload-icon { font-size: 20px; color: var(--fpt-cyan); }
-        .file-upload-text { font-size: 13px; font-weight: 600; color: #475569; }
-        .file-name-preview { font-size: 12.5px; font-weight: 700; color: #0d9488; }
+        .file-upload-icon { font-size: 18px; color: #64748b; display: flex; align-items: center; }
+        .file-upload-text { font-size: 13px; font-weight: 500; color: #64748b; }
+        .file-name-preview { font-size: 13px; font-weight: 600; color: #0f766e; }
 
         .btn-run-inference { background: var(--fpt-cyan); color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s; }
         .btn-run-inference:hover { background: #008fa0; }
@@ -567,27 +565,36 @@
                 group.className = 'form-group';
                 
                 const nameLow = p.name.toLowerCase();
-                const isShortParam = nameLow.includes('ratio') || nameLow.includes('lang') || nameLow.includes('type') || nameLow.includes('model') || p.type === 'number' || p.type === 'float';
+                // ONLY large text block parameters use <textarea>. Rest use standard clean text <input>.
+                const isLargeText = nameLow === 'document' || nameLow === 'text' || nameLow === 'content' || nameLow === 'narrative';
+
+                // Elegant subtext label layout: parameters title is clear, description is clean subtitle
+                const labelHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 2px;">
+                        <span style="font-size: 13.5px; font-weight: 600; color: #1e293b; letter-spacing: 0.3px;">${p.name}</span>
+                        <span style="font-size: 12px; color: #64748b; font-weight: 400; text-transform: none;">${p.desc}</span>
+                    </div>
+                `;
 
                 if (p.type === 'file') {
                     group.innerHTML = `
-                        <label>${p.name.toUpperCase()} (${p.desc})</label>
-                        <div class="file-upload-zone">
-                            <span class="file-upload-icon" id="icon-${p.name}"><i class="fa-solid fa-cloud-arrow-up"></i></span>
-                            <span class="file-upload-text" id="text-${p.name}">Chọn ảnh hoặc kéo thả vào đây</span>
-                            <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)">
+                        ${labelHtml}
+                        <div class="file-upload-zone" onclick="this.querySelector('input').click()">
+                            <span class="file-upload-icon" id="icon-${p.name}" style="margin-right: 4px;"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+                            <span class="file-upload-text" id="text-${p.name}">Chọn tệp hoặc kéo thả vào đây</span>
+                            <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)" style="display: none;">
                             <span class="file-name-preview" id="preview-${p.name}"></span>
                         </div>
                     `;
-                } else if (isShortParam) {
+                } else if (isLargeText) {
                     group.innerHTML = `
-                        <label>${p.name.toUpperCase()} (${p.desc})</label>
-                        <input type="text" class="input-text-field" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} placeholder="Nhập ${p.desc.toLowerCase()}...">
+                        ${labelHtml}
+                        <textarea class="input-text-field" id="param-${p.name}" name="${p.name}" rows="4" style="resize: vertical;" ${p.required ? 'required' : ''} placeholder="Nhập nội dung..."></textarea>
                     `;
                 } else {
                     group.innerHTML = `
-                        <label>${p.name.toUpperCase()} (${p.desc})</label>
-                        <textarea class="input-text-field" id="param-${p.name}" name="${p.name}" rows="2" style="resize: vertical;" ${p.required ? 'required' : ''} placeholder="Nhập ${p.desc.toLowerCase()}..."></textarea>
+                        ${labelHtml}
+                        <input type="text" class="input-text-field" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} placeholder="Nhập ${p.desc.toLowerCase()}...">
                     `;
                 }
                 container.appendChild(group);
@@ -600,11 +607,11 @@
             const textEl = document.getElementById(`text-${name}`);
             const iconEl = document.getElementById(`icon-${name}`);
             if (inputEl.files && inputEl.files.length > 0) {
-                if (textEl) textEl.style.display = 'none';
+                if (textEl) textEl.innerText = `Selected file:`;
                 if (iconEl) iconEl.innerHTML = `<i class="fa-solid fa-file-circle-check" style="color: #0d9488;"></i>`;
-                preview.innerText = `📎 Selected: ${inputEl.files[0].name}`;
+                preview.innerText = inputEl.files[0].name;
             } else {
-                if (textEl) textEl.style.display = 'inline-block';
+                if (textEl) textEl.innerText = 'Chọn tệp hoặc kéo thả vào đây';
                 if (iconEl) iconEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i>`;
                 preview.innerText = '';
             }
