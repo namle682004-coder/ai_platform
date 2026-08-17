@@ -203,7 +203,13 @@
 
             <!-- PLAYGROUND TAB PANEL -->
             <div class="tab-panel active" id="panel-SERVICE">
-                <div class="service-grid">
+                <!-- Message when disabled -->
+                <div id="playground-disabled-message" style="display: none; padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                    You need to enable this api to run demo
+                </div>
+                
+                <!-- Interactive playground when enabled -->
+                <div id="playground-interactive-container" class="service-grid">
                     <div class="sandbox-left">
                         <div style="font-size:15px; font-weight:700; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
                             INPUT PARAMETERS
@@ -478,6 +484,19 @@
             const isEnabled = isApiActive(apis, currentSvcName);
 
             updateToggleButtonUI(isEnabled);
+
+            // Show or hide playground content based on enabled state
+            const disabledMsg = document.getElementById('playground-disabled-message');
+            const interactiveCont = document.getElementById('playground-interactive-container');
+            if (disabledMsg && interactiveCont) {
+                if (isEnabled) {
+                    disabledMsg.style.display = 'none';
+                    interactiveCont.style.display = 'grid';
+                } else {
+                    disabledMsg.style.display = 'block';
+                    interactiveCont.style.display = 'none';
+                }
+            }
 
             // Sync credit balance
             const paidBal = await fetchPaidBalanceFromBackend();
