@@ -845,13 +845,14 @@
 
         function isApiHeavyFor4G(apiName) {
             const name = apiName.toLowerCase();
-            // LLM Chatbot and Image Generation are too heavy for 4G GPU
-            return name.includes('llm') || name.includes('chatbot') || name.includes('image') || name.includes('generation');
+            // Only Translation API is currently hosted/connected to a real GPU model.
+            // The other 12 services are not yet hosted.
+            return !name.includes('translation');
         }
 
         function switchTab(tabName) {
             if (tabName === 'SERVICE' && isApiHeavyFor4G(currentSvcName)) {
-                showToast("Hệ thống hiện tại chưa cung cấp đủ tài nguyên cho dịch vụ này. Sẽ cập nhật nâng cấp lại sau.", "warning");
+                showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt môi trường Sandbox cho dịch vụ này. Hệ thống sẽ sớm mở lại sau khi hoàn thành nâng cấp hạ tầng.", "warning");
                 return;
             }
             const tabs = ['OVERVIEW', 'SERVICE', 'DOCUMENT', 'PRICING'];

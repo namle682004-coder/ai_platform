@@ -25,31 +25,42 @@ class TranslationResponse(BaseModel):
 
 
 # Lazy load ML models on first request to prevent startup crash if packages are missing
-translator_vi_en = None
-translator_en_vi = None
+tokenizer_vi_en = None
+model_vi_en = None
+tokenizer_en_vi = None
+model_en_vi = None
 ml_initialized = False
 init_error = None
+device_name = "cpu"
 
 
 def init_ml():
-    global translator_vi_en, translator_en_vi, ml_initialized, init_error
+    global tokenizer_vi_en, model_vi_en, tokenizer_en_vi, model_en_vi, ml_initialized, init_error, device_name
     if ml_initialized:
         return
     try:
         import torch
-        from transformers import pipeline
+        from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
         
         # Detect CUDA GPU
-        device = 0 if torch.cuda.is_available() else -1
+        device_id = "cuda" if torch.cuda.is_available() else "cpu"
+        device = torch.device(device_id)
+        device_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
         
         # Load lightweight Helsinki-NLP models (approx. 150MB each, fits easily on 3050 GPU)
-        translator_en_vi = pipeline("translation_en_to_vi", model="Helsinki-NLP/opus-mt-en-vi", device=device)
-        translator_vi_en = pipeline("translation_vi_to_en", model="Helsinki-NLP/opus-mt-vi-en", device=device)
+        model_en_vi_name = "Helsinki-NLP/opus-mt-en-vi"
+        tokenizer_en_vi = AutoTokenizer.from_pretrained(model_en_vi_name)
+        model_en_vi = AutoModelForSeq2SeqLM.from_pretrained(model_en_vi_name).to(device)
+        
+        model_vi_en_name = "Helsinki-NLP/opus-mt-vi-en"
+        tokenizer_vi_en = AutoTokenizer.from_pretrained(model_vi_en_name)
+        model_vi_en = AutoModelForSeq2SeqLM.from_pretrained(model_vi_en_name).to(device)
         
         ml_initialized = True
         init_error = None
     except Exception as e:
         init_error = str(e)
+        ml_initialized = False
 
 
 @translation_app.post("/v1/predictions", response_model=TranslationResponse)
@@ -66,15 +77,22 @@ async def translate_text(
     # 1. Real-time Inference using GPU/CPU Model
     if ml_initialized:
         try:
+            import torch
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            
             src = "vi" if "vi" in request.source_lang.lower() else "en"
             tgt = "en" if "en" in request.target_lang.lower() else "vi"
 
-            if src == "vi" and tgt == "en" and translator_vi_en:
-                res = translator_vi_en(request.text)
-                translated_text = res[0]["translation_text"]
-            elif src == "en" and tgt == "vi" and translator_en_vi:
-                res = translator_en_vi(request.text)
-                translated_text = res[0]["translation_text"]
+            if src == "vi" and tgt == "en" and tokenizer_vi_en and model_vi_en:
+                inputs = tokenizer_vi_en(request.text, return_tensors="pt", padding=True).to(device)
+                with torch.no_grad():
+                    outputs = model_vi_en.generate(**inputs)
+                translated_text = tokenizer_vi_en.decode(outputs[0], skip_special_tokens=True)
+            elif src == "en" and tgt == "vi" and tokenizer_en_vi and model_en_vi:
+                inputs = tokenizer_en_vi(request.text, return_tensors="pt", padding=True).to(device)
+                with torch.no_grad():
+                    outputs = model_en_vi.generate(**inputs)
+                translated_text = tokenizer_en_vi.decode(outputs[0], skip_special_tokens=True)
             else:
                 translated_text = f"[Model Fallback] Translation from {request.source_lang} to {request.target_lang} is not loaded."
 
@@ -97,7 +115,7 @@ async def translate_text(
 
     # 2. Local Fallback if torch/transformers packages are not installed in the .venv
     elapsed = (time.time() - start_time) * 1000
-    mock_translated = f"[Simulated Translation]: {request.text} (Please install torch, transformers, sacremoses inside .venv to run real CUDA inference. Error: {init_error})"
+    mock_translated = f"[Simulated Translation]: {request.text} (Please verify torch, transformers, sentencepiece and sacremoses inside .venv. Error: {init_error})"
     return TranslationResponse(
         translated_text=mock_translated,
         source_lang=request.source_lang,
@@ -109,11 +127,12 @@ async def translate_text(
 @translation_app.get("/health", tags=["Health"])
 async def health_check():
     init_ml()
-    backend_status = "Helsinki-NLP (Live GPU/CPU Engine)" if ml_initialized else "Mock/Fallback Engine"
+    backend_status = f"Helsinki-NLP (Live GPU Engine: {device_name})" if ml_initialized else "Mock/Fallback Engine"
+    cuda_status = ml_initialized and ("cuda" in str(device_name).lower() or device_name != "cpu")
     return {
         "status": "healthy",
         "service": "translation-server",
         "backend": backend_status,
-        "cuda_available": ml_initialized and translator_vi_en is not None,
+        "cuda_available": bool(cuda_status),
         "init_error": init_error
     }
