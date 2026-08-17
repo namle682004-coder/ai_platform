@@ -804,14 +804,33 @@
         }
 
         function navigateToService(apiName) {
-            if (apiName === 'Text to Speech' || apiName === 'Text to Speech API') {
+            const nameLow = apiName.toLowerCase();
+            if (nameLow.includes('speech to text')) {
+                window.location.href = '/staff/service-stt';
+            } else if (nameLow.includes('text to speech')) {
                 window.location.href = '/staff/service-tts';
-            } else if (apiName === 'LLM Chatbot API') {
+            } else if (nameLow.includes('llm') || nameLow.includes('chatbot')) {
                 window.location.href = '/staff/service-llm';
-            } else if (apiName === 'Image Generation API') {
+            } else if (nameLow.includes('image')) {
                 window.location.href = '/staff/service-image';
-            } else if (apiName === 'Content Moderation API') {
+            } else if (nameLow.includes('moderation')) {
                 window.location.href = '/staff/service-moderation';
+            } else if (nameLow.includes('driver')) {
+                window.location.href = '/staff/service-ocr-dl';
+            } else if (nameLow.includes('id recognition') || nameLow.includes('identity')) {
+                window.location.href = '/staff/service-ocr-id';
+            } else if (nameLow.includes('passport')) {
+                window.location.href = '/staff/service-ocr-passport';
+            } else if (nameLow.includes('facematch')) {
+                window.location.href = '/staff/service-vision-facematch';
+            } else if (nameLow.includes('liveness')) {
+                window.location.href = '/staff/service-vision-liveness';
+            } else if (nameLow.includes('embedding')) {
+                window.location.href = '/staff/service-nlp-embeddings';
+            } else if (nameLow.includes('summariz')) {
+                window.location.href = '/staff/service-nlp-summarization';
+            } else if (nameLow.includes('translat')) {
+                window.location.href = '/staff/service-nlp-translation';
             } else {
                 window.location.href = '/staff/service-stt';
             }
