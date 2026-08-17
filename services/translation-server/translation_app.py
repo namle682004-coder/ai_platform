@@ -114,5 +114,6 @@ async def health_check():
         "status": "healthy",
         "service": "translation-server",
         "backend": backend_status,
-        "cuda_available": ml_initialized and translator_vi_en is not None
+        "cuda_available": ml_initialized and translator_vi_en is not None,
+        "init_error": init_error
     }
