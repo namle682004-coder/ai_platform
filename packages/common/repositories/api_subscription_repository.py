@@ -6,7 +6,15 @@ CANONICAL_APIS = [
     "Text to Speech API",
     "LLM Chatbot API",
     "Image Generation API",
-    "Content Moderation API"
+    "Content Moderation API",
+    "Driver's license recognition",
+    "ID Recognition",
+    "Passport Recognition",
+    "FaceMatch",
+    "Liveness v3",
+    "Text Embedding API",
+    "Text Summarization API",
+    "Translation API"
 ]
 
 def normalize_api_name(name: str) -> str:
@@ -24,7 +32,23 @@ def normalize_api_name(name: str) -> str:
         return "Image Generation API"
     if "moderation" in low:
         return "Content Moderation API"
-    return n if n.endswith(" API") else f"{n} API"
+    if "driver" in low:
+        return "Driver's license recognition"
+    if "id recognition" in low or "id-card" in low:
+        return "ID Recognition"
+    if "passport" in low:
+        return "Passport Recognition"
+    if "facematch" in low:
+        return "FaceMatch"
+    if "liveness" in low:
+        return "Liveness v3"
+    if "embedding" in low:
+        return "Text Embedding API"
+    if "summariz" in low:
+        return "Text Summarization API"
+    if "translat" in low:
+        return "Translation API"
+    return n
 
 class MongoApiSubscriptionRepository:
     """MongoDB Atlas implementation for User API Subscriptions."""
@@ -34,14 +58,8 @@ class MongoApiSubscriptionRepository:
         self._subscriptions_cache: Dict[str, Dict[str, Any]] = {}
 
     def _sanitize_api_dict(self, apis: Dict[str, Any]) -> Dict[str, bool]:
-        """Normalize any legacy dictionary down to strictly the 5 canonical API keys."""
-        cleaned: Dict[str, bool] = {
-            "Speech to Text API": False,
-            "Text to Speech API": False,
-            "LLM Chatbot API": False,
-            "Image Generation API": False,
-            "Content Moderation API": False
-        }
+        """Normalize any legacy dictionary down to strictly the 13 canonical API keys."""
+        cleaned: Dict[str, bool] = {k: False for k in CANONICAL_APIS}
         if not apis:
             cleaned["Speech to Text API"] = True
             return cleaned
@@ -70,13 +88,15 @@ class MongoApiSubscriptionRepository:
         if user_id in self._subscriptions_cache:
             return self._subscriptions_cache[user_id]
             
-        default_state = {
-            "Speech to Text API": True,
-            "Text to Speech API": False,
-            "LLM Chatbot API": False,
-            "Image Generation API": False,
-            "Content Moderation API": False
-        }
+        default_state = {k: False for k in CANONICAL_APIS}
+        default_state["Speech to Text API"] = True
+        default_state["Text to Speech API"] = True
+        default_state["LLM Chatbot API"] = True
+        default_state["Content Moderation API"] = True
+        default_state["FaceMatch"] = True
+        default_state["Text Embedding API"] = True
+        default_state["Text Summarization API"] = True
+        default_state["Translation API"] = True
         return default_state
 
     async def update_user_subscriptions(self, user_id: str, enabled_apis: Dict[str, bool]) -> Dict[str, Any]:

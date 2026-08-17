@@ -1,8 +1,14 @@
-from typing import Optional, Dict, Any
-from common.interfaces.endpoints import IEndpointRepository
+import asyncio
+import os
+import sys
+
+# Add packages and services to sys.path
+sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/packages')
+sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/services/gateway')
+
 from common.database.mongodb import mongo_manager
 
-DEFAULT_ENDPOINTS = [
+NEW_ENDPOINTS = [
     {
         "endpoint_id": "/v1/chat/completions",
         "api_id": "api_llm",
@@ -498,50 +504,20 @@ DEFAULT_ENDPOINTS = [
     }
 ]
 
+async def seed_13_apis():
+    await mongo_manager.connect()
+    db = mongo_manager.get_database()
+    if db is None:
+        print("Error: Could not connect to MongoDB Atlas.")
+        return
 
-class MongoEndpointRepository(IEndpointRepository):
-    """MongoDB Atlas implementation for Endpoints serving as full API Catalog."""
+    # Delete existing endpoints
+    await db.endpoints.delete_many({})
+    print("Cleared existing endpoints collection.")
 
-    def __init__(self):
-        self._endpoints_cache: Dict[str, Dict[str, Any]] = {}
+    # Insert 13 new APIs
+    result = await db.endpoints.insert_many(NEW_ENDPOINTS)
+    print(f"Successfully inserted {len(result.inserted_ids)} API endpoints into MongoDB Atlas!")
 
-    async def list_endpoints(self) -> Dict[str, Any]:
-        db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                cursor = db.endpoints.find({}, {"_id": 0})
-                eps = await cursor.to_list(length=100)
-                
-                # Auto-seed if empty
-                if not eps or len(eps) == 0:
-                    await db.endpoints.insert_many([dict(e) for e in DEFAULT_ENDPOINTS])
-                    cursor = db.endpoints.find({}, {"_id": 0})
-                    eps = await cursor.to_list(length=100)
-                
-                self._endpoints_cache.clear()
-                for item in eps:
-                    item.pop("_id", None)
-                    self._endpoints_cache[item["endpoint_id"]] = item
-                return self._endpoints_cache
-            except Exception:
-                pass
-        
-        # Fallback to defaults if DB completely fails
-        if not self._endpoints_cache:
-            self._endpoints_cache = {e["endpoint_id"]: dict(e) for e in DEFAULT_ENDPOINTS}
-        return self._endpoints_cache
-
-    async def update_endpoint_status(self, endpoint_id: str, status: str) -> Optional[Dict[str, Any]]:
-        db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                await db.endpoints.update_one({"endpoint_id": endpoint_id}, {"$set": {"status": status}})
-            except Exception:
-                pass
-        
-        if endpoint_id in self._endpoints_cache:
-            self._endpoints_cache[endpoint_id]["status"] = status
-            return self._endpoints_cache[endpoint_id]
-        return None
-
-endpoint_repository = MongoEndpointRepository()
+if __name__ == "__main__":
+    asyncio.run(seed_13_apis())
