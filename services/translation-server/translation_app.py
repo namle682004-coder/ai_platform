@@ -43,8 +43,8 @@ def init_ml():
         device = 0 if torch.cuda.is_available() else -1
         
         # Load lightweight Helsinki-NLP models (approx. 150MB each, fits easily on 3050 GPU)
-        translator_en_vi = pipeline("translation", model="Helsinki-NLP/opus-mt-en-vi", device=device)
-        translator_vi_en = pipeline("translation", model="Helsinki-NLP/opus-mt-vi-en", device=device)
+        translator_en_vi = pipeline("translation_en_to_vi", model="Helsinki-NLP/opus-mt-en-vi", device=device)
+        translator_vi_en = pipeline("translation_vi_to_en", model="Helsinki-NLP/opus-mt-vi-en", device=device)
         
         ml_initialized = True
         init_error = None
