@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everwin AI Platform - Service Details & Playground</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/static/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --fpt-blue: #0f4c81;
+            --fpt-cyan: #00a4b8;
+            --fpt-orange: #f97316;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .top-header { background: var(--fpt-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+        .layout-body { display: flex; flex: 1; }
+
+        .sidebar { width: 220px; background: #ffffff; border-right: 1px solid var(--border-color); padding: 20px 0; }
+        .nav-section { margin-bottom: 24px; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 0 20px 8px 20px; letter-spacing: 0.5px; }
+        .nav-list { list-style: none; }
+        .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.15s ease; border-left: 3px solid transparent; }
+        .nav-item.active a, .nav-item a:hover { background: #f1f5f9; color: var(--fpt-cyan); border-left-color: var(--fpt-cyan); }
+
+        .main-content { flex: 1; padding: 24px 32px; background: #f8fafc; }
+
+        .notice-bar { background: #1e3a8a; color: #fff; padding: 10px 16px; border-radius: 6px; font-size: 12.5px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+
+        .service-header-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+        .service-title-box { display: flex; align-items: center; gap: 16px; }
+        .service-icon-lg { width: 56px; height: 56px; border-radius: 12px; background: var(--fpt-cyan); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+        .service-name { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #0f172a; }
+
+        .btn-status-toggle { background: #007bff; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: background 0.15s; }
+        .btn-status-toggle:hover { background: #0056b3; }
+        .btn-status-toggle.disabled { background: #dc3545; color: #ffffff; }
+        .btn-status-toggle.disabled:hover { background: #b02a37; }
+
+        .btn-buy { background: #0f172a; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; margin-left: 10px; }
+        .free-remain { font-size: 12.5px; color: var(--text-sub); margin-left: auto; }
+
+        .service-nav-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; gap: 8px; }
+        .tab-btn { padding: 10px 24px; font-size: 13px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; position: relative; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--fpt-cyan); }
+        .tab-btn.active { color: var(--fpt-cyan); border-bottom-color: var(--fpt-cyan); background: #ffffff; border-radius: 6px 6px 0 0; }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .service-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
+        .sandbox-left { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12.5px; font-weight: 700; color: #334155; }
+        .input-text-field { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; outline: none; background: #fff; font-family: var(--font-body); }
+        .input-text-field:focus { border-color: var(--fpt-cyan); }
+
+        .file-upload-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; background: #f8fafc; position: relative; }
+        .file-upload-zone:hover { border-color: var(--fpt-cyan); background: #f0fdfa; }
+        .file-upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .file-name-preview { margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #0d9488; }
+
+        .btn-run-inference { background: var(--fpt-cyan); color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s; }
+        .btn-run-inference:hover { background: #008fa0; }
+
+        .sandbox-right { display: flex; flex-direction: column; gap: 20px; }
+        .playground-results-card { background: #0f172a; border-radius: 10px; padding: 20px; color: #38bdf8; display: flex; flex-direction: column; gap: 12px; min-height: 250px; }
+        .playground-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: #fff; }
+        .json-viewer { font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-x: auto; flex: 1; color: #38bdf8; }
+
+        .integration-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; }
+        .lang-options { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; font-size: 13px; font-weight: 600; color: #334155; }
+        .btn-copy-blue { margin-left: auto; background: #007bff; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+        .code-snippet-card { background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; word-break: break-all; white-space: pre-wrap; }
+
+        .doc-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 28px; margin-bottom: 24px; }
+        .doc-section-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 14px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+        .doc-text { font-size: 14px; color: #334155; line-height: 1.7; margin-bottom: 16px; }
+        .doc-list { margin-left: 20px; font-size: 13.5px; color: #475569; line-height: 1.8; margin-bottom: 16px; }
+
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+        .doc-table th, .doc-table td { border: 1px solid var(--border-color); padding: 12px 14px; text-align: left; }
+        .doc-table th { background: #f8fafc; font-weight: 700; color: #1e293b; }
+        .badge-req { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-opt { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+
+        .url-box { background: #1e293b; color: #38bdf8; padding: 12px 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 16px; }
+
+        /* Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
+
+        /* CONFIRM TOGGLE API MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
+        .confirm-header { background: #cbd5e1; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1e293b; }
+        .confirm-body { padding: 24px 20px; font-size: 14px; color: #334155; }
+        .confirm-footer { padding: 12px 20px 16px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
+        .btn-confirm-cancel:hover { background: #f1f5f9; }
+        .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
+        .btn-confirm-ok:hover { background: #0056b3; }
+    </style>
+    <script src="/static/js/staff_layout.js"></script>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
+            <div class="project-selector" onclick="location.href='/staff/dashboard'"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Default Project</span></div>
+        </div>
+        <div class="header-right">
+            <div class="user-menu">
+                <span>Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout-body">
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="section-title">Console</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="section-title">Payment & Support</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/payment"><i class="fa-solid fa-credit-card" style="width: 16px; text-align: center;"></i> Payment history</a></li>
+                    <li class="nav-item"><a href="/staff/contact"><i class="fa-solid fa-headset" style="width: 16px; text-align: center;"></i> Contact us</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="notice-bar">
+                <span>⚡ Bạn đang truy cập môi trường Sandbox API để phát triển và kiểm thử tích hợp local.</span>
+            </div>
+
+            <!-- SERVICE TITLE CARD -->
+            <div class="service-header-card">
+                <div class="service-title-box">
+                    <div class="service-icon-lg" id="svc-icon-box"><i class="fa-solid fa-plug"></i></div>
+                    <div>
+                        <div class="service-name" id="svc-title-text">Loading Service...</div>
+                        <div style="font-size: 13px; color: var(--text-sub); margin-top: 4px;" id="svc-desc-text">Fetching API details from database...</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="btn-status-toggle" id="svc-status-toggle-btn" onclick="handleServiceHeaderToggleClick()">ACTIVE</button>
+                    <div class="free-remain" id="svc-paid-balance-text">Remaining: 0 blocks</div>
+                </div>
+            </div>
+
+            <!-- TAB MENU -->
+            <div class="service-nav-tabs">
+                <button class="tab-btn active" id="tab-btn-OVERVIEW" onclick="switchTab('OVERVIEW')">OVERVIEW</button>
+                <button class="tab-btn" id="tab-btn-SERVICE" onclick="switchTab('SERVICE')">SERVICE (PLAYGROUND)</button>
+                <button class="tab-btn" id="tab-btn-DOCUMENT" onclick="switchTab('DOCUMENT')">DOCUMENT</button>
+                <button class="tab-btn" id="tab-btn-PRICING" onclick="switchTab('PRICING')">PRICING</button>
+            </div>
+
+            <!-- OVERVIEW TAB PANEL -->
+            <div class="tab-panel active" id="panel-OVERVIEW">
+                <div class="doc-card">
+                    <div class="doc-section-title" id="overview-title">About the Service</div>
+                    <div class="doc-text" id="overview-summary">Loading Overview...</div>
+                    <div class="doc-section-title" style="margin-top:24px;">Key Features</div>
+                    <ul class="doc-list" id="overview-features-list">
+                        <li>Realtime high-speed inference</li>
+                        <li>Vietnamese optimization</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PLAYGROUND TAB PANEL -->
+            <div class="tab-panel" id="panel-SERVICE">
+                <div class="service-grid">
+                    <div class="sandbox-left">
+                        <div style="font-size:15px; font-weight:700; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                            INPUT PARAMETERS
+                        </div>
+                        <!-- Dynamic inputs container -->
+                        <form id="playground-form" onsubmit="event.preventDefault(); runPlaygroundInference();" style="display:flex; flex-direction:column; gap:16px;">
+                            <div id="dynamic-inputs-container">
+                                <!-- Dynamic Form Fields Go Here -->
+                            </div>
+                            <button type="submit" class="btn-run-inference" id="btn-run-inference"><i class="fa-solid fa-play"></i> RUN PLAYGROUND</button>
+                        </form>
+                    </div>
+
+                    <div class="sandbox-right">
+                        <div class="playground-results-card">
+                            <div class="playground-header">
+                                <span>RESPONSE (JSON)</span>
+                                <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px; font-size:11px;" id="response-status-badge">N/A</span>
+                            </div>
+                            <div class="json-viewer" id="json-viewer-box">{ "status": "Waiting for execution..." }</div>
+                        </div>
+
+                        <!-- Integration snippet codes -->
+                        <div class="integration-card">
+                            <div class="playground-header" style="color:#0f172a; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                                <span>INTEGRATION CODES</span>
+                            </div>
+                            <div class="lang-options">
+                                <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cURL</label>
+                                <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
+                                <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> PHP</label>
+                                <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                            </div>
+                            <div class="code-snippet-card" id="snippet-code-box">Loading integration snippet...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENT TAB PANEL -->
+            <div class="tab-panel" id="panel-DOCUMENT">
+                <div class="doc-card">
+                    <div class="doc-section-title">API Endpoint</div>
+                    <div class="url-box" id="doc-endpoint-url">POST https://ai-platform-6p72.onrender.com/v1/...</div>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Request Headers</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Header</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                        </thead>
+                        <tbody id="doc-headers-tbody">
+                            <!-- Dynamic headers rows -->
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Request Parameters</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                        </thead>
+                        <tbody id="doc-params-tbody">
+                            <!-- Dynamic parameters rows -->
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Sample Response</div>
+                    <div class="code-snippet-card" id="doc-sample-response">{ "status": "success" }</div>
+                </div>
+            </div>
+
+            <!-- PRICING TAB PANEL -->
+            <div class="tab-panel" id="panel-PRICING">
+                <div class="doc-card">
+                    <div class="doc-section-title">Pricing Details</div>
+                    <div class="doc-text" id="pricing-free-quota-text">Free Quota: 1,000 requests per month</div>
+                    <div class="doc-text" id="pricing-pay-as-you-go-text">Pay-as-you-go: 200 VNĐ per request</div>
+                    <div class="doc-text" id="pricing-billing-cycle-text">Billing Cycle: Monthly charge based on successful API requests</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM TOGGLE API -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-header">Confirm Status Change</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to change this API status?</div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSvcName = "";
+        let currentSvcData = null;
+        let currentSnippetLang = "curl";
+
+        // Map pathnames to canonical service names
+        function getSvcNameFromPath() {
+            const path = window.location.pathname;
+            if (path.includes('ocr-dl')) return "Driver's license recognition";
+            if (path.includes('ocr-id')) return "ID Recognition";
+            if (path.includes('ocr-passport')) return "Passport Recognition";
+            if (path.includes('vision-facematch')) return "FaceMatch";
+            if (path.includes('vision-liveness')) return "Liveness v3";
+            if (path.includes('nlp-embeddings')) return "Text Embedding API";
+            if (path.includes('nlp-summarization')) return "Text Summarization API";
+            if (path.includes('nlp-translation')) return "Translation API";
+            return "Speech to Text API";
+        }
+
+        async function initPage() {
+            currentSvcName = getSvcNameFromPath();
+            const catalog = await fetchApiCatalogFromBackend();
+            currentSvcData = catalog.find(item => item.name === currentSvcName);
+
+            if (!currentSvcData) {
+                showToast("Service not found in catalog database!", "error");
+                return;
+            }
+
+            // Sync UI metadata
+            document.getElementById('svc-title-text').innerText = currentSvcData.name;
+            document.getElementById('svc-desc-text').innerText = currentSvcData.description || "";
+
+            // Dynamic Icons based on service name
+            let iconClass = 'fa-plug';
+            let nameLow = currentSvcName.toLowerCase();
+            if (nameLow.includes('driver')) iconClass = 'fa-id-card-clip';
+            else if (nameLow.includes('id recognition') || nameLow.includes('identity')) iconClass = 'fa-address-card';
+            else if (nameLow.includes('passport')) iconClass = 'fa-passport';
+            else if (nameLow.includes('facematch')) iconClass = 'fa-user-check';
+            else if (nameLow.includes('liveness')) iconClass = 'fa-user-shield';
+            else if (nameLow.includes('embedding')) iconClass = 'fa-magnifying-glass';
+            else if (nameLow.includes('summariz')) iconClass = 'fa-file-lines';
+            else if (nameLow.includes('translat')) iconClass = 'fa-language';
+            document.getElementById('svc-icon-box').innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+
+            // Overview Tab
+            if (currentSvcData.overview) {
+                document.getElementById('overview-title').innerText = currentSvcData.overview.title || "About the Service";
+                document.getElementById('overview-summary').innerText = currentSvcData.overview.summary || "";
+                if (currentSvcData.overview.features) {
+                    const ul = document.getElementById('overview-features-list');
+                    ul.innerHTML = '';
+                    currentSvcData.overview.features.forEach(f => {
+                        const li = document.createElement('li');
+                        li.innerText = f;
+                        ul.appendChild(li);
+                    });
+                }
+            }
+
+            // Document Tab
+            const method = currentSvcData.document?.method || "POST";
+            const epUrl = currentSvcData.document?.endpoint_url || `https://ai-platform-6p72.onrender.com${currentSvcData.endpoint_id}`;
+            document.getElementById('doc-endpoint-url').innerText = `${method} ${epUrl}`;
+            
+            // Render Headers
+            const headersTbody = document.getElementById('doc-headers-tbody');
+            headersTbody.innerHTML = '';
+            const headers = currentSvcData.document?.headers || [{"name": "api-key", "type": "string", "required": true, "desc": "Khóa API Key"}];
+            headers.forEach(h => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${h.name}</code></td>
+                    <td>${h.type || 'string'}</td>
+                    <td><span class="${h.required ? 'badge-req' : 'badge-opt'}">${h.required ? 'REQUIRED' : 'OPTIONAL'}</span></td>
+                    <td>${h.desc || ''}</td>
+                `;
+                headersTbody.appendChild(tr);
+            });
+
+            // Render Parameters
+            const paramsTbody = document.getElementById('doc-params-tbody');
+            paramsTbody.innerHTML = '';
+            const params = currentSvcData.document?.parameters || [];
+            params.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${p.name}</code></td>
+                    <td>${p.type || 'string'}</td>
+                    <td><span class="${p.required ? 'badge-req' : 'badge-opt'}">${p.required ? 'REQUIRED' : 'OPTIONAL'}</span></td>
+                    <td>${p.desc || ''}</td>
+                `;
+                paramsTbody.appendChild(tr);
+            });
+
+            // Render Sample Response
+            document.getElementById('doc-sample-response').innerText = currentSvcData.document?.sample_response || "{}";
+
+            // Pricing Tab
+            if (currentSvcData.pricing) {
+                document.getElementById('pricing-free-quota-text').innerText = `Hạn mức miễn phí: ${currentSvcData.pricing.free_quota || ""}`;
+                document.getElementById('pricing-pay-as-you-go-text').innerText = `Thanh toán theo lượt (Pay-as-you-go): ${currentSvcData.pricing.pay_as_you_go || ""}`;
+                document.getElementById('pricing-billing-cycle-text').innerText = `Chu kỳ đối soát: ${currentSvcData.pricing.billing_cycle || ""}`;
+            }
+
+            // Sync playground dynamic inputs
+            generatePlaygroundInputs(params);
+
+            // Sync initial state and balance
+            await syncServiceUIState();
+        }
+
+        function generatePlaygroundInputs(params) {
+            const container = document.getElementById('dynamic-inputs-container');
+            container.innerHTML = '';
+
+            if (params.length === 0) {
+                container.innerHTML = `<div style="font-size: 13px; color: var(--text-sub);">Không cần tham số truyền vào cho API này.</div>`;
+                return;
+            }
+
+            params.forEach(p => {
+                const group = document.createElement('div');
+                group.className = 'form-group';
+                
+                if (p.type === 'file') {
+                    group.innerHTML = `
+                        <label>${p.name.toUpperCase()} (${p.desc})</label>
+                        <div class="file-upload-zone" onclick="this.querySelector('input').click()">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: var(--fpt-cyan); margin-bottom: 6px;"></i>
+                            <div style="font-size: 12.5px; font-weight:600; color: #475569;">Chọn ảnh hoặc kéo thả vào đây</div>
+                            <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)">
+                            <div class="file-name-preview" id="preview-${p.name}"></div>
+                        </div>
+                    `;
+                } else {
+                    group.innerHTML = `
+                        <label>${p.name.toUpperCase()} (${p.desc})</label>
+                        <textarea class="input-text-field" id="param-${p.name}" name="${p.name}" rows="3" ${p.required ? 'required' : ''} placeholder="Nhập nội dung..."></textarea>
+                    `;
+                }
+                container.appendChild(group);
+            });
+            updateSnippetCode();
+        }
+
+        function handleFileSelected(name, inputEl) {
+            const preview = document.getElementById(`preview-${name}`);
+            if (inputEl.files && inputEl.files.length > 0) {
+                preview.innerText = `📎 Selected: ${inputEl.files[0].name}`;
+            } else {
+                preview.innerText = '';
+            }
+        }
+
+        async function syncServiceUIState() {
+            const apis = await fetchEnabledAPIsFromBackend();
+            const isEnabled = isApiActive(apis, currentSvcName);
+
+            const btn = document.getElementById('svc-status-toggle-btn');
+            if (isEnabled) {
+                btn.innerText = 'ACTIVE';
+                btn.classList.remove('disabled');
+            } else {
+                btn.innerText = 'DISABLED';
+                btn.classList.add('disabled');
+            }
+
+            // Sync credit balance
+            const paidBal = await fetchPaidBalanceFromBackend();
+            const paidUnit = currentSvcData?.unit || 'request';
+            const unitCost = paidUnit === 'character' ? 1 : (paidUnit === 'block' ? 150 : 10);
+            const remaining = paidUnit === 'character' ? paidBal : Math.floor(paidBal / unitCost);
+            
+            document.getElementById('svc-paid-balance-text').innerText = isEnabled 
+                ? `Remaining: ${remaining.toLocaleString()} ${paidUnit}s` 
+                : 'Status: OFF';
+        }
+
+        function switchTab(tabName) {
+            const tabs = ['OVERVIEW', 'SERVICE', 'DOCUMENT', 'PRICING'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const panel = document.getElementById(`panel-${t}`);
+                if (t === tabName) {
+                    btn.classList.add('active');
+                    panel.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                    panel.classList.remove('active');
+                }
+            });
+        }
+
+        let targetPendingAction = 'enable';
+        function handleServiceHeaderToggleClick() {
+            const btn = document.getElementById('svc-status-toggle-btn');
+            const isEnabled = !btn.classList.contains('disabled');
+            
+            targetPendingAction = isEnabled ? 'disable' : 'enable';
+            document.getElementById('modal-confirm-body').innerText = isEnabled
+                ? `Bạn có chắc chắn muốn TẮT dịch vụ "${currentSvcName}"?`
+                : `Bạn có muốn BẬT dịch vụ "${currentSvcName}"?`;
+            openConfirmModal();
+        }
+
+        function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+        async function onConfirmEnableClick() {
+            closeConfirmModal();
+            const apis = getEnabledAPIs();
+
+            if (targetPendingAction === 'disable') {
+                apis[currentSvcName] = false;
+                await setEnabledAPIs(apis);
+                await syncServiceUIState();
+                showToast(`Đã tắt API "${currentSvcName}" thành công!`, 'warning');
+            } else {
+                apis[currentSvcName] = true;
+                await setEnabledAPIs(apis);
+                await syncServiceUIState();
+                showToast(`Đã kích hoạt API "${currentSvcName}" thành công!`, 'success');
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#dc3545');
+            toast.innerHTML = `<span>${msg}</span><i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="this.parentElement.remove()"></i>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        async function runPlaygroundInference() {
+            const runBtn = document.getElementById('btn-run-inference');
+            runBtn.disabled = true;
+            runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> EXECUTING...`;
+
+            document.getElementById('response-status-badge').innerText = 'PENDING';
+            document.getElementById('response-status-badge').style.background = '#e2e8f0';
+
+            const apis = getEnabledAPIs();
+            if (!isApiActive(apis, currentSvcName)) {
+                showToast("Dịch vụ chưa được KÍCH HOẠT! Vui lòng bật trạng thái ACTIVE ở góc trên.", "error");
+                runBtn.disabled = false;
+                runBtn.innerHTML = `<i class="fa-solid fa-play"></i> RUN PLAYGROUND`;
+                return;
+            }
+
+            const epId = currentSvcData.endpoint_id;
+            const params = currentSvcData.document?.parameters || [];
+            
+            // Build body / FormData
+            let bodyData = null;
+            let headers = {};
+
+            const isMultipart = params.some(p => p.type === 'file');
+
+            if (isMultipart) {
+                bodyData = new FormData();
+                params.forEach(p => {
+                    const el = document.getElementById(`param-${p.name}`);
+                    if (p.type === 'file') {
+                        if (el.files && el.files[0]) {
+                            bodyData.append(p.name, el.files[0]);
+                        }
+                    } else {
+                        bodyData.append(p.name, el.value || "");
+                    }
+                });
+            } else {
+                headers['Content-Type'] = 'application/json';
+                const jsonDoc = {};
+                params.forEach(p => {
+                    const el = document.getElementById(`param-${p.name}`);
+                    if (el) {
+                        jsonDoc[p.name] = el.value || "";
+                    }
+                });
+                bodyData = JSON.stringify(jsonDoc);
+            }
+
+            // Always add default live key for playground testing
+            headers['Authorization'] = 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+
+            try {
+                const res = await fetch(epId, {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyData
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    document.getElementById('json-viewer-box').innerText = JSON.stringify(json, null, 2);
+                    document.getElementById('response-status-badge').innerText = 'SUCCESS';
+                    document.getElementById('response-status-badge').style.background = '#10b981';
+                    
+                    // Deduct credit balance on mock run to feel interactive
+                    const localBal = getPaidBalance();
+                    const paidUnit = currentSvcData?.unit || 'request';
+                    const unitCost = paidUnit === 'character' ? 1 : (paidUnit === 'block' ? 150 : 10);
+                    const deduct = paidUnit === 'character' ? 100 : 1;
+                    if (localBal > deduct) {
+                        setPaidBalance(localBal - deduct);
+                        await syncServiceUIState();
+                    }
+                    showToast("Inference completed successfully!", "success");
+                } else {
+                    const errText = await res.text();
+                    document.getElementById('json-viewer-box').innerText = `Error: ${res.status} ${res.statusText}\n${errText}`;
+                    document.getElementById('response-status-badge').innerText = 'ERROR';
+                    document.getElementById('response-status-badge').style.background = '#dc3545';
+                }
+            } catch (err) {
+                document.getElementById('json-viewer-box').innerText = `Failed to connect to API gateway:\n${err.message}`;
+                document.getElementById('response-status-badge').innerText = 'ERROR';
+                document.getElementById('response-status-badge').style.background = '#dc3545';
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = `<i class="fa-solid fa-play"></i> RUN PLAYGROUND`;
+            }
+        }
+
+        function switchSnippetLang(lang) {
+            currentSnippetLang = lang;
+            updateSnippetCode();
+        }
+
+        function updateSnippetCode() {
+            const box = document.getElementById('snippet-code-box');
+            if (!box || !currentSvcData) return;
+
+            const epId = currentSvcData.endpoint_id;
+            const params = currentSvcData.document?.parameters || [];
+            const isMultipart = params.some(p => p.type === 'file');
+
+            let curlStr = "";
+            let pyStr = "";
+            let phpStr = "";
+
+            if (currentSnippetLang === 'curl') {
+                curlStr = `curl -X POST "https://ai-platform-6p72.onrender.com${epId}" \\\n  -H "api-key: SSAmMKZJHIgM..."`;
+                if (isMultipart) {
+                    params.forEach(p => {
+                        if (p.type === 'file') curlStr += ` \\\n  -F "${p.name}=@your_file.jpg"`;
+                        else curlStr += ` \\\n  -F "${p.name}=value"`;
+                    });
+                } else {
+                    curlStr += ` \\\n  -H "Content-Type: application/json" \\\n  -d '{\n`;
+                    params.forEach((p, idx) => {
+                        curlStr += `    "${p.name}": "value"${idx === params.length - 1 ? '' : ','}\n`;
+                    });
+                    curlStr += `  }'`;
+                }
+                box.innerText = curlStr;
+            } else if (currentSnippetLang === 'python') {
+                pyStr = `import requests\n\nurl = "https://ai-platform-6p72.onrender.com${epId}"\nheaders = {\n    "api-key": "SSAmMKZJHIgM..."\n}\n`;
+                if (isMultipart) {
+                    pyStr += `files = {\n`;
+                    params.forEach(p => {
+                        if (p.type === 'file') pyStr += `    "${p.name}": ("file.jpg", open("file.jpg", "rb"), "image/jpeg"),\n`;
+                    });
+                    pyStr += `}\ndata = {\n`;
+                    params.forEach(p => {
+                        if (p.type !== 'file') pyStr += `    "${p.name}": "value",\n`;
+                    });
+                    pyStr += `}\nresponse = requests.post(url, headers=headers, files=files, data=data)\nprint(response.json())`;
+                } else {
+                    pyStr += `data = {\n`;
+                    params.forEach(p => {
+                        pyStr += `    "${p.name}": "value",\n`;
+                    });
+                    pyStr += `}\nresponse = requests.post(url, headers=headers, json=data)\nprint(response.json())`;
+                }
+                box.innerText = pyStr;
+            } else if (currentSnippetLang === 'php') {
+                phpStr = `<?php\n\n$curl = curl_init();\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "https://ai-platform-6p72.onrender.com${epId}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n`;
+                if (isMultipart) {
+                    phpStr += `  CURLOPT_POSTFIELDS => array(\n`;
+                    params.forEach(p => {
+                        if (p.type === 'file') phpStr += `    "${p.name}" => new CURLFile("file.jpg"),\n`;
+                        else phpStr += `    "${p.name}" => "value",\n`;
+                    });
+                    phpStr += `  ),\n`;
+                } else {
+                    phpStr += `  CURLOPT_POSTFIELDS => json_encode(array(\n`;
+                    params.forEach(p => {
+                        phpStr += `    "${p.name}" => "value",\n`;
+                    });
+                    phpStr += `  )),\n`;
+                }
+                phpStr += `  CURLOPT_HTTPHEADER => array(\n    "api-key: SSAmMKZJHIgM...",\n    "Content-Type: ${isMultipart ? 'multipart/form-data' : 'application/json'}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\necho $response;\n?>`;
+                box.innerText = phpStr;
+            }
+        }
+
+        function copySnippetText() {
+            const box = document.getElementById('snippet-code-box');
+            navigator.clipboard.writeText(box.innerText);
+            showToast("Copied integration code snippet!", "success");
+        }
+
+        window.onload = initPage;
+    </script>
+</body>
+</html>

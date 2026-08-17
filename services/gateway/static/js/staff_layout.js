@@ -368,12 +368,107 @@ function showToast(msg, type = 'info') {
     setTimeout(() => { toast.remove(); }, 3500);
 }
 
-function logoutUser() {
-    localStorage.removeItem('aip_auth_token');
-    showToast('Đã đăng xuất khỏi tài khoản.', 'info');
-    setTimeout(() => { location.href = '/login'; }, 800);
+function initMasterSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    const path = window.location.pathname;
+
+    sidebar.innerHTML = `
+        <div class="nav-section">
+            <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> Console</span>
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item ${path === '/staff/dashboard' || path === '/staff' ? 'active' : ''}"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
+                <li class="nav-item ${path === '/staff/apis' ? 'active' : ''}"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
+                <li class="nav-item ${path === '/staff/keys' ? 'active' : ''}"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
+                <li class="nav-item ${path === '/staff/report' ? 'active' : ''}"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
+            </ul>
+        </div>
+        
+        <div class="nav-section">
+            <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                <span><i class="fa-solid fa-id-card" style="margin-right: 8px; width: 14px;"></i> OCR & Reader</span>
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item ${path.includes('ocr-dl') ? 'active' : ''}"><a href="/staff/service-ocr-dl"><i class="fa-solid fa-id-card-clip" style="width: 16px; text-align: center;"></i> Driver's License</a></li>
+                <li class="nav-item ${path.includes('ocr-id') ? 'active' : ''}"><a href="/staff/service-ocr-id"><i class="fa-solid fa-address-card" style="width: 16px; text-align: center;"></i> ID Recognition</a></li>
+                <li class="nav-item ${path.includes('ocr-passport') ? 'active' : ''}"><a href="/staff/service-ocr-passport"><i class="fa-solid fa-passport" style="width: 16px; text-align: center;"></i> Passport Recog</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                <span><i class="fa-solid fa-eye" style="margin-right: 8px; width: 14px;"></i> Speech & Vision</span>
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item ${path.includes('service-stt') ? 'active' : ''}"><a href="/staff/service-stt"><i class="fa-solid fa-microphone-lines" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
+                <li class="nav-item ${path.includes('service-tts') ? 'active' : ''}"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
+                <li class="nav-item ${path.includes('vision-facematch') ? 'active' : ''}"><a href="/staff/service-vision-facematch"><i class="fa-solid fa-user-check" style="width: 16px; text-align: center;"></i> FaceMatch</a></li>
+                <li class="nav-item ${path.includes('vision-liveness') ? 'active' : ''}"><a href="/staff/service-vision-liveness"><i class="fa-solid fa-user-shield" style="width: 16px; text-align: center;"></i> Liveness v3</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                <span><i class="fa-solid fa-brain" style="margin-right: 8px; width: 14px;"></i> Generative AI</span>
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item ${path.includes('service-llm') ? 'active' : ''}"><a href="/staff/service-llm"><i class="fa-solid fa-robot" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
+                <li class="nav-item ${path.includes('service-image') ? 'active' : ''}"><a href="/staff/service-image"><i class="fa-solid fa-image" style="width: 16px; text-align: center;"></i> Image Gen API</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
+                <span><i class="fa-solid fa-font" style="margin-right: 8px; width: 14px;"></i> Natural Language</span>
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item ${path.includes('service-moderation') ? 'active' : ''}"><a href="/staff/service-moderation"><i class="fa-solid fa-shield-halved" style="width: 16px; text-align: center;"></i> Moderation API</a></li>
+                <li class="nav-item ${path.includes('nlp-embeddings') ? 'active' : ''}"><a href="/staff/service-nlp-embeddings"><i class="fa-solid fa-magnifying-glass" style="width: 16px; text-align: center;"></i> Embedding API</a></li>
+                <li class="nav-item ${path.includes('nlp-summarization') ? 'active' : ''}"><a href="/staff/service-nlp-summarization"><i class="fa-solid fa-file-lines" style="width: 16px; text-align: center;"></i> Summarize API</a></li>
+                <li class="nav-item ${path.includes('nlp-translation') ? 'active' : ''}"><a href="/staff/service-nlp-translation"><i class="fa-solid fa-language" style="width: 16px; text-align: center;"></i> Translation API</a></li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="section-title" ${path === '/staff/payment' ? 'style="border-left: 3px solid var(--fpt-cyan);"' : ''}>
+                <a href="/staff/payment" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; text-transform:uppercase;">
+                    <i class="fa-solid fa-credit-card" style="width: 14px;"></i> Payment history
+                </a>
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="section-title" ${path === '/staff/contact' ? 'style="border-left: 3px solid var(--fpt-cyan);"' : ''}>
+                <a href="/staff/contact" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; text-transform:uppercase;">
+                    <i class="fa-solid fa-headset" style="width: 14px;"></i> Contact us
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+function toggleNavSection(headerEl) {
+    const navList = headerEl.nextElementSibling;
+    const icon = headerEl.querySelector('.toggle-icon');
+    if (navList) {
+        if (navList.style.display === 'none') {
+            navList.style.display = 'block';
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        } else {
+            navList.style.display = 'none';
+            if (icon) icon.style.transform = 'rotate(-90deg)';
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     initMasterTopbar();
+    initMasterSidebar();
 });

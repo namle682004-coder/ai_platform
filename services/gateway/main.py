@@ -196,15 +196,36 @@ async def serve_staff_service_moderation():
     return FileResponse(os.path.join(current_dir, "static", "staff_service_moderation.html"))
 
 @app.get("/staff/service-ocr-dl", include_in_schema=False)
+async def serve_staff_ocr_dl():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_ocr_dl.html"))
+
 @app.get("/staff/service-ocr-id", include_in_schema=False)
+async def serve_staff_ocr_id():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_ocr_id.html"))
+
 @app.get("/staff/service-ocr-passport", include_in_schema=False)
+async def serve_staff_ocr_passport():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_ocr_passport.html"))
+
 @app.get("/staff/service-vision-facematch", include_in_schema=False)
+async def serve_staff_vision_facematch():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_vision_facematch.html"))
+
 @app.get("/staff/service-vision-liveness", include_in_schema=False)
+async def serve_staff_vision_liveness():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_vision_liveness.html"))
+
 @app.get("/staff/service-nlp-embeddings", include_in_schema=False)
+async def serve_staff_nlp_embeddings():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_nlp_embeddings.html"))
+
 @app.get("/staff/service-nlp-summarization", include_in_schema=False)
+async def serve_staff_nlp_summarization():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_nlp_summarization.html"))
+
 @app.get("/staff/service-nlp-translation", include_in_schema=False)
-async def serve_staff_dynamic_service():
-    return FileResponse(os.path.join(current_dir, "static", "staff_service_detail.html"))
+async def serve_staff_nlp_translation():
+    return FileResponse(os.path.join(current_dir, "static", "staff_service_nlp_translation.html"))
 
 
 @app.get("/staff/payment", include_in_schema=False)
