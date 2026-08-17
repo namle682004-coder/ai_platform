@@ -586,21 +586,46 @@
                 let bgColor = '#64748b';
                 let desc = item.description || '';
                 
-                if (item.name.includes('Speech to Text')) {
+                const nameLow = item.name.toLowerCase();
+                if (nameLow.includes('speech to text')) {
                     iconClass = 'fa-microphone-lines'; bgColor = '#10b981';
-                    desc = 'Convert your voice into text using PhoWhisper STT model';
-                } else if (item.name.includes('Text to Speech')) {
+                    desc = desc || 'Convert your voice into text using PhoWhisper STT model';
+                } else if (nameLow.includes('text to speech')) {
                     iconClass = 'fa-volume-high'; bgColor = '#10b981';
-                    desc = 'Convert text to natural-sounding voices with viXTTS synthesis';
-                } else if (item.name.includes('LLM') || item.name.includes('Chatbot')) {
+                    desc = desc || 'Convert text to natural-sounding voices with viTTS';
+                } else if (nameLow.includes('llm') || nameLow.includes('chatbot')) {
                     iconClass = 'fa-robot'; bgColor = '#3b82f6';
-                    desc = 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints';
-                } else if (item.name.includes('Image')) {
+                    desc = desc || 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints';
+                } else if (nameLow.includes('image')) {
                     iconClass = 'fa-image'; bgColor = '#8b5cf6';
-                    desc = 'Generate images from text using Stable Diffusion XL';
-                } else if (item.name.includes('Moderation')) {
+                    desc = desc || 'Generate images from text using Stable Diffusion XL';
+                } else if (nameLow.includes('moderation')) {
                     iconClass = 'fa-shield-halved'; bgColor = '#ef4444';
-                    desc = 'Scan and filter bad language / toxic text content';
+                    desc = desc || 'Scan and filter bad language / toxic text content';
+                } else if (nameLow.includes('driver')) {
+                    iconClass = 'fa-id-card-clip'; bgColor = '#f59e0b';
+                    desc = desc || 'Extract rich information from driver\'s license cards';
+                } else if (nameLow.includes('id recognition') || nameLow.includes('identity')) {
+                    iconClass = 'fa-address-card'; bgColor = '#f59e0b';
+                    desc = desc || 'Extract rich information from citizen identity cards (CCCD)';
+                } else if (nameLow.includes('passport')) {
+                    iconClass = 'fa-passport'; bgColor = '#f59e0b';
+                    desc = desc || 'Extract structured information from passport document images';
+                } else if (nameLow.includes('facematch')) {
+                    iconClass = 'fa-user-check'; bgColor = '#06b6d4';
+                    desc = desc || 'Compare two face images to verify if they belong to the same person';
+                } else if (nameLow.includes('liveness')) {
+                    iconClass = 'fa-user-shield'; bgColor = '#06b6d4';
+                    desc = desc || 'Liveness Detection v3 to prevent spoofing & identity fraud';
+                } else if (nameLow.includes('embedding')) {
+                    iconClass = 'fa-magnifying-glass'; bgColor = '#3b82f6';
+                    desc = desc || 'Generate dense vector representations for RAG systems';
+                } else if (nameLow.includes('summariz')) {
+                    iconClass = 'fa-file-lines'; bgColor = '#3b82f6';
+                    desc = desc || 'Summarize long articles or documents into concise bullet points';
+                } else if (nameLow.includes('translat')) {
+                    iconClass = 'fa-language'; bgColor = '#3b82f6';
+                    desc = desc || 'High-quality machine translation between English and Vietnamese';
                 }
 
                 const card = document.createElement('div');
@@ -638,7 +663,15 @@
                 { name: "Text to Speech API" },
                 { name: "LLM Chatbot API" },
                 { name: "Image Generation API" },
-                { name: "Content Moderation API" }
+                { name: "Content Moderation API" },
+                { name: "Driver's license recognition" },
+                { name: "ID Recognition" },
+                { name: "Passport Recognition" },
+                { name: "FaceMatch" },
+                { name: "Liveness v3" },
+                { name: "Text Embedding API" },
+                { name: "Text Summarization API" },
+                { name: "Translation API" }
             ];
             renderCardsGrid(defaultCatalog, cachedApis);
 
