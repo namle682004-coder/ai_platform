@@ -302,6 +302,53 @@ async def health_check():
     }
 
 
+@app.get("/v1/user/gpu-status")
+async def get_gpu_status():
+    import subprocess
+    import shutil
+    
+    if not shutil.which("nvidia-smi"):
+        return {
+            "gpu_detected": False,
+            "name": "No NVIDIA GPU detected",
+            "vram_used_mb": 0,
+            "vram_total_mb": 0,
+            "vram_percentage": 0.0
+        }
+    
+    try:
+        res = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,memory.used,memory.total", "--format=csv,noheader,nounits"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        parts = res.stdout.strip().split(",")
+        if len(parts) >= 3:
+            name = parts[0].strip()
+            used = int(parts[1].strip())
+            total = int(parts[2].strip())
+            pct = round((used / total) * 100, 1)
+            return {
+                "gpu_detected": True,
+                "name": name,
+                "vram_used_mb": used,
+                "vram_total_mb": total,
+                "vram_percentage": pct
+            }
+    except Exception:
+        pass
+        
+    return {
+        "gpu_detected": False,
+        "name": "Failed to query GPU",
+        "vram_used_mb": 0,
+        "vram_total_mb": 0,
+        "vram_percentage": 0.0
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     from gateway.core.config import gateway_settings
