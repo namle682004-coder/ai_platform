@@ -168,29 +168,28 @@
 
             <!-- SERVICE TITLE CARD -->
             <div class="service-header-card">
-                <div class="service-title-box">
-                    <div class="service-icon-lg" id="svc-icon-box"><i class="fa-solid fa-plug"></i></div>
-                    <div>
-                        <div class="service-name" id="svc-title-text">Loading Service...</div>
-                        <div style="font-size: 13px; color: var(--text-sub); margin-top: 4px;" id="svc-desc-text">Fetching API details from database...</div>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <button class="btn-status-toggle" id="svc-status-toggle-btn" onclick="handleServiceHeaderToggleClick()">ACTIVE</button>
-                    <div class="free-remain" id="svc-paid-balance-text">Remaining: 0 blocks</div>
+                <div class="service-title-box" style="display:flex; align-items:center; width: 100%;">
+                    <a href="/staff/apis" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:14px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to APIs Catalog">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div class="service-icon-lg" id="svc-icon-box" style="margin-right:14px;"><i class="fa-solid fa-plug"></i></div>
+                    <div class="service-name" id="svc-title-text" style="margin-right:14px;">Loading Service...</div>
+                    <button class="btn-status-toggle" id="svc-status-toggle-btn" onclick="handleServiceHeaderToggleClick()" style="margin-right:10px;">ENABLE</button>
+                    <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
+                    <span class="free-remain" id="svc-paid-balance-text" style="margin-left:auto;">Remaining: 0 blocks</span>
                 </div>
             </div>
 
             <!-- TAB MENU -->
             <div class="service-nav-tabs">
-                <button class="tab-btn active" id="tab-btn-OVERVIEW" onclick="switchTab('OVERVIEW')">OVERVIEW</button>
-                <button class="tab-btn" id="tab-btn-SERVICE" onclick="switchTab('SERVICE')">SERVICE (PLAYGROUND)</button>
+                <button class="tab-btn" id="tab-btn-OVERVIEW" onclick="switchTab('OVERVIEW')">OVERVIEW</button>
+                <button class="tab-btn active" id="tab-btn-SERVICE" onclick="switchTab('SERVICE')">SERVICE (PLAYGROUND)</button>
                 <button class="tab-btn" id="tab-btn-DOCUMENT" onclick="switchTab('DOCUMENT')">DOCUMENT</button>
                 <button class="tab-btn" id="tab-btn-PRICING" onclick="switchTab('PRICING')">PRICING</button>
             </div>
 
             <!-- OVERVIEW TAB PANEL -->
-            <div class="tab-panel active" id="panel-OVERVIEW">
+            <div class="tab-panel" id="panel-OVERVIEW">
                 <div class="doc-card">
                     <div class="doc-section-title" id="overview-title">About the Service</div>
                     <div class="doc-text" id="overview-summary">Loading Overview...</div>
@@ -203,7 +202,7 @@
             </div>
 
             <!-- PLAYGROUND TAB PANEL -->
-            <div class="tab-panel" id="panel-SERVICE">
+            <div class="tab-panel active" id="panel-SERVICE">
                 <div class="service-grid">
                     <div class="sandbox-left">
                         <div style="font-size:15px; font-weight:700; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
@@ -456,18 +455,29 @@
             }
         }
 
+        function updateToggleButtonUI(isEnabled) {
+            const btn = document.getElementById('svc-status-toggle-btn');
+            const freeRemainEl = document.getElementById('svc-paid-balance-text');
+            if (btn) {
+                if (!isEnabled) {
+                    btn.innerText = 'ENABLE';
+                    btn.classList.remove('disabled');
+                    btn.style.background = '#007bff';
+                    if (freeRemainEl) freeRemainEl.style.display = 'none';
+                } else {
+                    btn.innerText = 'DISABLE';
+                    btn.classList.add('disabled');
+                    btn.style.background = '#64748b';
+                    if (freeRemainEl) freeRemainEl.style.display = 'inline';
+                }
+            }
+        }
+
         async function syncServiceUIState() {
             const apis = await fetchEnabledAPIsFromBackend();
             const isEnabled = isApiActive(apis, currentSvcName);
 
-            const btn = document.getElementById('svc-status-toggle-btn');
-            if (isEnabled) {
-                btn.innerText = 'ACTIVE';
-                btn.classList.remove('disabled');
-            } else {
-                btn.innerText = 'DISABLED';
-                btn.classList.add('disabled');
-            }
+            updateToggleButtonUI(isEnabled);
 
             // Sync credit balance
             const paidBal = await fetchPaidBalanceFromBackend();
@@ -475,9 +485,10 @@
             const unitCost = paidUnit === 'character' ? 1 : (paidUnit === 'block' ? 150 : 10);
             const remaining = paidUnit === 'character' ? paidBal : Math.floor(paidBal / unitCost);
             
-            document.getElementById('svc-paid-balance-text').innerText = isEnabled 
-                ? `Remaining: ${remaining.toLocaleString()} ${paidUnit}s` 
-                : 'Status: OFF';
+            const freeRemainEl = document.getElementById('svc-paid-balance-text');
+            if (freeRemainEl) {
+                freeRemainEl.innerText = `Remaining: ${remaining.toLocaleString()} ${paidUnit}s`;
+            }
         }
 
         function switchTab(tabName) {
@@ -498,7 +509,7 @@
         let targetPendingAction = 'enable';
         function handleServiceHeaderToggleClick() {
             const btn = document.getElementById('svc-status-toggle-btn');
-            const isEnabled = !btn.classList.contains('disabled');
+            const isEnabled = btn.innerText === 'DISABLE';
             
             targetPendingAction = isEnabled ? 'disable' : 'enable';
             document.getElementById('modal-confirm-body').innerText = isEnabled
