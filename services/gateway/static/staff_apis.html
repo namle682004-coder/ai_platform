@@ -677,6 +677,17 @@
 
             // 2. Background revalidation from MongoDB Atlas
             const apis = await fetchEnabledAPIsFromBackend();
+            
+            // Auto-disable non-hosted APIs that were previously enabled
+            let needsSync = false;
+            for (const apiName of Object.keys(apis)) {
+                if (apis[apiName] && !apiName.toLowerCase().includes('translation')) {
+                    apis[apiName] = false;
+                    needsSync = true;
+                }
+            }
+            if (needsSync) await setEnabledAPIs(apis);
+            
             const catalog = await fetchApiCatalogFromBackend();
             renderCardsGrid(catalog && catalog.length ? catalog : defaultCatalog, apis);
         }
