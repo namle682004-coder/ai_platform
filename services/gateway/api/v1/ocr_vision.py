@@ -31,36 +31,26 @@ async def ocr_driver_license(
                 files=files,
                 headers={"Authorization": auth_hdr}
             )
-            if res.status_code == 200:
-                ocr_data = res.json()
-                # If we successfully parsed OCR, we construct a driver license layout
-                return {
-                    "status": "success",
-                    "data": {
-                        "license_number": "120398401923",
-                        "full_name": "NGUYEN VAN A",
-                        "dob": "10/12/1990",
-                        "nationality": "VNM",
-                        "class": "A1",
-                        "expires": "2035/12/10",
-                        "raw_extracted_text": ocr_data.get("detected_text", "")
-                    }
+            res.raise_for_status()
+            ocr_data = res.json()
+            # If we successfully parsed OCR, we construct a driver license layout
+            return {
+                "status": "success",
+                "data": {
+                    "license_number": "120398401923",
+                    "full_name": "NGUYEN VAN A",
+                    "dob": "10/12/1990",
+                    "nationality": "VNM",
+                    "class": "A1",
+                    "expires": "2035/12/10",
+                    "raw_extracted_text": ocr_data.get("detected_text", "")
                 }
-    except Exception:
-        pass
-
-    # 2. Local Fallback Simulation
-    return {
-        "status": "success",
-        "data": {
-            "license_number": "120398401923",
-            "full_name": "NGUYEN VAN A",
-            "dob": "10/12/1990",
-            "nationality": "VNM",
-            "class": "A1",
-            "expires": "2035/12/10"
-        }
-    }
+            }
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (OCR Server): {str(e)}"
+        )
 
 @router.post("/ocr/id-card")
 async def ocr_id_card(
@@ -78,39 +68,27 @@ async def ocr_id_card(
                 files=files,
                 headers={"Authorization": auth_hdr}
             )
-            if res.status_code == 200:
-                ocr_data = res.json()
-                return {
-                    "status": "success",
-                    "data": {
-                        "id_number": "001095012345",
-                        "full_name": "TRAN THI B",
-                        "dob": "15/08/1995",
-                        "gender": "Female",
-                        "nationality": "Vietnamese",
-                        "place_of_origin": "Ha Noi",
-                        "place_of_residence": "Cau Giay, Ha Noi",
-                        "expires": "15/08/2035",
-                        "raw_extracted_text": ocr_data.get("detected_text", "")
-                    }
+            res.raise_for_status()
+            ocr_data = res.json()
+            return {
+                "status": "success",
+                "data": {
+                    "id_number": "001095012345",
+                    "full_name": "TRAN THI B",
+                    "dob": "15/08/1995",
+                    "gender": "Female",
+                    "nationality": "Vietnamese",
+                    "place_of_origin": "Ha Noi",
+                    "place_of_residence": "Cau Giay, Ha Noi",
+                    "expires": "15/08/2035",
+                    "raw_extracted_text": ocr_data.get("detected_text", "")
                 }
-    except Exception:
-        pass
-
-    # 2. Local Fallback Simulation
-    return {
-        "status": "success",
-        "data": {
-            "id_number": "001095012345",
-            "full_name": "TRAN THI B",
-            "dob": "15/08/1995",
-            "gender": "Female",
-            "nationality": "Vietnamese",
-            "place_of_origin": "Ha Noi",
-            "place_of_residence": "Cau Giay, Ha Noi",
-            "expires": "15/08/2035"
-        }
-    }
+            }
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (OCR Server): {str(e)}"
+        )
 
 @router.post("/ocr/passport")
 async def ocr_passport(
@@ -128,39 +106,27 @@ async def ocr_passport(
                 files=files,
                 headers={"Authorization": auth_hdr}
             )
-            if res.status_code == 200:
-                ocr_data = res.json()
-                return {
-                    "status": "success",
-                    "data": {
-                        "passport_number": "B1234567",
-                        "nationality": "VNM",
-                        "full_name": "PHAM VAN C",
-                        "dob": "20/05/1988",
-                        "gender": "Male",
-                        "place_of_birth": "Da Nang",
-                        "date_of_issue": "12/04/2021",
-                        "date_of_expiry": "12/04/2031",
-                        "raw_extracted_text": ocr_data.get("detected_text", "")
-                    }
+            res.raise_for_status()
+            ocr_data = res.json()
+            return {
+                "status": "success",
+                "data": {
+                    "passport_number": "B1234567",
+                    "nationality": "VNM",
+                    "full_name": "PHAM VAN C",
+                    "dob": "20/05/1988",
+                    "gender": "Male",
+                    "place_of_birth": "Da Nang",
+                    "date_of_issue": "12/04/2021",
+                    "date_of_expiry": "12/04/2031",
+                    "raw_extracted_text": ocr_data.get("detected_text", "")
                 }
-    except Exception:
-        pass
-
-    # 2. Local Fallback Simulation
-    return {
-        "status": "success",
-        "data": {
-            "passport_number": "B1234567",
-            "nationality": "VNM",
-            "full_name": "PHAM VAN C",
-            "dob": "20/05/1988",
-            "gender": "Male",
-            "place_of_birth": "Da Nang",
-            "date_of_issue": "12/04/2021",
-            "date_of_expiry": "12/04/2031"
-        }
-    }
+            }
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (OCR Server): {str(e)}"
+        )
 
 @router.post("/vision/facematch")
 async def vision_facematch(
@@ -183,23 +149,18 @@ async def vision_facematch(
                 files=files,
                 headers={"Authorization": auth_hdr}
             )
-            if res.status_code == 200:
-                return {
-                    "status": "success",
-                    "matched": True,
-                    "confidence": 0.965,
-                    "message": "Biometric match verified via GPU Vision Node"
-                }
-    except Exception:
-        pass
-
-    # 2. Local Fallback Simulation
-    return {
-        "status": "success",
-        "matched": True,
-        "confidence": 0.942,
-        "message": "Biometric match verified successfully"
-    }
+            res.raise_for_status()
+            return {
+                "status": "success",
+                "matched": True,
+                "confidence": 0.965,
+                "message": "Biometric match verified via GPU Vision Node"
+            }
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (Vision/OCR Server): {str(e)}"
+        )
 
 @router.post("/vision/liveness-v3")
 async def vision_liveness_v3(
@@ -218,23 +179,18 @@ async def vision_liveness_v3(
                 files=files,
                 headers={"Authorization": auth_hdr}
             )
-            if res.status_code == 200:
-                return {
-                    "status": "success",
-                    "is_live": True,
-                    "score": 0.995,
-                    "details": "Liveness verified via GPU Node (PaddleOCR-VL Backend)"
-                }
-    except Exception:
-        pass
-
-    # 2. Local Fallback Simulation
-    return {
-        "status": "success",
-        "is_live": True,
-        "score": 0.991,
-        "details": "No digital replay, mask or printed photo attack detected"
-    }
+            res.raise_for_status()
+            return {
+                "status": "success",
+                "is_live": True,
+                "score": 0.995,
+                "details": "Liveness verified via GPU Node (PaddleOCR-VL Backend)"
+            }
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (Vision/OCR Server): {str(e)}"
+        )
 
 @router.post("/nlp/summarization")
 async def nlp_summarization(
@@ -250,19 +206,16 @@ async def nlp_summarization(
                 json={"text": req.document[:200], "source_lang": "vie_Latn", "target_lang": "eng_Latn"},
                 headers={"Authorization": auth_hdr, "Content-Type": "application/json"}
             )
-            if res.status_code == 200:
-                return {
-                    "status": "success",
-                    "summary": f"Tóm tắt (GPU Node): {req.document[:150]}..."
-                }
-    except Exception:
-        pass
-
-    # 2. Local Fallback Simulation
-    return {
-        "status": "success",
-        "summary": "Tóm tắt: Everwin AI Platform cung cấp bộ 13 API dịch vụ trí tuệ nhân tạo toàn diện bao gồm OCR, Vision và xử lý ngôn ngữ tự nhiên tối ưu."
-    }
+            res.raise_for_status()
+            return {
+                "status": "success",
+                "summary": f"Tóm tắt (GPU Node): {req.document[:150]}..."
+            }
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (Translation Server): {str(e)}"
+        )
 
 @router.post("/nlp/translation")
 async def nlp_translation(
@@ -281,18 +234,14 @@ async def nlp_translation(
                 json={"text": req.text, "source_lang": src, "target_lang": tgt},
                 headers={"Authorization": auth_hdr, "Content-Type": "application/json"}
             )
-            if res.status_code == 200:
-                data = res.json()
-                return {
-                    "status": "success",
-                    "translated_text": data.get("translated_text", "")
-                }
-    except Exception:
-        pass
-
-    # 2. Local Fallback Simulation
-    translated = "Welcome to Everwin AI Platform." if "chào" in req.text.lower() else "Đây là bản dịch mẫu."
-    return {
-        "status": "success",
-        "translated_text": translated
-    }
+            res.raise_for_status()
+            data = res.json()
+            return {
+                "status": "success",
+                "translated_text": data.get("translated_text", "")
+            }
+    except httpx.HTTPError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (Translation Server): {str(e)}"
+        )

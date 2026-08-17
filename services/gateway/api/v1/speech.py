@@ -31,19 +31,15 @@ async def create_speech(
                 json=payload.model_dump(),
                 headers={"Authorization": auth_hdr, "Content-Type": "application/json"}
             )
-            if res.status_code == 200:
-                # Stream the response chunks directly
-                return StreamingResponse(
-                    res.aiter_bytes(),
-                    media_type=res.headers.get("content-type", "audio/mpeg")
-                )
-    except Exception:
-        # Fallback to local simulated logic if backend tts-adapter is offline/not started
-        pass
-
-    # 2. Local Fallback Simulation
-    async def audio_stream_generator() -> AsyncGenerator[bytes, None]:
-        for _ in range(5):
-            yield b"\xFF\xF3\x44\xC4\x00\x00"
-
-    return StreamingResponse(audio_stream_generator(), media_type="audio/mpeg")
+            res.raise_for_status()
+            # Stream the response chunks directly
+            return StreamingResponse(
+                res.aiter_bytes(),
+                media_type=res.headers.get("content-type", "audio/mpeg")
+            )
+    except httpx.HTTPError as e:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (TTS Server): {str(e)}"
+        )

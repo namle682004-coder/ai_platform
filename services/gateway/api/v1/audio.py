@@ -32,15 +32,11 @@ async def create_transcription(
                 data=data,
                 headers=headers
             )
-            if res.status_code == 200:
-                return res.json()
-    except Exception:
-        # Fallback to local simulated logic if backend stt-server is offline/not started
-        pass
-
-    # 2. Local Fallback Simulation
-    return {
-        "text": f"Xác nhận bóc băng ghi âm file {file.filename} (Kích thước: {len(audio_bytes)} bytes) qua mô hình {model}.",
-        "language": language or "vi",
-        "duration": 15.2,
-    }
+            res.raise_for_status()
+            return res.json()
+    except httpx.HTTPError as e:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=502,
+            detail=f"GPU Inference Node Offline (STT Server): {str(e)}"
+        )
