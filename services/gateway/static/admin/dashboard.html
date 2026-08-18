@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Overview - AIP Admin Console</title>
+    <link rel="icon" type="image/svg+xml" href="/static/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/static/assets/img/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/assets/css/admin.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <div class="brand-logo"><i class="fa-solid fa-brain"></i></div>
+            <div class="brand-text">
+                <h2>AIP Platform</h2>
+                <span>Enterprise SaaS Grade</span>
+            </div>
+        </div>
+
+        <div class="menu-category">Main Console</div>
+        <ul class="nav-menu">
+            <li class="nav-item active"><button onclick="location.href='/admin/dashboard'"><i class="fa-solid fa-chart-line"></i> Analytics Overview</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/playground'"><i class="fa-solid fa-flask"></i> AI Model Playground</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/keys'"><i class="fa-solid fa-key"></i> API Keys & Approvals</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/users'"><i class="fa-solid fa-users-gear"></i> User & RBAC Control</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/aliases'"><i class="fa-solid fa-cubes"></i> Model Aliases Registry</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/endpoints'"><i class="fa-solid fa-network-wired"></i> Export Endpoints</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/jobs'"><i class="fa-solid fa-bolt"></i> Async Job Queue</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/audit'"><i class="fa-solid fa-list-check"></i> Security Audit Logs</button></li>
+        </ul>
+
+        <div class="menu-category">Developer Tools</div>
+        <ul class="nav-menu">
+            <li class="nav-item"><button onclick="location.href='/admin/staff'"><i class="fa-solid fa-code"></i> Staff Developer Portal</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/docs'"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
+            <li class="nav-item"><button onclick="window.open('/status', '_blank')"><i class="fa-solid fa-globe"></i> Public Status Page</button></li>
+        </ul>
+
+        <div class="user-profile-card">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700;"><i class="fa-solid fa-user-shield"></i></div>
+                <div>
+                    <div id="user-display-email" style="font-size: 12.5px; font-weight: 700; color: #0f172a;">admin@company.com</div>
+                    <div id="user-display-role" style="font-size: 11px; color: var(--emerald); font-weight: 600;">Administrator</div>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="openModal('modal-auth')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        </div>
+    </div>
+
+    <div class="main-workspace">
+        <div class="top-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-sub);"></i>
+                <input type="text" placeholder="Search models, endpoints, API keys...">
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-sm btn-danger" onclick="toggleCircuitBreaker()"><i class="fa-solid fa-power-off"></i> Circuit Breaker: <span id="cb-label">OFF</span></button>
+                <div class="pill-status">
+                    <div class="status-dot"></div>
+                    MongoDB Atlas: ai_platform
+                </div>
+            </div>
+        </div>
+        <div class="content-body">
+            <div class="page-header">
+                <div>
+                    <h1>Analytics Overview</h1>
+                    <p>Real-time AI Inference Health, Playground Testing & RBAC Governance</p>
+                </div>
+                <button class="btn btn-primary" onclick="openModal('modal-create-key')"><i class="fa-solid fa-key"></i> Direct Key Create</button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="stat-card">
+                    <div class="stat-title">In-Flight Requests</div>
+                    <div class="stat-value" id="val-inflight">4</div>
+                    <div class="stat-badge badge-green"><i class="fa-solid fa-arrow-trend-up"></i> +12.4% vs last hour</div>
+                    <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);"><i class="fa-solid fa-bolt"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Avg P95 Latency</div>
+                    <div class="stat-value" id="val-latency">124.5 ms</div>
+                    <div class="stat-badge badge-green"><i class="fa-solid fa-circle-check"></i> Within SLA (&lt;200ms)</div>
+                    <div class="stat-icon" style="background: var(--emerald-light); color: var(--emerald);"><i class="fa-solid fa-gauge-high"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Throughput (RPS)</div>
+                    <div class="stat-value" id="val-rps">57.5 rps</div>
+                    <div class="stat-badge badge-green"><i class="fa-solid fa-wave-square"></i> Peak Capacity</div>
+                    <div class="stat-icon" style="background: var(--purple-light); color: var(--purple);"><i class="fa-solid fa-chart-simple"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Active Model Aliases</div>
+                    <div class="stat-value">21 Aliases</div>
+                    <div class="stat-badge badge-green"><i class="fa-solid fa-layer-group"></i> 100% Operational</div>
+                    <div class="stat-icon" style="background: var(--amber-light); color: var(--amber);"><i class="fa-solid fa-cubes"></i></div>
+                </div>
+            </div>
+
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fa-solid fa-wave-square" style="color: var(--primary);"></i> Real-Time Inference Traffic Throughput (RPS)</div>
+                </div>
+                <canvas id="trafficChart" height="90"></canvas>
+            </div>
+
+            <div class="glass-panel" style="margin-top: 24px;">
+                <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="panel-title"><i class="fa-solid fa-server" style="color: var(--primary);"></i> GPU Node Infrastructure Health & Metrics</div>
+                    <div style="font-size:12.5px; color:var(--text-sub); display:flex; align-items:center; gap:6px; font-weight: 500;">
+                        <span class="live-dot" style="width:8px; height:8px; border-radius:50%; background:var(--emerald); display:inline-block; animation: pulse 1.5s infinite;"></span>
+                        Live Node Connection
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 10px;">
+                    <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none;">
+                        <div class="stat-title">GPU Device Name</div>
+                        <div class="stat-value" id="gpu-health-name" style="font-size: 14.5px; margin: 12px 0 6px 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #0f172a;">Querying...</div>
+                        <div class="stat-badge badge-green" id="gpu-health-status-badge" style="margin-top: 4px;"><i class="fa-solid fa-circle-check"></i> Connected</div>
+                    </div>
+                    <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none;">
+                        <div class="stat-title">VRAM Usage</div>
+                        <div class="stat-value" id="gpu-health-vram-text" style="font-size: 16px; margin: 12px 0 6px 0; font-weight: 700; color: #0f172a;">- / - MB</div>
+                        <div style="margin-top: 10px; width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                            <div id="gpu-health-vram-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none;">
+                        <div class="stat-title">GPU Core Temp</div>
+                        <div class="stat-value" id="gpu-health-temp" style="font-size: 22px; margin: 12px 0 6px 0; font-weight: 700; color: #0f172a;">-°C</div>
+                        <div class="stat-badge" id="gpu-health-temp-badge" style="background:#e0f2fe; color:#0369a1; margin-top: 4px;"><i class="fa-solid fa-temperature-half"></i> Normal</div>
+                    </div>
+                    <div class="stat-card" style="padding: 18px; border: 1px solid var(--panel-border); box-shadow: none;">
+                        <div class="stat-title">Utilization & Power</div>
+                        <div class="stat-value" id="gpu-health-util" style="font-size: 14px; margin: 12px 0 6px 0; font-weight: 700; color: #0f172a;">Util: -% | Power: -W</div>
+                        <div class="stat-badge badge-green" id="gpu-health-util-badge" style="margin-top: 4px;"><i class="fa-solid fa-bolt"></i> Operational</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-create-key">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Generate New API Key</h3>
+                <button class="modal-close" onclick="closeModal('modal-create-key')">&times;</button>
+            </div>
+            <form onsubmit="handleCreateKey(event)">
+                <div class="form-group">
+                    <label>Tenant / Department ID</label>
+                    <input type="text" id="input-tenant" class="form-control" placeholder="e.g. TENANT_RETAIL_BANK" required>
+                </div>
+                <div class="form-group">
+                    <label>Requests Per Minute (RPM Limit)</label>
+                    <input type="number" id="input-rpm" class="form-control" value="60" required>
+                </div>
+                <div class="form-group">
+                    <label>Tokens Per Minute (TPM Limit)</label>
+                    <input type="number" id="input-tpm" class="form-control" value="100000" required>
+                </div>
+                <div class="form-group">
+                    <label>Max Concurrency Limit</label>
+                    <input type="number" id="input-conc" class="form-control" value="5" required>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key"></i> Generate Key</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-auth">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="auth-title">Staff / Admin Login</h3>
+                <button class="modal-close" onclick="closeModal('modal-auth')">&times;</button>
+            </div>
+            <form onsubmit="handleAuthSubmit(event)">
+                <div class="form-group">
+                    <label>Corporate Email</label>
+                    <input type="email" id="auth-email" class="form-control" value="admin@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-password" class="form-control" value="admin123" required>
+                </div>
+                <div id="auth-signup-fields" style="display:none;">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="auth-fullname" class="form-control" placeholder="Nam Le Developer">
+                    </div>
+                    <div class="form-group">
+                        <label>Account Role</label>
+                        <select id="auth-role" class="form-control">
+                            <option value="staff">Staff / Developer</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                    <a href="#" id="auth-toggle-link" style="font-size:12.5px; color:var(--primary);" onclick="toggleAuthMode()">Need an account? Signup</a>
+                    <button type="submit" class="btn btn-primary" id="auth-submit-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/assets/js/admin.js"></script>
+</body>
+</html>

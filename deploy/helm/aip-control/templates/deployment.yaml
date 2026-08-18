@@ -1,18 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aip-control.fullname" . | default "aip-gateway" }}
+  name: {{ .Release.Name }}-gateway
   labels:
-    app.kubernetes.io/name: aip-gateway
+    {{- include "aip-control.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app.kubernetes.io/name: aip-gateway
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
         app.kubernetes.io/name: aip-gateway
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: gateway

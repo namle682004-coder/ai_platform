@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aip-rabbitmq
+  namespace: aip-infra
+  labels:
+    app.kubernetes.io/name: aip-rabbitmq
+    app.kubernetes.io/component: message-queue
+spec:
+  serviceName: aip-rabbitmq
+  replicas: {{ .Values.rabbitmq.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aip-rabbitmq
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aip-rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: {{ .Values.rabbitmq.image }}
+          ports:
+            - containerPort: 5672
+              name: amqp
+            - containerPort: 15672
+              name: management
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: aip-rabbitmq-secret
+                  key: username
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: aip-rabbitmq-secret
+                  key: password
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+          resources:
+            {{- toYaml .Values.rabbitmq.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "check_running"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "check_running"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.rabbitmq.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aip-rabbitmq
+  namespace: aip-infra
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5672
+      targetPort: amqp
+      name: amqp
+    - port: 15672
+      targetPort: management
+      name: management
+  selector:
+    app.kubernetes.io/name: aip-rabbitmq

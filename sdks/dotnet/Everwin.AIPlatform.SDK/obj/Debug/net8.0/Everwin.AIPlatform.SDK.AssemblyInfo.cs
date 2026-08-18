@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Official Enterprise .NET 8 LTS Client SDK for AI Inference Platform (AIP)")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eb42cae27e31b23933f90fced0c3689932e3a3e2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+23abb4b11210418e91e253d7ec75994e4af217b9")]
 [assembly: System.Reflection.AssemblyProductAttribute("Everwin.AIPlatform.SDK")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Everwin.AIPlatform.SDK")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

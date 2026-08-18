@@ -1,0 +1,115 @@
+groups:
+  - name: aip-sla-alerts
+    rules:
+      # --- Uptime & Availability ---
+      - alert: GatewayDown
+        expr: up{job="aip-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          sla: uptime
+        annotations:
+          summary: "AIP Gateway is down"
+          description: "Gateway pod {{ $labels.instance }} has been unreachable for 1 minute. SLA breach risk."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="aip-gateway", status=~"5.."}[5m]) / rate(http_requests_total{job="aip-gateway"}[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          sla: error-rate
+        annotations:
+          summary: "Error rate exceeds SLA threshold (>1%)"
+          description: "5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      # --- Latency ---
+      - alert: HighP95Latency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="aip-gateway"}[5m])) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          sla: latency
+        annotations:
+          summary: "P95 latency exceeds 200ms SLA"
+          description: "P95 latency is {{ $value | humanizeDuration }}."
+
+      - alert: HighP99Latency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job="aip-gateway"}[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: critical
+          sla: latency
+        annotations:
+          summary: "P99 latency exceeds 1s"
+          description: "P99 latency is {{ $value | humanizeDuration }}."
+
+      # --- GPU Health ---
+      - alert: GPUMemoryHigh
+        expr: DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_FREE > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "GPU VRAM usage above 90%"
+          description: "GPU {{ $labels.gpu }} VRAM at {{ $value | humanizePercentage }}."
+
+      - alert: GPUTemperatureHigh
+        expr: DCGM_FI_DEV_GPU_TEMP > 85
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GPU temperature critical (>85°C)"
+          description: "GPU {{ $labels.gpu }} temperature: {{ $value }}°C."
+
+      # --- Infrastructure ---
+      - alert: MongoDBDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB is unreachable"
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis cache is unreachable"
+
+      - alert: RabbitMQQueueBacklog
+        expr: rabbitmq_queue_messages > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RabbitMQ queue backlog exceeding 1000 messages"
+          description: "Queue {{ $labels.queue }} has {{ $value }} pending messages."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space below 10%"
+
+      # --- Pod Health ---
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping"
+
+      - alert: HPAMaxedOut
+        expr: kube_horizontalpodautoscaler_status_current_replicas == kube_horizontalpodautoscaler_spec_max_replicas
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA {{ $labels.horizontalpodautoscaler }} at max replicas"
+          description: "Auto-scaler cannot add more pods. Consider increasing maxReplicas."

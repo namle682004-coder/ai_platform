@@ -8,8 +8,8 @@ setup:
 	$(UV) pip install -e packages/common -e packages/sdk-py -e services/gateway -e services/translation-server -e services/stt-server -e services/moderation-server pytest httpx ruff python-multipart
 
 dev-env:
-	@echo "Starting local infrastructure (MongoDB, Redis, RabbitMQ, MinIO)..."
-	docker compose -f deploy/docker-compose/docker-compose.yml up -d mongodb redis rabbitmq minio
+	@echo "Starting local infrastructure (Redis, RabbitMQ, MinIO)..."
+	docker compose -f deploy/docker-compose/docker-compose.yml up -d redis rabbitmq minio
 
 dev-env-down:
 	@echo "Stopping local infrastructure..."

@@ -1,0 +1,150 @@
+name: AIP Enterprise CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target deployment environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service:
+          - { name: gateway, path: services/gateway, port: 8000 }
+          - { name: stt-server, path: services/stt-server, port: 8001 }
+          - { name: tts-adapter, path: services/tts-adapter, port: 8002 }
+          - {
+              name: translation-server,
+              path: services/translation-server,
+              port: 8003,
+            }
+          - {
+              name: moderation-server,
+              path: services/moderation-server,
+              port: 8004,
+            }
+          - { name: ocr-server, path: services/ocr-server, port: 8005 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push ${{ matrix.service.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.service.path }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:latest
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || github.event.inputs.environment == 'staging')
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set kubeconfig
+        run: echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Deploy Infrastructure (if changed)
+        run: |
+          helm upgrade --install aip-infra deploy/helm/aip-infra \
+            --namespace aip-infra --create-namespace \
+            --wait --timeout 5m
+
+      - name: Deploy Gateway
+        run: |
+          helm upgrade --install aip-control deploy/helm/aip-control \
+            --namespace aip-control --create-namespace \
+            --set image.tag=${{ github.sha }} \
+            --wait --timeout 5m
+
+      - name: Deploy AI Runtimes
+        run: |
+          helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
+            --namespace aip-multimodal --create-namespace \
+            --set stt.image.tag=${{ github.sha }} \
+            --set tts.image.tag=${{ github.sha }} \
+            --set translation.image.tag=${{ github.sha }} \
+            --set moderation.image.tag=${{ github.sha }} \
+            --set ocr.image.tag=${{ github.sha }} \
+            --wait --timeout 10m
+
+      - name: Verify Deployment Health
+        run: |
+          kubectl rollout status deployment/aip-gateway -n aip-control --timeout=120s
+          echo "Staging deployment successful!"
+
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set kubeconfig
+        run: echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Deploy to Production
+        run: |
+          helm upgrade --install aip-control deploy/helm/aip-control \
+            --namespace aip-control \
+            --set image.tag=${{ github.sha }} \
+            --set replicaCount=5 \
+            --wait --timeout 5m
+
+          helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
+            --namespace aip-multimodal \
+            --set stt.image.tag=${{ github.sha }} \
+            --set tts.image.tag=${{ github.sha }} \
+            --set translation.image.tag=${{ github.sha }} \
+            --set moderation.image.tag=${{ github.sha }} \
+            --set ocr.image.tag=${{ github.sha }} \
+            --wait --timeout 10m
+
+      - name: Production Health Check
+        run: |
+          kubectl rollout status deployment/aip-gateway -n aip-control --timeout=180s
+          echo "Production deployment successful!"
