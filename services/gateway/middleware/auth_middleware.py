@@ -16,6 +16,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if (
             not path.startswith("/v1/")
             or path.startswith("/v1/auth/")
+            or path.startswith("/v1/user/")
             or path.startswith("/v1/mcp")
             or path in ["/health", "/docs", "/openapi.json", "/redoc"]
         ):

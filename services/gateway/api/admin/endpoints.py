@@ -21,7 +21,7 @@ def is_endpoint_enabled(endpoint_id: str) -> bool:
     endpoint = cache.get(endpoint_id)
     if not endpoint:
         return True
-    return endpoint.get("status") == "enabled"
+    return endpoint.get("status") in ["enabled", "active"]
 
 
 @router.get("/endpoints", summary="List All Exported API Endpoints from MongoDB Atlas")
@@ -39,7 +39,11 @@ async def update_endpoint_export_status(
     if request.status not in ["enabled", "disabled"]:
         raise HTTPException(status_code=400, detail="Status must be 'enabled' or 'disabled'.")
 
-    updated = await repo.update_endpoint_status(endpoint_id, request.status)
+    normalized_id = endpoint_id
+    if normalized_id == "chat_completions":
+        normalized_id = "/v1/chat/completions"
+
+    updated = await repo.update_endpoint_status(normalized_id, request.status)
     if not updated:
         raise HTTPException(status_code=404, detail=f"Endpoint '{endpoint_id}' not found.")
 

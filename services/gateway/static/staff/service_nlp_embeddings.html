@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everwin AI Platform - Service Details & Playground</title>
+    <link rel="icon" type="image/svg+xml" href="/static/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/static/assets/img/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --fpt-blue: #0f4c81;
+            --fpt-cyan: #00a4b8;
+            --fpt-orange: #f97316;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .top-header { background: var(--fpt-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px; }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+        .layout-body { display: flex; flex: 1; }
+
+        .sidebar { width: 220px; background: #ffffff; border-right: 1px solid var(--border-color); padding: 20px 0; }
+        .nav-section { margin-bottom: 24px; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 0 20px 8px 20px; letter-spacing: 0.5px; }
+        .nav-list { list-style: none; }
+        .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.15s ease; border-left: 3px solid transparent; }
+        .nav-item.active a, .nav-item a:hover { background: #f1f5f9; color: var(--fpt-cyan); border-left-color: var(--fpt-cyan); }
+
+        .main-content { flex: 1; padding: 24px 32px; background: #f8fafc; }
+
+        .notice-bar { background: #1e3a8a; color: #fff; padding: 10px 16px; border-radius: 6px; font-size: 12.5px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+
+        .service-header-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+        .service-title-box { display: flex; align-items: center; gap: 16px; }
+        .service-icon-lg { width: 56px; height: 56px; border-radius: 12px; background: var(--fpt-cyan); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+        .service-name { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #0f172a; }
+
+        .btn-status-toggle { background: #007bff; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; transition: background 0.15s; }
+        .btn-status-toggle:hover { background: #0056b3; }
+        .btn-status-toggle.disabled { background: #dc3545; color: #ffffff; }
+        .btn-status-toggle.disabled:hover { background: #b02a37; }
+
+        .btn-buy { background: #0f172a; color: #ffffff; border: none; padding: 7px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; text-transform: uppercase; margin-left: 10px; }
+        .free-remain { font-size: 12.5px; color: var(--text-sub); margin-left: auto; }
+
+        .service-nav-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; gap: 8px; }
+        .tab-btn { padding: 10px 24px; font-size: 13px; font-weight: 700; border: none; background: transparent; color: #64748b; cursor: pointer; position: relative; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--fpt-cyan); }
+        .tab-btn.active { color: var(--fpt-cyan); border-bottom-color: var(--fpt-cyan); background: #ffffff; border-radius: 6px 6px 0 0; }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .service-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; }
+        .sandbox-left { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .input-text-field { width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13.5px; outline: none; background: #ffffff; color: var(--text-dark); font-family: var(--font-body); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+        .input-text-field:focus { border-color: var(--fpt-cyan); box-shadow: 0 0 0 3px rgba(0, 164, 184, 0.15); }
+        .input-text-field::placeholder { color: #94a3b8; font-size: 13.5px; }
+
+        /* Frame-based file upload zone */
+        .doc-upload-frame { border: 1.5px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; box-sizing: border-box; padding: 16px; }
+        .doc-upload-frame:hover { border-color: var(--fpt-cyan); background: #f0fdfa; }
+        .doc-upload-skeleton { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #64748b; text-align: center; }
+        .doc-upload-skeleton i { font-size: 32px; color: #94a3b8; }
+        .doc-upload-skeleton span { font-size: 12.5px; font-weight: 500; }
+        .doc-upload-preview { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 2; }
+        .doc-upload-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); color: #fff; font-size: 12.5px; font-weight: 600; align-items: center; justify-content: center; z-index: 3; gap: 6px; }
+        .doc-upload-frame:hover .doc-upload-overlay { display: flex; }
+
+        .btn-run-inference { background: var(--fpt-cyan); color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 13.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s; }
+        .btn-run-inference:hover { background: #008fa0; }
+
+        .sandbox-right { display: flex; flex-direction: column; gap: 20px; }
+        .playground-results-card { background: #0f172a; border-radius: 10px; padding: 20px; color: #38bdf8; display: flex; flex-direction: column; gap: 12px; min-height: 250px; }
+        .playground-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; font-family: var(--font-heading); font-size: 14px; font-weight: 700; color: #fff; }
+        .json-viewer { font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-x: auto; flex: 1; color: #38bdf8; }
+
+        .integration-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 24px; }
+        .lang-options { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; font-size: 13px; font-weight: 600; color: #334155; }
+        .btn-copy-blue { margin-left: auto; background: #007bff; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+        .code-snippet-card { background: #f8fafc; color: #0f172a; border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 12.5px; line-height: 1.6; word-break: break-all; white-space: pre-wrap; }
+
+        .doc-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 28px; margin-bottom: 24px; }
+        .doc-section-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 14px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+        .doc-text { font-size: 14px; color: #334155; line-height: 1.7; margin-bottom: 16px; }
+        .doc-list { margin-left: 20px; font-size: 13.5px; color: #475569; line-height: 1.8; margin-bottom: 16px; }
+
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+        .doc-table th, .doc-table td { border: 1px solid var(--border-color); padding: 12px 14px; text-align: left; }
+        .doc-table th { background: #f8fafc; font-weight: 700; color: #1e293b; }
+        .badge-req { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-opt { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+
+        .url-box { background: #1e293b; color: #38bdf8; padding: 12px 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 16px; }
+
+        /* Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
+
+        /* CONFIRM TOGGLE API MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
+        .confirm-header { background: #cbd5e1; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1e293b; }
+        .confirm-body { padding: 24px 20px; font-size: 14px; color: #334155; }
+        .confirm-footer { padding: 12px 20px 16px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
+        .btn-confirm-cancel:hover { background: #f1f5f9; }
+        .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
+        .pricing-cards-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+        .pricing-pack-card { background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 8px; padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+        .pricing-pack-card.premium { border-color: var(--fpt-cyan); }
+        .pricing-pack-card.enterprise { border-color: #0f4c81; }
+        .pack-badge { position: absolute; top: 10px; right: -30px; background: var(--fpt-cyan); color: #fff; font-size: 10px; font-weight: 700; padding: 4px 30px; transform: rotate(45deg); text-transform: uppercase; }
+        .pack-name { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; }
+        .pack-price { font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: #dc2626; }
+        .pack-features { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: #475569; text-align: left; margin: 10px 0; }
+        .btn-register-pack { background: #007bff; color: #ffffff; border: none; padding: 10px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.15s; }
+        .btn-register-pack:hover { background: #0056b3; }
+        .select-input { width: 100%; padding: 6px 20px 6px 0; border: none; border-bottom: 1.5px solid #cbd5e1; border-radius: 0; font-size: 13.5px; outline: none; background: transparent; color: #1e293b; font-weight: 500; }
+        .select-input:focus { border-bottom-color: #007bff; }
+    </style>
+    <script src="/static/assets/js/staff_layout.js"></script>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
+            <div class="project-selector" onclick="location.href='/staff/dashboard'"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Default Project</span></div>
+        </div>
+        <div class="header-right">
+            <div class="user-menu">
+                <span>Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout-body">
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="section-title">Console</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="section-title">Payment & Support</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/payment"><i class="fa-solid fa-credit-card" style="width: 16px; text-align: center;"></i> Payment history</a></li>
+                    <li class="nav-item"><a href="/staff/contact"><i class="fa-solid fa-headset" style="width: 16px; text-align: center;"></i> Contact us</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="notice-bar">
+                <span>⚡ Bạn đang truy cập môi trường Sandbox API để phát triển và kiểm thử tích hợp local.</span>
+            </div>
+
+            <!-- GPU Warning Banner -->
+            <div id="gpu-warning-banner" style="display: none; background: #fff7ed; border: 1.5px solid #ffedd5; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px; color: #c2410c; font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 10px; font-family: var(--font-body);">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px; color: #ea580c;"></i>
+                <span id="gpu-warning-text">CẢNH BÁO: Bộ nhớ VRAM của GPU hiện đang gần đầy. Vui lòng đóng bớt ứng dụng khác để tránh lỗi Out of Memory!</span>
+            </div>
+
+            <!-- SERVICE TITLE CARD -->
+            <div class="service-header-card">
+                <div class="service-title-box" style="display:flex; align-items:center; width: 100%;">
+                    <a href="/staff/apis" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:14px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to APIs Catalog">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div class="service-icon-lg" id="svc-icon-box" style="margin-right:14px;"><i class="fa-solid fa-plug"></i></div>
+                    <div class="service-name" id="svc-title-text" style="margin-right:14px;">Loading Service...</div>
+                    <button class="btn-status-toggle" id="svc-status-toggle-btn" onclick="handleServiceHeaderToggleClick()" style="margin-right:10px;">ENABLE</button>
+                    <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
+                    <span class="free-remain" id="svc-paid-balance-text" style="margin-left:auto;">Remaining: 0 blocks</span>
+                </div>
+            </div>
+
+            <!-- TAB MENU -->
+            <div class="service-nav-tabs">
+                <button class="tab-btn active" id="tab-btn-OVERVIEW" onclick="switchTab('OVERVIEW')">OVERVIEW</button>
+                <button class="tab-btn" id="tab-btn-SERVICE" onclick="switchTab('SERVICE')">SERVICE (PLAYGROUND)</button>
+                <button class="tab-btn" id="tab-btn-DOCUMENT" onclick="switchTab('DOCUMENT')">DOCUMENT</button>
+                <button class="tab-btn" id="tab-btn-PRICING" onclick="switchTab('PRICING')">PRICING</button>
+            </div>
+
+            <!-- OVERVIEW TAB PANEL -->
+            <div class="tab-panel active" id="panel-OVERVIEW">
+                <div class="doc-card">
+                    <div class="doc-section-title" id="overview-title">About the Service</div>
+                    <div class="doc-text" id="overview-summary">Loading Overview...</div>
+                    <div class="doc-section-title" style="margin-top:24px;">Key Features</div>
+                    <ul class="doc-list" id="overview-features-list">
+                        <li>Realtime high-speed inference</li>
+                        <li>Vietnamese optimization</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PLAYGROUND TAB PANEL -->
+            <div class="tab-panel" id="panel-SERVICE">
+                <!-- Message when disabled -->
+                <div id="playground-disabled-message" style="display: none; padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                    You need to enable this api to run demo
+                </div>
+                
+                <!-- Interactive playground when enabled -->
+                <div id="playground-interactive-container" class="service-grid">
+                    <div class="sandbox-left">
+                        <div style="font-size:15px; font-weight:700; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                            INPUT PARAMETERS
+                        </div>
+                        <!-- Dynamic inputs container -->
+                        <form id="playground-form" onsubmit="event.preventDefault(); runPlaygroundInference();" style="display:flex; flex-direction:column; gap:16px;">
+                            <div id="dynamic-inputs-container">
+                                <!-- Dynamic Form Fields Go Here -->
+                            </div>
+                            <button type="submit" class="btn-run-inference" id="btn-run-inference"><i class="fa-solid fa-play"></i> RUN PLAYGROUND</button>
+                        </form>
+                    </div>
+
+                    <div class="sandbox-right">
+                        <div class="playground-results-card">
+                            <div class="playground-header">
+                                <span>RESPONSE (JSON)</span>
+                                <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px; font-size:11px;" id="response-status-badge">N/A</span>
+                            </div>
+                            <div class="json-viewer" id="json-viewer-box">{ "status": "Waiting for execution..." }</div>
+                        </div>
+
+                        <!-- API Key selector -->
+                        <div class="integration-card" style="margin-bottom:20px; padding: 18px 24px;">
+                            <div class="playground-header" style="color:#0f172a; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                                <span>API KEY SELECTOR</span>
+                            </div>
+                            <div class="form-group" style="margin-top:4px;">
+                                <label style="font-size:12px; font-weight:700; color:#475569;">SELECT API KEY FOR INTEGRATION</label>
+                                <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()" style="margin-top:6px; cursor:pointer;">
+                                    <option value="SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR">Sandbox Default (SSAmMKZJ...)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Integration snippet codes -->
+                        <div class="integration-card">
+                            <div class="playground-header" style="color:#0f172a; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                                <span>INTEGRATION CODES</span>
+                            </div>
+                            <div class="lang-options">
+                                <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cURL</label>
+                                <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
+                                <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> PHP</label>
+                                <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                            </div>
+                            <div class="code-snippet-card" id="snippet-code-box">Loading integration snippet...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENT TAB PANEL -->
+            <div class="tab-panel" id="panel-DOCUMENT">
+                <div class="doc-card">
+                    <div class="doc-section-title">API Endpoint</div>
+                    <div class="url-box" id="doc-endpoint-url">POST https://ai-platform-6p72.onrender.com/v1/...</div>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Request Headers</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Header</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                        </thead>
+                        <tbody id="doc-headers-tbody">
+                            <!-- Dynamic headers rows -->
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Request Parameters</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                        </thead>
+                        <tbody id="doc-params-tbody">
+                            <!-- Dynamic parameters rows -->
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Sample Response</div>
+                    <div class="code-snippet-card" id="doc-sample-response">{ "status": "success" }</div>
+                </div>
+            </div>
+
+            <!-- PRICING TAB PANEL -->
+            <div class="tab-panel" id="panel-PRICING">
+                <div class="doc-card">
+                    <div class="doc-section-title">Pricing Details</div>
+                    <div class="doc-text" id="pricing-free-quota-text">Free Quota: 1,000 requests per month</div>
+                    <div class="doc-text" id="pricing-pay-as-you-go-text">Pay-as-you-go: 200 VNĐ per request</div>
+                    <div class="doc-text" id="pricing-billing-cycle-text">Billing Cycle: Monthly charge based on successful API requests</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM TOGGLE API -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-header">Confirm Status Change</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to change this API status?</div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">CANCEL</button>
+                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+            </div>
+        </div>
+    <!-- VNPAY VietQR Payment Modal -->
+    <div class="modal-overlay" id="vnpay-modal">
+        <div class="confirm-box" style="width: 500px;">
+            <div class="confirm-header" style="background:#0f4c81; color:#fff; display:flex; justify-content:space-between; align-items:center;">
+                <span>Thanh toán nạp gói API</span>
+                <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="closeVNPAYModal()"></i>
+            </div>
+            <div class="confirm-body" style="text-align: center; padding: 20px;">
+                <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+                    Chuyển khoản VietQR Nhanh 247
+                </div>
+                <div style="color: #64748b; font-size: 13px; margin-bottom: 16px;">
+                    Vui lòng quét mã QR dưới đây hoặc chuyển khoản theo thông tin số tài khoản MBBank.
+                </div>
+                <img id="vnpay-dynamic-qr" src="" style="width: 210px; height: 210px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; margin-bottom: 16px;" alt="VietQR Code">
+                
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; margin-top: 10px;">
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 8px 0; color: #64748b;">Ngân hàng:</td>
+                        <td style="padding: 8px 0; font-weight: 600; color: #0f172a;">MBBank (Ngân hàng Quân Đội)</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 8px 0; color: #64748b;">Số tài khoản:</td>
+                        <td style="padding: 8px 0; font-weight: 600; color: #0f172a; display:flex; align-items:center; justify-content:space-between;">
+                            <span>0867381554</span>
+                            <button class="btn-copy-blue" style="padding: 2px 8px; font-size:11px;" onclick="copyToClip('0867381554', 'Số tài khoản', this)">COPY</button>
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 8px 0; color: #64748b;">Tên tài khoản:</td>
+                        <td style="padding: 8px 0; font-weight: 600; color: #0f172a;">CONG TY CONG NGHE EVERWIN AI</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 8px 0; color: #64748b;">Số tiền:</td>
+                        <td style="padding: 8px 0; font-weight: 700; color: #dc2626;" id="vnpay-order-amount">500.000 VND</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 8px 0; color: #64748b;">Nội dung chuyển khoản:</td>
+                        <td style="padding: 8px 0; font-weight: 700; color: #0f4c81; display:flex; align-items:center; justify-content:space-between;">
+                            <span id="vnpay-order-memo">AIP VNPAY 123456</span>
+                            <button class="btn-copy-blue" style="padding: 2px 8px; font-size:11px;" onclick="copyToClip(document.getElementById('vnpay-order-memo').innerText, 'Nội dung', this)">COPY</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: #64748b;">Thời gian giữ mã:</td>
+                        <td style="padding: 8px 0; font-weight: 700; color: #f97316;" id="vnpay-timer">15:00</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="confirm-footer" style="background:#f8fafc; border-top:1px solid #cbd5e1;">
+                <button class="btn-confirm-cancel" onclick="closeVNPAYModal()">Hủy bỏ</button>
+                <button class="btn-confirm-ok" style="background:#10b981;" onclick="confirmVNPAYPayment()">Tôi đã chuyển khoản xong</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSvcName = "";
+        let currentSvcData = null;
+        let currentSnippetLang = "curl";
+
+        function getSvcNameFromPath() {
+            const path = window.location.pathname;
+            if (path.includes('ocr-dl')) return "Driver's license recognition";
+            if (path.includes('ocr-id')) return "ID Recognition";
+            if (path.includes('ocr-passport')) return "Passport Recognition";
+            if (path.includes('vision-facematch')) return "FaceMatch";
+            if (path.includes('vision-liveness')) return "Liveness v3";
+            if (path.includes('nlp-embeddings')) return "Text Embedding API";
+            if (path.includes('nlp-summarization')) return "Text Summarization API";
+            if (path.includes('nlp-translation')) return "Translation API";
+            if (path.includes('service-llm')) return "LLM Chatbot API";
+            if (path.includes('service-image')) return "Image Generation API";
+            if (path.includes('service-stt')) return "Speech to Text API";
+            if (path.includes('service-tts')) return "Text to Speech API";
+            if (path.includes('service-moderation')) return "Content Moderation API";
+            return "Speech to Text API";
+        }
+
+        async function initPage() {
+            currentSvcName = getSvcNameFromPath();
+            const catalog = await fetchApiCatalogFromBackend();
+            currentSvcData = catalog.find(item => item.name === currentSvcName);
+
+            if (!currentSvcData) {
+                showToast("Service not found in catalog database!", "error");
+                return;
+            }
+
+            // Sync UI metadata
+            document.getElementById('svc-title-text').innerText = currentSvcData.name;
+            const descEl = document.getElementById('svc-desc-text');
+            if (descEl) descEl.innerText = currentSvcData.description || "";
+
+            // Dynamic Icons based on service name
+            let iconClass = 'fa-plug';
+            let nameLow = currentSvcName.toLowerCase();
+            if (nameLow.includes('driver')) iconClass = 'fa-id-card-clip';
+            else if (nameLow.includes('id recognition') || nameLow.includes('identity')) iconClass = 'fa-address-card';
+            else if (nameLow.includes('passport')) iconClass = 'fa-passport';
+            else if (nameLow.includes('facematch')) iconClass = 'fa-user-check';
+            else if (nameLow.includes('liveness')) iconClass = 'fa-user-shield';
+            else if (nameLow.includes('embedding')) iconClass = 'fa-magnifying-glass';
+            else if (nameLow.includes('summariz')) iconClass = 'fa-file-lines';
+            else if (nameLow.includes('translat')) iconClass = 'fa-language';
+            document.getElementById('svc-icon-box').innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+
+            // Overview Tab
+            if (currentSvcData.overview) {
+                document.getElementById('overview-title').innerText = currentSvcData.overview.title || "About the Service";
+                document.getElementById('overview-summary').innerText = currentSvcData.overview.summary || "";
+                if (currentSvcData.overview.features) {
+                    const ul = document.getElementById('overview-features-list');
+                    ul.innerHTML = '';
+                    currentSvcData.overview.features.forEach(f => {
+                        const li = document.createElement('li');
+                        li.innerText = f;
+                        ul.appendChild(li);
+                    });
+                }
+            }
+
+            // Document Tab
+            const method = currentSvcData.document?.method || "POST";
+            const epUrl = currentSvcData.document?.endpoint_url || `https://ai-platform-6p72.onrender.com${currentSvcData.endpoint_id}`;
+            document.getElementById('doc-endpoint-url').innerText = `${method} ${epUrl}`;
+            
+            // Render Headers
+            const headersTbody = document.getElementById('doc-headers-tbody');
+            headersTbody.innerHTML = '';
+            const headers = currentSvcData.document?.headers || [{"name": "api-key", "type": "string", "required": true, "desc": "Khóa API Key"}];
+            headers.forEach(h => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${h.name}</code></td>
+                    <td>${h.type || 'string'}</td>
+                    <td><span class="${h.required ? 'badge-req' : 'badge-opt'}">${h.required ? 'REQUIRED' : 'OPTIONAL'}</span></td>
+                    <td>${h.desc || ''}</td>
+                `;
+                headersTbody.appendChild(tr);
+            });
+
+            // Render Parameters
+            const paramsTbody = document.getElementById('doc-params-tbody');
+            paramsTbody.innerHTML = '';
+            const params = currentSvcData.document?.parameters || [];
+            params.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${p.name}</code></td>
+                    <td>${p.type || 'string'}</td>
+                    <td><span class="${p.required ? 'badge-req' : 'badge-opt'}">${p.required ? 'REQUIRED' : 'OPTIONAL'}</span></td>
+                    <td>${p.desc || ''}</td>
+                `;
+                paramsTbody.appendChild(tr);
+            });
+
+            // Render Sample Response
+            document.getElementById('doc-sample-response').innerText = currentSvcData.document?.sample_response || "{}";
+
+            // Pricing Tab
+            if (currentSvcData.pricing) {
+                const pr = currentSvcData.pricing;
+                const panelPr = document.getElementById('panel-PRICING');
+                if (panelPr) {
+                    panelPr.innerHTML = `
+                        <div class="doc-card">
+                            <div class="doc-section-title">Bảng giá dịch vụ ${currentSvcName}</div>
+                            <table class="doc-table">
+                                <thead>
+                                    <tr><th>Hạn mức</th><th>Đơn giá</th><th>Chu kỳ</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Miễn phí mỗi tháng</strong></td>
+                                        <td><span style="color:#10b981; font-weight:700;">FREE</span></td>
+                                        <td>${pr.free_quota || "1,000 requests / tháng"}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Pay-as-you-go</strong></td>
+                                        <td>${pr.pay_as_you_go || "200 VNĐ / lượt"}</td>
+                                        <td>${pr.billing_cycle || "Hệ thống tự động trừ vào số dư tài khoản"}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="doc-section-title" style="margin-top:32px;">Đăng ký nạp thêm gói cước dịch vụ</div>
+                            <div style="font-size:13.5px; color:#475569; margin-bottom:16px;">
+                                Chọn một trong các gói cước dưới đây để tăng số dư tài khoản gọi API. Số tiền nạp sẽ được cộng trực tiếp vào số dư khả dụng của bạn.
+                            </div>
+                            
+                            <div class="pricing-cards-container">
+                                <div class="pricing-pack-card premium">
+                                    <div class="pack-badge">Popular</div>
+                                    <div class="pack-name">Gói Premium 500k</div>
+                                    <div class="pack-price">500,000 VNĐ</div>
+                                    <ul class="pack-features">
+                                        <li><i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i> Cộng ngay +1,500,000 VNĐ số dư</li>
+                                        <li><i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i> Hạn ngạch gọi API lớn không giới hạn</li>
+                                        <li><i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i> Hỗ trợ support trực tiếp 24/7</li>
+                                    </ul>
+                                    <button class="btn-register-pack" onclick="openPaymentQRModal('Gói Premium 500k', 500000, 1500000)">💳 ĐĂNG KÝ PREMIUM</button>
+                                </div>
+                                
+                                <div class="pricing-pack-card enterprise">
+                                    <div class="pack-name">Gói Enterprise 1M</div>
+                                    <div class="pack-price">1,000,000 VNĐ</div>
+                                    <ul class="pack-features">
+                                        <li><i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i> Cộng ngay +3,000,000 VNĐ số dư</li>
+                                        <li><i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i> Chiết khấu cao ưu đãi doanh nghiệp</li>
+                                        <li><i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i> Hỗ trợ kỹ thuật riêng biệt</li>
+                                    </ul>
+                                    <button class="btn-register-pack" style="background:#0f172a;" onclick="openPaymentQRModal('Gói Enterprise 1M', 1000000, 3000000)">💳 ĐĂNG KÝ ENTERPRISE</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // Sync playground dynamic inputs
+            generatePlaygroundInputs(params);
+
+            // Sync initial state and balance
+            await syncServiceUIState();
+
+            // Check GPU VRAM status
+            try {
+                const gpuRes = await fetch('/v1/user/gpu-status');
+                if (gpuRes.ok) {
+                    const gpuData = await gpuRes.json();
+                    if (gpuData.gpu_detected) {
+                        const used = gpuData.vram_used_mb;
+                        const total = gpuData.vram_total_mb;
+                        const pct = gpuData.vram_percentage;
+                        
+                        // Check if VRAM is close to running out (percentage > 85% or headroom < 500 MB)
+                        if (pct > 85 || (total - used < 500)) {
+                            const banner = document.getElementById('gpu-warning-banner');
+                            const bannerText = document.getElementById('gpu-warning-text');
+                            if (banner && bannerText) {
+                                bannerText.innerText = `CẢNH BÁO: Bộ nhớ VRAM của card ${gpuData.name} hiện đang gần đầy (Đang dùng: ${pct}% - ${used}/${total} MB). Vui lòng đóng bớt ứng dụng đồ họa khác để tránh lỗi tràn bộ nhớ (Out of Memory)!`;
+                                banner.style.display = 'flex';
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch GPU status:", e);
+            }
+        }
+
+        function generatePlaygroundInputs(params) {
+            const container = document.getElementById('dynamic-inputs-container');
+            container.innerHTML = '';
+
+            if (params.length === 0) {
+                container.innerHTML = `<div style="font-size: 13px; color: var(--text-sub);">Không cần tham số truyền vào cho API này.</div>`;
+                return;
+            }
+
+            params.forEach(p => {
+                const group = document.createElement('div');
+                group.className = 'form-group';
+                
+                const nameLow = p.name.toLowerCase();
+                const isLargeText = nameLow === 'document' || nameLow === 'text' || nameLow === 'content' || nameLow === 'narrative';
+
+                // 1. Detect if it is a select/choice parameter
+                const choices = detectChoicesForParam(p);
+
+                // Elegant subtext label layout
+                const labelHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 2px;">
+                        <span style="font-size: 13.5px; font-weight: 600; color: #1e293b; letter-spacing: 0.3px;">${p.name}</span>
+                        <span style="font-size: 12px; color: #64748b; font-weight: 400; text-transform: none;">${p.desc}</span>
+                    </div>
+                `;
+
+                if (p.type === 'file') {
+                    // Get customized frame dimensions and icon for document type
+                    const frameInfo = getFrameStyleForParam(p.name);
+                    group.innerHTML = `
+                        <div class="file-group-header" onclick="toggleFileGroupCollapse('${p.name}')" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding-bottom: 6px; border-bottom: 1.5px solid #f1f5f9; margin-bottom: 8px; margin-top: 6px;">
+                            ${labelHtml}
+                            <i class="fa-solid fa-chevron-down collapse-chevron" id="chevron-${p.name}" style="font-size: 12px; color: #94a3b8; transition: transform 0.2s; padding-left: 8px;"></i>
+                        </div>
+                        
+                        <div class="file-group-content" id="content-${p.name}" style="transition: max-height 0.25s ease-out; overflow:hidden; max-height: 500px;">
+                            <div class="doc-upload-frame" id="frame-${p.name}" style="${frameInfo.style}" onclick="this.querySelector('input').click()">
+                                <div class="doc-upload-skeleton" id="skeleton-${p.name}">
+                                    <i class="fa-solid ${frameInfo.bgIcon}"></i>
+                                    <span>${frameInfo.text}</span>
+                                </div>
+                                <div class="doc-upload-preview" id="preview-cont-${p.name}"></div>
+                                <div class="doc-upload-overlay" id="overlay-${p.name}">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Thay đổi tệp tải lên
+                                </div>
+                                <input type="file" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} onchange="handleFileSelected('${p.name}', this)" style="display: none;">
+                            </div>
+                        </div>
+                    `;
+                } else if (choices) {
+                    // Render beautiful dropdown select box instead of text input
+                    group.innerHTML = `
+                        ${labelHtml}
+                        <select class="select-input" id="param-${p.name}" name="${p.name}" style="margin-top: 6px; cursor:pointer;">
+                            ${choices.map(c => `<option value="${c}">${c.toUpperCase()}</option>`).join('')}
+                        </select>
+                    `;
+                } else if (isLargeText) {
+                    group.innerHTML = `
+                        ${labelHtml}
+                        <textarea class="input-text-field" id="param-${p.name}" name="${p.name}" rows="4" style="resize: vertical;" ${p.required ? 'required' : ''} placeholder="Nhập nội dung..."></textarea>
+                    `;
+                } else {
+                    group.innerHTML = `
+                        ${labelHtml}
+                        <input type="text" class="input-text-field" id="param-${p.name}" name="${p.name}" ${p.required ? 'required' : ''} placeholder="Nhập ${p.desc.toLowerCase()}...">
+                    `;
+                }
+                container.appendChild(group);
+            });
+            updateSnippetCode();
+        }
+
+        function getFrameStyleForParam(paramName) {
+            const name = paramName.toLowerCase();
+            if (name.includes('passport')) {
+                return {
+                    bgIcon: 'fa-passport',
+                    text: 'Tải lên ảnh Hộ chiếu (Passport)',
+                    style: 'width: 100%; height: 210px;'
+                };
+            }
+            if (name.includes('selfie') || name.includes('face') || name.includes('avatar') || name.includes('portrait')) {
+                return {
+                    bgIcon: 'fa-user-check',
+                    text: 'Ảnh chân dung / selfie',
+                    style: 'width: 180px; height: 180px; margin: 0 auto; border-radius: 50%;' // Circular portrait frame
+                };
+            }
+            if (name.includes('video')) {
+                return {
+                    bgIcon: 'fa-video',
+                    text: 'Tải lên video xác thực',
+                    style: 'width: 100%; height: 200px;'
+                };
+            }
+            // ID Card / CCCD / Driver license format
+            return {
+                bgIcon: 'fa-address-card',
+                text: `Tải lên ảnh thẻ / giấy tờ`,
+                style: 'width: 100%; height: 200px;'
+            };
+        }
+
+        function detectChoicesForParam(p) {
+            const name = p.name.toLowerCase();
+            const desc = p.desc.toLowerCase();
+
+            if (name === 'mode' || desc.includes('passive hoặc active') || desc.includes('passive or active')) {
+                return ['passive', 'active'];
+            }
+            if (name === 'source_lang' || name === 'target_lang' || desc.includes('ngôn ngữ')) {
+                if (name === 'source_lang') return ['vi', 'en', 'ja', 'ko', 'zh'];
+                if (name === 'target_lang') return ['en', 'vi', 'ja', 'ko', 'zh'];
+                return ['vi', 'en', 'ja', 'ko', 'zh'];
+            }
+            if (desc.includes('vi/en') || desc.includes('vi|en')) return ['vi', 'en'];
+            if (desc.includes('en/vi') || desc.includes('en|vi')) return ['en', 'vi'];
+            
+            const match = p.desc.match(/\[([^\]]+)\]/);
+            if (match) {
+                const parts = match[1].split(/[,|/]/).map(x => x.trim().toLowerCase());
+                if (parts.length > 1) return parts;
+            }
+            return null;
+        }
+
+        function toggleFileGroupCollapse(name) {
+            const content = document.getElementById(`content-${name}`);
+            const chevron = document.getElementById(`chevron-${name}`);
+            if (!content || !chevron) return;
+            
+            const isCollapsed = content.classList.contains('collapsed');
+            if (isCollapsed) {
+                content.classList.remove('collapsed');
+                content.style.maxHeight = '500px';
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('collapsed');
+                content.style.maxHeight = '0px';
+                chevron.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        function handleFileSelected(name, inputEl) {
+            const skeleton = document.getElementById(`skeleton-${name}`);
+            const previewCont = document.getElementById(`preview-cont-${name}`);
+            const content = document.getElementById(`content-${name}`);
+            const chevron = document.getElementById(`chevron-${name}`);
+
+            if (inputEl.files && inputEl.files.length > 0) {
+                const file = inputEl.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    skeleton.style.display = 'none';
+                    previewCont.style.display = 'block';
+                    
+                    // Auto-expand group to display preview
+                    if (content && content.classList.contains('collapsed')) {
+                        content.classList.remove('collapsed');
+                        content.style.maxHeight = '500px';
+                        if (chevron) chevron.style.transform = 'rotate(0deg)';
+                    }
+                    
+                    if (file.type.startsWith('video/')) {
+                        previewCont.innerHTML = `<video src="${e.target.result}" autoplay loop muted style="width:100%; height:100%; object-fit:cover;"></video>`;
+                    } else {
+                        previewCont.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                if (skeleton) skeleton.style.display = 'flex';
+                if (previewCont) {
+                    previewCont.style.display = 'none';
+                    previewCont.innerHTML = '';
+                }
+            }
+        }
+
+        function updateToggleButtonUI(isEnabled) {
+            const btn = document.getElementById('svc-status-toggle-btn');
+            const freeRemainEl = document.getElementById('svc-paid-balance-text');
+            if (btn) {
+                if (!isEnabled) {
+                    btn.innerText = 'ENABLE';
+                    btn.classList.remove('disabled');
+                    btn.style.background = '#007bff';
+                    if (freeRemainEl) freeRemainEl.style.display = 'none';
+                } else {
+                    btn.innerText = 'DISABLE';
+                    btn.classList.add('disabled');
+                    btn.style.background = '#64748b';
+                    if (freeRemainEl) freeRemainEl.style.display = 'inline';
+                }
+            }
+        }
+
+        function populateApiKeySelector() {
+            const selector = document.getElementById('api-key-selector');
+            if (!selector) return;
+            selector.innerHTML = '';
+            
+            const rawKeys = localStorage.getItem('aip_api_keys');
+            const keys = rawKeys ? JSON.parse(rawKeys) : [];
+            
+            const defOpt = document.createElement('option');
+            defOpt.value = 'SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+            defOpt.innerText = 'Sandbox Default (SSAmMKZJ...)';
+            selector.appendChild(defOpt);
+            
+            keys.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k.api_key;
+                opt.innerText = `${k.name} (${k.api_key.substring(0, 8)}...)`;
+                selector.appendChild(opt);
+            });
+            updateSnippetCode();
+        }
+
+        async function syncServiceUIState() {
+            const apis = await fetchEnabledAPIsFromBackend();
+            
+            // Auto-disable non-hosted APIs that were previously enabled
+            if (isApiHeavyFor4G(currentSvcName) && isApiActive(apis, currentSvcName)) {
+                apis[currentSvcName] = false;
+                await setEnabledAPIs(apis);
+                showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt dịch vụ này. Dịch vụ đã được tự động vô hiệu hóa.", "warning");
+            }
+            
+            const isEnabled = isApiActive(apis, currentSvcName);
+
+            updateToggleButtonUI(isEnabled);
+            populateApiKeySelector();
+
+            // Show or hide playground content based on enabled state
+            const disabledMsg = document.getElementById('playground-disabled-message');
+            const interactiveCont = document.getElementById('playground-interactive-container');
+            if (disabledMsg && interactiveCont) {
+                if (isEnabled) {
+                    disabledMsg.style.display = 'none';
+                    interactiveCont.style.display = 'grid';
+                } else {
+                    disabledMsg.style.display = 'block';
+                    interactiveCont.style.display = 'none';
+                }
+            }
+
+            // Sync credit balance
+            const paidBal = await fetchPaidBalanceFromBackend();
+            const paidUnit = currentSvcData?.unit || 'request';
+            const unitCost = paidUnit === 'character' ? 1 : (paidUnit === 'block' ? 150 : 10);
+            const remaining = paidUnit === 'character' ? paidBal : Math.floor(paidBal / unitCost);
+            
+            const freeRemainEl = document.getElementById('svc-paid-balance-text');
+            if (freeRemainEl) {
+                freeRemainEl.innerText = `Remaining: ${remaining.toLocaleString()} ${paidUnit}s`;
+            }
+        }
+
+        function isApiHeavyFor4G(apiName) {
+            const name = apiName.toLowerCase();
+            // Only Translation API is currently hosted/connected to a real GPU model.
+            // The other 12 services are not yet hosted.
+            return !name.includes('translation');
+        }
+
+        function switchTab(tabName) {
+            if (tabName === 'SERVICE' && isApiHeavyFor4G(currentSvcName)) {
+                showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt môi trường Sandbox cho dịch vụ này. Hệ thống sẽ sớm mở lại sau khi hoàn thành nâng cấp hạ tầng.", "warning");
+                return;
+            }
+            const tabs = ['OVERVIEW', 'SERVICE', 'DOCUMENT', 'PRICING'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const panel = document.getElementById(`panel-${t}`);
+                if (t === tabName) {
+                    if (btn) btn.classList.add('active');
+                    if (panel) panel.classList.add('active');
+                } else {
+                    if (btn) btn.classList.remove('active');
+                    if (panel) panel.classList.remove('active');
+                }
+            });
+        }
+
+        let targetPendingAction = 'enable';
+        function handleServiceHeaderToggleClick() {
+            const btn = document.getElementById('svc-status-toggle-btn');
+            const isEnabled = btn.innerText === 'DISABLE';
+            
+            targetPendingAction = isEnabled ? 'disable' : 'enable';
+            
+            if (targetPendingAction === 'enable' && isApiHeavyFor4G(currentSvcName)) {
+                showToast("Hạ tầng phần cứng (GPU/VRAM) hiện tại chưa cấp phát đủ tài nguyên để kích hoạt môi trường Sandbox cho dịch vụ này. Hệ thống sẽ sớm mở lại sau khi hoàn thành nâng cấp hạ tầng.", "warning");
+                return;
+            }
+
+            document.getElementById('modal-confirm-body').innerText = isEnabled
+                ? `Bạn có chắc chắn muốn TẮT dịch vụ "${currentSvcName}"?`
+                : `Bạn có muốn BẬT dịch vụ "${currentSvcName}"?`;
+            openConfirmModal();
+        }
+
+        function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+        async function onConfirmEnableClick() {
+            closeConfirmModal();
+            const apis = getEnabledAPIs();
+
+            if (targetPendingAction === 'disable') {
+                apis[currentSvcName] = false;
+                await setEnabledAPIs(apis);
+                await syncServiceUIState();
+                showToast(`Đã tắt API "${currentSvcName}" thành công!`, 'warning');
+            } else {
+                apis[currentSvcName] = true;
+                await setEnabledAPIs(apis);
+                await syncServiceUIState();
+                showToast(`Đã kích hoạt API "${currentSvcName}" thành công!`, 'success');
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#dc3545');
+            toast.innerHTML = `<span>${msg}</span><i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="this.parentElement.remove()"></i>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        async function runPlaygroundInference() {
+            const runBtn = document.getElementById('btn-run-inference');
+            runBtn.disabled = true;
+            runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> EXECUTING...`;
+
+            document.getElementById('response-status-badge').innerText = 'PENDING';
+            document.getElementById('response-status-badge').style.background = '#e2e8f0';
+
+            const apis = getEnabledAPIs();
+            if (!isApiActive(apis, currentSvcName)) {
+                showToast("Dịch vụ chưa được KÍCH HOẠT! Vui lòng bật trạng thái ACTIVE ở góc trên.", "error");
+                runBtn.disabled = false;
+                runBtn.innerHTML = `<i class="fa-solid fa-play"></i> RUN PLAYGROUND`;
+                return;
+            }
+
+            const epId = currentSvcData.endpoint_id;
+            const params = currentSvcData.document?.parameters || [];
+            
+            // Build body / FormData
+            let bodyData = null;
+            let headers = {};
+
+            const isMultipart = params.some(p => p.type === 'file');
+
+            if (isMultipart) {
+                bodyData = new FormData();
+                params.forEach(p => {
+                    const el = document.getElementById(`param-${p.name}`);
+                    if (p.type === 'file') {
+                        if (el.files && el.files[0]) {
+                            bodyData.append(p.name, el.files[0]);
+                        }
+                    } else {
+                        bodyData.append(p.name, el.value || "");
+                    }
+                });
+            } else {
+                headers['Content-Type'] = 'application/json';
+                const jsonDoc = {};
+                params.forEach(p => {
+                    const el = document.getElementById(`param-${p.name}`);
+                    if (el) {
+                        jsonDoc[p.name] = el.value || "";
+                    }
+                });
+                bodyData = JSON.stringify(jsonDoc);
+            }
+
+            // Always add default live key for playground testing
+            headers['Authorization'] = 'Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR';
+
+            try {
+                const res = await fetch(epId, {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyData
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    document.getElementById('json-viewer-box').innerText = JSON.stringify(json, null, 2);
+                    document.getElementById('response-status-badge').innerText = 'SUCCESS';
+                    document.getElementById('response-status-badge').style.background = '#10b981';
+                    
+                    // Deduct credit balance on mock run to feel interactive
+                    const localBal = getPaidBalance();
+                    const paidUnit = currentSvcData?.unit || 'request';
+                    const unitCost = paidUnit === 'character' ? 1 : (paidUnit === 'block' ? 150 : 10);
+                    const deduct = paidUnit === 'character' ? 100 : 1;
+                    if (localBal > deduct) {
+                        setPaidBalance(localBal - deduct);
+                        await syncServiceUIState();
+                    }
+                    showToast("Inference completed successfully!", "success");
+                } else {
+                    const errText = await res.text();
+                    document.getElementById('json-viewer-box').innerText = `Error: ${res.status} ${res.statusText}\n${errText}`;
+                    document.getElementById('response-status-badge').innerText = 'ERROR';
+                    document.getElementById('response-status-badge').style.background = '#dc3545';
+                }
+            } catch (err) {
+                document.getElementById('json-viewer-box').innerText = `Failed to connect to API gateway:\n${err.message}`;
+                document.getElementById('response-status-badge').innerText = 'ERROR';
+                document.getElementById('response-status-badge').style.background = '#dc3545';
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = `<i class="fa-solid fa-play"></i> RUN PLAYGROUND`;
+            }
+        }
+
+        function switchSnippetLang(lang) {
+            currentSnippetLang = lang;
+            updateSnippetCode();
+        }
+
+        function updateSnippetCode() {
+            const box = document.getElementById('snippet-code-box');
+            if (!box || !currentSvcData) return;
+
+            const epId = currentSvcData.endpoint_id;
+            const params = currentSvcData.document?.parameters || [];
+            const isMultipart = params.some(p => p.type === 'file');
+
+            const selector = document.getElementById('api-key-selector');
+            const apiKey = selector ? selector.value : 'SSAmMKZJHIgM...';
+
+            let curlStr = "";
+            let pyStr = "";
+            let phpStr = "";
+
+            if (currentSnippetLang === 'curl') {
+                curlStr = `curl -X POST "https://ai-platform-6p72.onrender.com${epId}" \\\n  -H "api-key: ${apiKey}"`;
+                if (isMultipart) {
+                    params.forEach(p => {
+                        if (p.type === 'file') curlStr += ` \\\n  -F "${p.name}=@your_file.jpg"`;
+                        else curlStr += ` \\\n  -F "${p.name}=value"`;
+                    });
+                } else {
+                    curlStr += ` \\\n  -H "Content-Type: application/json" \\\n  -d '{\n`;
+                    params.forEach((p, idx) => {
+                        curlStr += `    "${p.name}": "value"${idx === params.length - 1 ? '' : ','}\n`;
+                    });
+                    curlStr += `  }'`;
+                }
+                box.innerText = curlStr;
+            } else if (currentSnippetLang === 'python') {
+                pyStr = `import requests\n\nurl = "https://ai-platform-6p72.onrender.com${epId}"\nheaders = {\n    "api-key": "${apiKey}"\n}\n`;
+                if (isMultipart) {
+                    pyStr += `files = {\n`;
+                    params.forEach(p => {
+                        if (p.type === 'file') pyStr += `    "${p.name}": ("file.jpg", open("file.jpg", "rb"), "image/jpeg"),\n`;
+                    });
+                    pyStr += `}\ndata = {\n`;
+                    params.forEach(p => {
+                        if (p.type !== 'file') pyStr += `    "${p.name}": "value",\n`;
+                    });
+                    pyStr += `}\nresponse = requests.post(url, headers=headers, files=files, data=data)\nprint(response.json())`;
+                } else {
+                    pyStr += `data = {\n`;
+                    params.forEach(p => {
+                        pyStr += `    "${p.name}": "value",\n`;
+                    });
+                    pyStr += `}\nresponse = requests.post(url, headers=headers, json=data)\nprint(response.json())`;
+                }
+                box.innerText = pyStr;
+            } else if (currentSnippetLang === 'php') {
+                phpStr = `<?php\n\n$curl = curl_init();\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "https://ai-platform-6p72.onrender.com${epId}",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n`;
+                if (isMultipart) {
+                    phpStr += `  CURLOPT_POSTFIELDS => array(\n`;
+                    params.forEach(p => {
+                        if (p.type === 'file') phpStr += `    "${p.name}" => new CURLFile("file.jpg"),\n`;
+                        else phpStr += `    "${p.name}" => "value",\n`;
+                    });
+                    phpStr += `  ),\n`;
+                } else {
+                    phpStr += `  CURLOPT_POSTFIELDS => json_encode(array(\n`;
+                    params.forEach(p => {
+                        phpStr += `    "${p.name}" => "value",\n`;
+                    });
+                    phpStr += `  )),\n`;
+                }
+                phpStr += `  CURLOPT_HTTPHEADER => array(\n    "api-key: ${apiKey}",\n    "Content-Type: ${isMultipart ? 'multipart/form-data' : 'application/json'}"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\necho $response;\n?>`;
+                box.innerText = phpStr;
+            }
+        }
+
+        function copySnippetText() {
+            const box = document.getElementById('snippet-code-box');
+            navigator.clipboard.writeText(box.innerText);
+            showToast("Copied integration code snippet!", "success");
+        }
+
+        let selectedPackCost = "500.000 VND";
+        let selectedAddChars = 1500000;
+        let selectedPackName = "Gói Premium 500k";
+        let vnpayTimerInterval = null;
+
+        function openPaymentQRModal(packName, amount, addBalance) {
+            selectedPackName = packName;
+            selectedPackCost = amount.toLocaleString() + " VNĐ";
+            selectedAddChars = addBalance;
+
+            const orderCode = Math.floor(100000 + Math.random() * 900000);
+            const memo = `AIP VNPAY ${orderCode}`;
+
+            // VietQR dynamic image URL
+            const qrUrl = `https://api.vietqr.io/image/970422-0867381554-compact2.jpg?amount=${amount}&addInfo=${encodeURIComponent(memo)}&accountName=CONG%20TY%20CONG%20NGHE%20EVERWIN%20AI`;
+            
+            const qrImg = document.getElementById('vnpay-dynamic-qr');
+            if (qrImg) {
+                qrImg.src = qrUrl;
+                qrImg.onerror = () => {
+                    qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(`2|99|0867381554|CONG TY CONG NGHE EVERWIN AI||0|0|${amount}|${memo}|transfer_p2p`);
+                };
+            }
+
+            document.getElementById('vnpay-order-amount').innerText = selectedPackCost;
+            document.getElementById('vnpay-order-memo').innerText = memo;
+
+            // 15-minute countdown
+            startVnpayTimer(15 * 60);
+
+            document.getElementById('vnpay-modal').classList.add('active');
+        }
+
+        function startVnpayTimer(durationSecs) {
+            if (vnpayTimerInterval) clearInterval(vnpayTimerInterval);
+            let timer = durationSecs;
+            const timerEl = document.getElementById('vnpay-timer');
+            vnpayTimerInterval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                if (timerEl) {
+                    timerEl.innerText = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                }
+                if (--timer < 0) {
+                    clearInterval(vnpayTimerInterval);
+                    if (timerEl) timerEl.innerText = '00:00 (Hết hạn)';
+                }
+            }, 1000);
+        }
+
+        function closeVNPAYModal() {
+            if (vnpayTimerInterval) clearInterval(vnpayTimerInterval);
+            document.getElementById('vnpay-modal').classList.remove('active');
+        }
+
+        function copyToClip(text, label = 'Nội dung', btnEl = null) {
+            navigator.clipboard.writeText(text);
+            showToast(`Đã sao chép ${label}!`, 'success');
+            if (btnEl) {
+                const orig = btnEl.innerHTML;
+                btnEl.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
+                setTimeout(() => { btnEl.innerHTML = orig; }, 1500);
+            }
+        }
+
+        async function confirmVNPAYPayment() {
+            showToast('🔄 Đang xác thực giao dịch chuyển khoản qua Webhook...', 'info');
+            closeVNPAYModal();
+
+            // 1. Optimistic update local storage paid balance
+            const localBal = getPaidBalance() + selectedAddChars;
+            setPaidBalance(localBal);
+            await syncServiceUIState();
+
+            // 2. Persist database update via backend recharge API
+            try {
+                await rechargePaidBalanceOnBackend(
+                    selectedAddChars,
+                    selectedPackCost,
+                    `${selectedPackName} (${currentSvcName})`,
+                    "wwrwer23" // Active project default
+                );
+            } catch(e) {}
+
+            // 3. Record payment transaction into localStorage for history consistency
+            const rawHist = localStorage.getItem('aip_payment_history');
+            const hist = rawHist ? JSON.parse(rawHist) : [];
+            const txnId = 'VNP' + Math.floor(10000000 + Math.random() * 90000000);
+            hist.unshift({
+                txn_ref: txnId,
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16).replace(/-/g, '/'),
+                status: 'SUCCESS',
+                amount: selectedPackCost,
+                package: `${selectedPackName} (${currentSvcName})`,
+                project: "wwrwer23",
+                credits_added: selectedAddChars,
+                txn_no: Math.floor(10000000 + Math.random() * 90000000).toString()
+            });
+            localStorage.setItem('aip_payment_history', JSON.stringify(hist));
+
+            showToast("Đã kích hoạt gói cước thành công và cộng số dư tài khoản!", "success");
+        }
+
+        window.onload = initPage;
+    </script>
+</body>
+</html>

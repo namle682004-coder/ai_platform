@@ -1,23 +1,13 @@
 services:
-  mongodb:
-    image: mongo:7.0
-    container_name: aip-mongo
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    volumes:
-      - mongo_data:/data/db
-
   redis:
     image: redis:7.2-alpine
     container_name: aip-redis
-    command: redis-server --requirepass example
+    command: redis-server --requirepass example --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -30,6 +20,7 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
 
   minio:
     image: minio/minio:RELEASE.2024-05-10T01-41-38Z
@@ -43,22 +34,7 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio_data:/data
-
-  aip-gateway:
-    build:
-      context: ../..
-      dockerfile: services/aip-gateway/Dockerfile
-    container_name: aip-gateway-service
-    ports:
-      - "8000:8000"
-    environment:
-      - AIP_MONGO_URI=mongodb://root:example@mongodb:27017
-      - AIP_REDIS_URI=redis://:example@redis:6379/0
-      - AIP_RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/
-    depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
+    restart: unless-stopped
 
 volumes:
   mongo_data:

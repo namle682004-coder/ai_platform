@@ -1,0 +1,58 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts/*.yml"
+
+scrape_configs:
+  # Gateway metrics
+  - job_name: aip-gateway
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [aip-control]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        regex: aip-gateway
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_ip]
+        target_label: __address__
+        replacement: "$1:8000"
+    metrics_path: /metrics
+
+  # AI Runtime services metrics
+  - job_name: aip-runtimes
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [aip-multimodal, aip-text]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+        regex: ai-runtime
+        action: keep
+    metrics_path: /metrics
+
+  # MongoDB exporter
+  - job_name: mongodb
+    static_configs:
+      - targets: ["mongodb-exporter.aip-observability.svc:9216"]
+
+  # Redis exporter
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter.aip-observability.svc:9121"]
+
+  # RabbitMQ built-in prometheus metrics
+  - job_name: rabbitmq
+    static_configs:
+      - targets: ["aip-rabbitmq.aip-infra.svc:15692"]
+
+  # Node-level GPU metrics (DCGM exporter)
+  - job_name: gpu-dcgm
+    kubernetes_sd_configs:
+      - role: node
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __address__
+        replacement: "$1:9400"

@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aip-control
+  labels:
+    app.kubernetes.io/part-of: aip-platform
+    tier: control-plane
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aip-text
+  labels:
+    app.kubernetes.io/part-of: aip-platform
+    tier: ai-runtime
+    workload: cpu
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aip-multimodal
+  labels:
+    app.kubernetes.io/part-of: aip-platform
+    tier: ai-runtime
+    workload: gpu
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aip-infra
+  labels:
+    app.kubernetes.io/part-of: aip-platform
+    tier: infrastructure
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aip-observability
+  labels:
+    app.kubernetes.io/part-of: aip-platform
+    tier: monitoring

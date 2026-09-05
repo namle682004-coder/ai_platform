@@ -91,7 +91,7 @@ app.add_middleware(AuthMiddleware)
 # Favicon & Static Assets Handler
 @app.get("/favicon.ico", include_in_schema=False)
 async def serve_favicon_ico():
-    fav_path = os.path.join(current_dir, "static", "favicon.svg")
+    fav_path = os.path.join(current_dir, "static", "assets", "img", "favicon.svg")
     return FileResponse(fav_path, media_type="image/svg+xml")
 
 
@@ -109,25 +109,71 @@ async def root_redirect():
     return RedirectResponse(url="/admin")
 
 
-# Admin Dashboard Web UI Endpoint
+# Admin Console Web UI - Multi-Page Architecture (Enterprise Split)
 @app.get("/admin", include_in_schema=False)
+async def admin_redirect():
+    return RedirectResponse(url="/admin/dashboard")
+
+
 @app.get("/admin/dashboard", include_in_schema=False)
 async def serve_admin_dashboard():
-    dashboard_path = os.path.join(current_dir, "static", "admin_dashboard.html")
-    return FileResponse(dashboard_path)
+    return FileResponse(os.path.join(current_dir, "static", "admin", "dashboard.html"))
+
+
+@app.get("/admin/playground", include_in_schema=False)
+async def serve_admin_playground():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "playground.html"))
+
+
+@app.get("/admin/keys", include_in_schema=False)
+async def serve_admin_keys():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "keys.html"))
+
+
+@app.get("/admin/users", include_in_schema=False)
+async def serve_admin_users():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "users.html"))
+
+
+@app.get("/admin/aliases", include_in_schema=False)
+async def serve_admin_aliases():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "aliases.html"))
+
+
+@app.get("/admin/endpoints", include_in_schema=False)
+async def serve_admin_endpoints():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "endpoints.html"))
+
+
+@app.get("/admin/jobs", include_in_schema=False)
+async def serve_admin_jobs():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "jobs.html"))
+
+
+@app.get("/admin/audit", include_in_schema=False)
+async def serve_admin_audit():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "audit.html"))
+
+
+@app.get("/admin/staff", include_in_schema=False)
+async def serve_admin_staff():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "staff.html"))
+
+
+@app.get("/admin/docs", include_in_schema=False)
+async def serve_admin_docs():
+    return FileResponse(os.path.join(current_dir, "static", "admin", "docs.html"))
 
 
 # Auth Login & Signup Dedicated Web UI Pages
 @app.get("/login", include_in_schema=False)
 async def serve_login():
-    login_path = os.path.join(current_dir, "static", "login.html")
-    return FileResponse(login_path)
+    return FileResponse(os.path.join(current_dir, "static", "auth", "login.html"))
 
 
 @app.get("/signup", include_in_schema=False)
 async def serve_signup():
-    signup_path = os.path.join(current_dir, "static", "signup.html")
-    return FileResponse(signup_path)
+    return FileResponse(os.path.join(current_dir, "static", "auth", "signup.html"))
 
 
 @app.get("/terms", include_in_schema=False)
@@ -153,44 +199,85 @@ async def serve_terms():
 @app.get("/staff/dashboard", include_in_schema=False)
 @app.get("/portal", include_in_schema=False)
 async def serve_staff_dashboard():
-    dashboard_path = os.path.join(current_dir, "static", "staff_dashboard.html")
-    return FileResponse(dashboard_path)
+    return FileResponse(os.path.join(current_dir, "static", "staff", "dashboard.html"))
 
 
 @app.get("/staff/apis", include_in_schema=False)
 async def serve_staff_apis():
-    apis_path = os.path.join(current_dir, "static", "staff_apis.html")
-    return FileResponse(apis_path)
+    return FileResponse(os.path.join(current_dir, "static", "staff", "apis.html"))
 
 
 @app.get("/staff/keys", include_in_schema=False)
 async def serve_staff_keys():
-    keys_path = os.path.join(current_dir, "static", "staff_keys.html")
-    return FileResponse(keys_path)
+    return FileResponse(os.path.join(current_dir, "static", "staff", "keys.html"))
 
 
 @app.get("/staff/report", include_in_schema=False)
 async def serve_staff_report():
-    report_path = os.path.join(current_dir, "static", "staff_report.html")
-    return FileResponse(report_path)
+    return FileResponse(os.path.join(current_dir, "static", "staff", "report.html"))
 
 
-@app.get("/staff/service", include_in_schema=False)
-async def serve_staff_service():
-    service_path = os.path.join(current_dir, "static", "staff_service_detail.html")
-    return FileResponse(service_path)
+@app.get("/staff/service-stt", include_in_schema=False)
+async def serve_staff_service_stt():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_stt.html"))
+
+@app.get("/staff/service-tts", include_in_schema=False)
+async def serve_staff_service_tts():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_tts.html"))
+
+@app.get("/staff/service-llm", include_in_schema=False)
+async def serve_staff_service_llm():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_llm.html"))
+
+@app.get("/staff/service-image", include_in_schema=False)
+async def serve_staff_service_image():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_image.html"))
+
+@app.get("/staff/service-moderation", include_in_schema=False)
+async def serve_staff_service_moderation():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_moderation.html"))
+
+@app.get("/staff/service-ocr-dl", include_in_schema=False)
+async def serve_staff_ocr_dl():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_ocr_dl.html"))
+
+@app.get("/staff/service-ocr-id", include_in_schema=False)
+async def serve_staff_ocr_id():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_ocr_id.html"))
+
+@app.get("/staff/service-ocr-passport", include_in_schema=False)
+async def serve_staff_ocr_passport():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_ocr_passport.html"))
+
+@app.get("/staff/service-vision-facematch", include_in_schema=False)
+async def serve_staff_vision_facematch():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_vision_facematch.html"))
+
+@app.get("/staff/service-vision-liveness", include_in_schema=False)
+async def serve_staff_vision_liveness():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_vision_liveness.html"))
+
+@app.get("/staff/service-nlp-embeddings", include_in_schema=False)
+async def serve_staff_nlp_embeddings():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_nlp_embeddings.html"))
+
+@app.get("/staff/service-nlp-summarization", include_in_schema=False)
+async def serve_staff_nlp_summarization():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_nlp_summarization.html"))
+
+@app.get("/staff/service-nlp-translation", include_in_schema=False)
+async def serve_staff_nlp_translation():
+    return FileResponse(os.path.join(current_dir, "static", "staff", "service_nlp_translation.html"))
 
 
 @app.get("/staff/payment", include_in_schema=False)
 async def serve_staff_payment():
-    payment_path = os.path.join(current_dir, "static", "staff_payment.html")
-    return FileResponse(payment_path)
+    return FileResponse(os.path.join(current_dir, "static", "staff", "payment.html"))
 
 
 @app.get("/staff/contact", include_in_schema=False)
 async def serve_staff_contact():
-    contact_path = os.path.join(current_dir, "static", "staff_contact.html")
-    return FileResponse(contact_path)
+    return FileResponse(os.path.join(current_dir, "static", "staff", "contact.html"))
 
 
 # Public Status Page Endpoint (/status)
@@ -200,6 +287,8 @@ async def serve_status_page():
     return FileResponse(status_path)
 
 
+# Public Routers
+from gateway.api.v1.ocr_vision import router as ocr_vision_router
 from gateway.api.v1.user_portal import router as user_portal_router
 
 # Register Public /v1 Routers
@@ -216,6 +305,7 @@ app.include_router(models_router)
 app.include_router(auth_router)
 app.include_router(mcp_router)
 app.include_router(user_portal_router)
+app.include_router(ocr_vision_router)
 
 # Register Admin /admin/v1 Routers
 app.include_router(admin_keys_router)
@@ -249,6 +339,86 @@ async def health_check():
             "users_rbac_governance": "active (/admin/v1/users)",
             "mongodb_atlas": "active (ai_platform)",
         }
+    }
+
+
+@app.get("/v1/user/gpu-status")
+async def get_gpu_status():
+    import subprocess
+    import shutil
+    
+    if not shutil.which("nvidia-smi"):
+        return {
+            "gpu_detected": False,
+            "name": "No NVIDIA GPU detected",
+            "vram_used_mb": 0,
+            "vram_total_mb": 0,
+            "vram_percentage": 0.0,
+            "temperature_c": 0,
+            "gpu_utilization_pct": 0,
+            "power_draw_w": 0.0
+        }
+    
+    try:
+        res = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,memory.used,memory.total,temperature.gpu,utilization.gpu,power.draw", "--format=csv,noheader,nounits"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        parts = [x.strip() for x in res.stdout.strip().split(",")]
+        if len(parts) >= 6:
+            name = parts[0]
+            
+            try:
+                used = int(parts[1])
+            except ValueError:
+                used = 0
+                
+            try:
+                total = int(parts[2])
+            except ValueError:
+                total = 0
+                
+            try:
+                temp = int(parts[3])
+            except ValueError:
+                temp = 0
+                
+            try:
+                util = int(parts[4])
+            except ValueError:
+                util = 0
+                
+            try:
+                power = float(parts[5])
+            except ValueError:
+                power = 0.0
+                
+            pct = round((used / total) * 100, 1) if total > 0 else 0.0
+            return {
+                "gpu_detected": True,
+                "name": name,
+                "vram_used_mb": used,
+                "vram_total_mb": total,
+                "vram_percentage": pct,
+                "temperature_c": temp,
+                "gpu_utilization_pct": util,
+                "power_draw_w": power
+            }
+    except Exception:
+        pass
+        
+    return {
+        "gpu_detected": False,
+        "name": "Failed to query GPU",
+        "vram_used_mb": 0,
+        "vram_total_mb": 0,
+        "vram_percentage": 0.0,
+        "temperature_c": 0,
+        "gpu_utilization_pct": 0,
+        "power_draw_w": 0.0
     }
 
 

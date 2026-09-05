@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everwin AI Platform - Sign In</title>
+    <link rel="icon" type="image/svg+xml" href="/static/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/static/assets/img/favicon.png">
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --fpt-cyan: #00a4b8;
+            --fpt-cyan-dark: #008496;
+            --fpt-blue: #0062d6;
+            --fpt-orange: #ff8c00;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f766e 100%);
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-dark);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 440px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-header { text-align: center; margin-bottom: 32px; }
+
+        .brand-badge {
+            display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-heading);
+            font-size: 24px; font-weight: 800; color: var(--fpt-cyan); margin-bottom: 8px; text-decoration: none;
+        }
+
+        .auth-title { font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-label { display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .input-icon { position: absolute; left: 14px; color: #94a3b8; font-size: 14px; pointer-events: none; }
+        .toggle-password { position: absolute; right: 14px; color: #64748b; font-size: 15px; cursor: pointer; transition: color 0.15s; }
+        .toggle-password:hover { color: var(--fpt-cyan); }
+
+        .form-control {
+            width: 100%; padding: 11px 40px 11px 40px; border-radius: 8px;
+            border: 1px solid var(--border-color); font-size: 13.5px; outline: none;
+            background: #ffffff; color: var(--text-dark); transition: all 0.2s ease;
+        }
+
+        .form-control:focus { border-color: var(--fpt-cyan); box-shadow: 0 0 0 3px rgba(0, 164, 184, 0.15); }
+
+        .auth-meta { display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 24px; }
+        .remember-me { display: flex; align-items: center; gap: 8px; color: #475569; cursor: pointer; user-select: none; }
+        .remember-me input { accent-color: var(--fpt-cyan); width: 16px; height: 16px; cursor: pointer; }
+
+        .forgot-link { color: var(--fpt-cyan); text-decoration: none; font-weight: 600; }
+        .forgot-link:hover { text-decoration: underline; }
+
+        .btn-submit {
+            width: 100%; background: linear-gradient(90deg, #0096aa, #00b4cf); color: #ffffff;
+            border: none; padding: 13px; border-radius: 8px; font-family: var(--font-heading);
+            font-size: 14.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 164, 184, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .btn-submit:hover { background: linear-gradient(90deg, #008496, #0096aa); transform: translateY(-1px); }
+
+        .auth-footer { text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--text-sub); border-top: 1px solid var(--border-color); padding-top: 20px; }
+        .auth-footer a { color: var(--fpt-cyan); font-weight: 700; text-decoration: none; }
+        .auth-footer a:hover { text-decoration: underline; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal.active { display: flex; }
+        .modal-content { background: #ffffff; border-radius: 12px; width: 400px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+
+        /* Modern Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg {
+            min-width: 300px; padding: 14px 20px; border-radius: 8px; color: #ffffff; font-size: 13.5px; font-weight: 500;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: slideIn 0.3s ease forwards; opacity: 0.96;
+        }
+        .toast-msg.success { background: #10b981; border-left: 5px solid #059669; }
+        .toast-msg.error { background: #ef4444; border-left: 5px solid #dc2626; }
+        .toast-msg.warning { background: #f59e0b; border-left: 5px solid #d97706; }
+        .toast-msg.info { background: #00a4b8; border-left: 5px solid #008496; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="auth-container">
+        <div class="auth-header">
+            <a href="/staff" class="brand-badge"><i class="fa-solid fa-network-wired"></i> Everwin AI Platform</a>
+            <div class="auth-title">Đăng Nhập Developer Console</div>
+        </div>
+
+        <form onsubmit="handleLoginSubmit(event)">
+            <div class="form-group">
+                <label class="form-label">Developer Email</label>
+                <div class="input-wrapper">
+                    <i class="fa-regular fa-envelope input-icon"></i>
+                    <input type="email" id="login-email" class="form-control" placeholder="name@company.com" value="dev_namle@company.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" value="secret123" required>
+                    <i class="fa-regular fa-eye toggle-password" id="toggle-pwd-icon" onclick="togglePasswordVisibility('login-password', 'toggle-pwd-icon')"></i>
+                </div>
+            </div>
+
+            <div class="auth-meta">
+                <label class="remember-me">
+                    <input type="checkbox" id="remember-me-checkbox" checked> Ghi nhớ đăng nhập
+                </label>
+                <a href="#" class="forgot-link" onclick="openResetModal(); return false;">Quên mật khẩu?</a>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-right-to-bracket"></i> ĐĂNG NHẬP DEVELOPER
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Chưa có tài khoản? <a href="/signup">Đăng ký tài khoản miễn phí</a>
+        </div>
+    </div>
+
+    <!-- RESET PASSWORD MODAL -->
+    <div class="modal" id="modal-reset-pwd">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-family:var(--font-heading); font-size:18px; font-weight:700;">Đặt Lại Mật Khẩu</h3>
+                <span style="cursor:pointer; font-size:20px; color:#64748b;" onclick="closeResetModal()">&times;</span>
+            </div>
+            <p style="font-size:13px; color:#64748b; margin-bottom:16px;">Nhập email tài khoản và mật khẩu mới bạn muốn đổi:</p>
+            <form onsubmit="handleResetPasswordSubmit(event)">
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:12px; font-weight:600; color:#334155;">Email tài khoản</label>
+                    <input type="email" id="reset-email" class="form-control" style="padding-left:12px;" value="dev_namle@company.com" required>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#334155;">Mật khẩu mới</label>
+                    <input type="password" id="reset-new-password" class="form-control" style="padding-left:12px;" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit" style="padding:10px;">XÁC NHẬN ĐỔI MẬT KHẨU</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info');
+            toast.innerHTML = `<div><i class="fa-solid ${icon}"></i> &nbsp; ${msg}</div><span style="cursor:pointer;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const rememberMe = document.getElementById('remember-me-checkbox').checked;
+
+            try {
+                const res = await fetch('/v1/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                    const storage = rememberMe ? localStorage : sessionStorage;
+                    storage.setItem('aip_user_session', JSON.stringify(data.user));
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectUrl = urlParams.get('redirect') || '/staff/dashboard';
+                    setTimeout(() => { window.location.href = redirectUrl; }, 1000);
+                } else {
+                    showToast('Đăng nhập thất bại: ' + (data.detail || 'Email hoặc mật khẩu không hợp lệ'), 'error');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối server: ' + err.message, 'error');
+            }
+        }
+
+        function openResetModal() { document.getElementById('modal-reset-pwd').classList.add('active'); }
+        function closeResetModal() { document.getElementById('modal-reset-pwd').classList.remove('active'); }
+
+        async function handleResetPasswordSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('reset-email').value;
+            const newPassword = document.getElementById('reset-new-password').value;
+
+            try {
+                const res = await fetch('/v1/auth/forgot-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, new_password: newPassword })
+                });
+                const data = await res.json();
+                showToast(data.message || data.detail, res.ok ? 'success' : 'error');
+                if (res.ok) {
+                    closeResetModal();
+                }
+            } catch (err) {
+                showToast('Lỗi reset mật khẩu: ' + err.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

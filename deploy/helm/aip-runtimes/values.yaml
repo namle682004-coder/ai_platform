@@ -1,0 +1,118 @@
+# ==========================================
+# AIP AI Runtimes Helm Values
+# ==========================================
+
+# --- Speech to Text (Whisper) ---
+stt:
+  enabled: true
+  image:
+    repository: aip-platform/stt-server
+    tag: "1.0.0"
+  replicas: 2
+  port: 8001
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+      nvidia.com/gpu: 1
+  hpa:
+    minReplicas: 1
+    maxReplicas: 6
+    targetCPU: 70
+    targetMemory: 80
+  nodeSelector:
+    pool: gpu-multimodal
+
+# --- Text to Speech ---
+tts:
+  enabled: true
+  image:
+    repository: aip-platform/tts-adapter
+    tag: "1.0.0"
+  replicas: 2
+  port: 8002
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  hpa:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPU: 70
+  nodeSelector:
+    pool: gpu-multimodal
+
+# --- Translation Server ---
+translation:
+  enabled: true
+  image:
+    repository: aip-platform/translation-server
+    tag: "1.0.0"
+  replicas: 2
+  port: 8003
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  hpa:
+    minReplicas: 1
+    maxReplicas: 6
+    targetCPU: 70
+  nodeSelector:
+    pool: cpu-text
+
+# --- Moderation Server ---
+moderation:
+  enabled: true
+  image:
+    repository: aip-platform/moderation-server
+    tag: "1.0.0"
+  replicas: 2
+  port: 8004
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+      nvidia.com/gpu: 1
+  hpa:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPU: 70
+  nodeSelector:
+    pool: gpu-multimodal
+
+# --- OCR Server ---
+ocr:
+  enabled: true
+  image:
+    repository: aip-platform/ocr-server
+    tag: "1.0.0"
+  replicas: 2
+  port: 8005
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  hpa:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPU: 70
+  nodeSelector:
+    pool: gpu-multimodal

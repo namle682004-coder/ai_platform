@@ -3,6 +3,24 @@ from typing import Dict, Any, List
 from common.interfaces.api_logs import IAPILogRepository
 from common.database.mongodb import mongo_manager
 
+AI_API_LOG_PATHS = (
+    "/v1/audio/transcriptions",
+    "/v1/audio/speech",
+    "/v1/chat/completions",
+    "/v1/completions",
+    "/v1/embeddings",
+    "/v1/images/generations",
+    "/v1/moderations",
+    "/v1/predictions",
+    "/v1/ocr/driver-license",
+    "/v1/ocr/id-card",
+    "/v1/ocr/passport",
+    "/v1/vision/facematch",
+    "/v1/vision/liveness-v3",
+    "/v1/nlp/summarization",
+    "/v1/nlp/translation",
+)
+
 
 class MongoAPILogRepository(IAPILogRepository):
     """MongoDB Atlas implementation for API Call Execution Logs."""
@@ -27,7 +45,10 @@ class MongoAPILogRepository(IAPILogRepository):
         db = mongo_manager.get_database()
         if db is not None:
             try:
-                cursor = db.api_logs.find({}, {"_id": 0}).sort("timestamp", -1)
+                cursor = db.api_logs.find(
+                    {"path": {"$in": AI_API_LOG_PATHS}},
+                    {"_id": 0},
+                ).sort("timestamp", -1)
                 logs = await cursor.to_list(length=limit)
                 if logs:
                     for log_item in logs:

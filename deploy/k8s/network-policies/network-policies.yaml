@@ -1,0 +1,123 @@
+# Default deny all ingress/egress - whitelist only
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: aip-control
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: aip-multimodal
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: aip-infra
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Allow gateway to reach AI runtime services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-runtimes
+  namespace: aip-multimodal
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: ai-runtime
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              tier: control-plane
+      ports:
+        - port: 8001
+        - port: 8002
+        - port: 8004
+        - port: 8005
+  policyTypes:
+    - Ingress
+---
+# Allow gateway to reach infrastructure services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-control-to-infra
+  namespace: aip-infra
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              tier: control-plane
+        - namespaceSelector:
+            matchLabels:
+              tier: ai-runtime
+  policyTypes:
+    - Ingress
+---
+# Allow gateway egress to infra + runtimes + DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-egress
+  namespace: aip-control
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: aip-gateway
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              tier: infrastructure
+        - namespaceSelector:
+            matchLabels:
+              tier: ai-runtime
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+  policyTypes:
+    - Egress
+---
+# Allow runtime services egress to infra + DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-runtimes-egress
+  namespace: aip-multimodal
+spec:
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              tier: infrastructure
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+  policyTypes:
+    - Egress

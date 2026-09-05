@@ -31,4 +31,5 @@ ignore = ["B008", "B006", "E501", "E402"]
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
-asyncio_mode = "auto"
+pythonpath = ["services", "packages", "packages/sdk-py"]
+

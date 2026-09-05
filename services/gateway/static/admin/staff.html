@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Developer Portal - AIP Admin Console</title>
+    <link rel="icon" type="image/svg+xml" href="/static/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/static/assets/img/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/assets/css/admin.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <div class="brand-logo"><i class="fa-solid fa-brain"></i></div>
+            <div class="brand-text">
+                <h2>AIP Platform</h2>
+                <span>Enterprise SaaS Grade</span>
+            </div>
+        </div>
+        <div class="menu-category">Main Console</div>
+        <ul class="nav-menu">
+            <li class="nav-item"><button onclick="location.href='/admin/dashboard'"><i class="fa-solid fa-chart-line"></i> Analytics Overview</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/playground'"><i class="fa-solid fa-flask"></i> AI Model Playground</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/keys'"><i class="fa-solid fa-key"></i> API Keys & Approvals</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/users'"><i class="fa-solid fa-users-gear"></i> User & RBAC Control</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/aliases'"><i class="fa-solid fa-cubes"></i> Model Aliases Registry</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/endpoints'"><i class="fa-solid fa-network-wired"></i> Export Endpoints</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/jobs'"><i class="fa-solid fa-bolt"></i> Async Job Queue</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/audit'"><i class="fa-solid fa-list-check"></i> Security Audit Logs</button></li>
+        </ul>
+        <div class="menu-category">Developer Tools</div>
+        <ul class="nav-menu">
+            <li class="nav-item active"><button onclick="location.href='/admin/staff'"><i class="fa-solid fa-code"></i> Staff Developer Portal</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/docs'"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
+            <li class="nav-item"><button onclick="window.open('/status', '_blank')"><i class="fa-solid fa-globe"></i> Public Status Page</button></li>
+        </ul>
+        <div class="user-profile-card">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700;"><i class="fa-solid fa-user-shield"></i></div>
+                <div>
+                    <div id="user-display-email" style="font-size: 12.5px; font-weight: 700; color: #0f172a;">admin@company.com</div>
+                    <div id="user-display-role" style="font-size: 11px; color: var(--emerald); font-weight: 600;">Administrator</div>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="openModal('modal-auth')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        </div>
+    </div>
+    <div class="main-workspace">
+        <div class="top-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-sub);"></i>
+                <input type="text" placeholder="Search models, endpoints, API keys...">
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-sm btn-danger" onclick="toggleCircuitBreaker()"><i class="fa-solid fa-power-off"></i> Circuit Breaker: <span id="cb-label">OFF</span></button>
+                <div class="pill-status">
+                    <div class="status-dot"></div>
+                    MongoDB Atlas: ai_platform
+                </div>
+            </div>
+        </div>
+        <div class="content-body">
+            <div class="page-header">
+                <div>
+                    <h1>Staff Developer Portal</h1>
+                    <p>Embedded Staff Portal & Developer Dashboard</p>
+                </div>
+            </div>
+            <div class="glass-panel" style="padding: 0; overflow: hidden; height: 750px;">
+                <iframe src="/staff" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal-auth">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="auth-title">Staff / Admin Login</h3>
+                <button class="modal-close" onclick="closeModal('modal-auth')">&times;</button>
+            </div>
+            <form onsubmit="handleAuthSubmit(event)">
+                <div class="form-group">
+                    <label>Corporate Email</label>
+                    <input type="email" id="auth-email" class="form-control" value="admin@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-password" class="form-control" value="admin123" required>
+                </div>
+                <div id="auth-signup-fields" style="display:none;">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="auth-fullname" class="form-control" placeholder="Nam Le Developer">
+                    </div>
+                    <div class="form-group">
+                        <label>Account Role</label>
+                        <select id="auth-role" class="form-control">
+                            <option value="staff">Staff / Developer</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                    <a href="#" id="auth-toggle-link" style="font-size:12.5px; color:var(--primary);" onclick="toggleAuthMode()">Need an account? Signup</a>
+                    <button type="submit" class="btn btn-primary" id="auth-submit-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="/static/assets/js/admin.js"></script>
+</body>
+</html>
