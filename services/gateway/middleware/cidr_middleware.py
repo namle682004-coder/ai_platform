@@ -71,11 +71,15 @@ class AdminCIDRMiddleware(BaseHTTPMiddleware):
         cidrs = []
         for item in cidr_str.split(","):
             item = item.strip()
-            if item:
-                try:
-                    cidrs.append(ipaddress.ip_network(item, strict=False))
-                except ValueError:
-                    logger.warning(f"Invalid CIDR configured: {item}")
+            if not item:
+                continue
+            if item in ["*", "all", "0.0.0.0/0"]:
+                cidrs.append(ipaddress.ip_network("0.0.0.0/0"))
+                continue
+            try:
+                cidrs.append(ipaddress.ip_network(item, strict=False))
+            except ValueError:
+                logger.warning(f"Invalid CIDR configured: {item}")
         return cidrs
 
     def _is_ip_allowed(self, client_host: str) -> bool:
@@ -85,6 +89,8 @@ class AdminCIDRMiddleware(BaseHTTPMiddleware):
             return True
         try:
             ip = ipaddress.ip_address(client_host)
+            if ip.is_loopback:
+                return True
             return any(ip in net for net in self.allowed_cidrs)
         except ValueError:
             return False

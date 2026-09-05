@@ -35,8 +35,11 @@ class GatewaySettings(BaseSettings):
     default_tpm_limit: int = Field(100000, validation_alias="DEFAULT_TPM_LIMIT")
     default_concurrency_limit: int = Field(5, validation_alias="DEFAULT_CONCURRENCY_LIMIT")
 
-    # Admin CIDR Protection
-    admin_allowed_cidrs: str = Field("116.101.7.0/24,127.0.0.1/32,::1/128", validation_alias="ADMIN_ALLOWED_CIDRS")
+    # Admin CIDR Protection (allows localhost, private subnets, and corporate/dev networks)
+    admin_allowed_cidrs: str = Field(
+        "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,152.16.0.0/16,171.236.0.0/16",
+        validation_alias="ADMIN_ALLOWED_CIDRS",
+    )
 
     # Microservice Target Backend URLs
     stt_server_url: str = Field("http://localhost:8002", validation_alias="STT_SERVER_URL")
