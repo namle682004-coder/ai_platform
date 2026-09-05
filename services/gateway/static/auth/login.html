@@ -209,7 +209,6 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
-            const rememberMe = document.getElementById('remember-me-checkbox').checked;
 
             try {
                 const res = await fetch('/v1/auth/login', {
@@ -221,12 +220,16 @@
 
                 if (res.ok) {
                     showToast('Đăng nhập thành công! Đang chuyển hướng...', 'success');
-                    const storage = rememberMe ? localStorage : sessionStorage;
-                    storage.setItem('aip_user_session', JSON.stringify(data.user));
+                    // Ghi đè duy nhất vào localStorage để đồng bộ toàn bộ tab của trình duyệt Chrome
+                    localStorage.setItem('aip_user_session', JSON.stringify(data.user));
+                    sessionStorage.removeItem('aip_user_session');
 
                     const urlParams = new URLSearchParams(window.location.search);
-                    const redirectUrl = urlParams.get('redirect') || '/staff/dashboard';
-                    setTimeout(() => { window.location.href = redirectUrl; }, 1000);
+                    let redirectUrl = urlParams.get('redirect');
+                    if (!redirectUrl) {
+                        redirectUrl = data.user.role === 'admin' ? '/admin/dashboard' : '/staff/dashboard';
+                    }
+                    setTimeout(() => { window.location.href = redirectUrl; }, 800);
                 } else {
                     showToast('Đăng nhập thất bại: ' + (data.detail || 'Email hoặc mật khẩu không hợp lệ'), 'error');
                 }

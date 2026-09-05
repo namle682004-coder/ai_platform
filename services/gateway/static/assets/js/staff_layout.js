@@ -567,7 +567,33 @@ function toggleNavSection(headerEl) {
     }
 }
 
+function ensureStaffAuth() {
+    const raw = localStorage.getItem('aip_user_session');
+    if (!raw) {
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        return false;
+    }
+    try {
+        const user = JSON.parse(raw);
+        const nameEl = document.getElementById('header-username');
+        if (nameEl) nameEl.innerText = user.full_name || user.email || 'Nam Lê';
+        return true;
+    } catch (e) {
+        localStorage.removeItem('aip_user_session');
+        window.location.href = '/login';
+        return false;
+    }
+}
+
+// Đồng bộ đăng nhập/đăng xuất giữa tất cả các tab của trình duyệt
+window.addEventListener('storage', function(e) {
+    if (e.key === 'aip_user_session') {
+        window.location.reload();
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
+    ensureStaffAuth();
     initStaffChrome();
     initMasterSidebar();
 });
