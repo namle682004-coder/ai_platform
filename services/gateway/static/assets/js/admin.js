@@ -134,12 +134,67 @@ async function handleAuthSubmit(e) {
         const data = await res.json();
         if (res.ok) {
             showToast(`Login Successful! Welcome ${data.user.full_name || data.user.email}`, 'success');
+            localStorage.setItem('aip_user_session', JSON.stringify(data.user));
+            sessionStorage.removeItem('aip_user_session');
             closeModal('modal-auth');
+            if (data.user.role !== 'admin') {
+                alert('Tài khoản này có vai trò Staff/Developer, không có quyền Administrator. Đang chuyển hướng sang Staff Portal.');
+                window.location.href = '/staff/dashboard';
+            } else {
+                setTimeout(() => { window.location.reload(); }, 600);
+            }
         } else {
             showToast('Login Failed: ' + data.detail, 'error');
         }
     }
 }
+
+function checkAdminAuth() {
+    const raw = localStorage.getItem('aip_user_session');
+    if (!raw) {
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        return false;
+    }
+    try {
+        const user = JSON.parse(raw);
+        if (user.role !== 'admin') {
+            alert(`Tài khoản hiện tại [${user.email || 'Staff'}] không có quyền Administrator. Đang chuyển hướng về trang Staff Portal.`);
+            window.location.href = '/staff/dashboard';
+            return false;
+        }
+        const emailEl = document.getElementById('user-display-email');
+        const roleEl = document.getElementById('user-display-role');
+        if (emailEl) emailEl.innerText = user.email || 'admin@company.com';
+        if (roleEl) roleEl.innerText = 'Administrator';
+
+        const card = document.querySelector('.user-profile-card');
+        if (card) {
+            const btn = card.querySelector('button');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Logout';
+                btn.onclick = logoutAdmin;
+            }
+        }
+        return true;
+    } catch (e) {
+        localStorage.removeItem('aip_user_session');
+        window.location.href = '/login';
+        return false;
+    }
+}
+
+function logoutAdmin() {
+    localStorage.removeItem('aip_user_session');
+    sessionStorage.removeItem('aip_user_session');
+    window.location.href = '/login';
+}
+
+// Đồng bộ đăng nhập/đăng xuất giữa tất cả các tab của trình duyệt
+window.addEventListener('storage', (e) => {
+    if (e.key === 'aip_user_session') {
+        window.location.reload();
+    }
+});
 
 // ─── API Keys ───────────────────────────────────────────────────
 async function fetchAPIKeys() {
@@ -462,6 +517,9 @@ function initChart() {
 
 // ─── Page Initialization (Conditional per Page) ─────────────────
 window.addEventListener('DOMContentLoaded', () => {
+    // 1. Mandatory Admin Role Authentication Check
+    if (!checkAdminAuth()) return;
+
     // Dashboard-specific: chart + GPU health
     if (document.getElementById('trafficChart')) {
         initChart();
