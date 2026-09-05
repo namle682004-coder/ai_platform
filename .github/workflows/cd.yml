@@ -75,18 +75,30 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Set kubeconfig
-        run: echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+        id: kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          if [ -z "${{ secrets.KUBE_CONFIG_STAGING }}" ]; then
+            echo "::warning::KUBE_CONFIG_STAGING secret is not configured in GitHub Secrets. Skipping K8s cluster deploy."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Install Helm
+        if: steps.kubeconfig.outputs.skip != 'true'
         uses: azure/setup-helm@v3
 
       - name: Deploy Infrastructure (if changed)
+        if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           helm upgrade --install aip-infra deploy/helm/aip-infra \
             --namespace aip-infra --create-namespace \
             --wait --timeout 5m
 
       - name: Deploy Gateway
+        if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           helm upgrade --install aip-control deploy/helm/aip-control \
             --namespace aip-control --create-namespace \
@@ -94,6 +106,7 @@ jobs:
             --wait --timeout 5m
 
       - name: Deploy AI Runtimes
+        if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
             --namespace aip-multimodal --create-namespace \
@@ -105,6 +118,7 @@ jobs:
             --wait --timeout 10m
 
       - name: Verify Deployment Health
+        if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           kubectl rollout status deployment/aip-gateway -n aip-control --timeout=120s
           echo "Staging deployment successful!"
@@ -122,12 +136,23 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Set kubeconfig
-        run: echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+        id: kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          if [ -z "${{ secrets.KUBE_CONFIG_PRODUCTION }}" ]; then
+            echo "::warning::KUBE_CONFIG_PRODUCTION secret is not configured in GitHub Secrets. Skipping K8s cluster deploy."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Install Helm
+        if: steps.kubeconfig.outputs.skip != 'true'
         uses: azure/setup-helm@v3
 
       - name: Deploy to Production
+        if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           helm upgrade --install aip-control deploy/helm/aip-control \
             --namespace aip-control \
@@ -145,6 +170,7 @@ jobs:
             --wait --timeout 10m
 
       - name: Production Health Check
+        if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           kubectl rollout status deployment/aip-gateway -n aip-control --timeout=180s
           echo "Production deployment successful!"
