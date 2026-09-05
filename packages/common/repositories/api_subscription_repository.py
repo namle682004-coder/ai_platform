@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from common.database.mongodb import mongo_manager
 
 CANONICAL_APIS = [

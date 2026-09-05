@@ -14,14 +14,10 @@ async def create_transcription(
     language: str | None = Form("vi"),
     authorization: Optional[str] = Header(None)
 ):
-    audio_bytes = await file.read()
-    
     # 1. Attempt to call real GPU STT Microservice
     try:
         auth_hdr = authorization or "Bearer SSAmMKZJHIgM82n0NTnFQq6Q3CkIjLR"
         async with httpx.AsyncClient(timeout=15.0) as client:
-            # We must reset file seek to read again
-            await file.seek(0)
             files = {"file": (file.filename, file.file, file.content_type)}
             data = {"model": model, "language": language or "vi"}
             headers = {"Authorization": auth_hdr}

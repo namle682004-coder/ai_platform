@@ -8,7 +8,6 @@ from common.repositories.project_repository import project_repository
 from common.repositories.key_repository import key_repository
 from common.repositories.notification_repository import notification_repository
 from common.repositories.tenant_repository import tenant_repository
-from common.repositories.user_repository import user_repository
 from common.repositories.endpoint_repository import endpoint_repository
 from common.repositories.api_subscription_repository import api_subscription_repository
 from common.repositories.api_log_repository import AI_API_LOG_PATHS
@@ -348,19 +347,19 @@ def _filter_logs(logs: list, status: str = None, api: str = None, from_date: str
     result = logs
     if status:
         if status == "200":
-            result = [l for l in result if 200 <= l.get("status_code", 0) < 300]
+            result = [log_item for log_item in result if 200 <= log_item.get("status_code", 0) < 300]
         elif status == "400":
-            result = [l for l in result if 400 <= l.get("status_code", 0) < 500]
+            result = [log_item for log_item in result if 400 <= log_item.get("status_code", 0) < 500]
         elif status == "500":
-            result = [l for l in result if 500 <= l.get("status_code", 0) < 600]
+            result = [log_item for log_item in result if 500 <= log_item.get("status_code", 0) < 600]
     if api:
         api_lower = api.lower()
-        result = [l for l in result if api_lower in l.get("path", "").lower()]
+        result = [log_item for log_item in result if api_lower in log_item.get("path", "").lower()]
     if from_date:
         clean = from_date.replace("/", "-")
-        result = [l for l in result if l.get("timestamp", "") >= f"{clean}T00:00:00"]
+        result = [log_item for log_item in result if log_item.get("timestamp", "") >= f"{clean}T00:00:00"]
     if to_date:
         clean = to_date.replace("/", "-")
-        result = [l for l in result if l.get("timestamp", "") <= f"{clean}T23:59:59"]
+        result = [log_item for log_item in result if log_item.get("timestamp", "") <= f"{clean}T23:59:59"]
     return result
 

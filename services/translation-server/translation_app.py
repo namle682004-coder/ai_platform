@@ -1,6 +1,5 @@
 
 import time
-import os
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 

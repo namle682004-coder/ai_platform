@@ -1,5 +1,4 @@
 import httpx
-from collections.abc import AsyncGenerator
 from fastapi import APIRouter, Request, Header
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field

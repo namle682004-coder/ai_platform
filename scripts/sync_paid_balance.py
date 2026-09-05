@@ -1,5 +1,4 @@
 import asyncio
-import os
 import sys
 
 # Add packages and services to sys.path

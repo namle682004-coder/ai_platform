@@ -1,5 +1,5 @@
 import httpx
-from typing import Optional, List
+from typing import Optional
 from fastapi import APIRouter, File, UploadFile, Form, Header, HTTPException
 from pydantic import BaseModel
 from gateway.core.config import gateway_settings
