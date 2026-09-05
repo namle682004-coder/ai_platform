@@ -42,4 +42,4 @@ async def create_speech(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (TTS Server): {str(e)}"
-        )
+        ) from e

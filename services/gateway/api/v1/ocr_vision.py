@@ -50,7 +50,7 @@ async def ocr_driver_license(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (OCR Server): {str(e)}"
-        )
+        ) from e
 
 @router.post("/ocr/id-card")
 async def ocr_id_card(
@@ -88,7 +88,7 @@ async def ocr_id_card(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (OCR Server): {str(e)}"
-        )
+        ) from e
 
 @router.post("/ocr/passport")
 async def ocr_passport(
@@ -126,7 +126,7 @@ async def ocr_passport(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (OCR Server): {str(e)}"
-        )
+        ) from e
 
 @router.post("/vision/facematch")
 async def vision_facematch(
@@ -160,7 +160,7 @@ async def vision_facematch(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (Vision/OCR Server): {str(e)}"
-        )
+        ) from e
 
 @router.post("/vision/liveness-v3")
 async def vision_liveness_v3(
@@ -190,7 +190,7 @@ async def vision_liveness_v3(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (Vision/OCR Server): {str(e)}"
-        )
+        ) from e
 
 @router.post("/nlp/summarization")
 async def nlp_summarization(
@@ -215,7 +215,7 @@ async def nlp_summarization(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (Translation Server): {str(e)}"
-        )
+        ) from e
 
 @router.post("/nlp/translation")
 async def nlp_translation(
@@ -244,4 +244,4 @@ async def nlp_translation(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (Translation Server): {str(e)}"
-        )
+        ) from e

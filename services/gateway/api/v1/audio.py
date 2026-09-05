@@ -39,4 +39,4 @@ async def create_transcription(
         raise HTTPException(
             status_code=502,
             detail=f"GPU Inference Node Offline (STT Server): {str(e)}"
-        )
+        ) from e
