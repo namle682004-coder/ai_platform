@@ -11,6 +11,8 @@ from common.repositories.tenant_repository import tenant_repository
 from common.repositories.user_repository import user_repository
 from common.repositories.endpoint_repository import endpoint_repository
 from common.repositories.api_subscription_repository import api_subscription_repository
+from common.repositories.api_log_repository import AI_API_LOG_PATHS
+from common.security.argon2_hasher import generate_api_key
 
 router = APIRouter(prefix="/v1/user", tags=["User Portal & Console API"])
 
@@ -93,7 +95,7 @@ async def create_user_project(req: ProjectCreateRequest):
 @router.get("/api-keys", response_model=List[dict])
 async def list_user_api_keys():
     """Fetch active API keys from MongoDB Atlas."""
-    keys = key_repository.list_keys()
+    keys = await key_repository.list_keys()
     if not keys:
         default_key = {
             "key_id": f"key_{secrets.token_hex(6)}",
@@ -102,7 +104,7 @@ async def list_user_api_keys():
             "project_name": "wwrwer23",
             "created_at": datetime.now(timezone.utc).strftime("%Y/%m/%d %H:%M"),
         }
-        key_repository.save_key(default_key)
+        await key_repository.create_key(default_key)
         return [default_key]
     return keys
 
@@ -110,22 +112,27 @@ async def list_user_api_keys():
 @router.post("/api-keys", status_code=status.HTTP_201_CREATED)
 async def create_user_api_key(req: ApiKeyCreateRequest):
     """Generate and store a new API Key in MongoDB Atlas."""
-    raw_key = f"SSAm{secrets.token_urlsafe(24)}"
+    raw_key, hashed_key = generate_api_key(prefix="aip_live_")
     key_doc = {
         "key_id": f"key_{secrets.token_hex(6)}",
         "name": req.name,
-        "value": raw_key,
+        "prefix": raw_key[:12] + "...",
+        "hashed_key": hashed_key,
         "project_name": req.project_name or "Default Project",
         "created_at": datetime.now(timezone.utc).strftime("%Y/%m/%d %H:%M"),
     }
-    saved = key_repository.save_key(key_doc)
-    return {"message": f"API Key '{req.name}' created successfully!", "api_key": saved}
+    saved = await key_repository.create_key(key_doc)
+    return {
+        "message": f"API Key '{req.name}' created successfully!",
+        "api_key": raw_key,
+        "key": {key: value for key, value in saved.items() if key != "hashed_key"},
+    }
 
 
 @router.delete("/api-keys/{key_id}")
 async def delete_user_api_key(key_id: str):
     """Revoke an API key in MongoDB Atlas."""
-    success = key_repository.revoke_key(key_id)
+    success = await key_repository.delete_key(key_id)
     return {"message": "API key revoked successfully", "success": success}
 
 
@@ -237,3 +244,123 @@ async def list_database_apis_catalog():
     """Fetch all available API services catalog from MongoDB Atlas endpoints."""
     endpoints_map = await endpoint_repository.list_endpoints()
     return list(endpoints_map.values())
+
+
+# --- 7. API USAGE REPORT LOGS FOR STAFF REPORT PAGE ---
+
+@router.get("/api-report", summary="List API Call Logs with Filtering (Staff Report)")
+async def list_api_report_logs(
+    status: Optional[str] = None,
+    api: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 25,
+):
+    """
+    Fetch API call execution logs from MongoDB with optional filters.
+    Used by the Staff API Report page.
+
+    - **status**: Filter by HTTP status code group: "200", "400", "500"
+    - **api**: Filter by API path keyword (e.g. "speech", "completions")
+    - **from_date**: Start date (YYYY/MM/DD or YYYY-MM-DD)
+    - **to_date**: End date (YYYY/MM/DD or YYYY-MM-DD)
+    - **page**: Page number (default 1)
+    - **page_size**: Items per page (default 25)
+    """
+    from common.database.mongodb import mongo_manager
+
+    db = mongo_manager.get_database()
+    if db is None:
+        # Fallback to in-memory cache if no DB
+        from common.repositories.api_log_repository import api_log_repository
+        logs = await api_log_repository.list_recent_logs(limit=500)
+        # Apply client-side filtering on cache
+        filtered = _filter_logs(logs, status, api, from_date, to_date)
+        total = len(filtered)
+        start = (page - 1) * page_size
+        return {
+            "object": "list",
+            "data": filtered[start:start + page_size],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+
+    # Build MongoDB query
+    # Keep historical control-plane records out of the report as well.
+    query: Dict = {"path": {"$in": AI_API_LOG_PATHS}}
+
+    if status:
+        if status == "200":
+            query["status_code"] = {"$gte": 200, "$lt": 300}
+        elif status == "400":
+            query["status_code"] = {"$gte": 400, "$lt": 500}
+        elif status == "500":
+            query["status_code"] = {"$gte": 500, "$lt": 600}
+
+    if api:
+        # Map friendly name to path substring
+        api_path_map = {
+            "Speech to Text": "/v1/audio/transcriptions",
+            "Text to Speech": "/v1/audio/speech",
+            "LLM Chatbot": "/v1/chat/completions",
+            "Embeddings": "/v1/embeddings",
+            "Image Generation": "/v1/images",
+            "Moderation": "/v1/moderations",
+            "OCR": "/v1/ocr",
+            "Translation": "/v1/translations",
+        }
+        path_fragment = api_path_map.get(api, api.lower())
+        query["path"] = {"$regex": path_fragment, "$options": "i"}
+
+    if from_date or to_date:
+        ts_filter = {}
+        if from_date:
+            clean = from_date.replace("/", "-")
+            ts_filter["$gte"] = f"{clean}T00:00:00+00:00"
+        if to_date:
+            clean = to_date.replace("/", "-")
+            ts_filter["$lte"] = f"{clean}T23:59:59+00:00"
+        if ts_filter:
+            query["timestamp"] = ts_filter
+
+    try:
+        total = await db.api_logs.count_documents(query)
+        skip = (page - 1) * page_size
+        cursor = db.api_logs.find(query, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(page_size)
+        logs = await cursor.to_list(length=page_size)
+    except Exception:
+        logs = []
+        total = 0
+
+    return {
+        "object": "list",
+        "data": logs,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+def _filter_logs(logs: list, status: str = None, api: str = None, from_date: str = None, to_date: str = None) -> list:
+    """Client-side filtering fallback when MongoDB is unavailable."""
+    result = logs
+    if status:
+        if status == "200":
+            result = [l for l in result if 200 <= l.get("status_code", 0) < 300]
+        elif status == "400":
+            result = [l for l in result if 400 <= l.get("status_code", 0) < 500]
+        elif status == "500":
+            result = [l for l in result if 500 <= l.get("status_code", 0) < 600]
+    if api:
+        api_lower = api.lower()
+        result = [l for l in result if api_lower in l.get("path", "").lower()]
+    if from_date:
+        clean = from_date.replace("/", "-")
+        result = [l for l in result if l.get("timestamp", "") >= f"{clean}T00:00:00"]
+    if to_date:
+        clean = to_date.replace("/", "-")
+        result = [l for l in result if l.get("timestamp", "") <= f"{clean}T23:59:59"]
+    return result
+

@@ -16,7 +16,11 @@ const AIP_I18N = {
         select_project: "Select a project",
         logout: "Logout",
         create_prepaid_project: "CREATE PREPAID PROJECT",
-        search: "Search"
+        search: "Search",
+        payment_support: "Payment & Support",
+        back_to_dashboard: "Back to Dashboard",
+        back_to_apis: "Back to APIs Catalog",
+        language: "English"
     },
     vi: {
         dashboard: "Bảng Điều Khiển",
@@ -33,17 +37,94 @@ const AIP_I18N = {
         select_project: "Chọn Dự Án",
         logout: "Đăng Xuất",
         create_prepaid_project: "TẠO DỰ ÁN TRẢ TRƯỚC",
-        search: "Tìm kiếm"
+        search: "Tìm kiếm",
+        payment_support: "Thanh toán & Hỗ trợ",
+        back_to_dashboard: "Quay lại Bảng điều khiển",
+        back_to_apis: "Quay lại Danh sách API",
+        language: "Tiếng Việt"
     }
+};
+
+const AIP_COMMON_TRANSLATION_KEYS = {
+    "Console": "console",
+    "Bảng Điều Khiển": "console",
+    "Bảng điều khiển": "console",
+    "Applications": "applications",
+    "Ứng Dụng AI": "applications",
+    "Payment & Support": "payment_support",
+    "Thanh toán & Hỗ trợ": "payment_support",
+    "Dashboard": "dashboard",
+    "APIs": "apis",
+    "API Keys": "api_keys",
+    "API report": "api_report",
+    "Payment history": "payment_history",
+    "Contact us": "contact_us",
+    "Speech to Text": "speech_to_text",
+    "Text to Speech": "text_to_speech",
+    "LLM Chatbot": "llm_chatbot",
+    "Select a project": "select_project",
+    "Default Project": "select_project"
 };
 
 function getAppLanguage() {
     return localStorage.getItem('aip_lang') || 'en';
 }
 
-function setAppLanguage(lang) {
-    localStorage.setItem('aip_lang', lang);
+const aipSetLanguage = (lang) => {
+    const nextLanguage = AIP_I18N[lang] ? lang : 'en';
+    localStorage.setItem('aip_lang', nextLanguage);
     location.reload();
+};
+
+function setAppLanguage(lang) {
+    aipSetLanguage(lang);
+}
+
+document.addEventListener('click', (event) => {
+    const languageOption = event.target.closest('[onclick*="setAppLanguage("]');
+    if (!languageOption) return;
+    const match = languageOption.getAttribute('onclick').match(/setAppLanguage\(['"](en|vi)['"]\)/);
+    if (!match) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    aipSetLanguage(match[1]);
+}, true);
+
+function translateCommonText(element, language) {
+    if (!element) return;
+    const sourceText = Array.from(element.childNodes)
+        .filter(node => node.nodeType === Node.TEXT_NODE)
+        .map(node => node.textContent.trim())
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const key = AIP_COMMON_TRANSLATION_KEYS[sourceText];
+    if (!key || !AIP_I18N[language][key]) return;
+
+    const textNode = Array.from(element.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+    if (textNode) textNode.textContent = ` ${AIP_I18N[language][key]} `;
+}
+
+function applyCommonTranslations() {
+    const language = getAppLanguage();
+    const dictionary = AIP_I18N[language] || AIP_I18N.en;
+    const languageLabel = document.getElementById('current-lang-text');
+    const projectLabel = document.getElementById('current-project-label');
+    if (languageLabel) languageLabel.textContent = dictionary.language;
+    if (projectLabel && AIP_COMMON_TRANSLATION_KEYS[projectLabel.textContent.trim()]) {
+        projectLabel.textContent = dictionary.select_project;
+    }
+
+    document.querySelectorAll('.sidebar .section-title, .sidebar .nav-item a').forEach(element => {
+        translateCommonText(element, language);
+    });
+
+    document.querySelectorAll('[title="Back to Dashboard"], [title="Quay lại Bảng điều khiển"]').forEach(element => {
+        element.title = dictionary.back_to_dashboard;
+    });
+    document.querySelectorAll('[title="Back to APIs Catalog"], [title="Quay lại Danh sách API"]').forEach(element => {
+        element.title = dictionary.back_to_apis;
+    });
 }
 
 function toggleLangDropdown(e) {
@@ -259,13 +340,22 @@ async function initMasterTopbar() {
     const lang = getAppLanguage();
     const langText = document.getElementById('current-lang-text');
     if (langText) {
-        langText.innerText = lang === 'vi' ? 'Tiếng Việt' : 'English';
+        langText.innerText = (AIP_I18N[lang] || AIP_I18N.en).language;
     }
+    applyCommonTranslations();
 
     const projects = await getProjects();
     const activeName = getActiveProjectName();
     const label = document.getElementById('current-project-label');
     if (label) label.innerText = activeName;
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initMasterTopbar();
+    }, { once: true });
+} else {
+    initMasterTopbar();
 }
 
 function openSelectProjectModal() {
@@ -356,24 +446,74 @@ async function submitCreatePrepaidProject() {
     showToast(`Prepaid Project "${name}" created successfully!`, 'success');
 }
 
-function showToast(msg, type = 'info') {
+function staffShowToast(msg, type = 'info') {
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
         document.body.appendChild(container);
     }
+    container.style.cssText = 'position:fixed; top:6px; right:6px; z-index:10000; display:flex; flex-direction:column; align-items:flex-end; gap:6px; pointer-events:none; width:calc(100vw - 12px);';
     const toast = document.createElement('div');
     toast.className = `toast-msg toast-${type}`;
+    toast.style.cssText = 'width:min(720px, calc(100vw - 24px)); min-height:38px; padding:7px 11px; border-radius:4px; display:flex; align-items:center; justify-content:space-between; gap:8px; color:#fff; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 4px 12px rgba(0,0,0,0.16); opacity:0.96; pointer-events:auto;';
     let bg = '#007bff';
     if (type === 'success') bg = '#10b981';
     if (type === 'warning') bg = '#f59e0b';
     if (type === 'error') bg = '#ef4444';
 
     toast.style.background = bg;
-    toast.innerHTML = `<span>${msg}</span><i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="this.parentElement.remove()"></i>`;
+    toast.innerHTML = `<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${msg}</span><i class="fa-solid fa-xmark" style="cursor:pointer; flex:0 0 auto;" onclick="this.parentElement.remove()"></i>`;
     container.appendChild(toast);
     setTimeout(() => { toast.remove(); }, 3500);
+}
+
+function toggleStaffSidebar() {
+    document.body.classList.toggle('aip-sidebar-collapsed');
+    localStorage.setItem('aip_sidebar_collapsed', document.body.classList.contains('aip-sidebar-collapsed') ? '1' : '0');
+}
+
+function initStaffChrome() {
+    if (!document.getElementById('aip-staff-chrome-style')) {
+        const style = document.createElement('style');
+        style.id = 'aip-staff-chrome-style';
+        style.textContent = `
+            #toast-container { position: fixed !important; top: 6px !important; right: 6px !important; z-index: 10000 !important; width: calc(100vw - 12px) !important; align-items: flex-end !important; gap: 6px !important; }
+            #toast-container .toast-msg { width: min(720px, calc(100vw - 24px)) !important; min-width: 0 !important; max-width: none !important; min-height: 38px !important; padding: 7px 11px !important; border-radius: 4px !important; white-space: nowrap !important; overflow: hidden !important; }
+            .aip-sidebar-collapsed .sidebar { display: none !important; }
+            .layout-body, .main-content { min-width: 0 !important; }
+            .main-content { overflow-x: hidden !important; }
+            .chart-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; min-width: 0 !important; }
+            .chart-card, .table-card { min-width: 0 !important; max-width: 100% !important; }
+            .chart-card canvas { display: block; max-width: 100% !important; }
+            .table-card { overflow-x: auto !important; }
+            .table-card table { max-width: 100%; }
+            .aip-sidebar-toggle { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: rgba(255,255,255,0.14); color: #fff; cursor: pointer; font-size: 15px; }
+            .aip-sidebar-toggle:hover { background: rgba(255,255,255,0.25); }
+            @media (max-width: 700px) { .aip-sidebar-toggle { display: inline-flex; } }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const headerLeft = document.querySelector('.top-header .header-left');
+    if (headerLeft && !document.getElementById('aip-sidebar-toggle')) {
+        const toggle = document.createElement('button');
+        toggle.id = 'aip-sidebar-toggle';
+        toggle.className = 'aip-sidebar-toggle';
+        toggle.type = 'button';
+        toggle.title = 'Toggle sidebar';
+        toggle.setAttribute('aria-label', 'Toggle sidebar');
+        toggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+        toggle.addEventListener('click', toggleStaffSidebar);
+        headerLeft.insertBefore(toggle, headerLeft.firstChild);
+    }
+
+    if (localStorage.getItem('aip_sidebar_collapsed') === '1') {
+        document.body.classList.add('aip-sidebar-collapsed');
+    }
+
+    // Page scripts may define their own showToast; replace it with the shared renderer.
+    window.showToast = staffShowToast;
 }
 
 function initMasterSidebar() {
@@ -428,6 +568,6 @@ function toggleNavSection(headerEl) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    initMasterTopbar();
+    initStaffChrome();
     initMasterSidebar();
 });
