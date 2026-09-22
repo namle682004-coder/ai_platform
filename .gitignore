@@ -81,3 +81,11 @@ hf_cache/
 logs/
 tmp/
 scratch/
+
+# .NET SDK Build Artifacts
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.suo
+
