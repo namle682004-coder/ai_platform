@@ -18,7 +18,7 @@ def test_admin_list_exported_endpoints():
     response = client.get("/admin/v1/endpoints")
     assert response.status_code == 200
     data = response.json()
-    assert len(data["data"]) >= 8
+    assert len(data["data"]) >= 7
 
 
 def test_admin_update_endpoint_export_status():

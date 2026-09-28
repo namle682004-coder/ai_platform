@@ -1,7 +1,7 @@
 import time
 import json
 import uuid
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 import httpx
 from fastapi import APIRouter, Request, Response, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -94,16 +94,40 @@ def _normalize_scores(raw_scores: Any, cat_dict: Dict[str, bool]) -> Dict[str, f
 
 
 async def _evaluate_single_text_neural(text: str) -> Dict[str, Any]:
+    # 1. Try dedicated moderation server
+    mod_url = f"{gateway_settings.moderation_server_url}/v1/moderation/text"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.post(
+                mod_url,
+                json={"input": text, "model": "moderation-multimodal"},
+                headers={"Authorization": "Bearer aip_live_valid_test_key_12345"},
+            )
+            if res.status_code == 200:
+                data = res.json()
+                if "results" in data and len(data["results"]) > 0:
+                    r0 = data["results"][0]
+                    cat_dict = _normalize_categories(r0.get("categories", {}))
+                    score_dict = _normalize_scores(r0.get("category_scores", {}), cat_dict)
+                    return {
+                        "flagged": bool(r0.get("flagged", any(cat_dict.values()))),
+                        "categories": cat_dict,
+                        "category_scores": score_dict,
+                    }
+    except Exception:
+        pass
+
+    # 2. Try LLM endpoint
     vllm_url = f"{gateway_settings.vllm_server_url}/chat/completions"
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             res = await client.post(
                 vllm_url,
                 json={
                     "model": "chat-general-standard",
                     "messages": [
                         {"role": "system", "content": MODERATION_SYSTEM_PROMPT},
-                        {"role": "user", "content": f"Text to evaluate: {text}"}
+                        {"role": "user", "content": f"Text to evaluate: {text}"},
                     ],
                     "temperature": 0.0,
                     "max_tokens": 250,
@@ -123,6 +147,33 @@ async def _evaluate_single_text_neural(text: str) -> Dict[str, Any]:
                         "categories": cat_dict,
                         "category_scores": score_dict,
                     }
+    except Exception:
+        pass
+
+    # 3. In-process evaluation fallback
+    try:
+        import sys
+        from pathlib import Path
+
+        _mod_path = (
+            Path(__file__).resolve().parent.parent.parent.parent
+            / "data-plane"
+            / "moderation-server"
+        )
+        if str(_mod_path) not in sys.path:
+            sys.path.insert(0, str(_mod_path))
+        from moderation_engine import moderation_engine
+
+        eval_res = await moderation_engine.moderate([text], "moderation-multimodal")
+        if eval_res and len(eval_res.results) > 0:
+            r0 = eval_res.results[0]
+            cat_dict = _normalize_categories(r0.categories.model_dump())
+            score_dict = _normalize_scores(r0.category_scores.model_dump(), cat_dict)
+            return {
+                "flagged": r0.flagged,
+                "categories": cat_dict,
+                "category_scores": score_dict,
+            }
     except Exception:
         pass
 

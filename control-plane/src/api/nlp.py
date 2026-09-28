@@ -206,9 +206,9 @@ async def nlp_translation(
 
             return full_resp
 
-    except httpx.HTTPError:
+    except httpx.HTTPError as e:
         if not allow_in_process_fallback():
-            raise HTTPException(status_code=503, detail="Translation runtime unavailable")
+            raise HTTPException(status_code=503, detail="Translation runtime unavailable") from e
         # Standalone microservice on port 8003 is offline or busy.
         # Fallback to direct in-process translation or clean simulation
         try:
@@ -308,7 +308,7 @@ async def nlp_summarization(
         return cached_copy
 
     # 2. Call Data-Plane Translation/LLM Microservice
-    auth_hdr = _extract_auth_header(authorization)
+    _extract_auth_header(authorization)
     try:
         summary_text = f"Tóm tắt: {req.document[:180]}..."
         elapsed_ms = round((time.time() - start_time) * 1000, 2)

@@ -135,9 +135,9 @@ async def create_transcription(
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }))
             return resp_data
-    except Exception:
+    except Exception as e:
         if not allow_in_process_fallback():
-            raise HTTPException(status_code=503, detail="STT runtime unavailable")
+            raise HTTPException(status_code=503, detail="STT runtime unavailable") from e
         try:
             import sys
             from pathlib import Path
@@ -230,7 +230,7 @@ async def create_speech_browser(
 
         return Response(content=audio_bytes, media_type=media_type, headers={"X-AIP-Storage-Key": obj_name})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/audio/speech", summary="Text to Speech (Audio Synthesis)")
@@ -275,9 +275,9 @@ async def create_speech(
             )
             res.raise_for_status()
             audio_bytes = res.content
-    except Exception:
+    except Exception as e:
         if not allow_in_process_fallback():
-            raise HTTPException(status_code=503, detail="TTS runtime unavailable")
+            raise HTTPException(status_code=503, detail="TTS runtime unavailable") from e
         try:
             import sys
             from pathlib import Path

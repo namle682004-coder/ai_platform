@@ -83,7 +83,7 @@ async def process_document_ocr(
             data=file_bytes,
             content_type=file.content_type or "image/jpeg",
         )
-    except Exception as m_exc:
+    except Exception:
         pass
 
     try:

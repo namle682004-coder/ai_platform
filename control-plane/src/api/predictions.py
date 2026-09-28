@@ -79,9 +79,9 @@ async def create_prediction(
                         "alias_name": alias_name,
                         "result": {"translated_text": translated, "source_lang": src_lang, "target_lang": tgt_lang},
                     }
-        except Exception:
+        except Exception as e:
             if not allow_in_process_fallback():
-                raise HTTPException(status_code=503, detail="Prediction runtime unavailable")
+                raise HTTPException(status_code=503, detail="Prediction runtime unavailable") from e
             try:
                 import sys
                 from pathlib import Path

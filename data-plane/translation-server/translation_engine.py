@@ -10,7 +10,7 @@ import logging
 import os
 import sys
 import time
-from typing import Tuple, Optional
+from typing import Optional
 
 import torch
 from transformers import AutoTokenizer
@@ -173,7 +173,7 @@ class CTranslate2TranslationEngine:
         start_time = time.time()
 
         _src = self.normalize_lang(source_lang)
-        tgt = self.normalize_lang(target_lang)
+        _tgt = self.normalize_lang(target_lang)
 
         if self._translator is not None:
             try:

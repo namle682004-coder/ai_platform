@@ -86,7 +86,7 @@ async def transcribe_audio(
             data=file_bytes,
             content_type=file.content_type or "audio/wav",
         )
-    except Exception as m_exc:
+    except Exception:
         pass
 
     try:

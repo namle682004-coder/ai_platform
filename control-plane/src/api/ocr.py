@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime, timezone
-import hashlib
 import time
 import uuid
 from typing import Optional
@@ -352,9 +351,9 @@ async def _extract_id_card_data(
             )
             if res.status_code == 200:
                 detected_text = res.json().get("detected_text", "")
-    except Exception:
+    except Exception as e:
         if not allow_in_process_fallback():
-            raise HTTPException(status_code=503, detail="OCR runtime unavailable")
+            raise HTTPException(status_code=503, detail="OCR runtime unavailable") from e
         try:
             import sys
             from pathlib import Path
