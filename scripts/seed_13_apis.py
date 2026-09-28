@@ -2,8 +2,8 @@ import asyncio
 import sys
 
 # Add packages and services to sys.path
-sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/packages')
-sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/services/gateway')
+sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/packages/common')
+sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/control-plane')
 
 from common.database.mongodb import mongo_manager
 
@@ -29,7 +29,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/chat/completions",
+            "endpoint_url": "http://localhost:8000/v1/chat/completions",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
@@ -68,7 +68,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/audio/transcriptions",
+            "endpoint_url": "http://localhost:8000/v1/audio/transcriptions",
             "method": "POST",
             "content_type": "multipart/form-data",
             "headers": [
@@ -97,7 +97,7 @@ NEW_ENDPOINTS = [
         "free_quota": "100,000 characters",
         "unit": "character",
         "overview": {
-            "title": "FPT.AI Speech - Text to Speech",
+            "title": "AIP Speech - Text to Speech",
             "summary": "Speech synthesis is the fundamental component of many artificial intelligence systems.",
             "features": [
                 "Building automatic communication system: automated call center, serving machine, maid robot",
@@ -106,11 +106,11 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://api.fpt.ai/hmi/tts/v5",
+            "endpoint_url": "http://localhost:8000/v1/audio/speech",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
-                {"name": "api_key", "type": "string", "required": True, "desc": "Your API key (get from console.fpt.ai)"},
+                {"name": "api-key", "type": "string", "required": True, "desc": "Your API Key"},
                 {"name": "voice", "type": "string", "required": False, "desc": "banmai, lannhi, leminh, myan"},
                 {"name": "speed", "type": "number", "required": False, "desc": "Adjust speed (-3 to +3)"}
             ],
@@ -145,7 +145,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/images/generations",
+            "endpoint_url": "http://localhost:8000/v1/images/generations",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
@@ -155,7 +155,7 @@ NEW_ENDPOINTS = [
                 {"name": "prompt", "type": "string", "required": True, "desc": "Mô tả bức ảnh cần tạo"},
                 {"name": "size", "type": "string", "required": False, "desc": "Kích thước ảnh (1024x1024)"}
             ],
-            "sample_response": '{\n  "data": [{\n    "url": "https://ai-platform-6p72.onrender.com/images/xyz.png"\n  }]\n}'
+            "sample_response": '{\n  "data": [{\n    "url": "http://localhost:8000/images/xyz.png"\n  }]\n}'
         },
         "pricing": {
             "free_quota": "100 ảnh miễn phí",
@@ -183,7 +183,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/moderation/text",
+            "endpoint_url": "http://localhost:8000/v1/moderation/text",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
@@ -220,7 +220,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/ocr/driver-license",
+            "endpoint_url": "http://localhost:8000/v1/ocr/driver-license",
             "method": "POST",
             "content_type": "multipart/form-data",
             "headers": [
@@ -242,7 +242,7 @@ NEW_ENDPOINTS = [
         "api_id": "api_ocr_id",
         "name": "ID Recognition",
         "category": "OCR & Reader",
-        "status": "disabled",
+        "status": "active",
         "description": "Extract rich information from citizen identity cards (CCCD/CMND) with high accuracy.",
         "icon": "fa-address-card",
         "free_quota": "1,000 requests",
@@ -251,22 +251,26 @@ NEW_ENDPOINTS = [
             "title": "ID Card OCR Recognition (CCCD/CMND)",
             "summary": "Tự động trích xuất đầy đủ thông tin mặt trước và mặt sau của CMND 9 số, 12 số và CCCD gắn chíp.",
             "features": [
-                "Nhận diện Số định danh cá nhân, Họ tên, Ngày sinh, Địa chỉ, Ngày cấp, Nơi cấp",
-                "Tự động phát hiện thẻ bị cắt góc, chụp nghiêng hoặc giả mạo",
-                "Xử lý nhanh dưới 200ms"
+                "Bóc tách đầy đủ 4 loại thẻ: CMND 9 số, CMND 12 số, CCCD gắn chip (mặt trước & mặt sau)",
+                "Chuẩn hóa và bóc tách địa chỉ 4 cấp (address_entities: Tỉnh, Huyện, Xã, Thôn/Đường)",
+                "Đi kèm xác suất tin cậy trên từng trường (id_prob, name_prob, dob_prob, address_prob...)",
+                "Tự động nhận diện dòng MRZ và mã QR trên thẻ CCCD",
+                "Phát hiện tẩy xóa, cắt góc, lóa sáng và chụp qua màn hình"
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/ocr/id-card",
+            "endpoint_url": "http://localhost:8000/v1/ocr/id-card",
             "method": "POST",
             "content_type": "multipart/form-data",
             "headers": [
                 {"name": "api-key", "type": "string", "required": True, "desc": "Khóa API Key"}
             ],
             "parameters": [
-                {"name": "image", "type": "file", "required": True, "desc": "Ảnh chụp mặt trước hoặc mặt sau CCCD"}
+                {"name": "image", "type": "file", "required": True, "desc": "Ảnh chụp mặt trước hoặc mặt sau CCCD (dung lượng < 5MB)"},
+                {"name": "side", "type": "string", "required": False, "desc": "Mặt thẻ: auto, front, hoặc back"},
+                {"name": "card_type", "type": "string", "required": False, "desc": "Gợi ý loại thẻ: new, old, cccd_12, cmnd_09"}
             ],
-            "sample_response": '{\n  "status": "success",\n  "data": {\n    "id_number": "001095012345",\n    "full_name": "TRAN THI B",\n    "dob": "15/08/1995"\n  }\n}'
+            "sample_response": '{\\n  "errorCode": 0,\\n  "errorMessage": "",\\n  "data": [\\n    {\\n      "id": "001095012345",\\n      "id_prob": "99.85",\\n      "name": "TRẦN THỊ B",\\n      "name_prob": "99.72",\\n      "dob": "15/08/1995",\\n      "dob_prob": "99.90",\\n      "sex": "NỮ",\\n      "sex_prob": "99.80",\\n      "nationality": "Việt Nam",\\n      "nationality_prob": "99.95",\\n      "home": "Xã Dịch Vọng Hậu, Cầu Giấy, Hà Nội",\\n      "home_prob": "98.75",\\n      "address": "Số 18, Phố Duy Tân, Phường Dịch Vọng Hậu, Cầu Giấy, Hà Nội",\\n      "address_prob": "98.92",\\n      "address_entities": {\\n        "province": "Thành phố Hà Nội",\\n        "district": "Quận Cầu Giấy",\\n        "ward": "Phường Dịch Vọng Hậu",\\n        "street": "Số 18, Phố Duy Tân"\\n      },\\n      "doe": "15/08/2035",\\n      "doe_prob": "99.10",\\n      "type": "new",\\n      "type_new": "cccd_12_front"\\n    }\\n  ]\\n}'
         },
         "pricing": {
             "free_quota": "1,000 requests miễn phí",
@@ -294,7 +298,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/ocr/passport",
+            "endpoint_url": "http://localhost:8000/v1/ocr/passport",
             "method": "POST",
             "content_type": "multipart/form-data",
             "headers": [
@@ -331,7 +335,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/vision/facematch",
+            "endpoint_url": "http://localhost:8000/v1/vision/facematch",
             "method": "POST",
             "content_type": "multipart/form-data",
             "headers": [
@@ -355,7 +359,7 @@ NEW_ENDPOINTS = [
         "name": "Liveness v3",
         "category": "Computer Vision",
         "status": "disabled",
-        "description": "FPT.AI Reader - Liveness Detection v3 to prevent spoofing attacks.",
+        "description": "Advanced Liveness Detection v3 to prevent spoofing attacks.",
         "icon": "fa-user-shield",
         "free_quota": "500 requests",
         "unit": "request",
@@ -369,7 +373,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/vision/liveness-v3",
+            "endpoint_url": "http://localhost:8000/v1/vision/liveness-v3",
             "method": "POST",
             "content_type": "multipart/form-data",
             "headers": [
@@ -407,7 +411,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/nlp/embeddings",
+            "endpoint_url": "http://localhost:8000/v1/nlp/embeddings",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
@@ -444,7 +448,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/nlp/summarization",
+            "endpoint_url": "http://localhost:8000/v1/nlp/summarization",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
@@ -482,7 +486,7 @@ NEW_ENDPOINTS = [
             ]
         },
         "document": {
-            "endpoint_url": "https://ai-platform-6p72.onrender.com/v1/nlp/translation",
+            "endpoint_url": "http://localhost:8000/v1/nlp/translation",
             "method": "POST",
             "content_type": "application/json",
             "headers": [
@@ -510,13 +514,14 @@ async def seed_13_apis():
         print("Error: Could not connect to MongoDB Atlas.")
         return
 
-    # Delete existing endpoints
-    await db.endpoints.delete_many({})
-    print("Cleared existing endpoints collection.")
-
-    # Insert 13 new APIs
-    result = await db.endpoints.insert_many(NEW_ENDPOINTS)
-    print(f"Successfully inserted {len(result.inserted_ids)} API endpoints into MongoDB Atlas!")
+    # Upsert only the declared endpoints; preserve admin-managed records.
+    for endpoint in NEW_ENDPOINTS:
+        await db.endpoints.update_one(
+            {"endpoint_id": endpoint["endpoint_id"]},
+            {"$set": endpoint},
+            upsert=True,
+        )
+    print(f"Successfully upserted {len(NEW_ENDPOINTS)} API endpoints into MongoDB Atlas!")
 
 if __name__ == "__main__":
     asyncio.run(seed_13_apis())

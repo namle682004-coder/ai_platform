@@ -1,0 +1,22 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": [
+    "packages/common",
+    "packages/contracts",
+    "packages/sdk",
+    "control-plane",
+    "data-plane/vllm-engine",
+    "data-plane/moderation-server",
+    "data-plane/ocr-server",
+    "data-plane/stt-server",
+    "data-plane/translation-server",
+    "data-plane/tts-adapter",
+    "workers/orchestration/dispatcher-worker",
+    "workers/orchestration/callback-worker",
+    "workers/gpu-workloads/image-worker"
+  ],
+  "pythonVersion": "3.10",
+  "pythonPlatform": "Linux",
+  "typeCheckingMode": "off"
+}

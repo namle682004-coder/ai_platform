@@ -1,17 +1,41 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "AI Inference Platform - Gateway Microservice",
-    "description": "Enterprise Control Plane API Gateway Microservice (100% SRS Production Grade)",
+    "title": "Everwin AI Platform - Enterprise Control Plane",
+    "description": "Enterprise Multi-tenant AI Gateway & Inference Middleware Platform",
     "version": "1.0.0"
   },
   "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Root"
+        ],
+        "summary": "Control Plane Overview",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/chat/completions": {
       "post": {
         "tags": [
           "Chat Completions"
         ],
-        "summary": "Create Chat Completion",
+        "summary": "Create Chat Completion (OpenAI-compatible, SSE Streaming Supported)",
         "operationId": "create_chat_completion_v1_chat_completions_post",
         "requestBody": {
           "content": {
@@ -99,7 +123,7 @@
         "tags": [
           "Embeddings"
         ],
-        "summary": "Create Embeddings",
+        "summary": "Vector Embeddings Extraction",
         "operationId": "create_embeddings_v1_embeddings_post",
         "security": [
           {
@@ -161,19 +185,42 @@
     "/v1/audio/transcriptions": {
       "post": {
         "tags": [
-          "Audio Transcriptions (STT)"
+          "Audio (STT & TTS)"
         ],
-        "summary": "Create Transcription",
+        "summary": "Speech to Text (ASR Transcription)",
         "operationId": "create_transcription_v1_audio_transcriptions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_create_transcription_v1_audio_transcriptions_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -194,30 +241,48 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/v1/audio/speech": {
       "post": {
         "tags": [
-          "Audio Speech (TTS)"
+          "Audio (STT & TTS)"
         ],
-        "summary": "Create Speech",
+        "summary": "Text to Speech (Audio Synthesis)",
         "operationId": "create_speech_v1_audio_speech_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SpeechRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -238,12 +303,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/v1/images/generations": {
@@ -297,7 +357,7 @@
         "tags": [
           "Moderations"
         ],
-        "summary": "Create Moderation",
+        "summary": "Content Safety & Policy Moderation (Llama-Guard)",
         "operationId": "create_moderation_v1_moderations_post",
         "requestBody": {
           "content": {
@@ -336,22 +396,140 @@
         ]
       }
     },
-    "/v1/predictions": {
-      "post": {
+    "/v1/models": {
+      "get": {
         "tags": [
-          "Predictions (Custom Inference)"
+          "Models & Aliases"
         ],
-        "summary": "Create Prediction",
-        "operationId": "create_prediction_v1_predictions_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PredictionRequest"
+        "summary": "List Available Model Aliases (Scoped to API Key)",
+        "description": "Returns list of active AI model aliases accessible by the client's API Key.",
+        "operationId": "list_models_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/models/status": {
+      "get": {
+        "tags": [
+          "Status & Health Probes"
+        ],
+        "summary": "Status of Models Hosted on vLLM Engine (OpenAI-compatible alias)",
+        "operationId": "models_status_alias_v1_models_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/models/{alias}": {
+      "get": {
+        "tags": [
+          "Models & Aliases"
+        ],
+        "summary": "Retrieve Model Alias Metadata & Specs",
+        "description": "Retrieves granular specs, min VRAM, runtime engine, and status for a specific alias.",
+        "operationId": "get_model_alias_v1_models__alias__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alias",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alias"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
-          "required": true
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ocr/process": {
+      "post": {
+        "tags": [
+          "Document OCR & Intelligent Document Processing"
+        ],
+        "summary": "General Document OCR (PaddleOCR-VL)",
+        "operationId": "ocr_process_document_v1_ocr_process_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_process_document_v1_ocr_process_post"
+              }
+            }
+          }
         },
         "responses": {
           "200": {
@@ -372,12 +550,458 @@
               }
             }
           }
-        },
+        }
+      }
+    },
+    "/v1/ocr/driver-license": {
+      "post": {
+        "tags": [
+          "Document OCR & Intelligent Document Processing"
+        ],
+        "summary": "Driver License OCR Extraction",
+        "operationId": "ocr_driver_license_v1_ocr_driver_license_post",
         "security": [
           {
             "HTTPBearer": []
           }
-        ]
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_driver_license_v1_ocr_driver_license_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ocr/id-card": {
+      "post": {
+        "tags": [
+          "Document OCR & Intelligent Document Processing"
+        ],
+        "summary": "National ID (CCCD/CMND) OCR Extraction",
+        "description": "Extract structured identity information from Vietnamese ID cards (CCCD/CMND).\nSpecifications:\n- CMND 9 digits front/back (old, old_back, cmnd_09_front)\n- CMND 12 digits front/back (new, cmnd_12_front)\n- CCCD 12 digits with chip front/back (new, new_back, cccd_12_front)\n- 4-tier Address Entities decomposition: province, district, ward, street",
+        "operationId": "ocr_id_card_v1_ocr_id_card_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_id_card_v1_ocr_id_card_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ocr/passport": {
+      "post": {
+        "tags": [
+          "Document OCR & Intelligent Document Processing"
+        ],
+        "summary": "Passport OCR Extraction",
+        "operationId": "ocr_passport_v1_ocr_passport_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_passport_v1_ocr_passport_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/vision/facematch": {
+      "post": {
+        "tags": [
+          "Computer Vision & Biometric eKYC"
+        ],
+        "summary": "Biometric Face Match (1:1 Verification)",
+        "operationId": "vision_facematch_v1_vision_facematch_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_vision_facematch_v1_vision_facematch_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/vision/liveness": {
+      "post": {
+        "tags": [
+          "Computer Vision & Biometric eKYC"
+        ],
+        "summary": "Anti-spoofing Liveness Detection",
+        "operationId": "vision_liveness_v1_vision_liveness_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_vision_liveness_v1_vision_liveness_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/nlp/translation": {
+      "post": {
+        "tags": [
+          "Natural Language Processing (Translation & Summarization)"
+        ],
+        "summary": "Bilingual Text Translation (Helsinki-NLP)",
+        "operationId": "nlp_translation_v1_nlp_translation_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/nlp/summarization": {
+      "post": {
+        "tags": [
+          "Natural Language Processing (Translation & Summarization)"
+        ],
+        "summary": "Intelligent Text Summarization",
+        "operationId": "nlp_summarization_v1_nlp_summarization_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummarizationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/jobs": {
@@ -581,53 +1205,23 @@
         }
       }
     },
-    "/v1/models": {
-      "get": {
+    "/v1/predictions": {
+      "post": {
         "tags": [
-          "Models & Aliases"
+          "Predictions (Custom Inference)"
         ],
-        "summary": "List Models",
-        "operationId": "list_models_v1_models_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
+        "summary": "Create Prediction",
+        "operationId": "create_prediction_v1_predictions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictionRequest"
               }
             }
-          }
+          },
+          "required": true
         },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/models/{alias}": {
-      "get": {
-        "tags": [
-          "Models & Aliases"
-        ],
-        "summary": "Get Model Alias",
-        "operationId": "get_model_alias_v1_models__alias__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "alias",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Alias"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -647,7 +1241,87 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/mcp/sse": {
+      "get": {
+        "tags": [
+          "Model Context Protocol (MCP) Gateway Bridge"
+        ],
+        "summary": "MCP Server-Sent Events (SSE) Stream",
+        "description": "Establishes SSE Connection for MCP Clients (Cursor, Antigravity, Claude Desktop).",
+        "operationId": "mcp_sse_stream_v1_mcp_sse_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/mcp/messages": {
+      "post": {
+        "tags": [
+          "Model Context Protocol (MCP) Gateway Bridge"
+        ],
+        "summary": "MCP JSON-RPC Tool Execution Message Endpoint",
+        "description": "Receives MCP JSON-RPC 2.0 requests from MCP Clients and executes AIP Model tools.",
+        "operationId": "mcp_messages_v1_mcp_messages_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/mcp/tools": {
+      "get": {
+        "tags": [
+          "Model Context Protocol (MCP) Gateway Bridge"
+        ],
+        "summary": "List Available MCP Tools",
+        "description": "Returns the list of exposed AIP Model tools for MCP protocol.",
+        "operationId": "list_mcp_tools_v1_mcp_tools_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/auth/signup": {
@@ -771,81 +1445,6 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/mcp/sse": {
-      "get": {
-        "tags": [
-          "Model Context Protocol (MCP) Gateway Bridge"
-        ],
-        "summary": "MCP Server-Sent Events (SSE) Stream",
-        "description": "Establishes SSE Connection for MCP Clients (Cursor, Antigravity, Claude Desktop).",
-        "operationId": "mcp_sse_stream_v1_mcp_sse_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/mcp/messages": {
-      "post": {
-        "tags": [
-          "Model Context Protocol (MCP) Gateway Bridge"
-        ],
-        "summary": "MCP JSON-RPC Tool Execution Message Endpoint",
-        "description": "Receives MCP JSON-RPC 2.0 requests from MCP Clients and executes AIP Model tools.",
-        "operationId": "mcp_messages_v1_mcp_messages_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/mcp/tools": {
-      "get": {
-        "tags": [
-          "Model Context Protocol (MCP) Gateway Bridge"
-        ],
-        "summary": "List Available MCP Tools",
-        "description": "Returns the list of exposed AIP Model tools for MCP protocol.",
-        "operationId": "list_mcp_tools_v1_mcp_tools_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
@@ -1059,7 +1658,7 @@
           "User Portal & Console API"
         ],
         "summary": "List User Payments",
-        "description": "Fetch payment history transactions from MongoDB Atlas.",
+        "description": "Fetch payment history transactions directly from MongoDB Atlas payments collection.",
         "operationId": "list_user_payments_v1_user_payments_get",
         "responses": {
           "200": {
@@ -1134,7 +1733,7 @@
           "User Portal & Console API"
         ],
         "summary": "Get User Apis State",
-        "description": "Get active API states for user from MongoDB Atlas.",
+        "description": "Get active API states for user from MongoDB Atlas api_subscriptions collection.",
         "operationId": "get_user_apis_state_v1_user_apis_state_get",
         "responses": {
           "200": {
@@ -1157,13 +1756,83 @@
           "User Portal & Console API"
         ],
         "summary": "Update User Apis State",
-        "description": "Update active API states for user in MongoDB Atlas.",
+        "description": "Update active API states for user in MongoDB Atlas api_subscriptions collection.",
         "operationId": "update_user_apis_state_v1_user_apis_state_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ApisStateUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/balance": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Get User Balance",
+        "description": "Get paid balance from MongoDB Atlas api_subscriptions collection.",
+        "operationId": "get_user_balance_v1_user_balance_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/recharge": {
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Recharge User Balance",
+        "description": "Recharge credits and record payment in MongoDB Atlas.",
+        "operationId": "recharge_user_balance_v1_user_recharge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RechargeBalanceRequest"
               }
             }
           },
@@ -1292,7 +1961,7 @@
           "User Portal & Console API"
         ],
         "summary": "List Database Apis Catalog",
-        "description": "Fetch all available API services catalog from MongoDB Atlas.",
+        "description": "Fetch all available API services catalog from MongoDB Atlas endpoints.",
         "operationId": "list_database_apis_catalog_v1_user_apis_catalog_get",
         "responses": {
           "200": {
@@ -1307,6 +1976,1348 @@
                   "type": "array",
                   "title": "Response List Database Apis Catalog V1 User Apis Catalog Get"
                 }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/gpu-status": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Get User Gpu Status",
+        "description": "Get GPU VRAM and node resource utilization status for staff portal.",
+        "operationId": "get_user_gpu_status_v1_user_gpu_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/api-report": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "List API Call Logs with Filtering (Staff Report)",
+        "description": "Fetch API call execution logs from MongoDB with optional filters.\nUsed by the Staff API Report page.\n\n- **status**: Filter by HTTP status code group: \"200\", \"400\", \"500\"\n- **api**: Filter by API path keyword (e.g. \"speech\", \"completions\")\n- **from_date**: Start date (YYYY/MM/DD or YYYY-MM-DD)\n- **to_date**: End date (YYYY/MM/DD or YYYY-MM-DD)\n- **page**: Page number (default 1)\n- **page_size**: Items per page (default 25)",
+        "operationId": "list_api_report_logs_v1_user_api_report_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "api",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Api"
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/runs": {
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Record a Sandbox Simulation Run",
+        "description": "Save an interactive playground execution run (inputs, outputs, latency, tokens).",
+        "operationId": "create_simulation_run_v1_simulations_runs_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRun"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Simulation Run V1 Simulations Runs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "List Sandbox Simulation Runs",
+        "description": "List simulation history for the current user/tenant with optional filters.",
+        "operationId": "list_simulation_runs_v1_simulations_runs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by AI domain (chat, ocr, audio, etc.)",
+              "title": "Domain"
+            },
+            "description": "Filter by AI domain (chat, ocr, audio, etc.)"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status (success, failed)",
+              "title": "Status"
+            },
+            "description": "Filter by status (success, failed)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Get Detailed Simulation Run",
+        "description": "Retrieve full input/output payload and execution metrics for a specific run.",
+        "operationId": "get_simulation_run_v1_simulations_runs__run_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Delete a Simulation Run",
+        "operationId": "delete_simulation_run_v1_simulations_runs__run_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/chat/sessions": {
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Create Multi-Turn Chat Conversation Session",
+        "description": "Create a persistent conversation thread in the playground.",
+        "operationId": "create_chat_session_v1_simulations_chat_sessions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChatSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "List User Chat Sessions",
+        "operationId": "list_chat_sessions_v1_simulations_chat_sessions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/chat/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Get Chat Session Details",
+        "operationId": "get_chat_session_v1_simulations_chat_sessions__session_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Delete Chat Session and Messages",
+        "operationId": "delete_chat_session_v1_simulations_chat_sessions__session_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/chat/sessions/{session_id}/messages": {
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Append Message to Chat Session",
+        "description": "Record a user or assistant response into the conversation thread.",
+        "operationId": "add_chat_message_v1_simulations_chat_sessions__session_id__messages_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddChatMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Retrieve Message Thread History",
+        "operationId": "get_chat_messages_v1_simulations_chat_sessions__session_id__messages_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/chat/templates": {
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "List Saved Prompt Templates",
+        "operationId": "list_prompt_templates_v1_simulations_chat_templates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Save Custom Prompt Template",
+        "operationId": "create_prompt_template_v1_simulations_chat_templates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePromptTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/simulations/ocr/records": {
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Save OCR Document Extraction Record",
+        "operationId": "create_ocr_record_v1_simulations_ocr_records_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OCRDocumentRecord"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "List OCR Document Records",
+        "operationId": "list_ocr_records_v1_simulations_ocr_records_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "doc_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "id_card, driver_license, passport, invoice",
+              "title": "Doc Type"
+            },
+            "description": "id_card, driver_license, passport, invoice"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/ocr/records/{record_id}": {
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Get Detailed OCR Record",
+        "operationId": "get_ocr_record_v1_simulations_ocr_records__record_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Record Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/ekyc/sessions": {
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Save eKYC Biometric Verification Run",
+        "operationId": "create_ekyc_session_v1_simulations_ekyc_sessions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EKYCVerificationSession"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "List eKYC Verification Sessions",
+        "operationId": "list_ekyc_sessions_v1_simulations_ekyc_sessions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/audio/transcriptions": {
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Save STT Transcription Record",
+        "operationId": "create_stt_record_v1_simulations_audio_transcriptions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioTranscriptionRecord"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "List STT Transcription Records",
+        "operationId": "list_stt_records_v1_simulations_audio_transcriptions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/simulations/audio/syntheses": {
+      "post": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "Save TTS Synthesis Record",
+        "operationId": "create_tts_record_v1_simulations_audio_syntheses_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioSynthesisRecord"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Simulation & Playground Data"
+        ],
+        "summary": "List TTS Synthesis Records",
+        "operationId": "list_tts_records_v1_simulations_audio_syntheses_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/usage/summary": {
+      "get": {
+        "tags": [
+          "Usage Metering & Token Consumption"
+        ],
+        "summary": "Get Aggregated Token Usage and Cost Summary",
+        "description": "Retrieve aggregate usage statistics (requests, tokens, cost) for tenant or organization.",
+        "operationId": "get_usage_summary_v1_usage_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional tenant filter",
+              "title": "Tenant Id"
+            },
+            "description": "Optional tenant filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/usage/records": {
+      "get": {
+        "tags": [
+          "Usage Metering & Token Consumption"
+        ],
+        "summary": "List Granular Inference Usage Records",
+        "description": "Retrieve detailed log of recent inference token consumption records.",
+        "operationId": "list_usage_records_v1_usage_records_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by tenant ID",
+              "title": "Tenant Id"
+            },
+            "description": "Filter by tenant ID"
+          },
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by service domain (e.g. chat, embedding)",
+              "title": "Domain"
+            },
+            "description": "Filter by service domain (e.g. chat, embedding)"
+          },
+          {
+            "name": "model_alias",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by model alias",
+              "title": "Model Alias"
+            },
+            "description": "Filter by model alias"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Max number of records to return",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max number of records to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/usage/tpm": {
+      "get": {
+        "tags": [
+          "Usage Metering & Token Consumption"
+        ],
+        "summary": "Get Current Realtime TPM (Tokens Per Minute) Status",
+        "description": "Check current minute's real-time token consumption against TPM quota limit.",
+        "operationId": "get_realtime_tpm_v1_usage_tpm_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -2063,10 +4074,316 @@
     "/health": {
       "get": {
         "tags": [
-          "Health"
+          "Status & Health Probes"
         ],
-        "summary": "Health Check",
+        "summary": "Basic Liveness Probe",
         "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": [
+          "Status & Health Probes"
+        ],
+        "summary": "Kubernetes Liveness Probe",
+        "operationId": "liveness_probe_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Status & Health Probes"
+        ],
+        "summary": "Kubernetes Readiness Probe",
+        "operationId": "readiness_probe_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/status": {
+      "get": {
+        "tags": [
+          "Status & Health Probes"
+        ],
+        "summary": "Comprehensive Platform Status Monitoring",
+        "operationId": "platform_status_root_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/status": {
+      "get": {
+        "tags": [
+          "Status & Health Probes"
+        ],
+        "summary": "Comprehensive Platform Status Monitoring (v1)",
+        "operationId": "platform_status_v1_v1_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/status/models": {
+      "get": {
+        "tags": [
+          "Status & Health Probes"
+        ],
+        "summary": "Status of Models Hosted on vLLM Engine",
+        "operationId": "models_status_root_status_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/status/models": {
+      "get": {
+        "tags": [
+          "Status & Health Probes"
+        ],
+        "summary": "Status of Models Hosted on vLLM Engine (v1)",
+        "operationId": "models_status_v1_v1_status_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/schemas": {
+      "get": {
+        "tags": [
+          "Dynamic Schema Registry"
+        ],
+        "summary": "List All AI Model JSON Schemas",
+        "operationId": "list_model_schemas_v1_schemas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/schemas/{model_id}": {
+      "get": {
+        "tags": [
+          "Dynamic Schema Registry"
+        ],
+        "summary": "Get JSON Schema for Specific AI Model",
+        "operationId": "get_model_schema_v1_schemas__model_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models/{model_id}/schema": {
+      "get": {
+        "tags": [
+          "Dynamic Schema Registry"
+        ],
+        "summary": "Alias: Get Model Schema",
+        "operationId": "get_model_schema_alias_v1_models__model_id__schema_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/resources/gpu": {
+      "get": {
+        "tags": [
+          "Admin - Hardware & Node Resources"
+        ],
+        "summary": "Get Live GPU Hardware Telemetry",
+        "operationId": "get_gpu_resources_admin_v1_resources_gpu_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/resources/capacity": {
+      "get": {
+        "tags": [
+          "Admin - Hardware & Node Resources"
+        ],
+        "summary": "Get Cluster Node Capacity & Workload Allocations",
+        "operationId": "get_cluster_capacity_admin_v1_resources_capacity_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2087,6 +4404,40 @@
   },
   "components": {
     "schemas": {
+      "AddChatMessageRequest": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "user, assistant, or system"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "prompt_tokens": {
+            "type": "integer",
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "AddChatMessageRequest"
+      },
       "AliasStatusUpdateRequest": {
         "properties": {
           "status": {
@@ -2144,6 +4495,145 @@
         ],
         "title": "ApisStateUpdateRequest"
       },
+      "AudioSynthesisRecord": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "admin@company.com"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "default": "default"
+          },
+          "input_text": {
+            "type": "string",
+            "title": "Input Text"
+          },
+          "voice_id": {
+            "type": "string",
+            "title": "Voice Id",
+            "default": "northern-female"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed",
+            "default": 1.0
+          },
+          "pitch": {
+            "type": "number",
+            "title": "Pitch",
+            "default": 1.0
+          },
+          "output_audio_url": {
+            "type": "string",
+            "title": "Output Audio Url"
+          },
+          "audio_format": {
+            "type": "string",
+            "title": "Audio Format",
+            "default": "mp3"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "title": "Duration Seconds",
+            "default": 0.0
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_text",
+          "output_audio_url"
+        ],
+        "title": "AudioSynthesisRecord",
+        "description": "Entity storing Text-to-Speech generated voice syntheses."
+      },
+      "AudioTranscriptionRecord": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "admin@company.com"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "default": "default"
+          },
+          "audio_url": {
+            "type": "string",
+            "title": "Audio Url"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "title": "Duration Seconds",
+            "default": 0.0
+          },
+          "sample_rate": {
+            "type": "integer",
+            "title": "Sample Rate",
+            "default": 16000
+          },
+          "transcription_text": {
+            "type": "string",
+            "title": "Transcription Text"
+          },
+          "word_timestamps": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Word Timestamps"
+          },
+          "language_detected": {
+            "type": "string",
+            "title": "Language Detected",
+            "default": "vi"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "default": 1.0
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio_url",
+          "transcription_text"
+        ],
+        "title": "AudioTranscriptionRecord",
+        "description": "Entity storing Speech-to-Text audio transcriptions."
+      },
       "Body_create_transcription_v1_audio_transcriptions_post": {
         "properties": {
           "file": {
@@ -2175,6 +4665,130 @@
         ],
         "title": "Body_create_transcription_v1_audio_transcriptions_post"
       },
+      "Body_ocr_driver_license_v1_ocr_driver_license_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_ocr_driver_license_v1_ocr_driver_license_post"
+      },
+      "Body_ocr_id_card_v1_ocr_id_card_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image"
+          },
+          "side": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Side"
+          },
+          "card_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_ocr_id_card_v1_ocr_id_card_post"
+      },
+      "Body_ocr_passport_v1_ocr_passport_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_ocr_passport_v1_ocr_passport_post"
+      },
+      "Body_ocr_process_document_v1_ocr_process_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ocr_process_document_v1_ocr_process_post"
+      },
+      "Body_vision_facematch_v1_vision_facematch_post": {
+        "properties": {
+          "image_cccd": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image Cccd"
+          },
+          "image_selfie": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image Selfie"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_cccd",
+          "image_selfie"
+        ],
+        "title": "Body_vision_facematch_v1_vision_facematch_post"
+      },
+      "Body_vision_liveness_v1_vision_liveness_post": {
+        "properties": {
+          "video": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Video"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode",
+            "default": "passive"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video"
+        ],
+        "title": "Body_vision_liveness_v1_vision_liveness_post"
+      },
       "ChatCompletionRequest": {
         "properties": {
           "model": {
@@ -2187,7 +4801,13 @@
               "$ref": "#/components/schemas/ChatMessage"
             },
             "type": "array",
-            "title": "Messages"
+            "title": "Messages",
+            "example": [
+              {
+                "content": "Xin chào! Bạn có thể giới thiệu về khả năng của mình được không?",
+                "role": "user"
+              }
+            ]
           },
           "temperature": {
             "anyOf": [
@@ -2247,7 +4867,9 @@
                 "type": "null"
               }
             ],
-            "title": "Max Tokens"
+            "title": "Max Tokens",
+            "default": 1024,
+            "example": 1024
           },
           "user": {
             "anyOf": [
@@ -2440,6 +5062,155 @@
           "tenant_id"
         ],
         "title": "CreateAPIKeyRequest"
+      },
+      "CreateChatSessionRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": "New Conversation"
+          },
+          "model_alias": {
+            "type": "string",
+            "title": "Model Alias",
+            "default": "chat-general-standard"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "default": 0.7
+          },
+          "max_tokens": {
+            "type": "integer",
+            "title": "Max Tokens",
+            "default": 1024
+          }
+        },
+        "type": "object",
+        "title": "CreateChatSessionRequest"
+      },
+      "CreatePromptTemplateRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": "general"
+          },
+          "template_content": {
+            "type": "string",
+            "title": "Template Content"
+          },
+          "variables": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Variables"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "template_content"
+        ],
+        "title": "CreatePromptTemplateRequest"
+      },
+      "EKYCVerificationSession": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "admin@company.com"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "default": "default"
+          },
+          "id_card_image_url": {
+            "type": "string",
+            "title": "Id Card Image Url"
+          },
+          "selfie_image_url": {
+            "type": "string",
+            "title": "Selfie Image Url"
+          },
+          "facematch_score": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Facematch Score",
+            "default": 0.0
+          },
+          "liveness_score": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Liveness Score",
+            "default": 0.0
+          },
+          "is_live": {
+            "type": "boolean",
+            "title": "Is Live",
+            "default": true
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected",
+              "manual_review"
+            ],
+            "title": "Decision",
+            "default": "approved"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          },
+          "verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Verified At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id_card_image_url",
+          "selfie_image_url"
+        ],
+        "title": "EKYCVerificationSession",
+        "description": "Entity storing an eKYC biometric verification session."
       },
       "EmbeddingData": {
         "properties": {
@@ -2869,6 +5640,95 @@
         ],
         "title": "ModerationRequest"
       },
+      "OCRDocumentRecord": {
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "admin@company.com"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "default": "default"
+          },
+          "doc_type": {
+            "type": "string",
+            "enum": [
+              "id_card",
+              "driver_license",
+              "passport",
+              "invoice",
+              "general"
+            ],
+            "title": "Doc Type",
+            "default": "id_card"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          },
+          "cropped_portrait_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cropped Portrait Url"
+          },
+          "extracted_data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Extracted Data"
+          },
+          "confidence_scores": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Confidence Scores"
+          },
+          "is_tampered": {
+            "type": "boolean",
+            "title": "Is Tampered",
+            "default": false
+          },
+          "tamper_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamper Warning"
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_url"
+        ],
+        "title": "OCRDocumentRecord",
+        "description": "Entity storing OCR document image and extracted structured fields."
+      },
       "PaymentCreateRequest": {
         "properties": {
           "amount": {
@@ -2940,6 +5800,41 @@
         ],
         "title": "ProjectCreateRequest"
       },
+      "RechargeBalanceRequest": {
+        "properties": {
+          "credits": {
+            "type": "integer",
+            "title": "Credits"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "package": {
+            "type": "string",
+            "title": "Package"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project",
+            "default": "default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "credits",
+          "amount",
+          "package"
+        ],
+        "title": "RechargeBalanceRequest"
+      },
       "RejectRequestPayload": {
         "properties": {
           "reason": {
@@ -2986,6 +5881,122 @@
           "full_name"
         ],
         "title": "SignupRequest"
+      },
+      "SimulationRun": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "admin@company.com"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "default": "default"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "domain": {
+            "type": "string",
+            "enum": [
+              "chat",
+              "ocr",
+              "vision",
+              "audio",
+              "nlp",
+              "image",
+              "moderation",
+              "general"
+            ],
+            "title": "Domain",
+            "default": "general"
+          },
+          "model_alias": {
+            "type": "string",
+            "title": "Model Alias"
+          },
+          "input_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Payload"
+          },
+          "output_payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Output Payload"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failed",
+              "running"
+            ],
+            "title": "Status",
+            "default": "success"
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "default": 0.0
+          },
+          "token_usage": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Usage"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_alias"
+        ],
+        "title": "SimulationRun",
+        "description": "Entity tracking individual interactive playground / sandbox simulation runs."
       },
       "SpeechRequest": {
         "properties": {
@@ -3070,6 +6081,33 @@
         ],
         "title": "StaffKeyRequest"
       },
+      "SummarizationRequest": {
+        "properties": {
+          "document": {
+            "type": "string",
+            "title": "Document",
+            "example": "Văn bản tài liệu dài cần tóm tắt..."
+          },
+          "ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratio",
+            "description": "Tỷ lệ tóm tắt văn bản",
+            "default": 0.2
+          }
+        },
+        "type": "object",
+        "required": [
+          "document"
+        ],
+        "title": "SummarizationRequest"
+      },
       "ToggleMaintenanceRequest": {
         "properties": {
           "is_maintenance": {
@@ -3087,6 +6125,32 @@
           "is_maintenance"
         ],
         "title": "ToggleMaintenanceRequest"
+      },
+      "TranslationRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "example": "Xin chào thế giới, chào mừng đến với Everwin AI Platform."
+          },
+          "source_lang": {
+            "type": "string",
+            "title": "Source Lang",
+            "default": "vi",
+            "example": "vi"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang",
+            "default": "en",
+            "example": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "TranslationRequest"
       },
       "UpdateQuotaRequest": {
         "properties": {
@@ -3231,5 +6295,59 @@
         "scheme": "bearer"
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Chat Completions",
+      "description": "Standard OpenAI-compatible Chat completion & reasoning interface (Qwen2.5 / DeepSeek with SSE Streaming)."
+    },
+    {
+      "name": "Completions",
+      "description": "Raw text prompt completion interface."
+    },
+    {
+      "name": "Embeddings",
+      "description": "Dense high-dimensional vector embeddings for semantic search & RAG."
+    },
+    {
+      "name": "Audio (STT & TTS)",
+      "description": "Audio transcription (Whisper ASR) & Speech synthesis (viXTTS)."
+    },
+    {
+      "name": "Images",
+      "description": "Text-to-image generation via FLUX.1 & Stable Diffusion XL."
+    },
+    {
+      "name": "Moderations",
+      "description": "Content safety, toxicity detection & policy enforcement (Llama-Guard)."
+    },
+    {
+      "name": "Models",
+      "description": "SRS Section 6.1 official 21-model catalog & runtime alias resolver."
+    },
+    {
+      "name": "Document OCR & Intelligent Document Processing",
+      "description": "Document analysis, invoice scanning, CCCD, Driver License, and Passport OCR."
+    },
+    {
+      "name": "Computer Vision & Biometric eKYC",
+      "description": "1:1 Face matching and anti-spoofing liveness detection."
+    },
+    {
+      "name": "Natural Language Processing (Translation & Summarization)",
+      "description": "Bilingual machine translation (Helsinki-NLP) and executive document summarization."
+    },
+    {
+      "name": "Jobs",
+      "description": "Asynchronous heavy job status polling and cancellation."
+    },
+    {
+      "name": "User Portal & Console API",
+      "description": "Developer console: Projects, Keys, Balance & Service subscriptions."
+    },
+    {
+      "name": "Authentication",
+      "description": "User login, registration & token exchange."
+    }
+  ]
 }

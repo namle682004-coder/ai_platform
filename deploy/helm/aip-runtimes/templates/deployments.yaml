@@ -1,10 +1,13 @@
-{{- range $name, $svc := dict "stt" .Values.stt "tts" .Values.tts "translation" .Values.translation "moderation" .Values.moderation "ocr" .Values.ocr }}
-{{- if $svc.enabled }}
+{{- range $name, $svc := dict "stt" .Values.stt "tts" .Values.tts "translation" .Values.translation "moderation" .Values.moderation "ocr" .Values.ocr "vllm" .Values.vllm "image" .Values.image "video" .Values.video "lipsync" .Values.lipsync }}
+{{- if and $svc $svc.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: aip-{{ $name }}
+  {{- if $svc.namespace }}
+  namespace: {{ $svc.namespace }}
+  {{- end }}
   labels:
     app.kubernetes.io/name: aip-{{ $name }}
     app.kubernetes.io/component: ai-runtime
@@ -17,6 +20,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: aip-{{ $name }}
+        app.kubernetes.io/component: ai-runtime
     spec:
       nodeSelector:
         {{- toYaml $svc.nodeSelector | nindent 8 }}

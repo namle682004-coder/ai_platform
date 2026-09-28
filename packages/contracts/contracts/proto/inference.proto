@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package aip.inference.v1;
+
+// Service definition for real-time high-throughput GPU AI Inference
+service InferenceService {
+  rpc Translate(TranslationRequest) returns (TranslationResponse);
+  rpc ChatCompletion(ChatRequest) returns (ChatResponse);
+  rpc TranscribeAudio(TranscriptionRequest) returns (TranscriptionResponse);
+  rpc SynthesizeSpeech(SpeechRequest) returns (SpeechResponse);
+}
+
+message TranslationRequest {
+  string text = 1;
+  string source_lang = 2;
+  string target_lang = 3;
+  string model_alias = 4;
+}
+
+message TranslationResponse {
+  string status = 1;
+  string translated_text = 2;
+  string engine = 3;
+  int64 duration_ms = 4;
+}
+
+message ChatMessage {
+  string role = 1;
+  string content = 2;
+}
+
+message ChatRequest {
+  string model = 1;
+  repeated ChatMessage messages = 2;
+  float temperature = 3;
+  int32 max_tokens = 4;
+}
+
+message ChatResponse {
+  string id = 1;
+  string model = 2;
+  string content = 3;
+  int32 prompt_tokens = 4;
+  int32 completion_tokens = 5;
+}
+
+message TranscriptionRequest {
+  bytes audio_data = 1;
+  string format = 2;
+  string language = 3;
+  string model_alias = 4;
+}
+
+message TranscriptionResponse {
+  string text = 1;
+  string detected_language = 2;
+  float duration_seconds = 3;
+}
+
+message SpeechRequest {
+  string text = 1;
+  string voice = 2;
+  string format = 3;
+  string model_alias = 4;
+}
+
+message SpeechResponse {
+  bytes audio_data = 1;
+  string format = 2;
+  int64 duration_ms = 3;
+}

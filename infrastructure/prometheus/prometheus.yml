@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "/etc/prometheus/alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # 1. AIP Control-Plane Gateway Metrics
+  - job_name: "aip-gateway"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["host.docker.internal:8000", "aip-gateway:8000"]
+        labels:
+          service: "control-plane"
+          platform: "aip"
+
+  # 2. RabbitMQ Broker Metrics (Native Prometheus Plugin :15692)
+  - job_name: "rabbitmq"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["rabbitmq:15692", "aip-rabbitmq:15692"]
+        labels:
+          service: "message-broker"
+          platform: "aip"

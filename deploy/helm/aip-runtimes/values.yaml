@@ -9,7 +9,8 @@ stt:
     repository: aip-platform/stt-server
     tag: "1.0.0"
   replicas: 2
-  port: 8001
+  port: 8002
+  namespace: aip-multimodal
   resources:
     requests:
       cpu: 1000m
@@ -34,7 +35,8 @@ tts:
     repository: aip-platform/tts-adapter
     tag: "1.0.0"
   replicas: 2
-  port: 8002
+  port: 8007
+  namespace: aip-multimodal
   resources:
     requests:
       cpu: 500m
@@ -57,6 +59,7 @@ translation:
     tag: "1.0.0"
   replicas: 2
   port: 8003
+  namespace: aip-text
   resources:
     requests:
       cpu: 500m
@@ -78,7 +81,8 @@ moderation:
     repository: aip-platform/moderation-server
     tag: "1.0.0"
   replicas: 2
-  port: 8004
+  port: 8006
+  namespace: aip-text
   resources:
     requests:
       cpu: 1000m
@@ -102,7 +106,8 @@ ocr:
     repository: aip-platform/ocr-server
     tag: "1.0.0"
   replicas: 2
-  port: 8005
+  port: 8004
+  namespace: aip-multimodal
   resources:
     requests:
       cpu: 500m
@@ -114,5 +119,94 @@ ocr:
     minReplicas: 1
     maxReplicas: 4
     targetCPU: 70
+  nodeSelector:
+    pool: gpu-multimodal
+
+# --- Unified vLLM Serving Engine ---
+vllm:
+  enabled: true
+  image:
+    repository: aip-platform/vllm-engine
+    tag: "1.0.0"
+  replicas: 2
+  port: 8001
+  namespace: aip-text
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 8Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: 8000m
+      memory: 16Gi
+      nvidia.com/gpu: 1
+  hpa:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPU: 75
+    targetMemory: 85
+  nodeSelector:
+    pool: gpu-multimodal
+
+# --- Image Generation Worker (FLUX.1 / SDXL) ---
+image:
+  enabled: true
+  image:
+    repository: aip-platform/image-worker
+    tag: "1.0.0"
+  replicas: 1
+  port: 8005
+  namespace: aip-multimodal
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: 4000m
+      memory: 12Gi
+      nvidia.com/gpu: 1
+  nodeSelector:
+    pool: gpu-multimodal
+
+# --- Video Generation Worker (Wan2.2 / CogVideoX) ---
+video:
+  enabled: true
+  image:
+    repository: aip-platform/video-worker
+    tag: "1.0.0"
+  replicas: 1
+  port: 8006
+  namespace: aip-video
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 8Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: 8000m
+      memory: 24Gi
+      nvidia.com/gpu: 1
+  nodeSelector:
+    pool: gpu-video
+
+# --- LipSync Avatar Worker (LivePortrait) ---
+lipsync:
+  enabled: true
+  image:
+    repository: aip-platform/lipsync-worker
+    tag: "1.0.0"
+  replicas: 1
+  port: 8007
+  namespace: aip-multimodal
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: 4000m
+      memory: 12Gi
+      nvidia.com/gpu: 1
   nodeSelector:
     pool: gpu-multimodal

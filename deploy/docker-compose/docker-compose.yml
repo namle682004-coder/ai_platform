@@ -1,8 +1,24 @@
 services:
+  mongodb:
+    image: mongo:6.0
+    container_name: aip-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
   redis:
     image: redis:7.2-alpine
     container_name: aip-redis
-    command: redis-server --requirepass example --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     ports:
       - "6379:6379"
     volumes:
@@ -10,30 +26,326 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:3-management-alpine
     container_name: aip-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
+      - "15692:15692"  # Prometheus metrics port
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-aip}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-aip}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: unless-stopped
 
   minio:
-    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    image: minio/minio:latest
     container_name: aip-minio
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
     volumes:
       - minio_data:/data
+    restart: unless-stopped
+
+  prometheus:
+    profiles: ["monitoring", "all"]
+    image: prom/prometheus:v2.45.0
+    container_name: aip-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../../infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../infrastructure/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    restart: unless-stopped
+
+  alertmanager:
+    profiles: ["monitoring", "all"]
+    image: prom/alertmanager:v0.25.0
+    container_name: aip-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ../../infrastructure/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    restart: unless-stopped
+
+  grafana:
+    profiles: ["monitoring", "all"]
+    image: grafana/grafana:10.0.3
+    container_name: aip-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ../../infrastructure/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ../../infrastructure/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../../infrastructure/grafana/dashboards/json:/etc/grafana/provisioning/dashboards/json:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  control-plane:
+    build:
+      context: ../..
+      dockerfile: control-plane/Dockerfile
+    container_name: aip-control-plane
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=true
+      - AIP_API_KEY=${AIP_API_KEY:-}
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+      - ALLOW_IN_PROCESS_FALLBACK=${ALLOW_IN_PROCESS_FALLBACK:-false}
+      - MASTER_PEPPER=${MASTER_PEPPER:?MASTER_PEPPER must be set}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
+      - MINIO_ENDPOINT=http://minio:9000
+      - VLLM_SERVER_URL=http://host.docker.internal:8001/v1
+      - TRANSLATION_SERVER_URL=http://host.docker.internal:8003
+      - STT_SERVER_URL=http://host.docker.internal:8002
+      - OCR_SERVER_URL=http://host.docker.internal:8004
+      - MODERATION_SERVER_URL=http://host.docker.internal:8006
+      - TTS_SERVER_URL=http://host.docker.internal:8007
+    volumes:
+      - ../../control-plane/src:/app/control-plane/src
+      - ../../packages/common/common:/app/packages/common/common
+      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: aip-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://control-plane:8000
+    volumes:
+      - ../../frontend:/app
+      - /app/node_modules
+    depends_on:
+      - control-plane
+    restart: unless-stopped
+
+  dispatcher-worker:
+    build:
+      context: ../..
+      dockerfile: workers/orchestration/dispatcher-worker/Dockerfile
+    container_name: aip-dispatcher-worker
+    environment:
+      - ENVIRONMENT=development
+      - MASTER_PEPPER=${MASTER_PEPPER:?MASTER_PEPPER must be set}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
+      - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
+    volumes:
+      - ../../workers/orchestration/dispatcher-worker/dispatcher:/app/workers/orchestration/dispatcher-worker/dispatcher
+      - ../../control-plane/src:/app/control-plane/src
+      - ../../packages/common/common:/app/packages/common/common
+      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+  callback-worker:
+    build:
+      context: ../..
+      dockerfile: workers/orchestration/callback-worker/Dockerfile
+    container_name: aip-callback-worker
+    environment:
+      - ENVIRONMENT=development
+      - MASTER_PEPPER=${MASTER_PEPPER:?MASTER_PEPPER must be set}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
+      - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
+    volumes:
+      - ../../workers/orchestration/callback-worker/worker:/app/workers/orchestration/callback-worker/worker
+      - ../../control-plane/src:/app/control-plane/src
+      - ../../packages/common/common:/app/packages/common/common
+      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+  image-worker:
+    profiles: ["ai-specialized", "gpu-workers", "all"]
+    build:
+      context: ../..
+      dockerfile: workers/gpu-workloads/image-worker/Dockerfile
+    container_name: aip-image-worker
+    environment:
+      - ENVIRONMENT=development
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
+      - AIP_IMAGE_QUEUE=q.aip.tasks.image
+    volumes:
+      - ../../workers/gpu-workloads/image-worker:/app/workers/gpu-workloads/image-worker
+      - ../../packages/common/common:/app/packages/common/common
+      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+  # ─── Data Plane: Unified Inference & Specialized AI Microservices ───
+  vllm-engine:
+    profiles: ["ai-llm", "all"]
+    build:
+      context: ../..
+      dockerfile: data-plane/vllm-engine/Dockerfile
+    container_name: aip-vllm-engine
+    expose:
+      - "8001"
+    environment:
+      - PORT=8001
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+      - MODEL_NAME=${VLLM_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}
+      - HF_HOME=/root/.cache/huggingface
+      - TORCH_DTYPE=float16
+      - TEST_MODE=${VLLM_TEST_MODE:-false}
+    volumes:
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      - ../../data-plane/vllm-engine:/app/data-plane/vllm-engine
+      - ../../packages/common/common:/app/packages/common/common
+      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  translation-server:
+    profiles: ["ai-specialized", "all"]
+    build:
+      context: ../..
+      dockerfile: data-plane/translation-server/Dockerfile
+    container_name: aip-translation-server
+    expose:
+      - "8003"
+    environment:
+      - PORT=8003
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+      - HF_HOME=/root/.cache/huggingface
+    volumes:
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      - ../../data-plane/translation-server:/app/data-plane/translation-server
+      - ../../packages/common/common:/app/packages/common/common
+      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]
+    restart: unless-stopped
+
+  stt-server:
+    profiles: ["ai-specialized", "all"]
+    build:
+      context: ../..
+      dockerfile: data-plane/stt-server/Dockerfile
+    container_name: aip-stt-server
+    expose:
+      - "8002"
+    environment:
+      - PORT=8002
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+      - HF_HOME=/root/.cache/huggingface
+    volumes:
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      - ../../data-plane/stt-server:/app/data-plane/stt-server
+      - ../../packages/common/common:/app/packages/common/common
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+    restart: unless-stopped
+
+  ocr-server:
+    profiles: ["ai-specialized", "all"]
+    build:
+      context: ../..
+      dockerfile: data-plane/ocr-server/Dockerfile
+    container_name: aip-ocr-server
+    expose:
+      - "8004"
+    environment:
+      - PORT=8004
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+    volumes:
+      - ../../data-plane/ocr-server:/app/data-plane/ocr-server
+      - ../../packages/common/common:/app/packages/common/common
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8004", "--reload"]
+    restart: unless-stopped
+
+  moderation-server:
+    profiles: ["ai-specialized", "all"]
+    build:
+      context: ../..
+      dockerfile: data-plane/moderation-server/Dockerfile
+    container_name: aip-moderation-server
+    expose:
+      - "8006"
+    environment:
+      - PORT=8006
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+    volumes:
+      - ../../data-plane/moderation-server:/app/data-plane/moderation-server
+      - ../../packages/common/common:/app/packages/common/common
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8006", "--reload"]
+    restart: unless-stopped
+
+  tts-adapter:
+    profiles: ["ai-specialized", "all"]
+    build:
+      context: ../..
+      dockerfile: data-plane/tts-adapter/Dockerfile
+    container_name: aip-tts-adapter
+    expose:
+      - "8007"
+    environment:
+      - PORT=8007
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+    volumes:
+      - ../../data-plane/tts-adapter:/app/data-plane/tts-adapter
+      - ../../packages/common/common:/app/packages/common/common
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8007", "--reload"]
     restart: unless-stopped
 
 volumes:
@@ -41,3 +353,6 @@ volumes:
   redis_data:
   rabbitmq_data:
   minio_data:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:

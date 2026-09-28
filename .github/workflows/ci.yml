@@ -6,49 +6,69 @@ on:
   pull_request:
     branches: [ main, master, dev ]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-and-validate:
-    name: Fast Code Linting, Tests & OpenAPI Export Verification (No Heavy Docker Build)
+    name: Lint, Test & OpenAPI Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout Code Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install UV Package Manager
+      - name: Install UV (with cache)
         uses: astral-sh/setup-uv@v3
         with:
           version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "**/uv.lock"
 
       - name: Set up Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
+        run: uv python install 3.10 && uv python pin 3.10
 
-      - name: Install Monorepo Dependencies (Ultra Fast UV Sync)
+      - name: Install monorepo deps
         run: |
-          uv venv
-          uv pip install -e packages/common -e packages/sdk-py -e services/gateway -e services/translation-server -e services/stt-server -e services/moderation-server pytest httpx ruff python-multipart
+          uv venv --python 3.10
+          uv pip install -e packages/common \
+                         -e packages/contracts \
+                         -e packages/sdk \
+                         -e control-plane \
+                         -e data-plane/vllm-engine \
+                         -e data-plane/translation-server \
+                         -e data-plane/stt-server \
+                         -e data-plane/moderation-server \
+                         -e workers/orchestration/dispatcher-worker \
+                         -e workers/orchestration/callback-worker \
+                         -e workers/gpu-workloads/image-worker \
+                         pytest httpx ruff python-multipart
 
-      - name: Run Code Linting (Ruff Check)
-        run: |
-          uv run ruff check .
+      - name: Ruff lint
+        run: uv run ruff check control-plane/ data-plane/ workers/ packages/ tests/ scripts/
 
-      - name: Run Automated Pytest Suite (All 15 Integration Tests)
+      - name: Pytest
         env:
-          PYTHONPATH: "services:packages:packages/sdk-py"
-        run: |
-          uv run pytest
+          TEST_MODE: "true"
+          VLLM_TEST_MODE: "true"
+          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:control-plane:control-plane/src:workers/orchestration/dispatcher-worker:workers/orchestration/callback-worker:workers/gpu-workloads/image-worker:data-plane/translation-server:data-plane/vllm-engine"
+        run: uv run pytest -v
 
-      - name: Verify OpenAPI & Postman Asset Generation
+      - name: Export & verify OpenAPI assets
         env:
-          PYTHONPATH: "services:packages:packages/sdk-py"
+          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:control-plane:control-plane/src"
         run: |
           uv run python scripts/export_api_assets.py
-
-      - name: Check Export Assets Artifacts
-        run: |
           test -f openapi/openapi.json
           test -f openapi/aip_postman_collection.json
           test -f openapi/aip_documentation.html
-          echo "All export assets verified successfully!"
+          echo "✅ All export assets verified."
+
+      - name: Upload OpenAPI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-assets
+          path: openapi/
+          retention-days: 7
