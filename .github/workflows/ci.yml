@@ -15,6 +15,15 @@ jobs:
     name: Lint, Test & OpenAPI Verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TEST_MODE: "true"
+      VLLM_TEST_MODE: "true"
+      MASTER_PEPPER: "test-master-pepper-for-testing-purposes-min-32-chars"
+      JWT_SECRET: "test-jwt-secret-for-testing-purposes-min-32-chars"
+      MONGO_URI: "mongodb://localhost:27017/test_ai_platform"
+      MINIO_ROOT_PASSWORD: "minioadmin123"
+      RABBITMQ_URL: "amqp://guest:guest@localhost:5672/"
+      REDIS_URL: "redis://localhost:6379/0"
 
     steps:
       - uses: actions/checkout@v4

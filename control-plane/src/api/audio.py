@@ -61,7 +61,7 @@ async def create_transcription(
     if file_bytes:
         request_id = getattr(request.state, "request_id", None) if hasattr(request, "state") else f"req_{uuid.uuid4().hex[:12]}"
         safe_name = file.filename or f"{request_id}.wav"
-        obj_name = f"audio/inputs/{tenant_id}/{datetime.now(timezone.utc).strftime('%Y%m%d')}/{request_id}_{safe_name}"
+        obj_name = f"audio/inputs/{tenant_id}/{datetime.now(timezone.utc).strftime('%Y%m%d')}/{safe_name}"
         audio_s3_uri, _ = minio_storage.upload_bytes(
             bucket="aip-data",
             object_name=obj_name,

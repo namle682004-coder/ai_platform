@@ -17,11 +17,17 @@ logger = logging.getLogger("aip-video-worker")
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL")
 if not RABBITMQ_URL:
-    raise RuntimeError("RABBITMQ_URL must be configured")
+    if os.getenv("TEST_MODE") == "true":
+        RABBITMQ_URL = "amqp://guest:guest@localhost:5672/"
+    else:
+        raise RuntimeError("RABBITMQ_URL must be configured")
 QUEUE_NAME = os.getenv("AIP_VIDEO_QUEUE", "q.aip.tasks.video")
 MONGO_URI = os.getenv("MONGO_URI")
 if not MONGO_URI:
-    raise RuntimeError("MONGO_URI must be configured")
+    if os.getenv("TEST_MODE") == "true":
+        MONGO_URI = "mongodb://localhost:27017/test_ai_platform"
+    else:
+        raise RuntimeError("MONGO_URI must be configured")
 
 
 async def update_job_status(job_id: str, status: str, progress: int = 100, result_urls: list[str] | None = None, error: str | None = None):

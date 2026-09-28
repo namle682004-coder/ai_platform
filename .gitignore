@@ -75,9 +75,10 @@ Thumbs.db
 *.onnx
 *.engine
 *.gguf
-models/
+/models/
 models_cache/
 hf_cache/
+!packages/common/common/models/
 
 # Logs & Temporary Files
 *.log

@@ -169,6 +169,13 @@ class GatewaySettings(BaseSettings):
     @classmethod
     def _reconcile_variables(cls, values: dict) -> dict:
         if isinstance(values, dict):
+            # Test mode defaults if not set in environment
+            if os.getenv("TEST_MODE") == "true" or values.get("TEST_MODE") == "true":
+                values.setdefault("MASTER_PEPPER", "test-master-pepper-for-testing-purposes-min-32-chars")
+                values.setdefault("JWT_SECRET", "test-jwt-secret-for-testing-purposes-min-32-chars")
+                values.setdefault("MONGO_URI", "mongodb://localhost:27017/test_ai_platform")
+                values.setdefault("MINIO_ROOT_PASSWORD", "minioadmin123")
+
             # 1. MongoDB URI reconciliation
             if values.get("MONGODB_URI") and not values.get("MONGO_URI"):
                 values["MONGO_URI"] = values["MONGODB_URI"]

@@ -17,7 +17,10 @@ logger = logging.getLogger("aip-lipsync-worker")
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL")
 if not RABBITMQ_URL:
-    raise RuntimeError("RABBITMQ_URL must be configured")
+    if os.getenv("TEST_MODE") == "true":
+        RABBITMQ_URL = "amqp://guest:guest@localhost:5672/"
+    else:
+        raise RuntimeError("RABBITMQ_URL must be configured")
 QUEUE_NAME = os.getenv("AIP_LIPSYNC_QUEUE", "q.aip.tasks.lipsync")
 
 

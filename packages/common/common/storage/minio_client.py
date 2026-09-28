@@ -46,7 +46,10 @@ class MinIOStorageService:
         self.access_key = access_key or os.getenv("MINIO_ROOT_USER", "minioadmin")
         self.secret_key = secret_key or os.getenv("MINIO_ROOT_PASSWORD")
         if not self.secret_key:
-            raise RuntimeError("MINIO_ROOT_PASSWORD must be configured")
+            if os.getenv("TEST_MODE") == "true":
+                self.secret_key = "minioadmin123"
+            else:
+                raise RuntimeError("MINIO_ROOT_PASSWORD must be configured")
         self.secure = secure or (
             os.getenv("MINIO_USE_SSL", "false").lower() in ("true", "1")
         )
