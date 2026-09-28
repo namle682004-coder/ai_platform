@@ -26,7 +26,10 @@ def _make_redis_key(tenant_id: str, idempotency_key: str) -> str:
 
 
 class IdempotencyService:
-    """Service to record and look up idempotent request results in Redis."""
+    """Service to record and look up idempotent request results in Redis with in-memory fallback."""
+
+    def __init__(self):
+        self._mem_store: dict[str, dict[str, Any]] = {}
 
     async def get_cached_response(
         self,
@@ -53,7 +56,7 @@ class IdempotencyService:
         except Exception as exc:
             logger.warning("Failed to query idempotency key in Redis: %s", exc)
 
-        return None
+        return self._mem_store.get(redis_key)
 
     async def save_response(
         self,
@@ -69,6 +72,7 @@ class IdempotencyService:
             return False
 
         redis_key = _make_redis_key(tenant_id, idempotency_key)
+        self._mem_store[redis_key] = response_data
         try:
             success = await redis_service.set_json(
                 redis_key,
@@ -78,22 +82,30 @@ class IdempotencyService:
             return success
         except Exception as exc:
             logger.warning("Failed to save idempotency response in Redis: %s", exc)
-            return False
+            return True
 
     async def claim(self, tenant_id: str, idempotency_key: Optional[str]) -> Optional[bool]:
-        """Atomically reserve a key; None means Redis was unavailable."""
+        """Atomically reserve a key; falls back to local memory store if Redis is unavailable."""
         if not idempotency_key or not idempotency_key.strip():
             return False
+        redis_key = _make_redis_key(tenant_id, idempotency_key)
+
         try:
-            return await redis_service.set_json(
-                _make_redis_key(tenant_id, idempotency_key),
-                {"status": "in_progress"},
-                ttl_seconds=IDEMPOTENCY_TTL_SECONDS,
-                nx=True,
-            )
+            client = redis_service.get_client()
+            import json
+            serialized = json.dumps({"status": "in_progress"}, ensure_ascii=False)
+            res = await client.set(redis_key, serialized, ex=IDEMPOTENCY_TTL_SECONDS, nx=True)
+            if res is not None:
+                self._mem_store[redis_key] = {"status": "in_progress"}
+                return True
+            else:
+                return False
         except Exception as exc:
-            logger.warning("Failed to claim idempotency key: %s", exc)
-            return None
+            logger.warning("Redis unavailable for idempotency claim, using memory fallback: %s", exc)
+            if redis_key in self._mem_store:
+                return False
+            self._mem_store[redis_key] = {"status": "in_progress"}
+            return True
 
 
 idempotency_service = IdempotencyService()
