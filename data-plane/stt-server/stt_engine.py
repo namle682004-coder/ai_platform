@@ -31,6 +31,11 @@ class FasterWhisperEngine:
         if self._initialized:
             return
 
+        if os.getenv("TEST_MODE") == "true":
+            self._backend = "Test Mock Faster-Whisper Engine (CPU)"
+            self._initialized = True
+            return
+
         if stt_settings.device == "auto":
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
@@ -83,6 +88,21 @@ class FasterWhisperEngine:
         vad_filter: Optional[bool] = None,
     ) -> TranscriptionResponse:
         self.initialize()
+        if os.getenv("TEST_MODE") == "true":
+            return TranscriptionResponse(
+                text="Xin chào thế giới máy học",
+                language=language or "vi",
+                duration=2.5,
+                segments=[
+                    TranscriptionSegment(
+                        id=0,
+                        start=0.0,
+                        end=2.5,
+                        text="Xin chào thế giới máy học",
+                        avg_logprob=-0.12,
+                    )
+                ],
+            )
         if self._model is None:
             raise RuntimeError(self._backend)
         lang = language or stt_settings.default_language

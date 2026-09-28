@@ -142,7 +142,14 @@ async def setup_rabbitmq_topology(rabbitmq_url: str) -> None:
     Enables x-max-priority: 10 so RabbitMQ natively prioritizes urgent tasks.
     """
     logger.info("Setting up RabbitMQ alias/domain priority topology for AIP platform...")
-    connection = await aio_pika.connect_robust(rabbitmq_url)
+    import os
+    try:
+        connection = await aio_pika.connect_robust(rabbitmq_url)
+    except Exception as exc:
+        if os.getenv("TEST_MODE") == "true":
+            logger.warning(f"RabbitMQ connection skipped in TEST_MODE: {exc}")
+            return
+        raise
     channel = await connection.channel()
 
     try:

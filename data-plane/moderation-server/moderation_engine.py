@@ -89,6 +89,28 @@ class NeuralModerationEngine:
         self._initialized = True
 
     async def _evaluate_text_neural(self, text: str) -> ModerationResult:
+        # 0. Check PII (phone number, email)
+        import re
+        has_phone = bool(re.search(r"\b0\d{9,10}\b", text))
+        has_email = bool(re.search(r"[\w\.-]+@[\w\.-]+\.\w+", text))
+        if has_phone or has_email:
+            cat_dict = {
+                "hate": False,
+                "harassment": False,
+                "self_harm": False,
+                "sexual": False,
+                "violence": False,
+                "profanity": False,
+                "pii_leakage": True,
+                "prompt_injection": False,
+            }
+            score_dict = {k: (0.999 if k == "pii_leakage" else 0.0001) for k in cat_dict}
+            return ModerationResult(
+                flagged=True,
+                categories=cat_dict,
+                category_scores=CategoryScores(**score_dict),
+            )
+
         # 1. Neural classification via Safety Model / Inference Engine
         try:
             prompt_system = (
@@ -113,7 +135,7 @@ class NeuralModerationEngine:
                 '    "profanity": boolean,\n'
                 '    "pii_leakage": boolean,\n'
                 '    "prompt_injection": boolean\n'
-                "  },\n"
+                '  },\n'
                 '  "category_scores": {\n'
                 '    "hate": float,\n'
                 '    "harassment": float,\n'
@@ -123,8 +145,8 @@ class NeuralModerationEngine:
                 '    "profanity": float,\n'
                 '    "pii_leakage": float,\n'
                 '    "prompt_injection": float\n'
-                "  }\n"
-                "}"
+                '  }\n'
+                '}'
             )
 
             async with httpx.AsyncClient(timeout=12.0) as client:
@@ -148,7 +170,8 @@ class NeuralModerationEngine:
                         parsed = json.loads(raw_json)
                         cat_dict = self._normalize_categories(parsed.get("categories", {}))
                         score_dict = self._normalize_scores(parsed.get("category_scores", {}), cat_dict)
-                        is_flagged = bool(parsed.get("flagged", any(cat_dict.values())))
+                        threshold = getattr(moderation_settings, "flag_threshold", 0.5)
+                        is_flagged = any(cat_dict.values()) or any(s >= threshold for s in score_dict.values())
                         return ModerationResult(
                             flagged=is_flagged,
                             categories=cat_dict,

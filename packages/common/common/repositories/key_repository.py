@@ -119,12 +119,12 @@ class MongoKeyRepository(IKeyRepository):
         self._keys_cache[record["key_id"]] = record
         return record
 
-    async def list_keys(self) -> List[Dict[str, Any]]:
+    async def list_keys(self, limit: int = 100) -> List[Dict[str, Any]]:
         db = mongo_manager.get_database()
         if db is not None:
             try:
-                cursor = db.api_keys.find({}, {"_id": 0, "hashed_key": 0})
-                keys = await cursor.to_list(length=100)
+                cursor = db.api_keys.find({}, {"_id": 0})
+                keys = await cursor.to_list(length=limit)
                 if keys:
                     for k in keys:
                         k.pop("_id", None)
@@ -132,7 +132,7 @@ class MongoKeyRepository(IKeyRepository):
                     return keys
             except Exception:
                 pass
-        return [dict(k) for k in self._keys_cache.values()]
+        return [dict(k) for k in self._keys_cache.values()][:limit]
 
     async def update_quota(self, key_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         if key_id in self._keys_cache:

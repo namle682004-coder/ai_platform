@@ -51,6 +51,16 @@ async def create_async_job(
         )
     idempotency_key = effective_idemp_key
 
+    # 2. SSRF NetGuard Validation for Webhook URL
+    if request.webhook_url:
+        from common.security.netguard import is_safe_public_url
+        is_safe, error_reason = await is_safe_public_url(request.webhook_url)
+        if not is_safe:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid webhook_url (SSRF Protection): {error_reason}",
+            )
+
     # Check cached response (Redis-backed, 24h window)
     from src.jobs.idempotency import idempotency_service
     cached_resp = await idempotency_service.get_cached_response(tenant_id, idempotency_key)
@@ -72,16 +82,6 @@ async def create_async_job(
             status_code=409,
             content={"detail": "Idempotency-Key is already being processed"},
         )
-
-    # 2. SSRF NetGuard Validation for Webhook URL
-    if request.webhook_url:
-        from common.security.netguard import is_safe_public_url
-        is_safe, error_reason = await is_safe_public_url(request.webhook_url)
-        if not is_safe:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid webhook_url (SSRF Protection): {error_reason}",
-            )
 
     job_id = f"job_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc).isoformat()

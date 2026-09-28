@@ -1,72 +1,86 @@
 # Everwin AI Platform (AIP) Architecture
 
-**Status:** Phase 1 implementation review  
-**Last updated:** September 24, 2026  
-**Scope:** Self-hosted AI inference middleware and runtime platform
+**Status:** Current implementation map
+**Last updated:** September 28, 2026
+**Scope:** Self-hosted AI API gateway, inference runtimes, asynchronous workers, and supporting infrastructure
 
-This document describes the architecture that exists in this repository and identifies the gaps that must be closed before claiming full SRS compliance. It is intentionally split into **current state**, **request flows**, and **implementation backlog**.
+This document is the starting point for understanding how AIP components collaborate, how requests move through the platform, and which capabilities are implemented versus still require validation. It follows the component, flow, deployment, and operational-gap structure used by the DCP architecture reference, while describing AIP as it exists in this repository.
 
-## 1. Purpose and Boundaries
+**Related source-of-truth documents and code**
 
-AIP is a control plane in front of heterogeneous AI runtimes. It provides a common `/v1` API surface, API-key authentication, alias-based routing, quota and rate-limit controls, caching, asynchronous offload, usage recording, and operational visibility.
+- [README](README.md) — repository setup and developer quick start.
+- [Docker Compose stack](deploy/docker-compose/docker-compose.yml) — local services, profiles, ports, and dependencies.
+- [Runtime Helm values](deploy/helm/aip-runtimes/values.yaml) — Kubernetes runtime deployment settings.
+- [Gateway route registration](control-plane/src/main.py) — routers mounted by the public API.
+- [Static model alias catalog](packages/common/common/models/catalog.py) — local fallback aliases.
+- [API source](control-plane/src/api/) — public route implementations.
+- [Worker source](workers/) — asynchronous consumers and GPU workload workers.
 
-AIP is not the downstream business application. Downstream applications own prompts, RAG workflows, business decisions, UI, and domain-specific orchestration.
+## 1. Overview
 
-### 1.1 AIP responsibilities
+AIP is a self-hosted inference platform with a FastAPI control plane in front of specialized AI runtimes. The gateway owns the client-facing API surface, authenticates requests, resolves logical aliases, applies platform policy, and dispatches work to data-plane services or asynchronous workers.
 
-- Authenticate API clients and enforce alias permissions.
-- Validate public request schemas.
-- Resolve logical model aliases to runtime targets.
-- Apply rate limits, quotas, cache policy, and admission controls.
-- Forward requests to specialized data-plane runtimes.
-- Normalize public responses and stream compatible SSE responses.
-- Record usage, audit events, and runtime health.
-- Offload heavy work to RabbitMQ-backed workers.
+The platform is distributed across independently deployable components. A *route* is a public operation, a *model alias* is a logical runtime selection, and a *service* is a deployable process. Their counts are not expected to match: one runtime can serve multiple aliases and routes, while workers and infrastructure services are not models.
 
-### 1.2 Out of scope
+The static fallback catalog currently defines seven logical aliases across chat, embeddings, translation, speech-to-text, text-to-speech, OCR/document processing, and moderation. MongoDB-backed registry data may differ from that fallback. A route, seed entry, or deployment setting alone does not establish that a model is loaded or production-ready.
 
-- Prompt ownership and prompt templates.
-- RAG, vector database workflows, and business workflows.
-- Model training, fine-tuning, or evaluation pipelines.
-- Direct public access to data-plane runtimes.
-- Automatic model fallback without an explicit routing policy.
+### 1.1 Responsibilities
+
+- Authenticate API clients and enforce configured key, endpoint, and alias policies.
+- Resolve logical aliases to configured internal runtime targets.
+- Expose standardized AI APIs and platform management routes.
+- Apply quota, rate-limit, cache, and admission controls where configured.
+- Forward synchronous requests and streaming responses to runtimes.
+- Publish eligible heavy work to RabbitMQ and expose job status/result operations.
+- Record usage and expose health, metrics, and administration surfaces.
+
+### 1.2 Boundaries
+
+- Downstream applications own business workflows, prompts, and RAG orchestration.
+- Production data-plane runtimes and workers should not be directly exposed to API clients.
+- MongoDB, Redis, RabbitMQ, and MinIO can be run in the local Compose stack or supplied as deployment infrastructure; they are not inherently external-only.
+- AIP does not provide a guarantee of model fallback, rollout, or high availability unless the relevant routing and deployment policy is explicitly configured and tested.
 
 ## 2. System Context
 
 ```mermaid
 graph TD
-    client["Downstream applications\nOpenAI SDK / .NET SDK"]
-    ingress["Ingress / Load Balancer\nTLS termination"]
-    gateway["Control Plane\nAIP Gateway :8000"]
+    client["API clients / SDKs"]
+    portal["Developer and staff web UI"]
+    ingress["Ingress / Load balancer"]
+    gateway["Control plane / FastAPI gateway :8000"]
 
-    subgraph stores["Platform data stores"]
+    subgraph platform["Platform dependencies"]
         mongo[(MongoDB)]
         redis[(Redis)]
         rabbit{{"RabbitMQ"}}
         minio[(MinIO)]
     end
 
-    subgraph runtimes["Private data plane"]
-        vllm["LLM runtime :8001"]
-        stt["STT runtime :8002"]
-        translation["Translation runtime :8003"]
-        ocr["OCR runtime :8004"]
-        moderation["Moderation runtime :8006"]
-        tts["TTS runtime :8007"]
+    subgraph dataplane["Private synchronous data plane"]
+        llm["LLM and embeddings :8001"]
+        stt["STT :8002"]
+        translation["Translation :8003"]
+        ocr["OCR :8004"]
+        moderation["Moderation :8006"]
+        tts["TTS :8007"]
     end
 
-    subgraph workers["Asynchronous workers"]
-        dispatcher["Dispatcher worker"]
-        callback["Callback worker"]
-        gpu["GPU workload workers"]
+    subgraph workers["Asynchronous consumers"]
+        dispatcher["Dispatcher + stale-job reconciler"]
+        callback["Callback / webhook worker"]
+        image["Image worker"]
+        video["Video worker"]
+        lipsync["Lip-sync worker"]
     end
 
     client --> ingress --> gateway
+    portal --> ingress
     gateway --- mongo
     gateway --- redis
     gateway --- rabbit
     gateway --- minio
-    gateway --> vllm
+    gateway --> llm
     gateway --> stt
     gateway --> translation
     gateway --> ocr
@@ -74,104 +88,108 @@ graph TD
     gateway --> tts
     rabbit --> dispatcher
     rabbit --> callback
-    rabbit --> gpu
+    rabbit -. when connected .-> image
+    rabbit -. when connected .-> video
+    rabbit -. when connected .-> lipsync
     dispatcher --- mongo
     dispatcher --- minio
 ```
 
-Only the gateway should be reachable by external clients. Runtime services are internal network dependencies. In local Docker Compose, runtime services use `expose` rather than host-published ports; in Kubernetes, access is controlled by Services and NetworkPolicies.
+The intended production boundary is the gateway: client traffic enters through an ingress or load balancer and data-plane services remain private. Local development intentionally publishes additional infrastructure and frontend ports; see the Compose contract below.
 
 ## 3. Deployable Components
 
-### 3.1 Control plane
+### 3.1 Gateway and portal
 
-| Component                | Current location                                     | Responsibility                                    |
-| ------------------------ | ---------------------------------------------------- | ------------------------------------------------- |
-| Gateway                  | `control-plane/src`                                  | FastAPI public API, middleware, routing, proxying |
-| Auth middleware          | `control-plane/src/auth`                             | API key lookup, alias permission, tenant context  |
-| Alias router             | `control-plane/src/items/alias_router.py`            | Mongo-backed alias registry with catalog fallback |
-| Endpoint registry        | `packages/common/.../endpoint_repository.py`         | API catalog and export status                     |
-| Usage and cache services | `control-plane/src/usage`, `control-plane/src/cache` | Usage recording and Redis inference cache         |
-| Job publisher            | `control-plane/src/publisher`                        | RabbitMQ topology and task publication            |
-| Health service           | `control-plane/src/status`                           | Runtime and platform health reporting             |
+| Component | Location | Responsibility |
+| --- | --- | --- |
+| Control plane | `control-plane/src` | FastAPI routes, middleware, authentication, alias resolution, request dispatch, jobs, health, and administration. |
+| Web portal | `frontend/` | Developer/staff interface served separately from the API gateway. |
 
-### 3.2 Data plane
+The gateway registers standard inference routes, specialized OCR/vision/NLP routes, job and prediction APIs, identity and portal APIs, usage/simulation APIs, admin routes, status probes, and schema/resource routes. The mounted router list in `control-plane/src/main.py` is the source for the route groups.
 
-| Service            | Compose/Kubernetes port | Runtime endpoint                                            | Current implementation                                       |
-| ------------------ | ----------------------: | ----------------------------------------------------------- | ------------------------------------------------------------ |
-| vLLM engine        |                    8001 | `/v1/chat/completions`, `/v1/completions`, `/v1/embeddings` | FastAPI + Transformers model loader; not native `vllm serve` |
-| STT server         |                    8002 | `/v1/audio/transcriptions`                                  | Faster-Whisper pipeline                                      |
-| Translation server |                    8003 | `/v1/predictions`                                           | CTranslate2 translation service                              |
-| OCR server         |                    8004 | `/v1/ocr/process`                                           | PaddleOCR/EasyOCR fallback pipeline                          |
-| Moderation server  |                    8006 | `/v1/moderations`                                           | Hybrid model/rule moderation engine                          |
-| TTS adapter        |                    8007 | `/v1/audio/speech`                                          | TTS adapter and audio generation                             |
+### 3.2 Synchronous data plane
 
-The gateway exposes public routes separately from runtime routes. For example, public `/v1/ocr/id-card` is adapted to runtime `/v1/ocr/process`.
+| Runtime | Internal port | Main API role | Current-state note |
+| --- | ---: | --- | --- |
+| `vllm-engine` | 8001 | Chat completions, completions, embeddings | The service name and alias metadata say vLLM; verify the serving implementation and model before claiming native vLLM behavior. |
+| `stt-server` | 8002 | Audio transcription | Faster-Whisper based service. |
+| `translation-server` | 8003 | Translation/prediction | CTranslate2-based service. |
+| `ocr-server` | 8004 | Document and identity OCR | OCR pipeline with configured engine/fallback behavior. |
+| `moderation-server` | 8006 | Text/content moderation | Hybrid model/rule service. |
+| `tts-adapter` | 8007 | Audio speech synthesis | TTS adapter service. |
 
-### 3.3 Infrastructure
+Public paths are gateway contracts and need not match runtime paths. For example, an OCR route can adapt a public document-specific operation to a runtime processing endpoint.
 
-- MongoDB: aliases, endpoints, API keys, jobs, usage, audit, and metadata.
-- Redis: authentication cache, rate-limit state, inference cache, idempotency state.
-- RabbitMQ: heavy inference jobs, callbacks, retries, and dead-letter handling.
-- MinIO: uploaded inputs and generated artifacts.
-- Prometheus, Grafana, and Alertmanager: metrics and operational monitoring.
+### 3.3 Asynchronous workers
+
+| Worker | Location | Role |
+| --- | --- | --- |
+| Dispatcher | `workers/orchestration/dispatcher-worker` | Consumes queued tasks and runs stale-job reconciliation against MongoDB. |
+| Callback | `workers/orchestration/callback-worker` | Consumes callback events and delivers webhook notifications. |
+| Image | `workers/gpu-workloads/image-worker` | Consumes the configured image task queue and writes job artifacts to MinIO. |
+| Video | `workers/gpu-workloads/video-worker` | Separate video workload worker package. |
+| Lip-sync | `workers/gpu-workloads/lipsync-worker` | Separate lip-sync workload worker package. |
+
+The presence of a worker package does not mean that a public API route, queue binding, local Compose service, trained model, or production deployment is wired for it. In the current Compose file, the image worker is present under optional profiles; video and lip-sync workers are not listed there.
+
+### 3.4 Platform infrastructure
+
+- **MongoDB:** alias/endpoint registry and platform records such as jobs and usage.
+- **Redis:** authentication/rate-limit/cache/idempotency state as enabled by the gateway configuration.
+- **RabbitMQ:** task and callback messaging.
+- **MinIO:** input and generated artifact storage.
+- **Prometheus, Grafana, Alertmanager:** optional local monitoring stack.
+- **Runtime probe:** a separate repository component for runtime/hardware probing; it is not listed as a service in the current Docker Compose file.
 
 ## 4. Public API Surface
 
-The gateway owns the public contract. Runtime paths are not public API contracts.
+The gateway owns the public API. These are route groups, not a claim that every operation is enabled for every key or ready for production:
 
-| Public endpoint            | Method  | Route behavior                                                 |
-| -------------------------- | ------- | -------------------------------------------------------------- |
-| `/v1/chat/completions`     | POST    | Resolve requested alias, then proxy to LLM runtime             |
-| `/v1/completions`          | POST    | Legacy completion route                                        |
-| `/v1/embeddings`           | POST    | Resolve embedding alias, then proxy to LLM runtime             |
-| `/v1/audio/transcriptions` | POST    | Resolve STT alias, then call STT runtime                       |
-| `/v1/audio/speech`         | POST    | Resolve TTS alias, then call TTS runtime                       |
-| `/v1/moderations`          | POST    | Resolve moderation alias, then call moderation runtime         |
-| `/v1/ocr/*`                | POST    | Resolve OCR alias, then call OCR runtime                       |
-| `/v1/nlp/translation`      | POST    | Resolve translation alias, then call translation runtime       |
-| `/v1/predictions`          | POST    | Resolve caller-selected alias and dispatch by runtime metadata |
-| `/v1/models`               | GET     | List enabled aliases allowed for the API key                   |
-| `/v1/jobs`                 | POST    | Create an asynchronous job                                     |
-| `/v1/jobs/{id}`            | GET     | Read job state                                                 |
-| `/admin/v1/*`              | Various | Admin-only management APIs                                     |
+| API group | Representative public paths | Purpose |
+| --- | --- | --- |
+| Chat and completions | `POST /v1/chat/completions`, `POST /v1/completions` | Text generation and chat. |
+| Embeddings and models | `POST /v1/embeddings`, `GET /v1/models`, `GET /v1/models/{alias}` | Vectorization and alias discovery. |
+| Audio | `POST /v1/audio/transcriptions`, `POST /v1/audio/speech` | Speech-to-text and text-to-speech. |
+| Images | `POST /v1/images/generations`, `POST /v1/images/edits` | Image request handling; see implementation gaps below. |
+| Moderation | `POST /v1/moderations` | Content moderation. |
+| OCR | `POST /v1/ocr`, `/v1/ocr/process`, `/v1/ocr/id-card`, `/v1/ocr/driver-license`, `/v1/ocr/passport` | Document extraction. |
+| Vision | `POST /v1/vision/facematch`, `POST /v1/vision/liveness` | Face matching and liveness operations. |
+| NLP | `POST /v1/nlp/translation`, `POST /v1/nlp/summarization` | Translation and summarization. |
+| Predictions and jobs | `POST /v1/predictions`, `POST /v1/jobs`, `GET /v1/jobs/{job_id}`, `GET /v1/jobs/{job_id}/result`, `POST /v1/jobs/{job_id}/cancel` | Custom dispatch and asynchronous work. |
+| Platform APIs | `/v1/auth/*`, `/v1/user/*`, `/v1/usage/*`, `/v1/simulations/*`, `/v1/mcp/*`, `/admin/v1/*` | Identity, portal, usage, test/simulation, MCP, and administrative operations. |
 
-All authenticated public requests should use `Authorization: Bearer <api-key>`. Health and operational endpoints are explicitly exempted where appropriate.
+Exact methods, hidden compatibility paths, schemas, and authorization rules are defined in the router source and generated OpenAPI document. Do not treat a seeded API catalog entry as proof of route implementation.
 
 ## 5. Alias and Endpoint Model
 
-### 5.1 Alias resolution
+### 5.1 Model aliases
 
-An alias is a logical client-facing model identifier such as `chat-general-standard` or `stt-vn-standard`. The alias document contains runtime metadata and a target URL.
+An alias is a logical client-facing identifier that selects runtime metadata. The static fallback catalog in `packages/common/common/models/catalog.py` currently defines seven aliases, for example:
 
 ```json
 {
-  "alias_name": "chat-general-standard",
+  "id": "chat-general-standard",
   "physical_model": "Qwen2.5-1.5B-Instruct",
-  "runtime": "vllm",
+  "runtime": "vLLM",
   "target_url": "http://vllm-engine:8001/v1",
-  "status": "enabled",
-  "timeout_seconds": 120
+  "status": "active"
 }
 ```
 
-The current implementation loads the MongoDB alias registry during gateway startup and refreshes it after admin status changes. The static catalog is retained as an offline fallback when MongoDB is unavailable. An alias must be `enabled` or `active` to resolve.
+Gateway startup attempts to load MongoDB-backed alias and endpoint registries and starts an alias update listener. The code logs that catalog fallbacks remain active if registry preloading fails. Runtime resolution depends on the configured alias status and target metadata; the MongoDB catalog and static fallback may not contain identical entries.
 
 ### 5.2 Endpoint registry
 
-The `endpoints` collection is a public API catalog and feature gate. It stores path, method, description, documentation, pricing, and status. It does not perform runtime dispatch.
+The endpoint registry catalogs public operations and their status/metadata. It is separate from alias resolution: an endpoint answers “is this API operation available?”, while an alias answers “which runtime target handles this model identifier?” The route implementation remains the source of truth for actual behavior.
 
-The authentication middleware checks endpoint status before passing a request to a route. The registry is preloaded during gateway startup. Hidden compatibility paths are normalized to their canonical endpoint when their status is checked.
+### 5.3 Seeding and catalog policy
 
-### 5.3 Seed policy
-
-Seed scripts must be idempotent and non-destructive:
-
-- Upsert by `alias_name` or `endpoint_id`.
-- Never delete the whole collection as part of a normal seed.
-- Use gateway URLs in public documentation.
-- Use internal Docker/Kubernetes service DNS names for runtime targets.
-- Never commit production credentials or hardcoded MongoDB connection strings.
+- Use idempotent upserts keyed by stable endpoint or alias identifiers.
+- Avoid destructive whole-collection resets in normal seed runs.
+- Keep public gateway URLs distinct from internal Compose/Kubernetes runtime DNS names.
+- Treat model names, service names, and API domain counts as separate inventories.
+- Do not advertise a model as available until its runtime, weights, route mapping, and response contract have been verified.
 
 ## 6. Synchronous Request Flow
 
@@ -179,47 +197,34 @@ Seed scripts must be idempotent and non-destructive:
 sequenceDiagram
     autonumber
     participant C as Client
-    participant G as Gateway :8000
+    participant G as Gateway
     participant R as Redis
     participant M as MongoDB
-    participant A as Alias registry
+    participant A as Alias/endpoint registries
     participant RT as Runtime
 
-    C->>G: POST /v1/* + Bearer API key
-    G->>G: Assign or propagate X-Request-ID
-    G->>R: Check cached API key / limits
-    G->>M: Load key or tenant metadata on cache miss
-    G->>G: Check endpoint status and alias permission
-    G->>A: Resolve alias to active runtime target
-    G->>R: Check cache, rate limit, quota, concurrency
-    G->>RT: Forward validated request
-    RT-->>G: Response or SSE stream
-    G->>R: Store deterministic response when eligible
-    G->>M: Record usage asynchronously
-    G-->>C: Normalized response or stream
+    C->>G: Request to public /v1 route
+    G->>G: Assign/propagate request ID and run middleware
+    G->>R: Check cached identity/policy state when configured
+    G->>M: Read persistent key/registry metadata when needed
+    G->>G: Validate endpoint, key scope, request, quota/rate policy
+    G->>A: Resolve enabled alias and runtime target
+    G->>RT: Forward normalized request
+    RT-->>G: Response or stream
+    G->>R: Cache eligible response when configured
+    G->>M: Record usage/platform data as implemented
+    G-->>C: Public response or stream
 ```
 
-Failure mapping should remain stable:
-
-| Condition              | HTTP | Code                                     |
-| ---------------------- | ---: | ---------------------------------------- |
-| Invalid API key        |  401 | `unauthorized`                           |
-| Alias not permitted    |  403 | `forbidden_alias`                        |
-| Alias missing/disabled |  404 | `alias_not_found`                        |
-| Rate or quota limit    |  429 | `rate_limit_exceeded` / `quota_exceeded` |
-| Runtime capacity       |  503 | `capacity_exhausted`                     |
-| Runtime unavailable    |  503 | `runtime_unavailable`                    |
-| Runtime timeout        |  504 | `runtime_timeout`                        |
+The exact middleware and persistence path varies by route. Do not assume every route uses every cache/quota feature or that all operations share identical error mapping without contract tests.
 
 ## 7. Streaming and Asynchronous Flows
 
 ### 7.1 Streaming
 
-For `stream=true`, the gateway opens an upstream stream and returns `text/event-stream`. Chunks should be forwarded without buffering. The gateway must emit `data: [DONE]` after the upstream closes and record usage after the stream completes.
+The platform has stream-capable API/runtime paths, including chat and speech synthesis metadata. Streaming behavior is route-specific; confirm chunk forwarding, terminal markers, disconnect handling, and usage recording with endpoint-level tests before treating it as a uniform guarantee.
 
-### 7.2 Heavy inference jobs
-
-Heavy requests may be offloaded:
+### 7.2 Heavy jobs
 
 ```mermaid
 sequenceDiagram
@@ -230,115 +235,119 @@ sequenceDiagram
     participant W as Worker
     participant S as MinIO
 
-    C->>G: POST /v1/jobs or heavy inference request
-    G->>G: Authenticate, validate, reserve quota
-    G->>DB: Create queued job
-    G->>Q: Publish durable job message
-    G-->>C: 202 Accepted + job_id
-    Q->>W: Deliver job
-    W->>DB: queued -> running
-    W->>W: Execute runtime task
-    W->>S: Write output artifact
-    W->>DB: running -> completed/failed
-    C->>G: GET /v1/jobs/{id}
-    G-->>C: Status and artifact metadata
+    C->>G: POST /v1/jobs or eligible heavy request
+    G->>G: Authenticate, validate, apply idempotency/policy
+    G->>DB: Create or locate job record
+    G->>Q: Publish task
+    G-->>C: Accepted response with job identifier
+    Q->>W: Deliver task
+    W->>DB: Update task/job state
+    W->>W: Execute workload
+    W->>S: Store output artifact when applicable
+    C->>G: Poll job status/result or cancel
+    G-->>C: Job state and result metadata
 ```
 
-Job creation must be idempotent when `Idempotency-Key` is required by the public contract. Retry, dead-letter, cancellation, quota release, and webhook signing must be explicit state transitions rather than implicit best effort.
+`POST /v1/jobs` currently requires an `Idempotency-Key`. Queue durability, retry/dead-letter handling, cancellation races, quota release, and artifact behavior must be verified against the relevant publisher, consumer, and deployment topology; do not infer these guarantees from the route alone.
 
-## 8. Local and Kubernetes Deployment
+## 8. Deployment
 
-### 8.1 Docker Compose contract
+### 8.1 Docker Compose
 
-| Service     | Internal DNS         | Port |
-| ----------- | -------------------- | ---: |
-| Gateway     | `control-plane`      | 8000 |
-| LLM runtime | `vllm-engine`        | 8001 |
-| STT         | `stt-server`         | 8002 |
-| Translation | `translation-server` | 8003 |
-| OCR         | `ocr-server`         | 8004 |
-| Moderation  | `moderation-server`  | 8006 |
-| TTS         | `tts-adapter`        | 8007 |
+The Compose file defines the local control plane, frontend, core infrastructure, workers, and runtimes. Optional profiles include monitoring, LLM, specialized AI, GPU workers, and the combined `all` profile.
 
-The gateway uses these service names for internal routing. Data-plane ports are not published to the host in the Compose configuration.
+| Service | Compose port | Exposure |
+| --- | ---: | --- |
+| Control plane | 8000 | Published to host. |
+| Frontend | 5173 | Published to host. |
+| MongoDB | 27017 | Published to host. |
+| Redis | 6379 | Published to host. |
+| RabbitMQ | 5672, 15672, 15692 | Published to host. |
+| MinIO | 9000, 9001 | Published to host. |
+| Prometheus | 9090 | Published when monitoring profile is enabled. |
+| Alertmanager | 9093 | Published when monitoring profile is enabled. |
+| Grafana | 3000 | Published when monitoring profile is enabled. |
+| LLM runtime | 8001 | Container `expose`; not host-published. |
+| STT runtime | 8002 | Container `expose`; not host-published. |
+| Translation runtime | 8003 | Container `expose`; not host-published. |
+| OCR runtime | 8004 | Container `expose`; not host-published. |
+| Moderation runtime | 8006 | Container `expose`; not host-published. |
+| TTS runtime | 8007 | Container `expose`; not host-published. |
 
-### 8.2 Kubernetes contract
+Compose requires secrets such as MongoDB, Redis, RabbitMQ, MinIO, JWT, and master-pepper settings through environment substitution. The Compose file is a development stack, not a production network-security boundary: several infrastructure ports are intentionally host-published.
 
-Helm values define the runtime ports and Services. Runtime pods must receive labels that match the NetworkPolicy selectors. Only the gateway namespace should be ingress-facing. Runtime namespaces should allow ingress from the gateway and egress only to approved infrastructure and DNS.
+### 8.2 Kubernetes / Helm
 
-## 9. Security Boundaries
+The repository contains separate Helm charts for control plane, runtimes, and infrastructure. Runtime values define which services are enabled, namespaces, ports, replicas, resources, and node selectors. Rendered chart output and cluster connectivity/policy still need deployment-level validation; chart values alone do not prove a running or secure cluster.
 
-- API keys are accepted only through the gateway public surface.
-- Runtime services perform a minimum internal Bearer-header check, but they are not a replacement for gateway authentication.
-- Data-plane services must not be reachable from external clients.
-- Admin APIs require admin authorization and CIDR protection.
-- Secrets must come from environment or secret management, not source files.
-- Uploaded files require size, MIME, extension, checksum, and malware-scan policy.
-- MinIO buckets should remain private; clients receive time-limited presigned URLs.
-- Webhooks must use HMAC-SHA256 signatures and replay protection.
+## 9. Security and Operational Boundaries
 
-## 10. Current Implementation Gaps and Backlog
+- Expose the gateway through the production ingress; keep runtime services private.
+- Use secret management for API, database, broker, object-store, runtime, and signing credentials.
+- Protect admin APIs with the configured admin authorization and network restrictions.
+- Treat runtime shared-token checks as defense in depth, not a replacement for gateway authentication.
+- Keep object-store buckets private and validate uploaded content and resource limits.
+- Apply webhook signing, safe destination validation, and replay controls where callback delivery is enabled.
+- Validate Docker host port exposure and Kubernetes NetworkPolicies in the actual deployment environment.
+- Ensure production inference uses real models and deterministic configuration, not development placeholders.
 
-The following list is intentionally explicit. The presence of a route or configuration entry does not mean the corresponding SRS capability is complete.
+## 10. Current Implementation Gaps
 
-### P0: correctness and security blockers
+The presence of a route, worker, chart value, API seed, or model name is not by itself evidence that a complete production inference capability exists.
 
-| ID    | Issue                                                                                                    | Impact                                                                                        | Required fix                                                                                                 |
-| ----- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| P0-01 | **Resolved:** production MongoDB URI and credentials are no longer hardcoded in Python/config defaults.  | Existing exposed credentials still require rotation outside this repository.                  | Rotate previously exposed credentials and keep all deployment secrets in secret storage.                     |
-| P0-02 | **Resolved for admin updates:** alias changes publish Redis invalidation events to gateway replicas.     | External DB edits still require an explicit mutation event or a future MongoDB change stream. | Route all alias mutations through the repository/admin API; add change-stream support for out-of-band edits. |
-| P0-03 | **Resolved in manifests:** runtime pod labels, namespaces, and NetworkPolicy selectors now align.        | Rendered manifests still need cluster-level connectivity verification.                        | Add `kubectl`/integration policy tests in CI.                                                                |
-| P0-04 | **Resolved with shared runtime token:** data-plane services enforce `AIP_RUNTIME_TOKEN` when configured. | Token distribution and rotation still require deployment-secret verification.                 | Store the token in Kubernetes/Docker secret management, rotate it, and add direct-runtime rejection tests.   |
+### P0 — correctness and security
 
-### P1: SRS behavior gaps
+| ID | Finding | Remaining validation/action |
+| --- | --- | --- |
+| P0-01 | Production credentials were removed from source/config defaults in the prior implementation review. | Rotate any previously exposed credentials outside the repository and keep secrets in deployment secret storage. |
+| P0-02 | Admin alias updates publish invalidation events; out-of-band database changes may not notify gateway replicas. | Route mutations through the repository/admin API or add change-stream/invalidation coverage for external edits. |
+| P0-03 | Runtime labels/namespaces and NetworkPolicy selectors were aligned in manifests. | Test rendered manifests and actual cluster connectivity/policy. |
+| P0-04 | Runtime-token checks are configured for data-plane services. | Verify token provisioning, rotation, and rejection of unauthenticated direct runtime calls in each deployment. |
 
-| ID    | Issue                                                                                                                                          | Impact                                                                                                      | Required fix                                                                                |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| P1-01 | Native vLLM is not running; the service uses Transformers inside FastAPI.                                                                      | The deployment does not provide vLLM scheduling, batching, or PagedAttention semantics promised by the SRS. | Either migrate to native `vllm serve` or change the SRS/runtime name permanently.           |
-| P1-02 | **Partially resolved:** `embed-standard` metadata now matches the Transformers mean-pooling implementation and test dimension.                 | Mean-pooled causal-LM vectors still need semantic-quality validation.                                       | Deploy/benchmark a dedicated embedding model and lock the dimension/similarity contract.    |
-| P1-03 | **Resolved for production:** in-process runtime fallback is disabled unless explicitly enabled outside production.                             | Development may still opt into fallback for local testing.                                                  | Keep `ALLOW_IN_PROCESS_FALLBACK=false` in production and add a deployment policy check.     |
-| P1-04 | **Resolved in gateway middleware:** API keys now support `allowed_endpoints` scopes with wildcard compatibility.                               | Existing keys without scopes remain unrestricted until migrated.                                            | Seed explicit endpoint scopes for production keys and add admin UI/API management.          |
-| P1-05 | Alias versioning, canary, blue/green, and deprecated headers are not implemented end-to-end.                                                   | SRS rollout and lifecycle guarantees are not available.                                                     | Add version documents, active-version selection, weighted routing, and deprecation headers. |
-| P1-06 | **Partially resolved:** per-key rate/concurrency checks use atomic Redis Lua and now fail closed when Redis is unavailable.                    | Per-alias limits and concurrent-load integration tests are still missing.                                   | Add alias-aware buckets and load tests.                                                     |
-| P1-07 | **Partially resolved:** Redis NX claims prevent concurrent duplicate job creation and Redis failure no longer creates an unprotected job.      | Retry/DLQ, cancellation races, durable idempotency records, and artifact contract still need coverage.      | Add durable idempotency records and worker state-transition tests.                          |
-| P1-08 | **Partially resolved:** translation prediction dispatch now matches runtime metadata case-insensitively and sends `source_lang`/`target_lang`. | Other specialized adapters still need complete contract tests.                                              | Add public-to-runtime contract tests for every adapter and document each mapping.           |
+### P1 — product and contract behavior
 
-### P2: operational and quality gaps
+| ID | Gap | Impact / next step |
+| --- | --- | --- |
+| P1-01 | The runtime is named `vllm-engine`, but the implementation must be checked before claiming native vLLM serving. | Confirm the actual server/model loading path or update the product/SRS claims. |
+| P1-02 | Embeddings are currently described as mean-pooled output from the configured Transformers model. | Validate semantic quality and freeze the model, dimensions, and similarity contract. |
+| P1-03 | Production fallback behavior is configurable. | Keep in-process fallback disabled in production and enforce that setting at deployment. |
+| P1-04 | Endpoint-scope support is present, but existing keys may lack explicit scopes. | Migrate keys and verify admin management for endpoint permissions. |
+| P1-05 | Alias versioning, canary/weighted routing, blue-green rollout, and deprecation behavior are not complete end-to-end. | Add version selection and rollout contracts before promising those capabilities. |
+| P1-06 | Rate/concurrency checks have Redis-backed atomic behavior, but alias-aware limits and load coverage remain incomplete. | Add per-alias policy and integration/load tests. |
+| P1-07 | Job idempotency exists at the API path; durable idempotency, retry/DLQ, cancellation races, and artifact contracts need end-to-end validation. | Test explicit worker state transitions and broker failure/retry behavior. |
+| P1-08 | Translation dispatch has adapter-specific metadata handling. | Add public-to-runtime contract tests for each specialized route. |
 
-| ID    | Issue                                                                                  | Impact                                                                 | Required fix                                                                               |
-| ----- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| P2-01 | Runtime model volume/cache strategy is inconsistent across services.                   | Containers may redownload models or fail offline.                      | Define model registry, cache path, persistence, warm-up, and offline behavior per runtime. |
-| P2-02 | README and seed metadata contain historical model names and claims.                    | Operators may deploy or document models that are not actually present. | Generate catalog/documentation from a validated model manifest.                            |
-| P2-03 | Error response and timeout behavior vary between adapters.                             | SDKs cannot rely on one stable error contract.                         | Centralize error mapping and add contract tests for every public endpoint.                 |
-| P2-04 | Observability does not yet prove all SRS metrics and alerts are emitted.               | Runtime failures and quota regressions may be invisible.               | Add metric acceptance tests and dashboards for gateway, runtime, queue, and GPU groups.    |
-| P2-05 | Full integration tests require Redis, MongoDB, RabbitMQ, MinIO, and ML dependencies.   | Unit tests can pass while deployment wiring fails.                     | Add a reproducible test profile using Docker Compose and lightweight test runtimes.        |
-| P2-06 | Public endpoint seed data includes domains that are not implemented by local runtimes. | API catalog can advertise unavailable image/video/vision capabilities. | Mark unavailable APIs disabled or seed only validated routes.                              |
-| P2-07 | Admin updates do not consistently create audit events.                                 | Configuration changes are difficult to investigate.                    | Record actor, source IP, before/after state, and request ID for every admin mutation.      |
+### P2 — readiness and operations
+
+| ID | Gap | Impact / next step |
+| --- | --- | --- |
+| P2-01 | Model cache, persistence, warm-up, and offline behavior vary by runtime. | Document and test per-runtime model lifecycle. |
+| P2-02 | README/API seed/model metadata may contain historical names or claims. | Reconcile public catalog and documentation with verified deployed model manifests. |
+| P2-03 | Error and timeout behavior can vary across adapters. | Standardize public errors and test each route/runtime contract. |
+| P2-04 | Monitoring configuration exists, but emitted metrics and alerts need runtime acceptance testing. | Verify gateway, runtime, broker, and GPU metrics and alert rules in a running stack. |
+| P2-05 | Full integration tests require MongoDB, Redis, RabbitMQ, MinIO, and ML dependencies. | Maintain a reproducible Compose integration profile with lightweight test runtimes. |
+| P2-06 | The image API and worker contain placeholder/simulated artifact generation; video and lip-sync worker packages are not mounted as public routes by the current gateway router list. | Do not advertise these as production inference until real model execution and public/async contracts are connected and tested. |
+| P2-07 | Admin mutations may not consistently create complete audit events. | Record actor, source IP, before/after state, and request ID for each administrative mutation. |
 
 ## 11. Acceptance Checklist
 
-Before calling the implementation SRS-compliant, verify all of the following:
-
-- [x] No production credential exists in Python source or configuration defaults. Previously exposed credentials still require rotation.
-- [x] Admin alias changes propagate to every gateway replica without restart through Redis pub/sub.
-- [ ] Alias disabled status blocks every public route using that alias.
-- [ ] Endpoint disabled status blocks canonical and compatibility paths.
-- [ ] Every public route has an integration test for auth, routing, timeout, and error mapping.
-- [x] Data-plane ports are inaccessible from outside the gateway network in Compose; Kubernetes requires cluster policy testing.
-- [ ] Kubernetes rendered labels and NetworkPolicies permit only intended traffic (manifest alignment fixed; cluster test pending).
-- [ ] Embeddings use a real, documented model with tested dimensions.
-- [ ] Native vLLM claims are either implemented or removed from the SRS.
-- [ ] Heavy jobs are idempotent, durable, retryable, cancellable, and observable.
-- [ ] Runtime model caches and artifact retention are documented and tested.
-- [ ] Prometheus metrics and critical alerts are verified in a running environment.
+- [ ] Every enabled alias resolves to an installed model and a reachable runtime target.
+- [ ] Disabled aliases and endpoints are rejected consistently across canonical and compatibility routes.
+- [ ] Each public route has tests for authentication, authorization, request validation, timeout, response shape, and error mapping.
+- [ ] Data-plane ports are private in production Compose/Kubernetes deployments; rendered and live network policies are verified.
+- [ ] Model names and capability claims match the actual weights and runtime implementation.
+- [ ] Heavy jobs are idempotent and have verified durable publish, retry/DLQ, cancellation, terminal-state, quota, and artifact behavior.
+- [ ] Runtime model caching, warm-up, storage, and offline behavior are documented and tested.
+- [ ] Prometheus metrics, dashboards, and critical alerts are verified against a running deployment.
+- [ ] Image, video, and lip-sync capabilities are not advertised as production-ready until their real inference path is connected and validated.
 
 ## 12. Source of Truth
 
-- Runtime ports and Compose service names: `deploy/docker-compose/docker-compose.yml`.
-- Kubernetes runtime values: `deploy/helm/aip-runtimes/values.yaml`.
-- Public gateway routes: `control-plane/src/api`.
+- Compose service names, profiles, ports, and local exposure: `deploy/docker-compose/docker-compose.yml`.
+- Kubernetes runtime configuration: `deploy/helm/aip-runtimes/values.yaml`.
+- Gateway router registration: `control-plane/src/main.py`.
+- Public API behavior: `control-plane/src/api/`.
 - Alias fallback catalog: `packages/common/common/models/catalog.py`.
-- MongoDB alias and endpoint repositories: `packages/common/common/repositories`.
-- Database seed definitions: `migrations/seed_database.py`.
-- API catalog seed definitions: `scripts/seed_13_apis.py`.
+- Worker entry points: `workers/orchestration/` and `workers/gpu-workloads/`.
+- Database and API catalog seeds: `migrations/` and `scripts/`.
 - Automated verification: `tests/`.

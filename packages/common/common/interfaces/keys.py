@@ -10,7 +10,7 @@ class IKeyRepository(ABC):
         pass
 
     @abstractmethod
-    async def list_keys(self) -> List[Dict[str, Any]]:
+    async def list_keys(self, limit: int = 100) -> List[Dict[str, Any]]:
         pass
 
     @abstractmethod

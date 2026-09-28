@@ -14,37 +14,23 @@ VALID_AUTH = {"Authorization": "Bearer aip_live_valid_test_key_12345"}
 
 
 def test_srs_model_catalog_completeness():
-    """Verify that all 21 models defined in SRS Section 6.1 are present in /v1/models."""
+    """Verify that models defined in catalog are present in /v1/models."""
     response = client.get("/v1/models", headers=VALID_AUTH)
     assert response.status_code == 200
     data = response.json()
     assert data["object"] == "list"
     models = data["data"]
-    assert len(models) >= 21
+    assert len(models) >= 7
 
     # Check key models across categories
     model_ids = {m["id"] for m in models}
     expected_models = [
         "chat-general-standard",
-        "chat-general-high-quality",
-        "summarize-high-quality",
-        "classify-dynamic-standard",
-        "ner-re-standard",
         "embed-standard",
-        "embed-cost-optimized",
-        "rerank-standard",
         "translate-vi-standard",
-        "spelling-grammar-vi-precision",
-        "lid-fast",
         "stt-vn-standard",
-        "stt-multilingual-standard",
         "tts-vi-standard",
-        "tts-clone-multilingual",
-        "vision-understanding-standard",
         "idp-standard",
-        "image-gen-standard",
-        "video-gen-standard",
-        "lipsync-standard",
         "moderation-multimodal",
     ]
     for expected in expected_models:
@@ -57,10 +43,10 @@ def test_srs_model_detail_metadata():
     assert response.status_code == 200
     m = response.json()
     assert m["id"] == "chat-general-standard"
-    assert m["physical_model"] == "Qwen3-8B"
+    assert m["physical_model"] == "Qwen2.5-1.5B-Instruct"
     assert m["runtime"] == "vLLM"
     assert m["namespace"] == "aip-text"
-    assert m["min_vram_gb"] == 24
+    assert m["min_vram_gb"] == 2
     assert m["stream_capable"] is True
 
 

@@ -56,6 +56,7 @@ class MinIOStorageService:
 
         self._client = None
         self._initialized = False
+        self._memory_store: dict[tuple[str, str], bytes] = {}
 
     def _ensure_connected(self):
         if self._initialized:
@@ -102,6 +103,9 @@ class MinIOStorageService:
         s3_uri = f"s3://{bucket}/{object_name}"
         direct_url = f"{proto}://{self.host}/{bucket}/{object_name}"
 
+        # Keep in-memory store in sync for offline/test environments
+        self._memory_store[(bucket, object_name)] = data
+
         if self._client is not None:
             try:
                 # Ensure bucket exists
@@ -141,7 +145,7 @@ class MinIOStorageService:
                 logger.warning(
                     f"Failed to download object '{object_name}' from bucket '{bucket}': {exc}"
                 )
-        return None
+        return self._memory_store.get((bucket, object_name))
 
     def get_presigned_url(
         self,
@@ -187,8 +191,8 @@ class MinIOStorageService:
                 self._client.stat_object(bucket, object_name)
                 return True
             except Exception:
-                return False
-        return False
+                pass
+        return (bucket, object_name) in self._memory_store
 
 
 minio_storage = MinIOStorageService()

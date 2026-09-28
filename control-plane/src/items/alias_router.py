@@ -103,12 +103,18 @@ class AliasRouterService:
         finally:
             await pubsub.close()
 
+    ALIAS_SYNONYMS = {
+        "tts-vn-standard": "tts-vi-standard",
+        "stt-vi-standard": "stt-vn-standard",
+    }
+
     async def resolve_alias(self, alias_name: str) -> Optional[dict]:
         """
         Resolves a logical alias name to its active runtime target configuration.
         Returns None if alias is unknown or status == 'disabled'.
         """
-        item = self._registry.get(alias_name)
+        canonical_name = self.ALIAS_SYNONYMS.get(alias_name, alias_name)
+        item = self._registry.get(canonical_name)
         if not item:
             return None
         if item.get("status") not in ("enabled", "active"):
@@ -152,8 +158,9 @@ class AliasRouterService:
         return results
 
     async def update_alias_status(self, alias_name: str, new_status: str) -> bool:
-        if alias_name in self._registry:
-            self._registry[alias_name]["status"] = new_status
+        canonical_name = self.ALIAS_SYNONYMS.get(alias_name, alias_name)
+        if canonical_name in self._registry:
+            self._registry[canonical_name]["status"] = new_status
             return True
         return False
 

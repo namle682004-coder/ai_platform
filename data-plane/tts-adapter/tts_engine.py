@@ -179,6 +179,10 @@ class XTTSAudioEngine:
     ) -> AsyncGenerator[bytes, None]:
         self.initialize()
 
+        if os.getenv("TEST_MODE") == "true":
+            yield b"\xff\xfb\x90\x00" + b"\x00" * 128
+            return
+
         neural_voice = resolve_voice(voice)
         logger.info(f"Synthesizing audio using neural voice: {neural_voice} for requested voice: {voice}")
 

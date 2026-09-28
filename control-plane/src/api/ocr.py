@@ -130,6 +130,11 @@ async def ocr_process_document(
         request=request,
     )
     if is_hit and cached_val:
+        if isinstance(cached_val, dict):
+            if "text" not in cached_val:
+                cached_val["text"] = cached_val.get("detected_text", "")
+            if "detected_text" not in cached_val:
+                cached_val["detected_text"] = cached_val.get("text", "")
         if response:
             inference_cache.inject_headers(
                 response, is_hit=True, duration_ms=(time.time() - start_time) * 1000
@@ -149,7 +154,7 @@ async def ocr_process_document(
             res.raise_for_status()
             ocr_data = res.json()
             elapsed_ms = round((time.time() - start_time) * 1000, 2)
-            detected_text = ocr_data.get("detected_text", "")
+            detected_text = ocr_data.get("detected_text") or ocr_data.get("text", "")
             boxes = ocr_data.get("boxes", [])
 
             full_resp = {
@@ -160,6 +165,7 @@ async def ocr_process_document(
                 "status": "success",
                 "filename": file.filename or "doc.png",
                 "detected_text": detected_text,
+                "text": detected_text,
                 "boxes": boxes,
                 "usage": {
                     "total_boxes": len(boxes),
@@ -599,6 +605,22 @@ async def ocr_id_card(
     target_img = primary_img or image_back
     target_side = side or ("back" if not primary_img and image_back else None)
 
+    # 1. Check Inference Cache
+    img_content = await target_img.read()
+    await target_img.seek(0)
+    cached_val, is_hit = await inference_cache.get(
+        domain="ocr",
+        model_or_alias="ocr-id-card",
+        payload_data=img_content,
+        request=request,
+    )
+    if is_hit and cached_val:
+        if response:
+            inference_cache.inject_headers(
+                response, is_hit=True, duration_ms=(time.time() - start_time) * 1000
+            )
+        return cached_val
+
     clean_data, err_code, err_msg, detected_text = await _extract_id_card_data(
         target_img, target_side, card_type, request, tenant_id, request_id, authorization, api_key
     )
@@ -631,6 +653,17 @@ async def ocr_id_card(
             "request_id": request_id,
         },
     }
+    await inference_cache.set(
+        domain="ocr",
+        model_or_alias="ocr-id-card",
+        payload_data=img_content,
+        response_data=resp_obj,
+        ttl_seconds=86400,
+    )
+    if response:
+        inference_cache.inject_headers(
+            response, is_hit=False, duration_ms=elapsed_ms
+        )
     asyncio.create_task(_save_ocr_record_async(request_id, "id_card", getattr(image or file, "filename", "id_card.png") or "id_card.png", clean_data, tenant_id=tenant_id))
     return resp_obj
 

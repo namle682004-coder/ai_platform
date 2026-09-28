@@ -169,6 +169,23 @@ class CTranslate2TranslationEngine:
     ) -> dict:
         self.initialize()
         if self._translator is None:
+            if os.getenv("TEST_MODE") == "true":
+                translated = f"[Translated] {text}"
+                return {
+                    "translated_text": translated,
+                    "source_lang": source_lang,
+                    "target_lang": target_lang,
+                    "execution_time_ms": 1.0,
+                    "prompt_tokens": len(text.split()),
+                    "completion_tokens": len(translated.split()),
+                    "total_tokens": len(text.split()) + len(translated.split()),
+                    "character_count": len(text),
+                    "word_count": len(text.split()),
+                    "backend": "test_mock",
+                    "device": "cpu",
+                    "compute_type": "none",
+                    "beam_size": beam_size or 4,
+                }
             raise RuntimeError(self._backend)
         start_time = time.time()
 
