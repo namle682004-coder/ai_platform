@@ -12,12 +12,16 @@ dependencies = [
 
 [tool.uv.workspace]
 members = [
+    "control-plane",
+    "data-plane/*",
+    "workers/orchestration/*",
+    "workers/gpu-workloads/*",
     "packages/*",
-    "services/*",
 ]
 
 [tool.uv.sources]
 common = { workspace = true }
+control-plane = { workspace = true }
 aip-sdk = { workspace = true }
 
 [tool.ruff]
@@ -31,5 +35,20 @@ ignore = ["B008", "B006", "E501", "E402"]
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
-pythonpath = ["services", "packages", "packages/sdk-py"]
-
+pythonpath = [
+    ".",
+    "control-plane",
+    "control-plane/src",
+    "packages/common",
+    "packages/contracts",
+    "packages/sdk",
+    "data-plane/vllm-engine",
+    "data-plane/translation-server",
+    "data-plane/stt-server",
+    "data-plane/moderation-server",
+    "data-plane/tts-adapter",
+    "data-plane/ocr-server",
+    "workers/orchestration/dispatcher-worker",
+    "workers/orchestration/callback-worker",
+    "workers/gpu-workloads/image-worker",
+]

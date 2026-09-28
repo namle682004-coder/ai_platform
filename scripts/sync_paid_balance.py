@@ -2,8 +2,8 @@ import asyncio
 import sys
 
 # Add packages and services to sys.path
-sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/packages')
-sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/services/gateway')
+sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/packages/common')
+sys.path.insert(0, '/home/namle/AI-Projects/llm-apps/ai_platform/control-plane')
 
 from common.database.mongodb import mongo_manager
 

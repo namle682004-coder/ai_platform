@@ -2,11 +2,15 @@ import json
 import os
 import sys
 
-# Ensure root import paths
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "services")))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "packages")))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, ROOT_DIR)
+sys.path.insert(0, os.path.join(ROOT_DIR, "control-plane"))
+sys.path.insert(0, os.path.join(ROOT_DIR, "control-plane", "src"))
+sys.path.insert(0, os.path.join(ROOT_DIR, "packages", "common"))
+sys.path.insert(0, os.path.join(ROOT_DIR, "packages", "contracts"))
+sys.path.insert(0, os.path.join(ROOT_DIR, "packages", "sdk"))
 
-from gateway.main import app
+from src.main import app
 
 OUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "openapi"))
 os.makedirs(OUT_DIR, exist_ok=True)

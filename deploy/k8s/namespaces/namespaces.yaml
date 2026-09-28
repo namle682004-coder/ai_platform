@@ -27,6 +27,15 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: aip-video
+  labels:
+    app.kubernetes.io/part-of: aip-platform
+    tier: ai-runtime
+    workload: gpu-heavy
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: aip-infra
   labels:
     app.kubernetes.io/part-of: aip-platform

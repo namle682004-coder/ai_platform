@@ -1,0 +1,51 @@
+groups:
+  - name: aip_hardware_alerts
+    rules:
+      - alert: GpuOverheatingCritical
+        expr: aip_gpu_temperature_celsius > 85
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GPU nhiệt độ vượt ngưỡng an toàn (Nhiệt độ: {{ $value }}°C)"
+          description: "Nhiệt độ card GPU đang vượt quá 85°C. Cần kiểm tra hệ thống làm mát hoặc giảm tải inference."
+
+      - alert: GpuVramSaturationWarning
+        expr: (aip_gpu_memory_used_bytes / aip_gpu_memory_total_bytes) > 0.90
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "VRAM GPU sắp tràn (> 90%)"
+          description: "Bộ nhớ VRAM GPU đã sử dụng trên 90%. Nguy cơ lỗi CUDA Out of Memory (OOM) cho các tác vụ tiếp theo."
+
+  - name: aip_queue_alerts
+    rules:
+      - alert: RabbitMqQueueBacklogHigh
+        expr: rabbitmq_queue_messages_ready > 200
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hàng đợi RabbitMQ bị ứ đọng task (> 200 tasks)"
+          description: "Số lượng task chờ xử lý trong queue {{ $labels.queue }} đang vượt quá 200. Cần scale thêm worker."
+
+      - alert: DeadLetterQueueNotEmpty
+        expr: rabbitmq_queue_messages_ready{queue="q.aip.tasks.dlq"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Phát hiện task lỗi trong Dead-Letter Queue (DLQ)"
+          description: "Đang có task bị reject vào q.aip.tasks.dlq. Cần kiểm tra log worker để điều tra lỗi."
+
+  - name: aip_gateway_alerts
+    rules:
+      - alert: GatewayHigh5xxRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tỷ lệ lỗi HTTP 5xx trên Gateway tăng cao"
+          description: "Gateway đang trả về nhiều lỗi máy chủ nội bộ 5xx (> 5% tổng request trong 5 phút)."

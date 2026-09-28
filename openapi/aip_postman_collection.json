@@ -6,7 +6,34 @@
   },
   "item": [
     {
-      "name": "Create Chat Completion",
+      "name": "Control Plane Overview",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Chat Completion (OpenAI-compatible, SSE Streaming Supported)",
       "request": {
         "method": "POST",
         "header": [
@@ -63,7 +90,7 @@
       }
     },
     {
-      "name": "Create Embeddings",
+      "name": "Vector Embeddings Extraction",
       "request": {
         "method": "POST",
         "header": [
@@ -91,7 +118,7 @@
       }
     },
     {
-      "name": "Create Transcription",
+      "name": "Speech to Text (ASR Transcription)",
       "request": {
         "method": "POST",
         "header": [
@@ -120,7 +147,7 @@
       }
     },
     {
-      "name": "Create Speech",
+      "name": "Text to Speech (Audio Synthesis)",
       "request": {
         "method": "POST",
         "header": [
@@ -178,7 +205,7 @@
       }
     },
     {
-      "name": "Create Moderation",
+      "name": "Content Safety & Policy Moderation (Llama-Guard)",
       "request": {
         "method": "POST",
         "header": [
@@ -206,7 +233,93 @@
       }
     },
     {
-      "name": "Create Prediction",
+      "name": "List Available Model Aliases (Scoped to API Key)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/models",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "models"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Status of Models Hosted on vLLM Engine (OpenAI-compatible alias)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/models/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "models",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Retrieve Model Alias Metadata & Specs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/models/{alias}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "models",
+            "{alias}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "General Document OCR (PaddleOCR-VL)",
       "request": {
         "method": "POST",
         "header": [
@@ -222,13 +335,217 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}/v1/predictions",
+          "raw": "{{base_url}}/v1/ocr/process",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "v1",
-            "predictions"
+            "ocr",
+            "process"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Driver License OCR Extraction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/ocr/driver-license",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "ocr",
+            "driver-license"
+          ]
+        }
+      }
+    },
+    {
+      "name": "National ID (CCCD/CMND) OCR Extraction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/ocr/id-card",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "ocr",
+            "id-card"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Passport OCR Extraction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/ocr/passport",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "ocr",
+            "passport"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Biometric Face Match (1:1 Verification)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/vision/facematch",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "vision",
+            "facematch"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Anti-spoofing Liveness Detection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/vision/liveness",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "vision",
+            "liveness"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Bilingual Text Translation (Helsinki-NLP)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/nlp/translation",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "nlp",
+            "translation"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Intelligent Text Summarization",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/nlp/summarization",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "nlp",
+            "summarization"
           ]
         }
       }
@@ -351,64 +668,7 @@
       }
     },
     {
-      "name": "List Models",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/v1/models",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "v1",
-            "models"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Get Model Alias",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/v1/models/{alias}",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "v1",
-            "models",
-            "{alias}"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Register Staff / Admin Account",
+      "name": "Create Prediction",
       "request": {
         "method": "POST",
         "header": [
@@ -424,72 +684,13 @@
           }
         ],
         "url": {
-          "raw": "{{base_url}}/v1/auth/signup",
+          "raw": "{{base_url}}/v1/predictions",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "v1",
-            "auth",
-            "signup"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Login Staff / Admin Account",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/v1/auth/login",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "v1",
-            "auth",
-            "login"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Reset Account Password",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{api_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{base_url}}/v1/auth/forgot-password",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "v1",
-            "auth",
-            "forgot-password"
+            "predictions"
           ]
         }
       }
@@ -577,6 +778,93 @@
             "v1",
             "mcp",
             "tools"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Register Staff / Admin Account",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/auth/signup",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "signup"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Login Staff / Admin Account",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reset Account Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/auth/forgot-password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "forgot-password"
           ]
         }
       }
@@ -844,6 +1132,64 @@
       }
     },
     {
+      "name": "Get User Balance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/balance",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "balance"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Recharge User Balance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/recharge",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "recharge"
+          ]
+        }
+      }
+    },
+    {
       "name": "Submit User Feedback",
       "request": {
         "method": "POST",
@@ -926,6 +1272,786 @@
             "v1",
             "user",
             "apis-catalog"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get User Gpu Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/gpu-status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "gpu-status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List API Call Logs with Filtering (Staff Report)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/api-report",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "api-report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Record a Sandbox Simulation Run",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/runs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "runs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Sandbox Simulation Runs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/runs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "runs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Detailed Simulation Run",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/runs/{run_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "runs",
+            "{run_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete a Simulation Run",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/runs/{run_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "runs",
+            "{run_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Multi-Turn Chat Conversation Session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/sessions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "sessions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List User Chat Sessions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/sessions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "sessions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Chat Session Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/sessions/{session_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "sessions",
+            "{session_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Chat Session and Messages",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/sessions/{session_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "sessions",
+            "{session_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Append Message to Chat Session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/sessions/{session_id}/messages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "sessions",
+            "{session_id}",
+            "messages"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Retrieve Message Thread History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/sessions/{session_id}/messages",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "sessions",
+            "{session_id}",
+            "messages"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Saved Prompt Templates",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/templates",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "templates"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Save Custom Prompt Template",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/chat/templates",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "chat",
+            "templates"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Save OCR Document Extraction Record",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/ocr/records",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "ocr",
+            "records"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List OCR Document Records",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/ocr/records",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "ocr",
+            "records"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Detailed OCR Record",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/ocr/records/{record_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "ocr",
+            "records",
+            "{record_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Save eKYC Biometric Verification Run",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/ekyc/sessions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "ekyc",
+            "sessions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List eKYC Verification Sessions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/ekyc/sessions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "ekyc",
+            "sessions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Save STT Transcription Record",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/audio/transcriptions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "audio",
+            "transcriptions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List STT Transcription Records",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/audio/transcriptions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "audio",
+            "transcriptions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Save TTS Synthesis Record",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/audio/syntheses",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "audio",
+            "syntheses"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List TTS Synthesis Records",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/simulations/audio/syntheses",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "simulations",
+            "audio",
+            "syntheses"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Aggregated Token Usage and Cost Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/usage/summary",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "usage",
+            "summary"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Granular Inference Usage Records",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/usage/records",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "usage",
+            "records"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Current Realtime TPM (Tokens Per Minute) Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/usage/tpm",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "usage",
+            "tpm"
           ]
         }
       }
@@ -1496,7 +2622,7 @@
       }
     },
     {
-      "name": "Health Check",
+      "name": "Basic Liveness Probe",
       "request": {
         "method": "GET",
         "header": [
@@ -1518,6 +2644,321 @@
           ],
           "path": [
             "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Kubernetes Liveness Probe",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/health/live",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health",
+            "live"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Kubernetes Readiness Probe",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/health/ready",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health",
+            "ready"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Comprehensive Platform Status Monitoring",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Comprehensive Platform Status Monitoring (v1)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Status of Models Hosted on vLLM Engine",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/status/models",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "status",
+            "models"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Status of Models Hosted on vLLM Engine (v1)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/status/models",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "status",
+            "models"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List All AI Model JSON Schemas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/schemas",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "schemas"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get JSON Schema for Specific AI Model",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/schemas/{model_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "schemas",
+            "{model_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Alias: Get Model Schema",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/models/{model_id}/schema",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "models",
+            "{model_id}",
+            "schema"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Live GPU Hardware Telemetry",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/resources/gpu",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "resources",
+            "gpu"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Cluster Node Capacity & Workload Allocations",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/admin/v1/resources/capacity",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "admin",
+            "v1",
+            "resources",
+            "capacity"
           ]
         }
       }
