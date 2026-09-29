@@ -66,26 +66,30 @@ All deployable applications are consolidated under `apps/`, accompanied by share
 ```text
 ai_platform/
 ├── apps/                               # Deployable Applications
-│   ├── control-plane/                  # Tầng 1: API Gateway (FastAPI :8000), Auth, Quotas, Model Aliases, Web Console
+│   ├── control-plane/                  # Tier 1: API Gateway (FastAPI :8000), Auth, Quotas, Model Aliases, Web Console
 │   ├── frontend/                       # Developer & Staff Web UI Portal (Vite + Vanilla JS :5173)
-│   ├── data-plane/                     # Tầng 2: Unified Inference Serving Nodes (Dual HTTP & gRPC)
+│   ├── data-plane/                     # Tier 2: Unified Inference Serving Nodes (Dual HTTP & gRPC)
 │   │   ├── vllm-engine/                # LLM & Embedding Server (HTTP :8001 / gRPC :50051)
-│   │   ├── stt-server/                 # Faster-Whisper Vietnamese Speech-to-Text (HTTP :8002 / gRPC :50052)
-│   │   ├── translation-server/         # MarianMT/CTranslate2 En ↔ Vi Live on GPU (HTTP :8003 / gRPC :50053)
+│   │   ├── stt-server/                 # Faster-Whisper Speech-to-Text (HTTP :8002 / gRPC :50052)
+│   │   ├── translation-server/         # MarianMT/CTranslate2 En <-> Vi Live on GPU (HTTP :8003 / gRPC :50053)
 │   │   ├── ocr-server/                 # EasyOCR Document & Identity Digitization (HTTP :8004 / gRPC :50054)
 │   │   ├── moderation-server/          # PhoBERT Safety & Content Moderation (HTTP :8006 / gRPC :50055)
 │   │   ├── tts-adapter/                # vi-VN-Neural Speech Synthesis (HTTP :8007 / gRPC :50056)
 │   │   └── runtime-probe/              # Hardware telemetry probe & NVML health checker
-│   ├── dispatcher-worker/              # Tầng 3: Modular DCP Task Dispatcher, Resolver, gRPC Client & Reconciler
+│   ├── dispatcher-worker/              # Tier 3: Modular DCP Task Dispatcher, Resolver, gRPC Client & Reconciler
 │   │   └── src/                        # consumer/, resolver/, grpc_client/, retry/, publisher/, reconciler/
-│   ├── callback-worker/                # Tầng 3: HMAC-SHA256 Signed Webhook Notification Delivery
-│   ├── image-worker/                   # Tầng 3: FLUX.1 & SDXL High-Res Image Generation Worker
-│   ├── video-worker/                   # Tầng 3: Wan2.2 & CogVideoX Text-to-Video Generation Worker
-│   └── lipsync-worker/                 # Tầng 3: LivePortrait Audio-Driven Lip Synchronization Worker
+│   ├── callback-worker/                # Tier 3: HMAC-SHA256 Signed Webhook Notification Delivery
+│   ├── image-worker/                   # Tier 3: FLUX.1 & SDXL High-Res Image Generation Worker
+│   ├── video-worker/                   # Tier 3: Wan2.2 & CogVideoX Text-to-Video Generation Worker
+│   └── lipsync-worker/                 # Tier 3: LivePortrait Audio-Driven Lip Synchronization Worker
 ├── packages/                           # Shared Kernel Libraries
 │   ├── common/                         # Core domain schemas, Argon2id security, Mongo & Redis repositories
 │   ├── contracts/                      # Protobuf contracts (inference.proto, jobs.proto), compiled stubs & AMQP schemas
-│   └── sdk/                            # Official Python Client SDK (`aip-sdk`)
+│   └── sdk/                            # Official Python Client SDK (aip-sdk)
+├── migrations/                         # Database Migrations & Seeding (SRS Section 11.2)
+│   ├── 001_initial_mongo_indexes.py    # Production indexes for API keys, users, jobs TTL, audit logs
+│   ├── 002_seed_catalogs.py            # Idempotent seed for verified model catalog
+│   └── runner.py                       # Migration runner tracking status in _migrations_meta
 ├── infrastructure/                     # Observability (Prometheus, Grafana, Alertmanager)
 ├── deploy/                             # Deployment Manifests (Docker Compose, Helm, K8s)
 ├── sdks/                               # Multi-language Client SDKs (AIP.Platform.SDK for .NET 8)
