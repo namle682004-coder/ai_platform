@@ -29,15 +29,15 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - { name: control-plane,      dockerfile: control-plane/Dockerfile,                           port: 8000 }
-          - { name: vllm-engine,        dockerfile: data-plane/vllm-engine/Dockerfile,                   port: 8001 }
-          - { name: stt-server,         dockerfile: data-plane/stt-server/Dockerfile,                    port: 8002 }
-          - { name: translation-server, dockerfile: data-plane/translation-server/Dockerfile,            port: 8003 }
-          - { name: ocr-server,         dockerfile: data-plane/ocr-server/Dockerfile,                    port: 8004 }
-          - { name: moderation-server,  dockerfile: data-plane/moderation-server/Dockerfile,             port: 8006 }
-          - { name: tts-adapter,        dockerfile: data-plane/tts-adapter/Dockerfile,                   port: 8007 }
-          - { name: dispatcher-worker,  dockerfile: workers/orchestration/dispatcher-worker/Dockerfile, port: 0 }
-          - { name: callback-worker,    dockerfile: workers/orchestration/callback-worker/Dockerfile,   port: 0 }
+          - { name: control-plane,      dockerfile: apps/control-plane/Dockerfile,                           port: 8000 }
+          - { name: vllm-engine,        dockerfile: apps/data-plane/vllm-engine/Dockerfile,                   port: 8001 }
+          - { name: stt-server,         dockerfile: apps/data-plane/stt-server/Dockerfile,                    port: 8002 }
+          - { name: translation-server, dockerfile: apps/data-plane/translation-server/Dockerfile,            port: 8003 }
+          - { name: ocr-server,         dockerfile: apps/data-plane/ocr-server/Dockerfile,                    port: 8004 }
+          - { name: moderation-server,  dockerfile: apps/data-plane/moderation-server/Dockerfile,             port: 8006 }
+          - { name: tts-adapter,        dockerfile: apps/data-plane/tts-adapter/Dockerfile,                   port: 8007 }
+          - { name: dispatcher-worker,  dockerfile: apps/dispatcher-worker/Dockerfile, port: 0 }
+          - { name: callback-worker,    dockerfile: apps/callback-worker/Dockerfile,   port: 0 }
     steps:
       - uses: actions/checkout@v4
 
@@ -67,7 +67,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.environment == 'staging')
-    environment: staging
+    environment:
+      name: staging
     steps:
       - uses: actions/checkout@v4
 
@@ -78,7 +79,7 @@ jobs:
       - name: Configure kubeconfig
         id: kubeconfig
         env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_STAGING }}
+          KUBE_CONFIG: ""  # Configure via GitHub Secrets when deploying to Kubernetes
         run: |
           mkdir -p $HOME/.kube
           if [ -z "$KUBE_CONFIG" ]; then
@@ -121,7 +122,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.event_name == 'workflow_dispatch' && inputs.environment == 'production'
-    environment: production        # ✅ require reviewers trong repo settings
+    environment:
+      name: ${{ inputs.environment }}        # require reviewers trong GitHub repo settings
     steps:
       - uses: actions/checkout@v4
 
@@ -131,7 +133,7 @@ jobs:
       - name: Configure kubeconfig
         id: kubeconfig
         env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+          KUBE_CONFIG: ""  # Configure via GitHub Secrets when deploying to Kubernetes
         run: |
           mkdir -p $HOME/.kube
           if [ -z "$KUBE_CONFIG" ]; then

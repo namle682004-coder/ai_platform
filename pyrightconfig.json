@@ -4,8 +4,10 @@
   "extraPaths": [
     "packages/common",
     "packages/contracts",
+    "packages/contracts/contracts",
     "packages/sdk",
     "apps/control-plane",
+    "apps/control-plane/src",
     "apps/data-plane/vllm-engine",
     "apps/data-plane/moderation-server",
     "apps/data-plane/ocr-server",
@@ -13,8 +15,11 @@
     "apps/data-plane/translation-server",
     "apps/data-plane/tts-adapter",
     "apps/dispatcher-worker",
+    "apps/dispatcher-worker/src",
     "apps/callback-worker",
-    "apps/image-worker"
+    "apps/image-worker",
+    "apps/video-worker",
+    "apps/lipsync-worker"
   ],
   "pythonVersion": "3.10",
   "pythonPlatform": "Linux",

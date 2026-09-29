@@ -54,29 +54,29 @@ jobs:
           uv pip install -e packages/common \
                          -e packages/contracts \
                          -e packages/sdk \
-                         -e control-plane \
-                         -e data-plane/vllm-engine \
-                         -e data-plane/translation-server \
-                         -e data-plane/stt-server \
-                         -e data-plane/moderation-server \
-                         -e workers/orchestration/dispatcher-worker \
-                         -e workers/orchestration/callback-worker \
-                         -e workers/gpu-workloads/image-worker \
+                         -e apps/control-plane \
+                         -e apps/data-plane/vllm-engine \
+                         -e apps/data-plane/translation-server \
+                         -e apps/data-plane/stt-server \
+                         -e apps/data-plane/moderation-server \
+                         -e apps/dispatcher-worker \
+                         -e apps/callback-worker \
+                         -e apps/image-worker \
                          pytest httpx ruff python-multipart
 
       - name: Ruff lint
-        run: uv run ruff check control-plane/ data-plane/ workers/ packages/ tests/ scripts/
+        run: uv run ruff check apps/ packages/ tests/ scripts/
 
       - name: Pytest
         env:
           TEST_MODE: "true"
           VLLM_TEST_MODE: "true"
-          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:control-plane:control-plane/src:workers/orchestration/dispatcher-worker:workers/orchestration/callback-worker:workers/gpu-workloads/image-worker:data-plane/translation-server:data-plane/vllm-engine"
+          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src:apps/dispatcher-worker:apps/callback-worker:apps/image-worker:apps/data-plane/translation-server:apps/data-plane/vllm-engine"
         run: uv run pytest -v
 
       - name: Export & verify OpenAPI assets
         env:
-          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:control-plane:control-plane/src"
+          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src"
         run: |
           uv run python scripts/export_api_assets.py
           test -f openapi/openapi.json
