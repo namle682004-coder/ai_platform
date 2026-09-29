@@ -44,12 +44,7 @@ class MinIOStorageService:
         parsed = urlparse(raw_endpoint)
         self.host = parsed.netloc or parsed.path or "localhost:9000"
         self.access_key = access_key or os.getenv("MINIO_ROOT_USER", "minioadmin")
-        self.secret_key = secret_key or os.getenv("MINIO_ROOT_PASSWORD")
-        if not self.secret_key:
-            if os.getenv("TEST_MODE") == "true":
-                self.secret_key = "minioadmin123"
-            else:
-                raise RuntimeError("MINIO_ROOT_PASSWORD must be configured")
+        self.secret_key = secret_key or os.getenv("MINIO_ROOT_PASSWORD", "minioadmin123")
         self.secure = secure or (
             os.getenv("MINIO_USE_SSL", "false").lower() in ("true", "1")
         )
