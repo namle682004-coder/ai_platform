@@ -4,7 +4,7 @@ import sys
 
 from fastapi.testclient import TestClient
 
-_server_dir = os.path.join(os.path.dirname(__file__), "..", "data-plane", "tts-adapter")
+_server_dir = os.path.join(os.path.dirname(__file__), "..", "apps", "data-plane", "tts-adapter")
 sys.path.insert(0, _server_dir)
 _cfg_spec = importlib.util.spec_from_file_location("config", os.path.join(_server_dir, "config.py"))
 _cfg_mod = importlib.util.module_from_spec(_cfg_spec)

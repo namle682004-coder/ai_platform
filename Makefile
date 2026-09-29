@@ -23,14 +23,14 @@ setup:
 	$(UV) pip install -e packages/common \
 	                  -e packages/contracts \
 	                  -e packages/sdk \
-	                  -e control-plane \
-	                  -e workers/orchestration/dispatcher-worker \
-	                  -e workers/orchestration/callback-worker \
-	                  -e workers/gpu-workloads/image-worker \
-	                  -e data-plane/vllm-engine \
-	                  -e data-plane/translation-server \
-	                  -e data-plane/stt-server \
-	                  -e data-plane/moderation-server \
+	                  -e apps/control-plane \
+	                  -e apps/dispatcher-worker \
+	                  -e apps/callback-worker \
+	                  -e apps/image-worker \
+	                  -e apps/data-plane/vllm-engine \
+	                  -e apps/data-plane/translation-server \
+	                  -e apps/data-plane/stt-server \
+	                  -e apps/data-plane/moderation-server \
 	                  pytest httpx ruff python-multipart
 
 # ─── Infrastructure (Dev) ─────────────────────────────────────────
@@ -130,9 +130,9 @@ docker-logs-stt:
 # ─── Tầng 1: Control Plane (Native Dev) ───────────────────────────
 dev-gateway:
 	@echo "▶ Starting Control-Plane API on http://localhost:8000 ..."
-	cd control-plane && \
-	PYTHONPATH=../packages/common:../packages/contracts:../packages/sdk:src:. \
-	../$(UVICORN) src.main:app --reload --host 0.0.0.0 --port 8000
+	cd apps/control-plane && \
+	PYTHONPATH=../../packages/common:../../packages/contracts:../../packages/sdk:src:. \
+	../../$(UVICORN) src.main:app --reload --host 0.0.0.0 --port 8000
 
 # ─── Quản lý toàn bộ AI Data Plane (Start / Stop / Status 1 Click) ───
 start-all:
@@ -154,55 +154,55 @@ prepare-translation-model:
 
 dev-vllm:
 	@echo "▶ Starting vLLM Serving Engine on http://localhost:8001 ..."
-	cd data-plane/vllm-engine && \
-	PYTHONPATH=../../packages/common:../../packages/contracts:. \
-	../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8001
+	cd apps/data-plane/vllm-engine && \
+	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
+	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8001
 
 dev-translation:
 	@echo "▶ Starting Translation Microservice (Helsinki-NLP) on http://localhost:8003 ..."
-	cd data-plane/translation-server && \
-	PYTHONPATH=../../packages/common:../../packages/contracts:. \
-	../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8003
+	cd apps/data-plane/translation-server && \
+	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
+	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8003
 
 dev-stt:
 	@echo "▶ Starting Speech-to-Text Microservice (PhoWhisper) on http://localhost:8002 ..."
-	cd data-plane/stt-server && \
-	PYTHONPATH=../../packages/common:../../packages/contracts:. \
-	../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8002
+	cd apps/data-plane/stt-server && \
+	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
+	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8002
 
 dev-ocr:
 	@echo "▶ Starting OCR Microservice (PaddleOCR) on http://localhost:8004 ..."
-	cd data-plane/ocr-server && \
-	PYTHONPATH=../../packages/common:../../packages/contracts:. \
-	../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8004
+	cd apps/data-plane/ocr-server && \
+	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
+	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8004
 
 dev-moderation:
 	@echo "▶ Starting Moderation Microservice on http://localhost:8006 ..."
-	cd data-plane/moderation-server && \
-	PYTHONPATH=../../packages/common:../../packages/contracts:. \
-	../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8006
+	cd apps/data-plane/moderation-server && \
+	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
+	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8006
 
 dev-tts:
 	@echo "▶ Starting TTS Adapter Microservice on http://localhost:8007 ..."
-	cd data-plane/tts-adapter && \
-	PYTHONPATH=../../packages/common:../../packages/contracts:. \
-	../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8007
+	cd apps/data-plane/tts-adapter && \
+	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
+	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8007
 
 # ─── Tầng 3: Workers (Orchestration & GPU-Workloads) ──────────────
 dev-dispatcher:
 	@echo "▶ Starting AIP Dedicated Dispatcher Worker (Domain Tasks & Stale Reconciler)..."
-	PYTHONPATH=.:packages/common:packages/contracts:control-plane:control-plane/src:workers/orchestration/dispatcher-worker \
-	$(PYTHON) workers/orchestration/dispatcher-worker/dispatcher/main.py
+	PYTHONPATH=.:packages/common:packages/contracts:apps/control-plane:apps/control-plane/src:apps/dispatcher-worker:apps/dispatcher-worker/src \
+	$(PYTHON) apps/dispatcher-worker/src/main.py
 
 dev-callback:
 	@echo "▶ Starting AIP Dedicated Callback Worker (HMAC Webhooks)..."
-	PYTHONPATH=.:packages/common:packages/contracts:control-plane:control-plane/src:workers/orchestration/callback-worker \
-	$(PYTHON) workers/orchestration/callback-worker/worker/main.py
+	PYTHONPATH=.:packages/common:packages/contracts:apps/control-plane:apps/control-plane/src:apps/callback-worker \
+	$(PYTHON) apps/callback-worker/worker/main.py
 
 worker-image:
 	@echo "▶ Starting Image Generation Worker (FLUX.1/SDXL) — queue: q.aip.tasks.image ..."
-	PYTHONPATH=.:packages/common:packages/contracts:control-plane:control-plane/src:workers/gpu-workloads/image-worker \
-	$(PYTHON) workers/gpu-workloads/image-worker/worker.py
+	PYTHONPATH=.:packages/common:packages/contracts:apps/control-plane:apps/control-plane/src:apps/image-worker \
+	$(PYTHON) apps/image-worker/worker.py
 
 # ─── Tầng 6: Frontend / UI ────────────────────────────────────────
 frontend-dev:
@@ -210,33 +210,33 @@ frontend-dev:
 	@echo "   Staff Console  → http://localhost:5173/staff/dashboard"
 	@echo "   Auth Page      → http://localhost:5173/auth/login.html"
 	@echo "   Status Page    → http://localhost:5173/status.html"
-	cd frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run dev
+	cd apps/frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run dev
 
 ui: frontend-dev
 dev-ui: frontend-dev
 
 frontend-build:
 	@echo "▶ Building Frontend for Production (dist/)..."
-	cd frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run build
+	cd apps/frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run build
 
 # ─── Tests & Lint ─────────────────────────────────────────────────
 test:
 	@echo "▶ Running full Pytest test suite..."
-	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:control-plane:control-plane/src:workers/orchestration/dispatcher-worker:workers/orchestration/callback-worker:workers/gpu-workloads/image-worker:data-plane/translation-server:data-plane/vllm-engine \
+	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src:apps/dispatcher-worker:apps/callback-worker:apps/image-worker:apps/data-plane/translation-server:apps/data-plane/vllm-engine \
 	$(PYTEST) -v
 
 lint:
 	@echo "▶ Running Ruff linter on all code..."
-	$(RUFF) check control-plane/ data-plane/ workers/ packages/ tests/
+	$(RUFF) check apps/ packages/ tests/
 
 fmt:
 	@echo "▶ Auto-fixing Ruff lint issues..."
-	$(RUFF) check --fix control-plane/ data-plane/ workers/ packages/ tests/
+	$(RUFF) check --fix apps/ packages/ tests/
 
 # ─── Utilities ────────────────────────────────────────────────────
 export:
 	@echo "▶ Exporting OpenAPI JSON, Postman Collection, and Redoc HTML..."
-	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:control-plane:control-plane/src \
+	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src \
 	$(PYTHON) scripts/export_api_assets.py
 
 
@@ -250,7 +250,7 @@ clean:
 help:
 	@echo ""
 	@echo "╔═════════════════════════════════════════════════════════════════════╗"
-	@echo "║           Everwin AI Platform — Clean Architecture Stack            ║"
+	@echo "║           AIP Platform — Clean Architecture Stack            ║"
 	@echo "╠═════════════════════════════════════════════════════════════════════╣"
 	@echo "║ DOCKER CORE (8 SERVICES BẮT BUỘC & NÊN CHẠY)                         ║"
 	@echo "║  make up (docker-up)     Start 8 Core Services (DB, Queue, Gateway)  ║"

@@ -5,17 +5,31 @@ description = "AI Inference Platform (AIP) - Enterprise Microservices UV Workspa
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "common",
+    "aip-contracts",
+    "aip-sdk",
+    "control-plane",
     "pytest>=8.0.0",
+    "pytest-xdist>=3.5.0",
     "httpx>=0.27.0",
     "ruff>=0.4.0",
+    "python-multipart>=0.0.9",
+    "grpcio>=1.62.0",
+    "grpcio-tools>=1.62.0",
 ]
+
+[tool.uv]
+package = false
 
 [tool.uv.workspace]
 members = [
-    "control-plane",
-    "data-plane/*",
-    "workers/orchestration/*",
-    "workers/gpu-workloads/*",
+    "apps/control-plane",
+    "apps/data-plane/*",
+    "apps/dispatcher-worker",
+    "apps/callback-worker",
+    "apps/image-worker",
+    "apps/video-worker",
+    "apps/lipsync-worker",
     "packages/*",
 ]
 
@@ -23,6 +37,7 @@ members = [
 common = { workspace = true }
 control-plane = { workspace = true }
 aip-sdk = { workspace = true }
+aip-contracts = { workspace = true }
 
 [tool.ruff]
 line-length = 120
@@ -37,18 +52,19 @@ minversion = "7.0"
 testpaths = ["tests"]
 pythonpath = [
     ".",
-    "control-plane",
-    "control-plane/src",
+    "apps/control-plane",
+    "apps/control-plane/src",
     "packages/common",
     "packages/contracts",
     "packages/sdk",
-    "data-plane/vllm-engine",
-    "data-plane/translation-server",
-    "data-plane/stt-server",
-    "data-plane/moderation-server",
-    "data-plane/tts-adapter",
-    "data-plane/ocr-server",
-    "workers/orchestration/dispatcher-worker",
-    "workers/orchestration/callback-worker",
-    "workers/gpu-workloads/image-worker",
+    "apps/data-plane/vllm-engine",
+    "apps/data-plane/translation-server",
+    "apps/data-plane/stt-server",
+    "apps/data-plane/moderation-server",
+    "apps/data-plane/tts-adapter",
+    "apps/data-plane/ocr-server",
+    "apps/dispatcher-worker",
+    "apps/dispatcher-worker/src",
+    "apps/callback-worker",
+    "apps/image-worker",
 ]

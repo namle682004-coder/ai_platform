@@ -10,12 +10,12 @@ export AIP_MODEL_REGISTRY_PATH="${AIP_MODEL_REGISTRY_PATH:-$DIR/models}"
 export LD_LIBRARY_PATH="/home/namle/AI-Projects/llm-apps/qdrant-deploy/venv/lib/python3.10/site-packages/nvidia/cublas/lib:$DIR/.venv/lib/python3.10/site-packages/nvidia/cublas/lib:$LD_LIBRARY_PATH"
 
 SERVICES=(
-  "8001:vllm-engine:data-plane/vllm-engine:app:app"
-  "8002:stt-server:data-plane/stt-server:app:app"
-  "8003:translation-server:data-plane/translation-server:app:app"
-  "8004:ocr-server:data-plane/ocr-server:app:app"
-  "8006:moderation-server:data-plane/moderation-server:app:app"
-  "8007:tts-adapter:data-plane/tts-adapter:app:app"
+  "8001:vllm-engine:apps/data-plane/vllm-engine:app:app"
+  "8002:stt-server:apps/data-plane/stt-server:app:app"
+  "8003:translation-server:apps/data-plane/translation-server:app:app"
+  "8004:ocr-server:apps/data-plane/ocr-server:app:app"
+  "8006:moderation-server:apps/data-plane/moderation-server:app:app"
+  "8007:tts-adapter:apps/data-plane/tts-adapter:app:app"
 )
 
 is_port_listening() {

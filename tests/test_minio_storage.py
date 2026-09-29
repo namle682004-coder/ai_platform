@@ -109,8 +109,12 @@ def test_audio_transcription_uploads_to_minio():
 @pytest.mark.anyio
 async def test_video_worker_saves_artifact_to_real_minio():
     """Verify Video Worker writes MP4 artifact to MinIO and returns presigned URL."""
-    import importlib
-    video_mod = importlib.import_module("workers.gpu-workloads.video-worker.worker")
+    import importlib.util
+    from pathlib import Path
+    worker_path = Path(__file__).resolve().parent.parent / "apps" / "video-worker" / "worker.py"
+    spec = importlib.util.spec_from_file_location("video_worker", worker_path)
+    video_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(video_mod)
     process_video_job = video_mod.process_video_job
 
     job_id = f"job_vid_minio_{uuid.uuid4().hex[:6]}"

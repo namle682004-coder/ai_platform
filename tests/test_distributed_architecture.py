@@ -6,12 +6,20 @@ Automated tests for Decoupled Distributed Architecture (DCP Architecture):
 """
 
 import asyncio
+import importlib.util
+from pathlib import Path
 
 from src.publisher.topology import (
     setup_rabbitmq_topology,
 )
 from src.configs.settings import gateway_settings
-from dispatcher.reconciler import StaleJobReconciler
+
+# Dynamically load StaleJobReconciler from apps/dispatcher-worker/src/reconciler/stale_reconciler.py
+_reconciler_path = Path(__file__).resolve().parent.parent / "apps" / "dispatcher-worker" / "src" / "reconciler" / "stale_reconciler.py"
+_spec = importlib.util.spec_from_file_location("stale_reconciler", _reconciler_path)
+_mod = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+StaleJobReconciler = _mod.StaleJobReconciler
 
 
 def test_topology_declares_event_and_callback_queues():

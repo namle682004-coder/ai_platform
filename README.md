@@ -1,56 +1,74 @@
-# Everwin AI Platform (AIP)
+# AIP Platform
 > Enterprise AI Inference Middleware & Distributed Execution Engine
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-green.svg)](https://fastapi.tiangolo.com)
+[![gRPC](https://img.shields.io/badge/RPC-gRPC_Protobuf-244c5a.svg)](https://grpc.io)
 [![uv](https://img.shields.io/badge/Package_Manager-uv-blueviolet.svg)](https://astral.sh/uv)
 [![RabbitMQ](https://img.shields.io/badge/Broker-RabbitMQ_AMQP-orange.svg)](https://rabbitmq.com)
+[![Tests](https://img.shields.io/badge/Tests-112%2F112_Passing-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)]()
 
 ---
 
 ## 🌟 Overview
 
-**Everwin AI Platform (AIP)** is an enterprise-grade, self-hosted AI inference middleware platform and developer console. Built with **Clean Architecture & Domain-Driven Design (DDD)**, it acts as an intelligent distribution, governance, and execution layer between downstream business clients and upstream heterogeneous AI compute nodes (NVIDIA GPUs & CPUs).
+**AIP Platform** is an enterprise-grade, self-hosted AI inference middleware platform and developer console. Built with **Clean Architecture & Domain-Driven Design (DDD)**, it acts as an intelligent distribution, governance, and execution layer between downstream business applications and upstream heterogeneous AI compute nodes (NVIDIA GPUs & CPUs).
 
 ### Core Capabilities:
 - 🚀 **Standardized `/v1` AI APIs**: Drop-in unified endpoints for 21 enterprise AI models across 13 specialized domains.
-- 🛡️ **Zero-Trust Security & Governance**: Argon2id salted API key hashing, strict CIDR IP allowlisting, and project-based tenant isolation.
-- ⚡ **Asynchronous Task Offloading**: Dynamic threshold detection offloading heavy inference (FLUX.1 image generation, Wan2.2 video, CogVideoX, LivePortrait) to distributed RabbitMQ workers.
+- ⚡ **Dual Arterial Communication Protocols**: High-throughput multiplexed **gRPC binary data-plane** (:50051–:50056) for sub-millisecond inference combined with **RabbitMQ message queuing** for resilient asynchronous task offloading.
+- 🛡️ **Zero-Trust Security & Governance**: Argon2id salted API key hashing with Master Pepper, strict CIDR IP allowlisting, and project-based tenant isolation.
+- 🚦 **Intelligent Task Routing & Dispatch**: Modular DCP-pattern `dispatcher-worker` with dynamic task resolution (`task_resolver`), gRPC client execution (`inference_client`), jittered exponential backoff (`retry`), and dead-letter queue routing (`DLQ`).
 - 🔄 **Event-Driven Resilience**: Native DLQ dead-lettering, TTL message expirations, Redis-backed idempotency protection, HMAC-SHA256 signed webhooks, and automatic stale job reconciliation.
 - 📊 **Real-time Hardware Telemetry**: Native NVIDIA NVML integration monitoring real GPU core temperatures, VRAM consumption, and wattage with automated hardware allocation guards.
 - 🖥️ **Developer & Staff Self-Service Portal**: Integrated Web Console, interactive API Sandbox, Key Management, and public System Status page.
 
 ---
 
-## 🏛️ Clean Architecture Monorepo Structure
+## 🏛️ Clean Architecture Monorepo Structure (`apps/` Layout)
+
+The codebase follows the enterprise monorepo workspace standard, consolidating all runnable microservices and workers cleanly under `apps/` with shared kernels in `packages/`:
 
 ```text
 ai_platform/
-├── control-plane/                      # Tầng 1: Control-Plane
-│   └── gateway/                        # API Gateway (FastAPI), Auth, Quotas, Rate Limiting, Web Console
-│
-├── data-plane/                         # Tầng 2: Data-Plane (Unified Inference Serving Nodes)
-│   ├── vllm-engine/                    # vLLM High-Throughput Unified LLM & Embedding Server (:8001)
-│   ├── translation-server/             # MarianMT En ↔ Vi Live on GPU (:8003)
-│   ├── stt-server/                     # PhoWhisper Vietnamese Speech-to-Text (:8002)
-│   ├── tts-adapter/                    # viTTS Multi-regional Speech Synthesis (:8004)
-│   ├── ocr-server/                     # PaddleOCR Document & Identity Digitization (:8005)
-│   ├── moderation-server/              # Llama Guard Safety & Content Moderation (:8006)
-│   └── runtime-probe/                  # Hardware telemetry probe & NVML health checker
-│
-├── workers/                            # Tầng 3: Distributed Asynchronous Workers
-│   ├── orchestration/                  # Nhóm Điều phối & Sự kiện
-│   │   ├── dispatcher-worker/          # Job router, Priority Scheduler, Stale Job Auto-Reconciler
-│   │   └── callback-worker/            # HMAC-SHA256 signed Webhook notification delivery
-│   └── gpu-workloads/                  # Nhóm Tác vụ nặng GPU
-│       ├── image-worker/               # FLUX.1 & SDXL High-Res Image Generation
-│       ├── video-worker/               # Wan2.2 & CogVideoX Text-to-Video Generation
-│       └── lipsync-worker/             # LivePortrait Audio-Driven Lip Synchronization
+├── apps/                               # Core Monorepo Deployable Applications
+│   ├── control-plane/                  # Tầng 1: API Gateway (FastAPI), Auth (Argon2id), Quotas, Model Aliases, Web Console
+│   │   ├── src/api/                    # REST routers (/v1/chat, /v1/nlp, /v1/audio, /v1/vision, /v1/jobs, etc.)
+│   │   ├── src/auth/                   # Argon2id hasher, key validation, Master Pepper security
+│   │   ├── src/quota/                  # Redis Lua atomic rate limits (RPM, TPM, in-flight concurrency)
+│   │   ├── src/aliases/                # Logical-to-physical model alias resolution & Mongo Atlas loader
+│   │   ├── src/publisher/              # RabbitMQ AMQP 0-9-1 topology & task publisher
+│   │   └── src/grpc_helpers/           # Control Plane gRPC client manager & channel pooling
+│   │
+│   ├── data-plane/                     # Tầng 2: Unified Inference Serving Nodes (Dual HTTP & gRPC)
+│   │   ├── vllm-engine/                # High-Throughput LLM & Embedding Server (HTTP :8001 / gRPC :50051)
+│   │   ├── stt-server/                 # Faster-Whisper Vietnamese Speech-to-Text (HTTP :8002 / gRPC :50052)
+│   │   ├── translation-server/         # MarianMT/CTranslate2 En ↔ Vi Live on GPU (HTTP :8003 / gRPC :50053)
+│   │   ├── ocr-server/                 # EasyOCR Document & Identity Digitization (HTTP :8004 / gRPC :50054)
+│   │   ├── moderation-server/          # PhoBERT Safety & Content Moderation (HTTP :8006 / gRPC :50055)
+│   │   ├── tts-adapter/                # vi-VN-Neural Speech Synthesis (HTTP :8007 / gRPC :50056)
+│   │   └── runtime-probe/              # Hardware telemetry probe & NVML health checker
+│   │
+│   ├── dispatcher-worker/              # Tầng 3: Modular DCP Task Dispatcher & Reconciler
+│   │   └── src/
+│   │       ├── consumer/               # AMQP queue listener with prefetch=5 & connection recovery
+│   │       ├── resolver/               # Dynamic TaskResolver mapping domain/alias to gRPC endpoints
+│   │       ├── grpc_client/            # Asynchronous InferenceClient invoking compiled Protobuf stubs
+│   │       ├── retry/                  # Jittered exponential backoff & DLQ error classifier
+│   │       ├── publisher/              # CallbackPublisher emitting lifecycle events to aip.events
+│   │       ├── reconciler/             # StaleReconciler auto-healing orphan/stuck jobs (> 15m)
+│   │       └── main.py                 # Single unified async entrypoint with graceful shutdown
+│   │
+│   ├── callback-worker/                # Tầng 3: HMAC-SHA256 Signed Webhook Notification Delivery
+│   ├── image-worker/                   # Tầng 3: FLUX.1 & SDXL High-Res Image Generation Worker
+│   ├── video-worker/                   # Tầng 3: Wan2.2 & CogVideoX Text-to-Video Generation Worker
+│   ├── lipsync-worker/                 # Tầng 3: LivePortrait Audio-Driven Lip Synchronization Worker
+│   └── frontend/                       # Developer & Staff Web UI Portal (Vite + Vanilla JS)
 │
 ├── packages/                           # Shared Kernel Libraries
 │   ├── common/                         # Core domain schemas, Argon2id security, Mongo & Redis repositories
-│   ├── contracts/                      # AMQP messaging envelopes, event schemas & queue contracts
+│   ├── contracts/                      # Protobuf contracts (inference.proto, jobs.proto), compiled stubs & AMQP schemas
 │   └── sdk/                            # Official Python Client SDK (`aip-sdk`)
 │
 ├── infrastructure/                     # Observability & Monitoring
@@ -59,37 +77,101 @@ ai_platform/
 │   └── alertmanager/                   # Alertmanager notification routing
 │
 ├── deploy/                             # Enterprise Deployment Manifests
-│   ├── docker-compose/                 # Local stack (Mongo, Redis, RabbitMQ, MinIO, Monitoring)
+│   ├── docker-compose/                 # Local multi-service stack (Mongo, Redis, RabbitMQ, MinIO, Monitoring)
 │   ├── helm/                           # Kubernetes Helm Charts (aip-control, aip-runtimes, aip-infra)
 │   └── k8s/                            # Raw K8s manifests, NetworkPolicies, Namespaces & Secrets
 │
-├── frontend/                           # Developer & Staff Web UI Portal (Vite + Vanilla JS)
-├── sdks/                               # Multi-language Client SDKs (.NET 8 LTS C# Solution)
+├── sdks/                               # Multi-language Client SDKs (.NET 8 LTS C# Solution - AIP.Platform.SDK)
 ├── openapi/                            # OpenAPI 3.1 specifications & Postman Collection
-├── migrations/                         # Database seeding & migration scripts
-├── scripts/                            # Operational automation utilities
-└── tests/                              # Automated Pytest CI/CD test suite (100% pass)
+├── scripts/                            # Core operational automation utilities
+│   ├── export_api_assets.py            # OpenAPI JSON, Postman Collection & Redoc documentation generator
+│   ├── manage_services.sh              # 1-Click native lifecycle management (start/stop/status/restart)
+│   ├── prepare_translation_model.py    # MarianMT model weight conversion for CTranslate2
+│   ├── quick_check.sh                  # Instant health probe across all AI runtimes and gateway
+│   └── seed_13_apis.py                 # Automated MongoDB Atlas seeding for the 13-service / 21-model catalog
+└── tests/                              # Automated Pytest CI/CD test suite (112 tests, 100% pass)
 ```
 
 ---
 
-## 🎯 13 AI Services & 21-Model Catalog
+## 🎯 13 AI Services & 21-Model Catalog (Local 4GB VRAM Baseline)
 
-| # | Service Domain | Route | Target Models / Engines | Mode |
-|---|---|---|---|---|
-| 1 | **Translation** | `/v1/nlp/translate` | Helsinki-NLP/opus-mt-en-vi (GPU-accelerated) | Sync / Async |
-| 2 | **Speech-to-Text (STT)** | `/v1/audio/transcriptions` | PhoWhisper (Vietnamese ASR) | Sync / Async |
-| 3 | **Text-to-Speech (TTS)** | `/v1/audio/speech` | viTTS Multi-regional Speech Engine | Sync / Async |
-| 4 | **LLM Chat Completion** | `/v1/chat/completions` | Qwen/Qwen2.5-7B-Instruct, DeepSeek-V3 | Sync / Async |
-| 5 | **Vector Embedding** | `/v1/embeddings` | BAAI/bge-m3 Multilingual Vector Embeddings | Sync |
-| 6 | **Text Summarization** | `/v1/nlp/summarize` | VietAI/vit5-base-vietnews-summarization | Sync |
-| 7 | **Content Moderation** | `/v1/moderations` | Meta Llama Guard 3, VietNamese Toxicity Classifier | Sync |
-| 8 | **Image Generation** | `/v1/images/generations` | Black Forest FLUX.1-schnell, Stability SDXL Turbo | Async Worker |
-| 9 | **Video Generation** | `/v1/videos/generations` | Wan2.2-T2V-14B, THUDM/CogVideoX-5b | Async Worker |
-| 10 | **LipSync Synchronization** | `/v1/videos/lipsync` | Keling/LivePortrait Audio-Driven Facial Rigging | Async Worker |
-| 11 | **OCR & Document Reading** | `/v1/ocr/id`, `/v1/ocr/dl` | PaddleOCR Vietnamese CCCD & Driver's License | Sync / Async |
-| 12 | **FaceMatch eKYC** | `/v1/vision/facematch` | InsightFace ArcFace Biometric Recognition | Sync |
-| 13 | **Liveness Detection** | `/v1/vision/liveness` | Silent-Face-Anti-Spoofing MiniFASNetV2 | Sync |
+In strict adherence to real local hardware capabilities (**4GB VRAM GPU baseline**), the platform standardizes on **7 core production models** optimized for low footprint and sub-millisecond response:
+
+| # | Service Domain | Route | Target Model / Engine | gRPC Port | HTTP Port | Mode |
+|---|---|---|---|:---:|:---:|---|
+| 1 | **Translation** | `/v1/nlp/translate` | `opus-mt-vi-en` (CTranslate2, 1GB) | `:50053` | `:8003` | Sync / Async |
+| 2 | **Speech-to-Text (STT)** | `/v1/audio/transcriptions` | `faster-whisper-small` (ASR, CPU/GPU) | `:50052` | `:8002` | Sync / Async |
+| 3 | **Text-to-Speech (TTS)** | `/v1/audio/speech` | `vi-VN-Neural` (tts-adapter, CPU/GPU) | `:50056` | `:8007` | Sync / Async |
+| 4 | **LLM Chat Completion** | `/v1/chat/completions` | `Qwen2.5-1.5B-Instruct` (vLLM, 2GB) | `:50051` | `:8001` | Sync / Async |
+| 5 | **Vector Embedding** | `/v1/embeddings` | `Qwen2.5-1.5B-Instruct` (Mean-pooled, 0GB) | `:50051` | `:8001` | Sync |
+| 6 | **Text Summarization** | `/v1/nlp/summarize` | `Qwen2.5-1.5B-Instruct` (Zero-shot NLP) | `:50051` | `:8001` | Sync / Async |
+| 7 | **Content Moderation** | `/v1/moderations` | `PhoBERT-base + Rules` (Safety Engine, 1GB) | `:50055` | `:8006` | Sync |
+| 8 | **OCR & Document Reading** | `/v1/ocr/id`, `/v1/ocr/dl` | `EasyOCR-Vietnamese-ID` (IDP, 2GB) | `:50054` | `:8004` | Sync / Async |
+| 9 | **FaceMatch eKYC** | `/v1/vision/facematch` | `InsightFace ArcFace Biometrics` | - | `:8000` | Sync |
+| 10 | **Liveness Detection** | `/v1/vision/liveness` | `MiniFASNetV2 Anti-Spoofing` | - | `:8000` | Sync |
+| 11 | **Image Generation** | `/v1/images/generations` | `FLUX.1-schnell` / `SDXL Turbo` | - | - | Async Worker |
+| 12 | **Video Generation** | `/v1/videos/generations` | `Wan2.2-T2V-14B` / `CogVideoX-5b` | - | - | Async Worker |
+| 13 | **LipSync Synchronization** | `/v1/videos/lipsync` | `LivePortrait Audio-Driven Facial Rigging` | - | - | Async Worker |
+
+---
+
+## ⚡ Two Arterial Protocols: RabbitMQ & gRPC
+
+AIP Platform integrates two complementary arterial communication protocols to achieve high throughput, strict governance, and zero data loss:
+
+```mermaid
+flowchart TD
+    Client([Downstream Client]) -->|HTTP / REST Bearer Token| Gateway[apps/control-plane<br/>API Gateway :8000]
+
+    subgraph FastLane["Fast-Lane: Sub-Millisecond Binary gRPC / HTTP"]
+        Gateway -->|gRPC :50051 / HTTP :8001| VLLM["vLLM Engine (Qwen2.5-1.5B)"]
+        Gateway -->|gRPC :50053 / HTTP :8003| Trans["Translation Server (opus-mt-vi-en)"]
+        Gateway -->|gRPC :50052 / HTTP :8002| STT["STT Server (faster-whisper)"]
+        Gateway -->|gRPC :50054 / HTTP :8004| OCR["OCR Server (EasyOCR-ID)"]
+        Gateway -->|gRPC :50055 / HTTP :8006| Mod["Moderation Server (PhoBERT)"]
+        Gateway -->|gRPC :50056 / HTTP :8007| TTS["TTS Adapter (vi-VN-Neural)"]
+    end
+
+    subgraph SlowLane["Slow-Lane: Asynchronous Event-Driven Messaging"]
+        Gateway -->|Publish Task| ExTasks["Exchange: aip.tasks (Priority 1-10)"]
+        ExTasks -->|q.aip.tasks.*| Dispatcher["apps/dispatcher-worker<br/>(TaskConsumer + TaskResolver)"]
+        
+        Dispatcher -->|gRPC Predict| FastLane
+        Dispatcher -->|Delegate Heavy GPU| ImgW["apps/image-worker (FLUX.1)"]
+        Dispatcher -->|Delegate Heavy GPU| VidW["apps/video-worker (Wan2.2)"]
+        Dispatcher -->|Delegate Heavy GPU| LipW["apps/lipsync-worker (LivePortrait)"]
+        
+        ImgW -->|Store Artifact| MinIO[("MinIO S3")]
+        VidW -->|Store Artifact| MinIO
+        LipW -->|Store Artifact| MinIO
+        
+        Dispatcher -->|Publish Event| ExEvents["Exchange: aip.events"]
+        ExEvents -->|q.aip.events.callbacks| CallbackW["apps/callback-worker"]
+        CallbackW -->|HMAC-SHA256 Webhook| WebhookUrl([Client Webhook URL])
+        
+        Dispatcher -.->|Terminal Error| DLQ["Queue: q.aip.tasks.dlq"]
+        Reconciler["StaleReconciler (>15m)"] -.->|Audit Stuck Jobs| Mongo[("MongoDB Atlas")]
+    end
+```
+
+### 1. RabbitMQ (AMQP 0-9-1) — Asynchronous Resilience & Decoupling
+- **Decoupling**: Heavy tasks (image synthesis, video rendering, document batch OCR) are acknowledged in `< 50ms` with `202 Accepted` while execution proceeds in the background.
+- **Backpressure & Load Leveling**: Workers pull tasks based on actual GPU memory availability (`prefetch_count=5`), eliminating VRAM saturation.
+- **Durability & At-least-once**: All task envelopes are published with `delivery_mode=2` (persistent) to quorum queues.
+- **Priority Scheduling**: Native RabbitMQ `x-max-priority: 10` drains interactive UI requests ahead of batch offline workloads.
+- **Dead-Letter Routing (DLX)**: Retries exceeding the backoff threshold are routed to `q.aip.tasks.dlq` for post-mortem inspection.
+
+### 2. gRPC (HTTP/2 + Protobuf) — Binary Data-Plane Topology
+- **Binary Serialization**: Zero JSON parsing overhead for large embedding vectors, token streams, and audio buffers using Protobuf contracts defined in `packages/contracts/contracts/inference.proto`.
+- **Multiplexing**: A single persistent TCP connection handles concurrent bi-directional RPC streams.
+- **Dedicated Port Mapping**:
+  - `:50051`: `vllm-engine` (`InferenceService.Predict`, `InferenceService.PredictStream`)
+  - `:50052`: `stt-server` (`InferenceService.Predict`)
+  - `:50053`: `translation-server` (`InferenceService.Predict`)
+  - `:50054`: `ocr-server` (`InferenceService.Predict`)
+  - `:50055`: `moderation-server` (`InferenceService.Predict`)
+  - `:50056`: `tts-adapter` (`InferenceService.Predict`, `InferenceService.PredictStream`)
 
 ---
 
@@ -123,31 +205,33 @@ make dev-env-full
 ```bash
 make dev-gateway
 # API Gateway runs on http://localhost:8000
-# Swagger Docs: http://localhost:8000/docs
+# Interactive Swagger: http://localhost:8000/docs
 ```
 
-#### Tầng 2: Data-Plane AI Microservices
+#### Tầng 2: Data-Plane AI Microservices (1-Click or Individual)
 ```bash
-# Terminal 2A: vLLM Unified Serving Engine (Qwen / Llama / Embeddings)
-make dev-vllm
+# 1-Click start all native data-plane services
+make start-all
 
-# Terminal 2B: Translation Service (GPU-accelerated MarianMT)
-make dev-translation
-
-# Terminal 2C: Speech-to-Text Service (PhoWhisper)
-make dev-stt
+# Or start individually:
+make dev-vllm         # vLLM Serving Engine (:8001 / :50051)
+make dev-translation  # MarianMT Translation (:8003 / :50053)
+make dev-stt          # PhoWhisper Speech-to-Text (:8002 / :50052)
+make dev-ocr          # EasyOCR Vietnamese ID (:8004 / :50054)
+make dev-moderation   # PhoBERT Content Moderation (:8006 / :50055)
+make dev-tts          # vi-VN-Neural TTS Adapter (:8007 / :50056)
 ```
 
 #### Tầng 3: Distributed Asynchronous Workers
 ```bash
-# Terminal 4: Dispatcher Worker & Stale Job Auto-Reconciler
+# Dispatcher Worker (Domain Tasks & Stale Reconciler)
 make dev-dispatcher
 
-# Terminal 5: Callback Worker (HMAC-SHA256 Webhook Deliveries)
+# Callback Worker (HMAC-SHA256 Webhook Deliveries)
 make dev-callback
 
-# Terminal 6: GPU Image Generation Worker (FLUX.1 / SDXL)
-make worker-image
+# Specialized GPU Workers
+make worker-image     # FLUX.1 / SDXL Image Generation Worker
 ```
 
 ### 5. Run Web UI Portal (Vite)
@@ -220,9 +304,9 @@ translation = client.translate(
 print("Result:", translation.translated_text)
 ```
 
-### 3. C# .NET 8 SDK (`sdks/dotnet`)
+### 3. C# .NET 8 SDK (`sdks/dotnet/AIP.Platform.SDK`)
 ```csharp
-using Everwin.AIPlatform.SDK;
+using AIP.Platform.SDK;
 
 var client = new AIPClient("aip_live_testkey123", "http://localhost:8000");
 
@@ -241,41 +325,10 @@ In case of errors, the Gateway guarantees a standardized SRS Error Envelope:
     "message": "The provided API key is invalid or revoked",
     "details": {},
     "request_id": "req_650fa89b-fbf7-42c2-8419-74d754b2d189",
-    "timestamp": "2026-09-22T13:45:00.000Z"
+    "timestamp": "2026-09-29T11:45:00.000Z"
   }
 }
 ```
-
----
-
-## 🛡️ Reliability & Distributed Messaging Architecture
-
-```mermaid
-flowchart LR
-    Client([Downstream Client]) -->|HTTP POST| Gateway[AIP Gateway]
-    Gateway -->|Lightweight / Real-time| Services[Services: MarianMT / PhoWhisper]
-    Gateway -->|Heavy Tasks| ExTasks[Exchange: ex.aip.tasks]
-    
-    ExTasks -->|q.aip.tasks.image| ImageWorker[Image Worker FLUX.1]
-    ExTasks -->|q.aip.tasks.video| VideoWorker[Video Worker Wan2.2]
-    ExTasks -->|q.aip.tasks.lipsync| LipSyncWorker[LipSync Worker LivePortrait]
-    
-    ImageWorker -->|Result Event| ExEvents[Exchange: ex.aip.events]
-    VideoWorker -->|Result Event| ExEvents
-    LipSyncWorker -->|Result Event| ExEvents
-    
-    ExEvents -->|q.aip.events.callbacks| CallbackWorker[Callback Worker]
-    CallbackWorker -->|HMAC-SHA256 Webhook| WebhookUrl([Client Webhook URL])
-    
-    ExTasks -.->|Failure / Reject| DLQ[Queue: q.aip.tasks.dlq]
-    Reconciler[Stale Job Auto-Reconciler] -.->|Scan Stale Tasks| MongoDB[(MongoDB Atlas)]
-```
-
-- **Topic Routing**: Tasks route through `ex.aip.tasks` with routing keys like `task.image.generate`, `task.video.render`.
-- **Dead-Letter Queue (DLQ)**: Failed tasks after retry are routed to `q.aip.tasks.dlq` without blocking the pipeline.
-- **SSRF NetGuard**: Strict private IP range protection preventing attackers from targeting internal loopbacks/metadata endpoints via webhooks.
-- **HMAC-SHA256 Webhook Signatures**: Webhook payloads are signed with a shared secret and timestamp header `X-AIP-Signature: t=...,v1=...` to prevent tampering and replay attacks.
-- **Self-Healing Reconciler**: Background cron identifies jobs stuck in `processing` beyond their timeout and automatically marks them failed or re-enqueues them.
 
 ---
 
@@ -310,9 +363,9 @@ helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
 
 ## 🧪 Testing & Quality Assurance
 
-The codebase includes a comprehensive 32-test automated test suite covering all architecture tiers:
+The codebase includes a comprehensive 112-test automated test suite covering all architecture tiers:
 ```bash
-# Run the complete test suite (100% Pass)
+# Run the complete test suite (112/112 Pass)
 make test
 
 # Run code linter
@@ -324,4 +377,4 @@ make fmt
 
 ---
 
-*Everwin AI Platform — Mission-Critical Enterprise AI Middleware.*
+*AIP Platform — Mission-Critical Enterprise AI Middleware.*

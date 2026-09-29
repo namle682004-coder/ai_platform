@@ -10,7 +10,7 @@ import sys
 os.environ["TEST_MODE"] = "true"
 from fastapi.testclient import TestClient
 
-_server_dir = os.path.join(os.path.dirname(__file__), "..", "data-plane", "vllm-engine")
+_server_dir = os.path.join(os.path.dirname(__file__), "..", "apps", "data-plane", "vllm-engine")
 sys.path.insert(0, _server_dir)
 
 _spec = importlib.util.spec_from_file_location("vllm_app_module", os.path.join(_server_dir, "app.py"))
