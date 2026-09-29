@@ -18,4 +18,4 @@ RUN pip install --no-cache-dir \
 WORKDIR /app/apps/dispatcher-worker
 ENV PYTHONPATH=/app/apps/dispatcher-worker:/app/apps/dispatcher-worker/src:/app/apps/control-plane:/app/packages/common:/app/packages/contracts
 
-CMD ["python", "src/main.py"]
+CMD ["python", "-m", "src.main"]

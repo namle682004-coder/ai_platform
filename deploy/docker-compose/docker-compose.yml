@@ -186,6 +186,7 @@ services:
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     depends_on:
       - rabbitmq
+    command: ["python", "-m", "src.main"]
     restart: unless-stopped
 
   callback-worker:
