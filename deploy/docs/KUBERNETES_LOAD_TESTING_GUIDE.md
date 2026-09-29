@@ -1,93 +1,93 @@
-# Huong Dan Kiem Thu Chiu Tai va Co Gian Tren Kubernetes (Kubernetes Load & Stress Testing Guide)
+# Kubernetes Load & Stress Testing Guide for AIP Platform
 
-Tai lieu nay cung cap quy trinh chuan Enterprise de kiem thu chiu tai (Load Testing), kiem thu gioi han (Stress Testing), va xac thuc co che tu dong co gian (Autoscaling) tren cum Kubernetes cho he thong AIP Platform.
+This document provides a comprehensive operational guide for load testing, stress testing, and auto-scaling verification on Kubernetes clusters for the AIP Platform.
 
 ---
 
-## 1. Kien Truc Tong Quan & Cac Tang Co Gian (Architecture Overview)
+## 1. Architecture Overview & Scaling Dimensions
 
-AIP Platform duoc thiet ke theo mo hinh 3 tang phan lap voi cac co che chiu tai va co gian doc lap:
+The AIP Platform implements a 3-tier architecture with decoupled scaling mechanisms:
 
 ```mermaid
 flowchart TD
-    Client([Concurrent Users / Applications]) -->|High RPS HTTP / gRPC| Ingress[Kubernetes Ingress / Load Balancer]
+    Client([Concurrent Users / Downstream Applications]) -->|High RPS HTTP / gRPC| Ingress[Kubernetes Ingress / Load Balancer]
     
     subgraph Tier1["Tier 1: Control Plane (aip-control)"]
-        Ingress --> CP[Gateway Pods<br/>FastAPI + uvloop]
-        HPA1[HorizontalPodAutoscaler<br/>Target: CPU 70%, Memory 80%] -.->|Scale 2 to 15 Pods| CP
-        CP --> Redis[Redis Cluster<br/>Atomic Lua Rate Limiting]
+        Ingress --> CP[Gateway Pods<br/>FastAPI + uvloop Non-blocking I/O]
+        HPA1[HorizontalPodAutoscaler<br/>Target: CPU 70%, Memory 80%] -.->|Autoscale 2 to 15 Pods| CP
+        CP --> Redis[Redis Cluster<br/>Atomic Lua Rate Limiter]
     end
 
     subgraph Tier2["Tier 2: Real-time Data Plane (aip-text, aip-multimodal)"]
         CP -->|Direct HTTP / gRPC| DP[Inference Serving Pods<br/>vLLM, Faster-Whisper, MarianMT]
-        DCGM[NVIDIA DCGM Exporter<br/>VRAM, GPU Core, KV-Cache] -.->|Hardware Metrics| DP
+        DCGM[NVIDIA DCGM Exporter<br/>VRAM, GPU Cores, KV-Cache] -.->|Telemetry Metrics| DP
     end
 
     subgraph Tier3["Tier 3: Asynchronous Task Workers (aip-infra, aip-video)"]
         CP -->|Publish Task| RabbitMQ[(RabbitMQ Quorum Queues)]
         RabbitMQ --> Workers[Worker Pods<br/>Image, Video, Dispatcher]
-        KEDA[KEDA ScaledObject<br/>Trigger: QueueLength > 5] -.->|Scale 1 to 5 Pods| Workers
+        KEDA[KEDA ScaledObject<br/>Trigger: QueueLength > 5] -.->|Autoscale 1 to 5 Pods| Workers
     end
 ```
 
 ---
 
-## 2. Thiet Lap Moi Truong Tren Cum Kubernetes (Setup on Cluster)
+## 2. Cluster Prerequisites & Environment Setup
 
-### 2.1 Kiem tra ket noi cum
-Dam bao cong cu `kubectl` da tro dung vao cum Kubernetes (vi du: cum `kind` tren Docker Desktop, GKE, EKS, hoac On-Premises):
+### 2.1 Verify Cluster Connectivity
+Ensure your `kubectl` context points to the target cluster (e.g., local `kind`, EKS, GKE, or bare-metal Kubernetes):
 ```bash
 kubectl cluster-info
 kubectl get nodes
 ```
 
-### 2.2 Cai dat va kich hoat Metrics Server
-Metrics Server la thanh phan bat buoc de Kubernetes thu thap CPU/RAM cho bo tu dong co gian HPA:
+### 2.2 Install and Configure Metrics Server
+The Kubernetes Horizontal Pod Autoscaler (HPA) requires `metrics-server` to collect CPU and Memory utilization from kubelets:
 ```bash
-# 1. Cai dat Metrics Server ban chinh thuc
+# 1. Install official metrics-server components
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
-# 2. Cau hinh bo qua chung chi TLS tren cum local (kind / Docker Desktop)
+# 2. For local clusters (kind / Docker Desktop), enable insecure TLS for self-signed certificates
 kubectl patch deployment metrics-server -n kube-system --type 'json' \
   -p '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
 
-# 3. Kiem tra thu thap chi so (cho ~30 giay de he thong bat dau lay mau)
+# 3. Verify metrics collection (wait ~30 seconds for initial sample)
 kubectl top nodes
 ```
 
-### 2.3 Khoi tao 6 Namespaces va Secrets he thong
+### 2.3 Initialize Namespaces and Secrets
 ```bash
-# Khoi tao cac namespace chuan kien truc
+# Apply the 6 architectural namespaces
 kubectl apply -f deploy/k8s/namespaces/namespaces.yaml
 
-# Khoi tao cac secret dong bo (MongoDB, Redis, RabbitMQ, JWT, Master Pepper)
+# Apply synchronized secrets across namespaces
 kubectl apply -f deploy/k8s/secrets/secrets.yaml
 ```
 
-### 2.4 Nap Container Image vao cum kind (Dung cho Local Kind Cluster)
-Neu chay tren cum local `kind`, nap image container da build san vao cum containerd cua kind:
+### 2.4 Load Container Image into Kind (For Local Kind Clusters)
+If running on a local `kind` cluster, import the built container image into the node's containerd runtime:
 ```bash
-# Tag image gateway
+# Tag the existing gateway image
 docker tag docker-compose-control-plane:latest aip-platform/gateway:1.0.0
 
-# Nap truc tiep vao node kind (desktop-control-plane)
+# Import image directly into the kind node containerd namespace
 docker save aip-platform/gateway:1.0.0 | docker exec -i desktop-control-plane ctr --namespace=k8s.io images import -
 
-# Gan label pool=control-plane cho node
+# Label the node for control-plane scheduling
 kubectl label node desktop-control-plane pool=control-plane --overwrite
 ```
 
 ---
 
-## 3. LOAI 1: TEST TAI TANG SO LUONG NGUOI DUNG (User Concurrency & High RPS Load)
+## 3. TYPE 1: HIGH USER CONCURRENCY & RPS TESTING (Control Plane Scaling)
 
-### 3.1 Muc tieu kiem thu
-- Kiem tra kha nang chiu tai dong thoi cua Gateway khi so luong nguoi dung tang tu 50 len 500 va 1,000 users.
-- Xac thuc co che tu dong co gian Pods (Horizontal Pod Autoscaler - HPA) tang tu 2 len 10 pods khi CPU vuot 70%.
-- Xac thuc co che chan spam bang Redis Atomic Lua Script tra ve HTTP 429 (`rate_limit_exceeded`) trong duoi 2ms.
+### 3.1 Objectives
+- Verify gateway performance under sustained concurrent requests (50 to 1,000 virtual users).
+- Validate Horizontal Pod Autoscaler (HPA) behavior scaling from 2 to 10 pods when CPU exceeds 70%.
+- Ensure multi-tenant rate limits return `HTTP 429 Too Many Requests` in `< 2ms` via atomic Redis Lua scripts without degrading backend performance.
 
-### 3.2 Trien khai Control Plane voi HPA bang Helm
-Chay lenh trien khai:
+### 3.2 Deploy Control Plane with HPA
+Deploy the gateway chart with autoscaling enabled:
 ```bash
 helm upgrade --install aip-control deploy/helm/aip-control \
   --namespace aip-control \
@@ -99,97 +99,99 @@ helm upgrade --install aip-control deploy/helm/aip-control \
   --set autoscaling.targetMemoryUtilizationPercentage=80
 ```
 
-Kiem tra HPA da hoat dong:
+Verify HPA status:
 ```bash
 kubectl get hpa -n aip-control
 ```
 
-### 3.3 Cac phuong phap ban tai thuc te
+### 3.3 Execution Methods
 
-#### Phuong phap 1: Chay bang Python Async Benchmark (Co san trong he thong)
-File script: `tests/load/test_user_concurrency.py`
+#### Method 1: Python Asynchronous Benchmark Tool
+Execute the built-in test suite:
 ```bash
 python tests/load/test_user_concurrency.py
 ```
-*Ket qua do dac thuc te:*
-- 50 Virtual Users dong thoi goi Health Probe: **421.94 RPS**, do tre P95 dat **163.80ms**, 0 loi.
-- 40 Virtual Users dong thoi duyet API Catalog: **264.80 RPS**, do tre P95 dat **189.41ms**, 0 loi.
+*Benchmark baseline results:*
+- 50 concurrent virtual users hitting Health Probes: **421.94 RPS**, P95 latency **163.80ms**, 0 errors.
+- 40 concurrent virtual users browsing API Catalogs: **264.80 RPS**, P95 latency **189.41ms**, 0 errors.
 
-#### Phuong phap 2: Chay k6 Load Test (Chuan DevOps qua Ingress hoac Port-Forward)
-Mo 2 cua so Terminal:
-- **Terminal 1: Mo port-forward toi Gateway Service:**
+#### Method 2: High-Concurrency k6 Load Test
+Open multiple terminals to observe scaling in real-time:
+- **Terminal 1: Port-forward service to localhost:8000:**
   ```bash
   kubectl port-forward svc/aip-control-gateway 8000:8000 -n aip-control
   ```
-- **Terminal 2: Chay kich ban k6 ban tai tang dan tu 50 den 1,000 users:**
+- **Terminal 2: Run k6 ramp-up script (50 to 1,000 users):**
   ```bash
   k6 run deploy/k6/load_users_k6.js
   ```
-- **Terminal 3: Theo doi HPA va Pods tu dong nhay so theo thoi gian thuc:**
+- **Terminal 3: Watch HPA and Pods scale in real-time:**
   ```bash
   kubectl get hpa aip-control-gateway-hpa -n aip-control -w
   kubectl get pods -n aip-control -w
   ```
 
-#### Phuong phap 3: Test nhanh co gian thu cong (Manual Scaling Test)
-Ban co the thu tang/giam truc tiep so luong Pod va xem tren giao dien Kubernetes UI:
+#### Method 3: Manual Replica Scaling Test
+To observe immediate replica adjustments in the Kubernetes dashboard:
 ```bash
-# Tang len 8 Pods
+# Scale up to 8 pods
 kubectl scale deployment aip-control-gateway -n aip-control --replicas=8
 
-# Giam ve 2 Pods
+# Scale down to 2 pods
 kubectl scale deployment aip-control-gateway -n aip-control --replicas=2
 ```
 
-### 3.4 Giai thich nguyen ly van hanh cua HPA & Rate Limiting
+### 3.4 Operational Mechanics: HPA & Redis Rate Limiting
 
-#### 1. Cong thuc tinh toan so Pod cua HPA
-He thong lay mau CPU/RAM dinh ky moi 15 giay qua Metrics Server:
+#### 1. HPA Metric Evaluation & Scaling Formula
+Kubernetes `metrics-server` samples CPU and Memory every 15 seconds. HPA calculates desired replicas using:
 $$\text{DesiredReplicas} = \left\lceil \text{CurrentReplicas} \times \left( \frac{\text{CurrentMetricValue}}{\text{DesiredMetricValue}} \right) \right\rceil$$
 
-- **Chinh sach Scale-Up (`stabilizationWindowSeconds: 0`)**: Khi luong nguoi dung tang dot bien, K8s khong cho ma lap tuc nhan doi so Pod trong 15 giay de ngan ngua sap cong.
-- **Chinh sach Scale-Down (`stabilizationWindowSeconds: 300`)**: Khi het gio cao diem, K8s giu nguyen so Pod trong 5 phut truoc khi giam dan, tranh hien tuong dao dong tao/xoa Pod lien tuc (Flapping).
+- **Scale-Up Behavior (`stabilizationWindowSeconds: 0`)**:
+  When load spikes, HPA responds immediately without delay, doubling replicas every 15 seconds up to `maxReplicas`.
+- **Scale-Down Behavior (`stabilizationWindowSeconds: 300`)**:
+  When traffic subsides, HPA holds the replica count for 5 minutes (300s) to prevent flapping (rapid oscillation of pod creation and termination).
 
-#### 2. Co che Redis Atomic Lua Script Rate Limiting
-Moi request gui den deu chay qua doan ma Lua truc tiep trong RAM Redis:
-- Kiem tra so luot goi/phut (RPM) va so ket noi dong thoi (Concurrency) trong mot thao tac nguyen tu duy nhat (< 1ms).
-- Neu nguoi dung vuot nguong (vi du: qua 60 RPM hoac qua 5 ket noi dong thoi), he thong tra ve ma loi `429 Too Many Requests` ngay lap tuc tai Gateway, tuyet doi khong de request lam tac nghen tang GPU.
+#### 2. Redis Atomic Lua Rate Limiting
+To prevent race conditions during high concurrency:
+- Every request executes an atomic Lua script directly in Redis RAM.
+- RPM limits and active concurrency slots are checked and incremented in `< 1ms`.
+- Exceeded quotas trigger `429 Too Many Requests` immediately at the gateway, preventing unauthenticated or abusive traffic from reaching GPU runtimes.
 
 ---
 
-## 4. LOAI 2: TEST TAI TANG TAI GPU (Compute & VRAM Saturation Load)
+## 4. TYPE 2: GPU COMPUTE & VRAM SATURATION TESTING (Data Plane Scaling)
 
-### 4.1 Muc tieu kiem thu
-- Do luong gioi han bo nho VRAM va kha nang chiu tai cua GPU khi chay cac tac vu nang (LLM, Translation, Speech, Image Generation).
-- Do luong hang doi xu ly lo tu dong (Continuous Batching) cua vLLM / CTranslate2.
-- Xac thuc co che Ngat mach (Circuit Breaker) tu dong tu choi request khi VRAM dat nguong nguy hiem (> 95%) de tranh loi `CUDA Out Of Memory` (OOMKilled - Exit Code 137).
+### 4.1 Objectives
+- Measure hardware memory saturation boundaries (VRAM OOM) on GPU inference nodes.
+- Validate continuous batching queue dynamics in vLLM / CTranslate2.
+- Verify Circuit Breaker safeguards to reject traffic when VRAM exceeds 95%, avoiding unrecoverable `CUDA Out Of Memory` crashes (`OOMKilled Exit Code 137`).
 
-### 4.2 Cac chi so trong yeu can giam sat (NVIDIA DCGM Exporter)
-| Chi so (Metric) | Y nghia | Nguong canh bao |
+### 4.2 Key Monitoring Metrics (NVIDIA DCGM Exporter)
+| Metric | Description | Warning Threshold |
 | --- | --- | :---: |
-| `DCGM_FI_DEV_GPU_UTIL` | Ti le su dung nhan tinh toan GPU (%) | > 90% |
-| `DCGM_FI_DEV_FB_USED` | Luong bo nho VRAM da cap phat | > 92% tong dung luong |
-| `DCGM_FI_DEV_GPU_TEMP` | Nhiet do nhan GPU | > 82°C (Ha xung nhiet) |
-| `vllm:num_requests_waiting` | So luong request LLM dang cho KV-Cache | > 10 requests |
-| `vllm:gpu_cache_usage_factor` | Ti le chiem dung bo nho PagedAttention | > 0.90 |
+| `DCGM_FI_DEV_GPU_UTIL` | GPU Core Compute Utilization | > 90% |
+| `DCGM_FI_DEV_FB_USED` | GPU VRAM Allocated Memory | > 92% of Total |
+| `DCGM_FI_DEV_GPU_TEMP` | GPU Core Temperature | > 82°C (Thermal Throttling) |
+| `vllm:num_requests_waiting` | Queued LLM requests waiting for KV-Cache | > 10 requests |
+| `vllm:gpu_cache_usage_factor` | KV-Cache memory block utilization | > 0.90 |
 
-### 4.3 Cac kich ban test GPU thuc te
+### 4.3 Test Scenarios
 
-#### Kich ban 1: Keo dai ngu canh dau vao (Context Length Stress Test)
-Gui lien tuc cac doan van ban dai voi so token tang dan tu $512 \to 2,048 \to 8,000$ tokens vao API `/v1/nlp/summarize`:
+#### Scenario 1: Context Length Stress Test
+Send sequential requests with increasing input token length (512 -> 2,048 -> 8,000 tokens) to observe KV-cache allocation:
 ```bash
 curl -X POST "http://localhost:8000/v1/nlp/summarize" \
   -H "Authorization: Bearer aip_live_testkey123" \
   -H "Content-Type: application/json" \
-  -d '{"document": "Doan van ban dai can tom tat lap lai...", "ratio": 0.2}'
+  -d '{"document": "<REPEATED_LONG_DOCUMENT_TEXT>", "ratio": 0.2}'
 ```
-*Quan sat:* Luong bo nho KV-Cache tren GPU tang len tuong ung.
 
-#### Kich ban 2: Bao hoa Continuous Batching
-Gui dong thoi 30 prompt yeu cau tao 500 tokens vao endpoint `/v1/chat/completions`. Quan sat chi so `vllm:num_requests_waiting` trong vLLM engine.
+#### Scenario 2: Continuous Batching Saturation
+Dispatch 30 concurrent prompts requesting 500 completion tokens each to `/v1/chat/completions`. Observe `vllm:num_requests_waiting` and verify smooth token streaming backpressure.
 
-#### Kich ban 3: KEDA Autoscaling cho GPU Workers
-Doi voi cac tac vu bat dong bo (sinh anh FLUX.1/SDXL, video), cau hinh bo tu dong co gian KEDA dua vao do dai hang doi RabbitMQ:
+#### Scenario 3: KEDA Autoscaling for GPU Workers
+For asynchronous workloads (FLUX.1 image generation, video rendering), configure KEDA to scale pods based on RabbitMQ queue depth:
 ```yaml
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
@@ -209,48 +211,57 @@ spec:
       mode: QueueLength
       value: "5"
 ```
-*Nguyen ly:* Khi co hon 5 task dang cho trong queue `q.aip.tasks.image`, KEDA lap tuc khoi tao them Pod Worker GPU.
+When more than 5 tasks accumulate in `q.aip.tasks.image`, KEDA automatically provisions additional worker pods.
 
 ---
 
-## 5. BON BAI TEST SONG CON CHO ENTERPRISE (Must-Test Scenarios)
+## 5. FOUR CRITICAL ENTERPRISE STRESS SCENARIOS
 
-### 5.1 Test Don Hang Doi Bat Dong Bo (RabbitMQ Queue Backpressure)
-- **Thuc hien:** Bom dot bien 5,000 task vao RabbitMQ trong vong 10 giay.
-- **Tieu chuan dat:** Tham so `prefetch_count=5` cua worker dam bao worker chi nhan dung luong task GPU co the xu ly, khong nuot o at gay tran RAM. Cac task bi loi vuot qua nguong retry phai tu dong chuyen vao hang doi `q.aip.tasks.dlq`.
+### 5.1 RabbitMQ Queue Backpressure & Spike Test
+- **Execution:** Publish 5,000 tasks within 10 seconds into `aip.tasks`.
+- **Criteria:**
+  - Worker `prefetch_count=5` prevents GPU memory saturation.
+  - Quorum queues ensure zero message loss during peak ingestion.
+  - Exhausted retries route automatically to `q.aip.tasks.dlq`.
 
-### 5.2 Soak Test / Longevity Test (Kiem tra ro ri bo nho dai han)
-- **Thuc hien:** Duy tri muc tai 50% - 60% cong suat lien tuc tu **8 den 24 gio**.
-- **Tieu chuan dat:** Bo nho RAM cua FastAPI Gateway va VRAM cua PyTorch khong duoc tang tich luy theo thoi gian (tranh hien tuong khong giai phong bo nho tensor sau khi tra ve response).
+### 5.2 Soak / Longevity Testing (Memory Leak Verification)
+- **Execution:** Maintain 50%–60% system capacity continuously for **8 to 24 hours**.
+- **Criteria:**
+  - Gateway RSS memory must remain stable without cumulative growth.
+  - PyTorch CUDA memory allocation must stabilize, showing no memory fragmentation.
 
-### 5.3 Chaos Engineering Under Heavy Load (Kiem tra phuc hoi duoi tai)
-- **Thuc hien:** Trong luc he thong dang ganh tai 80% RPS, chay lenh xoa dot ngot mot Pod Gateway:
+### 5.3 Chaos Engineering Under Heavy Load
+- **Execution:** While running 80% RPS load, terminate a gateway pod:
   ```bash
   kubectl delete pod -l app.kubernetes.io/name=aip-gateway -n aip-control
   ```
-- **Tieu chuan dat:** Endpoint `/health/ready` lap tuc go pod bi loi khoi EndpointSlice trong 3 giay; Ingress dieu huong request sang cac pod con lai ma khong lam rot request cua client.
+- **Criteria:**
+  - `/health/ready` probe removes the failing pod from EndpointSlices within 3 seconds.
+  - Ingress reroutes in-flight requests to healthy pods with zero dropped connections.
 
-### 5.4 Test Can Kiet Database Connection Pool
-- **Thuc hien:** 1,000 ket noi dong thoi goi vao Gateway de ghi log va chi so token vao MongoDB Atlas.
-- **Tieu chuan dat:** Tac vu ghi chay bat dong bo (`asyncio.create_task`) giup Gateway tra ket qua ngay cho khach hang ma khong bi chan boi do tre cua database.
+### 5.4 Database Connection Pool Stress Test
+- **Execution:** 1,000 concurrent requests writing audit logs and token usage records.
+- **Criteria:**
+  - Asynchronous background tasks (`asyncio.create_task`) decouple MongoDB persistence from client response latency.
+  - Motor connection pool manages concurrent queries without `ServerSelectionTimeoutError`.
 
 ---
 
-## 6. Cac Lenh Giam Sat He Thong Thoi Gian Thuc (Cheat Sheet)
+## 6. Real-Time Cluster Monitoring Cheat Sheet
 
 ```bash
-# 1. Theo doi HPA tu dong co gian so luong Pods
+# 1. Monitor HPA autoscaling events in real-time
 kubectl get hpa -n aip-control -w
 
-# 2. Theo doi muc chiem dung CPU / RAM cua tung Pod
+# 2. Monitor CPU and Memory usage per Pod
 kubectl top pods -n aip-control
 
-# 3. Theo doi cac su kien scale-up va scale-down cua cum
+# 3. View cluster scaling events
 kubectl get events -n aip-control --sort-by='.lastTimestamp'
 
-# 4. Xem truc tiep log truy cap va do tre cua Gateway
+# 4. Stream Gateway access logs
 kubectl logs -f -l app.kubernetes.io/name=aip-gateway -n aip-control --tail=50
 
-# 5. Kiem tra EndpointSlice dang dieu phoi toi nhung IP Pod nao
+# 5. Inspect EndpointSlice traffic routing targets
 kubectl get endpointslices -n aip-control
 ```
