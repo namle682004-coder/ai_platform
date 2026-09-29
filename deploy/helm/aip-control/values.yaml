@@ -56,6 +56,13 @@ ingress:
       hosts:
         - aip-api.enterprise.internal
 
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
 resources:
   limits:
     cpu: 2000m
