@@ -38,15 +38,14 @@ def run_real_gpu_stress_test():
     # Step 1: Baseline Clean State
     torch.cuda.empty_cache()
     init_allocated = torch.cuda.memory_allocated(0) / (1024 * 1024)
-    print(f"\n[PHASE 1: BASELINE IDLE]")
+    print("\n[PHASE 1: BASELINE IDLE]")
     print(f"  VRAM Allocated: {init_allocated:.2f} MiB | VRAM Reserved: {torch.cuda.memory_reserved(0)/(1024*1024):.2f} MiB")
 
     # Step 2: Incremental VRAM Allocation within Safe Hardware Envelope
-    print(f"\n[PHASE 2: INCREMENTAL VRAM ALLOCATION & CIRCUIT BREAKER]")
+    print("\n[PHASE 2: INCREMENTAL VRAM ALLOCATION & CIRCUIT BREAKER]")
     tensors = []
     # Test increments: 512MB, 1024MB, 1536MB up to ~3200MB (Safe threshold under 95% SRS rule)
     step_megabytes = [512, 1024, 1536]
-    running_total_mb = 0
 
     for mb in step_megabytes:
         elements = (mb * 1024 * 1024) // 4
@@ -71,7 +70,7 @@ def run_real_gpu_stress_test():
         print("  [CIRCUIT BREAKER OK]: Request accepted.")
 
     # Step 3: Intense GPU Core Compute Saturation (Tensor core matrix multiplication)
-    print(f"\n[PHASE 3: GPU CORE COMPUTE SATURATION (FP32 Matrix Multiplication)]")
+    print("\n[PHASE 3: GPU CORE COMPUTE SATURATION (FP32 Matrix Multiplication)]")
     # Release one tensor to free space for large compute matrices
     tensors.pop()
     torch.cuda.empty_cache()
@@ -88,8 +87,8 @@ def run_real_gpu_stress_test():
     iterations = 50
     print(f"  Firing {iterations} continuous matrix multiplications to saturate GPU cores...")
     t_start = time.perf_counter()
-    for i in range(iterations):
-        c = torch.matmul(a, b)
+    for _i in range(iterations):
+        _ = torch.matmul(a, b)
     torch.cuda.synchronize()
     t_end = time.perf_counter()
 
@@ -100,16 +99,16 @@ def run_real_gpu_stress_test():
     print(f"  [PEAK VRAM USED] {torch.cuda.max_memory_allocated(0)/(1024*1024):.2f} MiB")
 
     # Step 4: Deallocation and Safety Cleanup
-    print(f"\n[PHASE 4: CLEAN DEALLOCATION & SAFETY RECOVERY]")
+    print("\n[PHASE 4: CLEAN DEALLOCATION & SAFETY RECOVERY]")
     del tensors
-    del a, b, c
+    del a, b
     torch.cuda.empty_cache()
     torch.cuda.synchronize()
 
     final_allocated = torch.cuda.memory_allocated(0) / (1024 * 1024)
     final_reserved = torch.cuda.memory_reserved(0) / (1024 * 1024)
     print(f"  VRAM Released. Allocated: {final_allocated:.2f} MiB | Reserved: {final_reserved:.2f} MiB")
-    print(f"  Zero CUDA memory leak confirmed.")
+    print("  Zero CUDA memory leak confirmed.")
     print("==================================================================")
     print("      ALL REAL HARDWARE GPU STRESS TESTS PASSED 100%!           ")
     print("==================================================================")
