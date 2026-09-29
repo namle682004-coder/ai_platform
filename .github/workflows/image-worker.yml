@@ -38,11 +38,15 @@ jobs:
           uv pip install -e packages/common \
                          -e packages/contracts \
                          -e apps/image-worker \
-                         ruff
+                         ruff pytest
 
       - name: Lint with Ruff
         shell: bash
         run: uv run ruff check apps/image-worker/
+
+      - name: Run Worker Unit Tests
+        shell: bash
+        run: uv run pytest tests/test_image_worker.py
 
   build-image:
     name: Docker Image (Image Worker)

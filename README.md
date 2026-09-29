@@ -11,22 +11,35 @@
 
 ---
 
-## 🌟 Overview
+## Overview
 
 **AIP Platform** is an enterprise-grade, self-hosted AI inference middleware platform and developer console. Built with **Clean Architecture & Domain-Driven Design (DDD)**, it acts as an intelligent distribution, governance, and execution layer between downstream business applications and upstream heterogeneous AI compute nodes (NVIDIA GPUs & CPUs).
 
 ### Core Capabilities:
-- 🚀 **Standardized `/v1` AI APIs**: Drop-in unified endpoints for 21 enterprise AI models across 13 specialized domains.
-- ⚡ **Dual Arterial Communication Protocols**: High-throughput multiplexed **gRPC binary data-plane** (:50051–:50056) for sub-millisecond inference combined with **RabbitMQ message queuing** for resilient asynchronous task offloading.
-- 🛡️ **Zero-Trust Security & Governance**: Argon2id salted API key hashing with Master Pepper, strict CIDR IP allowlisting, and project-based tenant isolation.
-- 🚦 **Intelligent Task Routing & Dispatch**: Modular DCP-pattern `dispatcher-worker` with dynamic task resolution (`task_resolver`), gRPC client execution (`inference_client`), jittered exponential backoff (`retry`), and dead-letter queue routing (`DLQ`).
-- 🔄 **Event-Driven Resilience**: Native DLQ dead-lettering, TTL message expirations, Redis-backed idempotency protection, HMAC-SHA256 signed webhooks, and automatic stale job reconciliation.
-- 📊 **Real-time Hardware Telemetry**: Native NVIDIA NVML integration monitoring real GPU core temperatures, VRAM consumption, and wattage with automated hardware allocation guards.
-- 🖥️ **Developer & Staff Self-Service Portal**: Integrated Web Console, interactive API Sandbox, Key Management, and public System Status page.
+- **Standardized `/v1` AI APIs**: Drop-in unified endpoints for 21 enterprise AI models across 13 specialized domains.
+- **Dual Arterial Communication Protocols**: High-throughput multiplexed **gRPC binary data-plane** (:50051–:50056) for sub-millisecond inference combined with **RabbitMQ message queuing** for resilient asynchronous task offloading.
+- **Zero-Trust Security & Governance**: Argon2id salted API key hashing with Master Pepper, strict CIDR IP allowlisting, and project-based tenant isolation.
+- **Intelligent Task Routing & Dispatch**: Modular DCP-pattern `dispatcher-worker` with dynamic task resolution (`task_resolver`), gRPC client execution (`inference_client`), jittered exponential backoff (`retry`), and dead-letter queue routing (`DLQ`).
+- **Event-Driven Resilience**: Native DLQ dead-lettering, TTL message expirations, Redis-backed idempotency protection, HMAC-SHA256 signed webhooks, and automatic stale job reconciliation.
+- **Real-time Hardware Telemetry**: Native NVIDIA NVML integration monitoring real GPU core temperatures, VRAM consumption, and wattage with automated hardware allocation guards.
+- **Developer & Staff Self-Service Portal**: Integrated Web Console, interactive API Sandbox, Key Management, and public System Status page.
+
+### Implementation Status & Deployment Readiness
+
+| Tier / Component | Target Artifact | Implementation State | Deployment Target | Notes |
+| --- | --- | :---: | :---: | --- |
+| **Control Plane** | `apps/control-plane` | Production Implemented | Render PaaS / K8s `aip-control` | FastAPI, Argon2id, Quota Lua scripts, Active `/health/ready` probe, Model Aliases, Dynamic UUID Routing |
+| **Developer Console** | `apps/frontend` | Production Implemented | Render PaaS / Vite Static | Inter/Monochrome Enterprise UI, `/project/{id}/apis/{id}` routing, Sandbox playgrounds |
+| **Text & Audio Runtimes** | `apps/data-plane` | Production Implemented | Docker Compose / K8s `aip-text`, `aip-multimodal` | CTranslate2 MarianMT, Faster-Whisper, EasyOCR, PhoBERT, vi-VN-Neural (Dual HTTP + gRPC) |
+| **Dispatcher Worker** | `apps/dispatcher-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | Modular DCP Consumer, TaskResolver, gRPC Client, Jittered Retry, Stale Reconciler |
+| **Callback Worker** | `apps/callback-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | HMAC-SHA256 Signed Webhook Delivery with exponential backoff |
+| **Image Worker** | `apps/image-worker` | Implemented (Diffusers / MinIO) | Docker Compose / K8s `aip-multimodal` | Async task consumer for FLUX.1 / SDXL image generation |
+| **Video & LipSync Workers**| `apps/{video,lipsync}-worker` | Specification / Blueprint | Future GPU Nodes (`aip-video`) | AMQP schema and task envelope contracts defined in `packages/contracts` |
+| **Storage & Messaging** | MongoDB, Redis, RabbitMQ, MinIO | Production Implemented | Atlas (Mongo) / Docker / K8s `aip-infra` | Native priority queues, dead-letter exchanges, multi-namespace synchronized secrets |
 
 ---
 
-## 🏛️ Clean Architecture Monorepo Structure (`apps/` Layout)
+## Clean Architecture Monorepo Structure (`apps/` Layout)
 
 The codebase follows the enterprise monorepo workspace standard, consolidating all runnable microservices and workers cleanly under `apps/` with shared kernels in `packages/`:
 
@@ -94,7 +107,7 @@ ai_platform/
 
 ---
 
-## 🎯 13 AI Services & 21-Model Catalog (Local 4GB VRAM Baseline)
+## 13 AI Services & 21-Model Catalog (Local 4GB VRAM Baseline)
 
 In strict adherence to real local hardware capabilities (**4GB VRAM GPU baseline**), the platform standardizes on **7 core production models** optimized for low footprint and sub-millisecond response:
 
@@ -116,7 +129,7 @@ In strict adherence to real local hardware capabilities (**4GB VRAM GPU baseline
 
 ---
 
-## ⚡ Two Arterial Protocols: RabbitMQ & gRPC
+## Two Arterial Protocols: RabbitMQ & gRPC
 
 AIP Platform integrates two complementary arterial communication protocols to achieve high throughput, strict governance, and zero data loss:
 
@@ -175,7 +188,7 @@ flowchart TD
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 - **OS**: Linux (Ubuntu 22.04 LTS) or Windows WSL2 (Ubuntu 22.04)
@@ -242,18 +255,18 @@ make ui
 
 ---
 
-## 🖥️ Developer & Staff Web Portal
+## Developer & Staff Web Portal
 
 Access the developer console directly in your browser:
-- 📊 **Staff Dashboard**: [http://localhost:5173/staff/dashboard](http://localhost:5173/staff/dashboard) — Live GPU telemetry, active request counters, and credit balances.
-- 🧪 **API Playground & Sandboxes**: [http://localhost:5173/staff/apis](http://localhost:5173/staff/apis) — Test all 13 AI services directly in your browser.
-- 🔑 **API Key Management**: [http://localhost:5173/staff/keys](http://localhost:5173/staff/keys) — Generate and revoke secure Argon2id API keys.
-- 📈 **Usage & Cost Reports**: [http://localhost:5173/staff/report](http://localhost:5173/staff/report) — Historical invocation graphs and breakdown by model.
-- 🚦 **System Status Page**: [http://localhost:5173/status.html](http://localhost:5173/status.html) — Public cluster uptime and component health status.
+- **Staff Dashboard**: [http://localhost:5173/staff/dashboard](http://localhost:5173/staff/dashboard) — Live GPU telemetry, active request counters, and credit balances.
+- **API Playground & Sandboxes**: [http://localhost:5173/staff/apis](http://localhost:5173/staff/apis) — Test all 13 AI services directly in your browser.
+- **API Key Management**: [http://localhost:5173/staff/keys](http://localhost:5173/staff/keys) — Generate and revoke secure Argon2id API keys.
+- **Usage & Cost Reports**: [http://localhost:5173/staff/report](http://localhost:5173/staff/report) — Historical invocation graphs and breakdown by model.
+- **System Status Page**: [http://localhost:5173/status.html](http://localhost:5173/status.html) — Public cluster uptime and component health status.
 
 ---
 
-## 💻 API Integration Examples
+## API Integration Examples
 
 ### Mandatory Authentication Header
 All requests must include an active API key:
@@ -332,7 +345,7 @@ In case of errors, the Gateway guarantees a standardized SRS Error Envelope:
 
 ---
 
-## 🚢 Kubernetes & Helm Deployment
+## Kubernetes & Helm Deployment
 
 For enterprise container orchestration, use the included Helm charts in `deploy/`:
 
@@ -361,7 +374,7 @@ helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## Testing & Quality Assurance
 
 The codebase includes a comprehensive 112-test automated test suite covering all architecture tiers:
 ```bash

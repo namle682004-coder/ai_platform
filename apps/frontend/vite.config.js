@@ -33,7 +33,25 @@ function cleanUrlsPlugin() {
           return next();
         }
 
-        // 3. Common path rewrites
+        // 3. Enterprise FPT.AI-compliant dynamic project & API routing
+        if (pathname.match(/^\/(?:staff\/)?project\/[^/]+\/apis\/[^/]+/)) {
+          req.url = `/staff/service_detail.html${search}`;
+          return next();
+        }
+        if (pathname.match(/^\/(?:staff\/)?project\/[^/]+\/apis\/?$/)) {
+          req.url = `/staff/apis.html${search}`;
+          return next();
+        }
+        if (pathname.match(/^\/(?:staff\/)?project\/[^/]+\/?$/) || pathname.match(/^\/(?:staff\/)?project\/[^/]+\/dashboard\/?$/)) {
+          req.url = `/staff/dashboard.html${search}`;
+          return next();
+        }
+        if (pathname.startsWith('/staff/service-') || pathname.startsWith('/staff/service_')) {
+          req.url = `/staff/service_detail.html${search}`;
+          return next();
+        }
+
+        // 4. Common path rewrites
         if (pathname === '/login') {
           req.url = `/auth/login.html${search}`;
           return next();

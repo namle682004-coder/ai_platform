@@ -70,3 +70,17 @@ env:
   DEFAULT_RPM_LIMIT: "300"
   DEFAULT_TPM_LIMIT: "500000"
   DEFAULT_CONCURRENCY_LIMIT: "20"
+  LOG_LEVEL: "INFO"
+
+config:
+  mongoUri: "mongodb://mongodb.aip-infra.svc.cluster.local:27017/ai_platform"
+  redisUrl: "redis://redis.aip-infra.svc.cluster.local:6379/0"
+  rabbitmqUrl: "amqp://aip:aip_pass@rabbitmq.aip-infra.svc.cluster.local:5672/aip"
+  minioEndpoint: "http://minio.aip-infra.svc.cluster.local:9000"
+
+existingSecret: ""
+
+secrets:
+  jwtSecret: "aip-default-jwt-secret-change-in-production-min32"
+  masterPepper: "aip-default-master-pepper-change-in-production-min32"
+

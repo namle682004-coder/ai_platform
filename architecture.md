@@ -44,6 +44,19 @@ AIP is an **enterprise-grade, self-hosted AI inference middleware platform** tha
 - **No End-User Consumer UI:** Serves raw APIs; the web portal is strictly for developer testing and admin governance.
 - **No Automatic Fallback:** Does not silently route requests to alternative models unless explicitly defined in tenant alias policy.
 
+### 1.3 Implementation Status & Deployment Readiness Matrix
+
+| Tier / Component | Target Artifact | Implementation State | Deployment Target | Notes |
+| --- | --- | :---: | :---: | --- |
+| **Control Plane** | `apps/control-plane` | Production Implemented | Render PaaS / K8s `aip-control` | FastAPI, Argon2id, Quota Lua scripts, Active `/health/ready` probe, Model Aliases, Dynamic UUID Routing |
+| **Developer Console** | `apps/frontend` | Production Implemented | Render PaaS / Vite Static | Inter/Monochrome Enterprise UI, `/project/{id}/apis/{id}` routing, Sandbox playgrounds |
+| **Text & Audio Runtimes** | `apps/data-plane` | Production Implemented | Docker Compose / K8s `aip-text`, `aip-multimodal` | CTranslate2 MarianMT, Faster-Whisper, EasyOCR, PhoBERT, vi-VN-Neural (Dual HTTP + gRPC) |
+| **Dispatcher Worker** | `apps/dispatcher-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | Modular DCP Consumer, TaskResolver, gRPC Client, Jittered Retry, Stale Reconciler |
+| **Callback Worker** | `apps/callback-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | HMAC-SHA256 Signed Webhook Delivery with exponential backoff |
+| **Image Worker** | `apps/image-worker` | Implemented (Diffusers / MinIO) | Docker Compose / K8s `aip-multimodal` | Async task consumer for FLUX.1 / SDXL image generation |
+| **Video & LipSync Workers**| `apps/{video,lipsync}-worker` | Specification / Blueprint | Future GPU Nodes (`aip-video`) | AMQP schema and task envelope contracts defined in `packages/contracts` |
+| **Storage & Messaging** | MongoDB, Redis, RabbitMQ, MinIO | Production Implemented | Atlas (Mongo) / Docker / K8s `aip-infra` | Native priority queues, dead-letter exchanges, multi-namespace synchronized secrets |
+
 ---
 
 ## 2. Monorepo Organization & Component Mapping (`apps/` Layout)

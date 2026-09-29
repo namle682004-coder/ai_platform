@@ -2,13 +2,14 @@ import uuid
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends, Response
+from fastapi import FastAPI, Depends, Response, Request
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from common.errors import aip_unhandled_exception_handler
-from starlette.responses import JSONResponse
 
 from common.models.schemas import AIPErrorResponse, AIPError
 from src.configs.settings import gateway_settings
@@ -268,7 +269,12 @@ async def favicon():
 
 
 @app.get("/", tags=["Root"], summary="Control Plane Overview")
-async def root():
+async def root(request: Request):
+    if "text/html" in request.headers.get("accept", ""):
+        from src.api.web import FRONTEND_DIR
+        index_html = FRONTEND_DIR / "index.html"
+        if index_html.exists():
+            return FileResponse(index_html)
     return {
         "service": "AIP Platform - Control Plane",
         "version": "1.0.0",
@@ -334,3 +340,13 @@ app.include_router(schemas_router)
 from src.resources.routes import router as resources_router
 
 app.include_router(resources_router)
+
+# Web UI Portal & Static Assets (Staff Developer Portal & Admin Console)
+from src.api.web import router as web_router, FRONTEND_DIR
+
+assets_dir = FRONTEND_DIR / "public" / "assets"
+if assets_dir.exists():
+    app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+    app.mount("/static/assets", StaticFiles(directory=str(assets_dir)), name="static_assets")
+
+app.include_router(web_router)

@@ -33,11 +33,11 @@ jobs:
       - name: Configure kubeconfig
         id: kubeconfig
         env:
-          KUBE_CONFIG: ""  # Configure via GitHub Secrets when deploying to Kubernetes
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_STAGING || secrets.KUBE_CONFIG }}
         run: |
           mkdir -p $HOME/.kube
           if [ -z "$KUBE_CONFIG" ]; then
-            echo "::warning::KUBE_CONFIG_STAGING not set — skipping deploy."
+            echo "::warning::KUBE_CONFIG_STAGING not set in GitHub Secrets — skipping deploy."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "$KUBE_CONFIG" | base64 -d > $HOME/.kube/config
@@ -85,11 +85,11 @@ jobs:
       - name: Configure kubeconfig
         id: kubeconfig
         env:
-          KUBE_CONFIG: ""  # Configure via GitHub Secrets when deploying to Kubernetes
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_PRODUCTION || secrets.KUBE_CONFIG }}
         run: |
           mkdir -p $HOME/.kube
           if [ -z "$KUBE_CONFIG" ]; then
-            echo "::warning::KUBE_CONFIG_PRODUCTION not set — skipping deploy."
+            echo "::warning::KUBE_CONFIG_PRODUCTION not set in GitHub Secrets — skipping deploy."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "$KUBE_CONFIG" | base64 -d > $HOME/.kube/config

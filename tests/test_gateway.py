@@ -54,3 +54,28 @@ def test_admin_quota_management_api():
     list_res = client.get("/admin/v1/keys")
     assert list_res.status_code == 200
     assert len(list_res.json()["data"]) >= 2
+
+
+def test_staff_portal_endpoints():
+    # 1. Staff APIs Catalog HTML
+    res = client.get("/staff/apis")
+    assert res.status_code == 200
+    assert "text/html" in res.headers["content-type"]
+    assert "APIs Catalog" in res.text
+
+    # 2. Staff APIs JSON negotiation
+    res_json = client.get("/staff/apis", headers={"accept": "application/json"})
+    assert res_json.status_code == 200
+    assert "application/json" in res_json.headers["content-type"]
+    assert "apis" in res_json.json()
+
+    # 3. Staff Dashboard & Other Views
+    res_dash = client.get("/staff/dashboard")
+    assert res_dash.status_code == 200
+    assert "text/html" in res_dash.headers["content-type"]
+
+    # 4. Static assets
+    res_asset = client.get("/assets/css/admin.css")
+    assert res_asset.status_code == 200
+    assert "text/css" in res_asset.headers["content-type"]
+

@@ -55,7 +55,24 @@ jobs:
 
       - name: Unit & Integration Tests
         shell: bash
-        run: uv run pytest tests/test_gateway.py tests/test_security.py tests/test_usage_metering.py tests/test_metrics.py --tb=short
+        run: |
+          uv run pytest tests/test_gateway.py \
+                        tests/test_security.py \
+                        tests/test_srs_compliance.py \
+                        tests/test_srs_section5_contract.py \
+                        tests/test_vietnamese_id_recognition.py \
+                        tests/test_usage_metering.py \
+                        tests/test_metrics.py \
+                        --tb=short
+
+      - name: Validate & Lint Helm Charts
+        shell: bash
+        run: |
+          helm lint deploy/helm/aip-control
+          helm lint deploy/helm/aip-runtimes
+          helm lint deploy/helm/aip-infra
+          helm template test-control deploy/helm/aip-control
+          helm template test-runtimes deploy/helm/aip-runtimes
 
       - name: Export & verify OpenAPI
         shell: bash
