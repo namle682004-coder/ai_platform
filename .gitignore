@@ -2,7 +2,7 @@
 # AIP Enterprise Monorepo Master .gitignore
 # ==========================================
 
-# Python Bytecode & Caches
+# --- Python Bytecode, Caches & Builds ---
 __pycache__/
 *.py[cod]
 *$py.class
@@ -25,7 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environments
+# --- Virtual Environments ---
 .venv
 .venv/
 venv
@@ -34,7 +34,7 @@ ENV/
 env/
 .uv/
 
-# Testing & Coverage Caches
+# --- Testing & Coverage Caches ---
 .pytest_cache/
 .coverage
 .coverage.*
@@ -47,27 +47,62 @@ coverage.xml
 *.py,cover
 .hypothesis/
 
-# Environment Variables & Sensitive Secrets
+# --- Environment Variables, Tokens & Sensitive Secrets ---
+# (NEVER commit live secrets, credentials, or private keys)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 *.env
 *.pem
 *.key
 *.cert
 *.crt
 *.pfx
+*.p12
+*.jks
+*.gpg
+*.asc
+id_rsa
+id_rsa*
+id_ed25519
+id_ed25519*
+*credentials*.json
+*service-account*.json
+client_secret*.json
 
-# IDEs & System Files
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
+# --- Kubernetes & Cloud Infrastructure Credentials ---
+# (Prevent accidental leakage of local kubeconfigs and secret files)
+*kubeconfig*
+*.kubeconfig
+*.secret.local.yaml
+*secrets.local.yaml
+*-values.local.yaml
+values.local.yaml
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
 
-# Heavy Model Weights & Cache (Prevent pushing GBs to Git)
+# --- Local Docker & Container Overrides ---
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.*.local.yml
+
+# --- Database & Persistent Volume Local Storage ---
+# (Prevent pushing raw database files or GBs of volume data)
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+mongo_data/
+redis_data/
+minio_data/
+rabbitmq_data/
+postgres_data/
+data/
+
+# --- Heavy AI Model Weights & Cache ---
+# (Model weights are pulled dynamically at runtime from MinIO/HuggingFace)
 *.safetensors
 *.bin
 *.pt
@@ -80,25 +115,43 @@ models_cache/
 hf_cache/
 !packages/common/common/models/
 
-# Logs & Temporary Files
+# --- ML Tracking & Training Runs ---
+wandb/
+runs/
+checkpoints/
+.neptune/
+
+# --- Logs & Temporary Files ---
 *.log
 logs/
 tmp/
 scratch/
+*.swp
+*.swo
+*~
+*.bak
+*.orig
 
-# .NET SDK Build Artifacts
+# --- IDEs & OS System Files ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# --- .NET 8 SDK Build Artifacts ---
 [Bb]in/
 [Oo]bj/
 *.user
 *.userosscache
 *.suo
 
-# Frontend Node.js & Vite Artifacts
+# --- Frontend Node.js & Vite Artifacts ---
 node_modules/
 dist/
 .vite/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-
+pnpm-debug.log*
