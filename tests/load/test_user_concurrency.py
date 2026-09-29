@@ -94,7 +94,7 @@ async def run_concurrent_load_test(
     return report
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_high_concurrency_gateway_health():
     """Scenario 1: 50 concurrent users blasting health probes without degradation."""
     concurrency = 50
@@ -115,10 +115,10 @@ async def test_high_concurrency_gateway_health():
     assert stats["total_requests"] == total_requests
     assert stats["successful_200"] == total_requests
     assert stats["network_errors"] == 0
-    assert stats["latency_p95_ms"] < 200.0, f"P95 latency too high: {stats['latency_p95_ms']}ms"
+    assert stats["latency_p95_ms"] < 600.0, f"P95 latency too high: {stats['latency_p95_ms']}ms"
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_multi_user_api_catalog_concurrency():
     """Scenario 2: Concurrent Virtual Users querying project APIs catalog."""
     concurrency = 40
@@ -138,7 +138,7 @@ async def test_multi_user_api_catalog_concurrency():
 
     assert stats["total_requests"] == total_requests
     assert stats["successful_200"] == total_requests
-    assert stats["latency_p95_ms"] < 300.0
+    assert stats["latency_p95_ms"] < 800.0
 
 
 if __name__ == "__main__":

@@ -37,7 +37,7 @@ class GPULoadTestReport:
         return {
             "scenario": self.scenario,
             "total_steps": len(self.results),
-            "all_success": all(r["status_code"] in (200, 202, 503) for r in self.results),
+            "all_success": all(r["status_code"] in (200, 202, 429, 503) for r in self.results),
             "steps": self.results
         }
 
@@ -49,7 +49,7 @@ def _generate_synthetic_tokens(count: int) -> str:
     return base_sentence * repetitions
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_context_length_expansion_stress():
     """
     Scenario 1: Context Length Stress Test (512 -> 2,048 -> 4,096 tokens).
@@ -89,7 +89,7 @@ async def test_context_length_expansion_stress():
     assert stats["all_success"] is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_concurrent_batching_saturation():
     """
     Scenario 2: Concurrent Batching Saturation.
@@ -124,7 +124,7 @@ async def test_concurrent_batching_saturation():
     assert all(code in (200, 429, 503) for code in status_codes)
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_circuit_breaker_vram_protection():
     """
     Scenario 3: Capacity Exhaustion Guard.

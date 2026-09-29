@@ -3,7 +3,10 @@ from common.repositories.endpoint_repository import endpoint_repository, DEFAULT
 from fastapi.testclient import TestClient
 from src.main import app
 
-async def test_repo():
+def test_repo():
+    asyncio.run(_test_repo())
+
+async def _test_repo():
     print("=== 1. DEFAULT_ENDPOINTS UUID VERIFICATION ===")
     print(f"Total default endpoints: {len(DEFAULT_ENDPOINTS)}")
     for ep in DEFAULT_ENDPOINTS:
@@ -62,5 +65,5 @@ def test_http_routes():
 
 
 if __name__ == "__main__":
-    asyncio.run(test_repo())
+    test_repo()
     test_http_routes()
