@@ -1,5 +1,0 @@
-# Monorepo Core Packages for Render / Pip Deployments
--e packages/common
--e packages/contracts
--e packages/sdk
--e control-plane

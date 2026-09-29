@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Everwin AI Platform - Enterprise Control Plane",
+    "title": "AIP Platform - Enterprise Control Plane",
     "description": "Enterprise Multi-tenant AI Gateway & Inference Middleware Platform",
     "version": "1.0.0"
   },
@@ -6131,7 +6131,7 @@
           "text": {
             "type": "string",
             "title": "Text",
-            "example": "Xin chào thế giới, chào mừng đến với Everwin AI Platform."
+            "example": "Xin chào thế giới, chào mừng đến với AIP Platform."
           },
           "source_lang": {
             "type": "string",

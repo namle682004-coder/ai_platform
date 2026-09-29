@@ -105,8 +105,12 @@ async def test_srs_2_2_job_concurrency_quota_enforcement():
 @pytest.mark.anyio
 async def test_srs_2_3_video_worker_execution():
     """Verify Video Worker pipeline execution and artifact generation."""
-    import importlib
-    video_mod = importlib.import_module("workers.gpu-workloads.video-worker.worker")
+    import importlib.util
+    from pathlib import Path
+    worker_path = Path(__file__).resolve().parent.parent / "apps" / "video-worker" / "worker.py"
+    spec = importlib.util.spec_from_file_location("video_worker", worker_path)
+    video_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(video_mod)
     process_video_job = video_mod.process_video_job
 
     with patch.object(video_mod, "update_job_status", new_callable=AsyncMock) as mock_update:
@@ -127,8 +131,12 @@ async def test_srs_2_3_video_worker_execution():
 @pytest.mark.anyio
 async def test_srs_2_3_lipsync_worker_execution():
     """Verify LipSync Worker pipeline execution and artifact generation."""
-    import importlib
-    lipsync_mod = importlib.import_module("workers.gpu-workloads.lipsync-worker.worker")
+    import importlib.util
+    from pathlib import Path
+    worker_path = Path(__file__).resolve().parent.parent / "apps" / "lipsync-worker" / "worker.py"
+    spec = importlib.util.spec_from_file_location("lipsync_worker", worker_path)
+    lipsync_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lipsync_mod)
     process_lipsync_job = lipsync_mod.process_lipsync_job
 
     with patch.object(lipsync_mod, "update_job_status", new_callable=AsyncMock) as mock_update:

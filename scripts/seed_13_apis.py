@@ -78,7 +78,7 @@ NEW_ENDPOINTS = [
                 {"name": "file", "type": "file", "required": True, "desc": "File âm thanh định dạng WAV/MP3/FLAC"},
                 {"name": "model", "type": "string", "required": False, "desc": "Tên mô hình (mặc định: PhoWhisper-STT-v1)"}
             ],
-            "sample_response": '{\n  "text": "Xin chào Everwin AI Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT.",\n  "language": "vi",\n  "duration": 3.42,\n  "confidence": 0.985\n}'
+            "sample_response": '{\n  "text": "Xin chào AIP Platform! Đây là kết quả nhận dạng giọng nói PhoWhisper STT.",\n  "language": "vi",\n  "duration": 3.42,\n  "confidence": 0.985\n}'
         },
         "pricing": {
             "free_quota": "10,000 blocks miễn phí mỗi tháng",
@@ -458,7 +458,7 @@ NEW_ENDPOINTS = [
                 {"name": "document", "type": "string", "required": True, "desc": "Nội dung văn bản dài cần tóm tắt"},
                 {"name": "ratio", "type": "number", "required": False, "desc": "Tỷ lệ tóm tắt (mặc định: 0.2)"}
             ],
-            "sample_response": '{\n  "status": "success",\n  "summary": "Everwin AI Platform ra mắt bộ 13 API dịch vụ trí tuệ nhân tạo thế hệ mới tích hợp sâu rộng..."\n}'
+            "sample_response": '{\n  "status": "success",\n  "summary": "AIP Platform ra mắt bộ 13 API dịch vụ trí tuệ nhân tạo thế hệ mới tích hợp sâu rộng..."\n}'
         },
         "pricing": {
             "free_quota": "10,000 requests miễn phí",
@@ -497,7 +497,7 @@ NEW_ENDPOINTS = [
                 {"name": "source_lang", "type": "string", "required": True, "desc": "vi hoặc en"},
                 {"name": "target_lang", "type": "string", "required": True, "desc": "en hoặc vi"}
             ],
-            "sample_response": '{\n  "status": "success",\n  "translated_text": "Welcome to Everwin AI Platform."\n}'
+            "sample_response": '{\n  "status": "success",\n  "translated_text": "Welcome to AIP Platform."\n}'
         },
         "pricing": {
             "free_quota": "100,000 ký tự miễn phí",

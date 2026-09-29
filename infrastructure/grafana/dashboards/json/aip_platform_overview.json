@@ -147,7 +147,7 @@
   "time": { "from": "now-30m", "to": "now" },
   "timepicker": { "refresh_intervals": ["5s", "10s", "30s", "1m"] },
   "timezone": "browser",
-  "title": "Everwin AIP — Enterprise Platform Overview",
+  "title": "AIP Platform — Enterprise Platform Overview",
   "uid": "aip-platform-overview",
   "version": 1
 }

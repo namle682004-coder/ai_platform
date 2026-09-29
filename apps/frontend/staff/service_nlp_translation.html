@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIP Platform - Translation API & Playground</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png">
+    
+    <!-- Professional Google Fonts: Plus Jakarta Sans & Inter & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --aip-blue: #0f4c81;
+            --aip-cyan: #0284c7;
+            --aip-cyan-hover: #0369a1;
+            --aip-orange: #f97316;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-sub: #64748b;
+            --border-color: #e2e8f0;
+            --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background: var(--bg-page); 
+            color: var(--text-dark); 
+            font-family: var(--font-body); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        .top-header { 
+            background: var(--aip-blue); 
+            height: 50px; 
+            padding: 0 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            color: #fff; 
+            font-size: 13px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { 
+            font-family: var(--font-heading); 
+            font-size: 16.5px; 
+            font-weight: 800; 
+            color: #fff; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            letter-spacing: -0.01em;
+        }
+        .project-selector { 
+            background: rgba(255, 255, 255, 0.15); 
+            border-radius: 6px; 
+            padding: 5px 12px; 
+            font-size: 12px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: background 0.15s;
+        }
+        .project-selector:hover { background: rgba(255, 255, 255, 0.22); }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+
+        .layout-body { display: flex; flex: 1; }
+
+        .sidebar {
+            width: 220px;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            padding: 20px 0;
+            position: sticky;
+            top: 50px;
+            height: calc(100vh - 50px);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        .nav-section { margin-bottom: 24px; }
+        .section-title { 
+            font-size: 11px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            color: #94a3b8; 
+            padding: 0 20px 8px 20px; 
+            letter-spacing: 0.6px; 
+        }
+        .nav-list { list-style: none; }
+        .nav-item a { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 10px 20px; 
+            font-size: 13.5px; 
+            font-weight: 500; 
+            color: #475569; 
+            text-decoration: none; 
+            transition: all 0.15s ease; 
+            border-left: 3px solid transparent; 
+        }
+        .nav-item.active a, .nav-item a:hover { 
+            background: #f1f5f9; 
+            color: var(--aip-cyan); 
+            border-left-color: var(--aip-cyan); 
+            font-weight: 600;
+        }
+
+        .main-content { flex: 1; padding: 24px 32px; background: #f8fafc; }
+
+        .notice-bar { 
+            background: #1e3a8a; 
+            color: #fff; 
+            padding: 11px 18px; 
+            border-radius: 8px; 
+            font-size: 12.5px; 
+            font-weight: 500; 
+            margin-bottom: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            box-shadow: 0 2px 6px rgba(30, 58, 138, 0.15);
+        }
+
+        .service-header-card { 
+            background: #ffffff; 
+            border-radius: 10px; 
+            border: 1px solid var(--border-color); 
+            padding: 22px 26px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .service-title-box { display: flex; align-items: center; gap: 16px; }
+        .service-icon-lg { 
+            width: 52px; 
+            height: 52px; 
+            border-radius: 12px; 
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+            color: #fff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+        }
+        .service-name { 
+            font-family: var(--font-heading); 
+            font-size: 21px; 
+            font-weight: 800; 
+            color: #0f172a; 
+            letter-spacing: -0.02em;
+        }
+
+        .btn-status-toggle { 
+            background: #007bff; 
+            color: #ffffff; 
+            border: none; 
+            padding: 7px 18px; 
+            border-radius: 6px; 
+            font-weight: 700; 
+            font-size: 12px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            letter-spacing: 0.3px;
+            transition: all 0.15s; 
+        }
+        .btn-status-toggle:hover { background: #0056b3; }
+        .btn-status-toggle.disabled { background: #64748b; color: #ffffff; }
+        .btn-status-toggle.disabled:hover { background: #475569; }
+
+        .btn-buy { 
+            background: #0f172a; 
+            color: #ffffff; 
+            border: none; 
+            padding: 7px 18px; 
+            border-radius: 6px; 
+            font-weight: 700; 
+            font-size: 12px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            letter-spacing: 0.3px;
+            margin-left: 10px; 
+            transition: background 0.15s;
+        }
+        .btn-buy:hover { background: #1e293b; }
+        .free-remain { font-size: 12.5px; font-weight: 600; color: var(--text-sub); margin-left: auto; }
+
+        .service-nav-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; gap: 8px; }
+        .tab-btn { 
+            padding: 10px 22px; 
+            font-family: var(--font-heading);
+            font-size: 13px; 
+            font-weight: 700; 
+            border: none; 
+            background: transparent; 
+            color: #64748b; 
+            cursor: pointer; 
+            position: relative; 
+            border-bottom: 3px solid transparent; 
+            margin-bottom: -2px; 
+            transition: all 0.2s; 
+            letter-spacing: 0.2px;
+        }
+        .tab-btn:hover { color: var(--aip-cyan); }
+        .tab-btn.active { 
+            color: var(--aip-cyan); 
+            border-bottom-color: var(--aip-cyan); 
+            background: #ffffff; 
+            border-radius: 6px 6px 0 0; 
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .service-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 24px; }
+        .sandbox-left { 
+            background: #ffffff; 
+            border-radius: 10px; 
+            border: 1px solid var(--border-color); 
+            padding: 24px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 18px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+
+        /* Professional Underline Input Style */
+        .translation-underline-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px 2px;
+            border: none;
+            border-bottom: 2px solid #cbd5e1;
+            border-radius: 0;
+            font-size: 15px;
+            line-height: 1.7;
+            background: transparent;
+            color: #0f172a;
+            font-family: var(--font-body);
+            font-weight: 400;
+            outline: none;
+            resize: vertical;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .translation-underline-input:focus {
+            border-bottom-color: #0284c7;
+            box-shadow: 0 1px 0 0 #0284c7;
+        }
+        .translation-underline-input::placeholder {
+            color: #94a3b8;
+            font-size: 14.5px;
+            font-weight: 400;
+        }
+
+        /* Language Pair Switcher Bar */
+        .lang-pair-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .lang-select-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .lang-select-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .lang-dropdown {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-family: var(--font-heading);
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            outline: none;
+            cursor: pointer;
+            padding: 2px 0;
+        }
+        .btn-swap-lang {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: var(--aip-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .btn-swap-lang:hover {
+            background: #f0fdfa;
+            border-color: var(--aip-cyan);
+            transform: rotate(180deg);
+        }
+
+        /* Preset chip sample buttons */
+        .sample-chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .sample-chip {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sample-chip:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .btn-run-inference {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #fff;
+            border: none;
+            padding: 13px;
+            border-radius: 8px;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+        }
+        .btn-run-inference:hover { 
+            background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+            transform: translateY(-1px);
+        }
+
+        /* ==================== RESULTS PANEL STYLES ==================== */
+        .sandbox-right { display: flex; flex-direction: column; gap: 18px; }
+        .playground-results-card { 
+            background: #ffffff; 
+            border-radius: 10px; 
+            border: 1px solid var(--border-color); 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 420px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
+        }
+        
+        .result-tabs-header { 
+            display: flex; 
+            background: #0f172a; 
+            color: #fff; 
+            padding: 0 16px; 
+            border-bottom: 1px solid #1e293b; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .result-tab-btns { display: flex; gap: 4px; }
+        .res-tab-btn { 
+            background: transparent; 
+            border: none; 
+            color: #94a3b8; 
+            padding: 12px 16px; 
+            font-family: var(--font-heading);
+            font-size: 12px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            border-bottom: 3px solid transparent; 
+            transition: all 0.2s; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            letter-spacing: 0.3px;
+        }
+        .res-tab-btn:hover { color: #38bdf8; }
+        .res-tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+        .result-tab-panel { display: none; padding: 20px; flex: 1; }
+        .result-tab-panel.active { display: block; }
+
+        /* Translation Visual Result Card */
+        .trans-header-badge {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .trans-lang-pair-title {
+            font-family: var(--font-heading);
+            font-size: 15px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.3px;
+        }
+        .trans-output-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 18px 20px;
+            font-size: 15px;
+            line-height: 1.75;
+            color: #0f172a;
+            min-height: 140px;
+            word-break: break-word;
+            position: relative;
+        }
+        .trans-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .trans-meta-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .trans-meta-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .trans-meta-val {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 2px;
+            font-family: var(--font-heading);
+        }
+
+        .json-viewer {
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 16px;
+            border-radius: 8px;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .integration-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 20px 24px; }
+        .lang-options { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #334155; }
+        .btn-copy-blue { 
+            margin-left: auto; 
+            background: #007bff; 
+            color: #fff; 
+            border: none; 
+            padding: 6px 14px; 
+            border-radius: 4px; 
+            font-size: 11.5px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: background 0.15s;
+        }
+        .btn-copy-blue:hover { background: #0056b3; }
+        .code-snippet-card { 
+            background: #f8fafc; 
+            color: #0f172a; 
+            border: 1px solid #e2e8f0; 
+            padding: 14px; 
+            border-radius: 6px; 
+            font-family: 'Fira Code', monospace; 
+            font-size: 12px; 
+            line-height: 1.6; 
+            word-break: break-all; 
+            white-space: pre-wrap; 
+        }
+
+        .doc-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 28px; margin-bottom: 24px; }
+        .doc-section-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 14px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+        .doc-text { font-size: 14px; color: #334155; line-height: 1.7; margin-bottom: 16px; }
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+        .doc-table th, .doc-table td { border: 1px solid var(--border-color); padding: 12px 14px; text-align: left; }
+        .doc-table th { background: #f8fafc; font-weight: 700; color: #1e293b; }
+        .badge-req { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-opt { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .url-box { background: #1e293b; color: #38bdf8; padding: 12px 16px; border-radius: 6px; font-family: 'Fira Code', monospace; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 16px; }
+
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 6px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; }
+        .confirm-header { background: #cbd5e1; padding: 14px 20px; font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #1e293b; }
+        .confirm-body { padding: 20px; font-size: 13.5px; color: #334155; }
+        .confirm-footer { padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; }
+        .btn-confirm-ok { background: #007bff; color: #fff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; border-radius: 4px; }
+    </style>
+    <script src="/assets/js/staff_layout.js"></script>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> AIP Platform</a>
+            <div class="project-selector" onclick="location.href='/staff/dashboard'"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Default Project</span></div>
+        </div>
+        <div class="header-right">
+            <div class="user-menu">
+                <span>Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout-body">
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="section-title">Console</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="section-title">Payment & Support</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/payment"><i class="fa-solid fa-credit-card" style="width: 16px; text-align: center;"></i> Payment history</a></li>
+                    <li class="nav-item"><a href="/staff/contact"><i class="fa-solid fa-headset" style="width: 16px; text-align: center;"></i> Contact us</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="notice-bar">
+                <span>⚡ Bạn đang truy cập môi trường Sandbox API để phát triển và kiểm thử tích hợp local.</span>
+            </div>
+
+            <!-- SERVICE TITLE CARD -->
+            <div class="service-header-card">
+                <div class="service-title-box" style="display:flex; align-items:center; width: 100%;">
+                    <a href="/staff/apis" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:14px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to APIs Catalog">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div class="service-icon-lg" id="svc-icon-box" style="margin-right:14px;"><i class="fa-solid fa-language"></i></div>
+                    <div class="service-name" id="svc-title-text" style="margin-right:14px;">Translation API</div>
+                    <button class="btn-status-toggle" id="svc-status-toggle-btn" onclick="handleServiceHeaderToggleClick()" style="margin-right:10px;">ENABLE</button>
+                    <button class="btn-buy" onclick="switchTab('PRICING')">BUY</button>
+                    <span class="free-remain" id="svc-paid-balance-text" style="margin-left:auto;">Remaining: 0 characters</span>
+                </div>
+            </div>
+
+            <!-- TAB MENU -->
+            <div class="service-nav-tabs">
+                <button class="tab-btn active" id="tab-btn-OVERVIEW" onclick="switchTab('OVERVIEW')">OVERVIEW</button>
+                <button class="tab-btn" id="tab-btn-SERVICE" onclick="switchTab('SERVICE')">SERVICE (PLAYGROUND)</button>
+                <button class="tab-btn" id="tab-btn-DOCUMENT" onclick="switchTab('DOCUMENT')">DOCUMENT</button>
+                <button class="tab-btn" id="tab-btn-PRICING" onclick="switchTab('PRICING')">PRICING</button>
+            </div>
+
+            <!-- OVERVIEW TAB PANEL -->
+            <div class="tab-panel active" id="panel-OVERVIEW">
+                <div class="doc-card">
+                    <div class="doc-section-title">About Neural Translation API</div>
+                    <div class="doc-text">
+                        Dịch vụ AI Neural Machine Translation cung cấp khả năng chuyển đổi ngôn ngữ tốc độ cao, giữ nguyên ngữ cảnh chuyên ngành, văn phong tự nhiên. Hệ thống được tối ưu hóa cho cặp ngôn ngữ Tiếng Việt ↔ Tiếng Anh, cùng các cặp ngôn ngữ quốc tế phổ biến (Nhật, Hàn, Trung, Pháp, Đức).
+                    </div>
+                    <div class="doc-section-title" style="margin-top:24px;">Key Features</div>
+                    <ul style="margin-left:20px; font-size:13.5px; color:#475569; line-height:1.8;">
+                        <li><strong>Dịch thuật ngữ cảnh sâu:</strong> Áp dụng mô hình Neural Transformer chuyên trách giữ trọn cấu trúc câu.</li>
+                        <li><strong>Độ trễ cực thấp:</strong> Tối ưu CTranslate2 int8 inference tăng tốc độ xử lý gấp 4 lần.</li>
+                        <li><strong>Đa dạng cặp ngôn ngữ:</strong> Hỗ trợ dịch hai chiều Tiếng Việt, Tiếng Anh, Tiếng Nhật, Tiếng Hàn, Tiếng Trung...</li>
+                        <li><strong>Tích hợp dễ dàng:</strong> REST API chuẩn OpenAPI, SDK Python/cURL/PHP hỗ trợ sẵn.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- PLAYGROUND TAB PANEL -->
+            <div class="tab-panel" id="panel-SERVICE">
+                <div id="playground-disabled-message" style="display: none; padding: 24px 0; color: #475569; font-size: 14.5px; font-weight: 500;">
+                    You need to enable this api to run demo
+                </div>
+                
+                <div id="playground-interactive-container" class="service-grid">
+                    <!-- LEFT: UNDERLINE TEXTAREA & LANG SELECTOR -->
+                    <div class="sandbox-left">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                            <span style="font-size:14.5px; font-weight:700; color:#0f172a; font-family:var(--font-heading);">VĂN BẢN GỐC CẦN DỊCH</span>
+                            <span style="font-size:11.5px; color:#64748b; font-weight:600;" id="text-counter-info">0 ký tự | 0 từ</span>
+                        </div>
+
+                        <!-- Language Pair Selector Bar -->
+                        <div class="lang-pair-bar">
+                            <div class="lang-select-box">
+                                <span class="lang-select-label">Ngôn ngữ nguồn</span>
+                                <select class="lang-dropdown" id="sel-source-lang" onchange="updateSnippetCode()">
+                                    <option value="vi" selected>Tiếng Việt (VI)</option>
+                                    <option value="en">Tiếng Anh (EN)</option>
+                                    <option value="ja">Tiếng Nhật (JA)</option>
+                                    <option value="ko">Tiếng Hàn (KO)</option>
+                                    <option value="zh">Tiếng Trung (ZH)</option>
+                                    <option value="fr">Tiếng Pháp (FR)</option>
+                                    <option value="de">Tiếng Đức (DE)</option>
+                                </select>
+                            </div>
+
+                            <button type="button" class="btn-swap-lang" onclick="swapLanguages()" title="Đảo chiều ngôn ngữ">
+                                <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                            </button>
+
+                            <div class="lang-select-box">
+                                <span class="lang-select-label">Ngôn ngữ đích</span>
+                                <select class="lang-dropdown" id="sel-target-lang" onchange="updateSnippetCode()">
+                                    <option value="en" selected>Tiếng Anh (EN)</option>
+                                    <option value="vi">Tiếng Việt (VI)</option>
+                                    <option value="ja">Tiếng Nhật (JA)</option>
+                                    <option value="ko">Tiếng Hàn (KO)</option>
+                                    <option value="zh">Tiếng Trung (ZH)</option>
+                                    <option value="fr">Tiếng Pháp (FR)</option>
+                                    <option value="de">Tiếng Đức (DE)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preset sample text chips -->
+                        <div>
+                            <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Văn bản mẫu thử nghiệm nhanh:</div>
+                            <div class="sample-chips-container">
+                                <span class="sample-chip" onclick="loadSampleText('partner')"><i class="fa-solid fa-handshake"></i> Hợp tác kinh doanh (VI ➔ EN)</span>
+                                <span class="sample-chip" onclick="loadSampleText('tech')"><i class="fa-solid fa-microchip"></i> Giới thiệu công nghệ (EN ➔ VI)</span>
+                                <span class="sample-chip" onclick="loadSampleText('greeting')"><i class="fa-solid fa-comment-dots"></i> Lời chào thương mại (VI ➔ JA)</span>
+                                <span class="sample-chip" onclick="clearInputText()"><i class="fa-solid fa-eraser"></i> Xóa trắng</span>
+                            </div>
+                        </div>
+
+                        <!-- UNDERLINE TEXTAREA (NO BORDER, SPACIOUS) -->
+                        <div class="form-group" style="margin-bottom: 8px;">
+                            <textarea 
+                                id="trans-text-input" 
+                                class="translation-underline-input" 
+                                placeholder="Nhập hoặc dán đoạn văn bản cần dịch tại đây..." 
+                                oninput="updateTextCounter()"></textarea>
+                        </div>
+
+                        <button type="button" class="btn-run-inference" id="btn-run-inference" onclick="runTranslationPlayground()">
+                            <i class="fa-solid fa-language"></i> DỊCH VĂN BẢN (RUN TRANSLATION)
+                        </button>
+                    </div>
+
+                    <!-- RIGHT: 2-TAB RESULTS (VISUAL TRANSLATION & RAW JSON) -->
+                    <div class="sandbox-right">
+                        <div class="playground-results-card">
+                            <div class="result-tabs-header">
+                                <div class="result-tab-btns">
+                                    <button class="res-tab-btn active" id="btn-tab-visual" onclick="switchResultTab('visual')">
+                                        <i class="fa-solid fa-file-lines"></i> KẾT QUẢ DỊCH THUẬT
+                                    </button>
+                                    <button class="res-tab-btn" id="btn-tab-json" onclick="switchResultTab('json')">
+                                        <i class="fa-solid fa-code"></i> RAW JSON
+                                    </button>
+                                </div>
+                                <span style="background:rgba(255,255,255,0.15); padding:3px 10px; border-radius:4px; font-size:11px; font-weight:700;" id="response-status-badge">READY</span>
+                            </div>
+
+                            <!-- TAB 1: VISUAL TRANSLATED TEXT -->
+                            <div class="result-tab-panel active" id="panel-result-visual">
+                                <!-- Empty State -->
+                                <div id="visual-empty-placeholder" style="text-align: center; padding: 55px 20px; color: #64748b;">
+                                    <i class="fa-solid fa-language" style="font-size: 46px; color: #cbd5e1; margin-bottom: 14px;"></i>
+                                    <div style="font-weight: 700; font-size: 14.5px; color: #334155; font-family: var(--font-heading);">Chưa có bản dịch</div>
+                                    <div style="font-size: 12.5px; margin-top: 4px; color: #64748b;">Nhập văn bản nguồn và bấm "Dịch văn bản" để xem kết quả.</div>
+                                </div>
+
+                                <!-- Visual Result Content -->
+                                <div id="visual-content" style="display: none;">
+                                    <!-- Translation Header Badge -->
+                                    <div class="trans-header-badge">
+                                        <div class="trans-lang-pair-title">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                            <span id="res-pair-title">TIẾNG VIỆT ➔ TIẾNG ANH</span>
+                                        </div>
+                                        <button class="btn-copy-blue" onclick="copyTranslatedText()" style="background:#ffffff; color:#0f172a; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+                                            <i class="fa-solid fa-copy"></i> SAO CHÉP
+                                        </button>
+                                    </div>
+
+                                    <!-- Output Box -->
+                                    <div class="trans-output-box" id="res-translated-text">
+                                        Waiting for translation...
+                                    </div>
+
+                                    <!-- Metadata Metrics Grid -->
+                                    <div class="trans-meta-grid">
+                                        <div class="trans-meta-item">
+                                            <div class="trans-meta-label">Số ký tự bản dịch</div>
+                                            <div class="trans-meta-val" id="res-meta-chars">0</div>
+                                        </div>
+                                        <div class="trans-meta-item">
+                                            <div class="trans-meta-label">Số từ bản dịch</div>
+                                            <div class="trans-meta-val" id="res-meta-words">0</div>
+                                        </div>
+                                        <div class="trans-meta-item">
+                                            <div class="trans-meta-label">Độ trễ suy luận</div>
+                                            <div class="trans-meta-val" id="res-meta-latency" style="color: #10b981;">0 ms</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: RAW JSON RESPONSE -->
+                            <div class="result-tab-panel" id="panel-result-json">
+                                <div class="json-viewer" id="json-viewer-box">{ "status": "Waiting for execution..." }</div>
+                            </div>
+                        </div>
+
+                        <!-- API Key selector -->
+                        <div class="integration-card" style="padding: 18px 24px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                                <span style="font-size: 13px; font-weight: 700; color: #0f172a; font-family: var(--font-heading);">API KEY SELECTOR</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size:12px; font-weight:700; color:#475569;">CHỌN KHÓA API DÙNG CHO CODE TÍCH HỢP</label>
+                                <select class="select-input" id="api-key-selector" onchange="updateSnippetCode()" style="margin-top:6px; cursor:pointer; width:100%; padding:6px 0; border:none; border-bottom:1.5px solid #cbd5e1; outline:none; background:transparent; font-size:13.5px; font-weight:500;">
+                                    <option value="aip_live_valid_test_key_12345">Sandbox Default (aip_live_test...)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Integration snippet codes -->
+                        <div class="integration-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                                <span style="font-size: 13px; font-weight: 700; color: #0f172a; font-family: var(--font-heading);">MÃ NGUỒN TÍCH HỢP (TRANSLATION API)</span>
+                                <div class="lang-options" style="margin-bottom:0;">
+                                    <label><input type="radio" name="lang" value="curl" checked onchange="switchSnippetLang('curl')"> cURL</label>
+                                    <label><input type="radio" name="lang" value="python" onchange="switchSnippetLang('python')"> Python</label>
+                                    <label><input type="radio" name="lang" value="php" onchange="switchSnippetLang('php')"> PHP</label>
+                                    <button class="btn-copy-blue" onclick="copySnippetText()"><i class="fa-solid fa-copy"></i> COPY</button>
+                                </div>
+                            </div>
+                            <div class="code-snippet-card" id="snippet-code-box">Loading integration snippet...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCUMENT TAB PANEL -->
+            <div class="tab-panel" id="panel-DOCUMENT">
+                <div class="doc-card">
+                    <div class="doc-section-title">API Endpoint</div>
+                    <div class="url-box" id="doc-endpoint-url">POST https://ai-platform-6p72.onrender.com/v1/translations</div>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Request Headers</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Header</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>Authorization</code></td><td>string</td><td><span class="badge-req">REQUIRED</span></td><td>Bearer &lt;YOUR_API_KEY&gt;</td></tr>
+                            <tr><td><code>Content-Type</code></td><td>string</td><td><span class="badge-req">REQUIRED</span></td><td>application/json</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Request Parameters (JSON Body)</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>text</code></td><td>string</td><td><span class="badge-req">REQUIRED</span></td><td>Đoạn văn bản nguồn cần dịch thuật</td></tr>
+                            <tr><td><code>source_lang</code></td><td>string</td><td><span class="badge-opt">OPTIONAL</span></td><td>Mã ngôn ngữ nguồn (vi, en, ja, ko, zh...). Mặc định: <code>vi</code></td></tr>
+                            <tr><td><code>target_lang</code></td><td>string</td><td><span class="badge-opt">OPTIONAL</span></td><td>Mã ngôn ngữ đích (en, vi, ja, ko, zh...). Mặc định: <code>en</code></td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="doc-section-title" style="margin-top:24px;">Sample Response</div>
+                    <div class="code-snippet-card">{
+  "id": "trans_8a1b2c3d",
+  "object": "nlp.translation",
+  "status": "success",
+  "translated_text": "Welcome to AIP Platform.",
+  "source_lang": "vi",
+  "target_lang": "en",
+  "data": {
+    "translated_text": "Welcome to AIP Platform.",
+    "source_language": "vi",
+    "target_language": "en"
+  },
+  "usage": {
+    "character_count": 35,
+    "word_count": 6
+  }
+}</div>
+                </div>
+            </div>
+
+            <!-- PRICING TAB PANEL -->
+            <div class="tab-panel" id="panel-PRICING">
+                <div class="doc-card">
+                    <div class="doc-section-title">Bảng giá dịch vụ Translation API</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Hạn mức</th><th>Đơn giá</th><th>Chu kỳ</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Miễn phí mỗi tháng</strong></td>
+                                <td><span style="color:#10b981; font-weight:700;">FREE</span></td>
+                                <td>100,000 ký tự / tháng</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Pay-as-you-go</strong></td>
+                                <td>1 VNĐ / ký tự</td>
+                                <td>Tự động trừ vào số dư ví tài khoản</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM TOGGLE API -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="confirm-box">
+            <div class="confirm-header">Xác nhận thay đổi trạng thái API</div>
+            <div class="confirm-body" id="modal-confirm-body">Bạn có muốn thay đổi trạng thái kích hoạt API này không?</div>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeConfirmModal()">HỦY BỎ</button>
+                <button class="btn-confirm-ok" onclick="onConfirmEnableClick()">XÁC NHẬN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSvcName = "Translation API";
+        let currentSvcData = null;
+        let currentSnippetLang = "curl";
+
+        const LANG_NAMES = {
+            vi: "Tiếng Việt",
+            en: "Tiếng Anh",
+            ja: "Tiếng Nhật",
+            ko: "Tiếng Hàn",
+            zh: "Tiếng Trung",
+            fr: "Tiếng Pháp",
+            de: "Tiếng Đức"
+        };
+
+        const sampleTexts = {
+            partner: {
+                src: "vi",
+                tgt: "en",
+                text: "Kính gửi quý khách hàng, chúng tôi rất vui mừng được hợp tác cùng quý doanh nghiệp trong việc phát triển và ứng dụng giải pháp trí tuệ nhân tạo toàn diện."
+            },
+            tech: {
+                src: "en",
+                tgt: "vi",
+                text: "The AIP Platform provides enterprise-grade high-throughput neural model inference with minimal latency and robust governance."
+            },
+            greeting: {
+                src: "vi",
+                tgt: "ja",
+                text: "Chúc công ty của bạn ngày càng phát triển và gặt hái được nhiều thành công mới trong tương lai!"
+            }
+        };
+
+        function loadSampleText(key) {
+            const item = sampleTexts[key];
+            if (item) {
+                document.getElementById('sel-source-lang').value = item.src;
+                document.getElementById('sel-target-lang').value = item.tgt;
+                document.getElementById('trans-text-input').value = item.text;
+                updateTextCounter();
+                updateSnippetCode();
+            }
+        }
+
+        function clearInputText() {
+            document.getElementById('trans-text-input').value = '';
+            updateTextCounter();
+            document.getElementById('visual-empty-placeholder').style.display = 'block';
+            document.getElementById('visual-content').style.display = 'none';
+            document.getElementById('json-viewer-box').innerText = '{ "status": "Waiting for execution..." }';
+            document.getElementById('response-status-badge').innerText = 'READY';
+            document.getElementById('response-status-badge').style.background = 'rgba(255,255,255,0.15)';
+        }
+
+        function swapLanguages() {
+            const srcEl = document.getElementById('sel-source-lang');
+            const tgtEl = document.getElementById('sel-target-lang');
+            const tmp = srcEl.value;
+            srcEl.value = tgtEl.value;
+            tgtEl.value = tmp;
+
+            const inputEl = document.getElementById('trans-text-input');
+            const resEl = document.getElementById('res-translated-text');
+            if (resEl && resEl.innerText && resEl.innerText !== 'Waiting for translation...' && document.getElementById('visual-content').style.display !== 'none') {
+                inputEl.value = resEl.innerText;
+                updateTextCounter();
+            }
+            updateSnippetCode();
+        }
+
+        function updateTextCounter() {
+            const text = document.getElementById('trans-text-input').value || '';
+            const charCount = text.length;
+            const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+            document.getElementById('text-counter-info').innerText = `${charCount} ký tự | ${wordCount} từ`;
+        }
+
+        function switchResultTab(tabKey) {
+            document.getElementById('btn-tab-visual').classList.toggle('active', tabKey === 'visual');
+            document.getElementById('btn-tab-json').classList.toggle('active', tabKey === 'json');
+            document.getElementById('panel-result-visual').classList.toggle('active', tabKey === 'visual');
+            document.getElementById('panel-result-json').classList.toggle('active', tabKey === 'json');
+        }
+
+        async function initPage() {
+            const catalog = await fetchApiCatalogFromBackend();
+            currentSvcData = catalog.find(item => 
+                item.name.toLowerCase().includes('translat') || 
+                (item.endpoint_id && item.endpoint_id.includes('translat'))
+            ) || {
+                name: "Translation API",
+                endpoint_id: "/v1/translations",
+                unit: "character"
+            };
+
+            currentSvcName = currentSvcData.name;
+            document.getElementById('svc-title-text').innerText = currentSvcName;
+
+            // Pre-fill initial sample
+            loadSampleText('partner');
+
+            await syncServiceUIState();
+        }
+
+        function updateToggleButtonUI(isEnabled) {
+            const btn = document.getElementById('svc-status-toggle-btn');
+            const freeRemainEl = document.getElementById('svc-paid-balance-text');
+            if (btn) {
+                if (!isEnabled) {
+                    btn.innerText = 'ENABLE';
+                    btn.classList.remove('disabled');
+                    btn.style.background = '#007bff';
+                    if (freeRemainEl) freeRemainEl.style.display = 'none';
+                } else {
+                    btn.innerText = 'DISABLE';
+                    btn.classList.add('disabled');
+                    btn.style.background = '#64748b';
+                    if (freeRemainEl) freeRemainEl.style.display = 'inline';
+                }
+            }
+        }
+
+        function populateApiKeySelector() {
+            const selector = document.getElementById('api-key-selector');
+            if (!selector) return;
+            selector.innerHTML = '';
+            
+            const rawKeys = localStorage.getItem('aip_api_keys');
+            const keys = rawKeys ? JSON.parse(rawKeys) : [];
+            
+            const defOpt = document.createElement('option');
+            defOpt.value = 'aip_live_valid_test_key_12345';
+            defOpt.innerText = 'Sandbox Default (aip_live_test...)';
+            selector.appendChild(defOpt);
+            
+            keys.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k.api_key;
+                opt.innerText = `${k.name} (${k.api_key.substring(0, 8)}...)`;
+                selector.appendChild(opt);
+            });
+            updateSnippetCode();
+        }
+
+        async function syncServiceUIState() {
+            const apis = await fetchEnabledAPIsFromBackend();
+            const isEnabled = isApiActive(apis, currentSvcName);
+
+            updateToggleButtonUI(isEnabled);
+            populateApiKeySelector();
+
+            const disabledMsg = document.getElementById('playground-disabled-message');
+            const interactiveCont = document.getElementById('playground-interactive-container');
+            if (disabledMsg && interactiveCont) {
+                if (isEnabled) {
+                    disabledMsg.style.display = 'none';
+                    interactiveCont.style.display = 'grid';
+                } else {
+                    disabledMsg.style.display = 'block';
+                    interactiveCont.style.display = 'none';
+                }
+            }
+
+            const paidBal = await fetchPaidBalanceFromBackend();
+            const freeRemainEl = document.getElementById('svc-paid-balance-text');
+            if (freeRemainEl) {
+                freeRemainEl.innerText = `Remaining: ${paidBal.toLocaleString()} characters`;
+            }
+        }
+
+        function switchTab(tabName) {
+            const tabs = ['OVERVIEW', 'SERVICE', 'DOCUMENT', 'PRICING'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const panel = document.getElementById(`panel-${t}`);
+                if (t === tabName) {
+                    if (btn) btn.classList.add('active');
+                    if (panel) panel.classList.add('active');
+                } else {
+                    if (btn) btn.classList.remove('active');
+                    if (panel) panel.classList.remove('active');
+                }
+            });
+        }
+
+        let targetPendingAction = 'enable';
+        function handleServiceHeaderToggleClick() {
+            const btn = document.getElementById('svc-status-toggle-btn');
+            const isEnabled = btn.innerText === 'DISABLE';
+            
+            targetPendingAction = isEnabled ? 'disable' : 'enable';
+            document.getElementById('modal-confirm-body').innerText = isEnabled
+                ? `Bạn có chắc chắn muốn TẮT dịch vụ "${currentSvcName}"?`
+                : `Bạn có muốn BẬT dịch vụ "${currentSvcName}"?`;
+            openConfirmModal();
+        }
+
+        function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+        async function onConfirmEnableClick() {
+            closeConfirmModal();
+            const apis = getEnabledAPIs();
+
+            if (targetPendingAction === 'disable') {
+                apis[currentSvcName] = false;
+                await setEnabledAPIs(apis);
+                await syncServiceUIState();
+                showToast(`Đã tắt API "${currentSvcName}"!`, 'warning');
+            } else {
+                apis[currentSvcName] = true;
+                await setEnabledAPIs(apis);
+                await syncServiceUIState();
+                showToast(`Đã kích hoạt API "${currentSvcName}"!`, 'success');
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#dc3545');
+            toast.innerHTML = `<span>${msg}</span><i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="this.parentElement.remove()"></i>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        async function runTranslationPlayground() {
+            const text = document.getElementById('trans-text-input').value.trim();
+            if (!text) {
+                showToast("Vui lòng nhập văn bản cần dịch!", "warning");
+                return;
+            }
+
+            const srcLang = document.getElementById('sel-source-lang').value;
+            const tgtLang = document.getElementById('sel-target-lang').value;
+
+            const runBtn = document.getElementById('btn-run-inference');
+            runBtn.disabled = true;
+            runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ĐANG DỊCH (AI INFERENCE)...`;
+
+            document.getElementById('response-status-badge').innerText = 'EXECUTING';
+            document.getElementById('response-status-badge').style.background = '#e2e8f0';
+
+            const apis = getEnabledAPIs();
+            if (!isApiActive(apis, currentSvcName)) {
+                showToast("Dịch vụ chưa được KÍCH HOẠT! Vui lòng bật trạng thái ENABLE ở góc trên.", "error");
+                runBtn.disabled = false;
+                runBtn.innerHTML = `<i class="fa-solid fa-language"></i> DỊCH VĂN BẢN (RUN TRANSLATION)`;
+                return;
+            }
+
+            const startTime = performance.now();
+            const payload = {
+                text: text,
+                source_lang: srcLang,
+                target_lang: tgtLang
+            };
+
+            try {
+                const res = await fetch('/v1/translations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer aip_live_valid_test_key_12345'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const latencyMs = Math.round(performance.now() - startTime);
+
+                if (res.ok) {
+                    const json = await res.json();
+                    
+                    // Render Tab 2: Raw JSON
+                    document.getElementById('json-viewer-box').innerText = JSON.stringify(json, null, 2);
+                    document.getElementById('response-status-badge').innerText = 'HTTP 200 OK';
+                    document.getElementById('response-status-badge').style.background = '#10b981';
+
+                    // Render Tab 1: Visual Structured
+                    renderTranslationVisual(json, srcLang, tgtLang, latencyMs);
+
+                    switchResultTab('visual');
+                    showToast("Dịch thuật hoàn tất thành công!", "success");
+                } else {
+                    const errText = await res.text();
+                    document.getElementById('json-viewer-box').innerText = `Error: ${res.status} ${res.statusText}\n${errText}`;
+                    document.getElementById('response-status-badge').innerText = 'ERROR';
+                    document.getElementById('response-status-badge').style.background = '#dc3545';
+                    showToast("Lỗi dịch thuật từ máy chủ!", "error");
+                }
+            } catch (err) {
+                document.getElementById('json-viewer-box').innerText = `Lỗi kết nối tới API gateway:\n${err.message}`;
+                document.getElementById('response-status-badge').innerText = 'ERROR';
+                document.getElementById('response-status-badge').style.background = '#dc3545';
+                showToast("Không thể kết nối đến máy chủ!", "error");
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = `<i class="fa-solid fa-language"></i> DỊCH VĂN BẢN (RUN TRANSLATION)`;
+            }
+        }
+
+        function renderTranslationVisual(json, srcLang, tgtLang, latencyMs) {
+            document.getElementById('visual-empty-placeholder').style.display = 'none';
+            document.getElementById('visual-content').style.display = 'block';
+
+            const translated = json.translated_text || json.data?.translated_text || (json.result?.translated_text) || "";
+            document.getElementById('res-translated-text').innerText = translated;
+
+            const srcName = LANG_NAMES[srcLang] || srcLang.toUpperCase();
+            const tgtName = LANG_NAMES[tgtLang] || tgtLang.toUpperCase();
+            document.getElementById('res-pair-title').innerText = `${srcName.toUpperCase()} ➔ ${tgtName.toUpperCase()}`;
+
+            const charCount = translated.length;
+            const wordCount = translated.trim() ? translated.trim().split(/\s+/).length : 0;
+            const latency = json.metadata?.latency_ms || latencyMs;
+
+            document.getElementById('res-meta-chars').innerText = charCount.toLocaleString();
+            document.getElementById('res-meta-words').innerText = wordCount.toLocaleString();
+            document.getElementById('res-meta-latency').innerText = `${latency} ms`;
+        }
+
+        function copyTranslatedText() {
+            const text = document.getElementById('res-translated-text').innerText;
+            navigator.clipboard.writeText(text);
+            showToast("Đã sao chép bản dịch!", "success");
+        }
+
+        function switchSnippetLang(lang) {
+            currentSnippetLang = lang;
+            updateSnippetCode();
+        }
+
+        function updateSnippetCode() {
+            const box = document.getElementById('snippet-code-box');
+            if (!box) return;
+
+            const selector = document.getElementById('api-key-selector');
+            const apiKey = selector ? selector.value : 'aip_live_valid_test_key_12345';
+            const textInput = (document.getElementById('trans-text-input')?.value || "Doan van ban can dich").replace(/"/g, '\\"').replace(/\n/g, ' ');
+            const srcLang = document.getElementById('sel-source-lang')?.value || "vi";
+            const tgtLang = document.getElementById('sel-target-lang')?.value || "en";
+
+            let curlStr = "";
+            let pyStr = "";
+            let phpStr = "";
+
+            if (currentSnippetLang === 'curl') {
+                curlStr = `curl -X POST "https://ai-platform-6p72.onrender.com/v1/translations" \\\n  -H "Authorization: Bearer ${apiKey}" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "text": "${textInput}",\n    "source_lang": "${srcLang}",\n    "target_lang": "${tgtLang}"\n  }'`;
+                box.innerText = curlStr;
+            } else if (currentSnippetLang === 'python') {
+                pyStr = `import requests\n\nurl = "https://ai-platform-6p72.onrender.com/v1/translations"\nheaders = {\n    "Authorization": "Bearer ${apiKey}",\n    "Content-Type": "application/json"\n}\npayload = {\n    "text": "${textInput}",\n    "source_lang": "${srcLang}",\n    "target_lang": "${tgtLang}"\n}\n\nresponse = requests.post(url, headers=headers, json=payload)\nprint(response.json())`;
+                box.innerText = pyStr;
+            } else if (currentSnippetLang === 'php') {
+                phpStr = `<?php\n\n$curl = curl_init();\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => "https://ai-platform-6p72.onrender.com/v1/translations",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_CUSTOMREQUEST => "POST",\n  CURLOPT_POSTFIELDS => json_encode(array(\n    "text" => "${textInput}",\n    "source_lang" => "${srcLang}",\n    "target_lang" => "${tgtLang}"\n  )),\n  CURLOPT_HTTPHEADER => array(\n    "Authorization: Bearer ${apiKey}",\n    "Content-Type: application/json"\n  ),\n));\n\n$response = curl_exec($curl);\ncurl_close($curl);\necho $response;\n?>`;
+                box.innerText = phpStr;
+            }
+        }
+
+        function copySnippetText() {
+            const box = document.getElementById('snippet-code-box');
+            navigator.clipboard.writeText(box.innerText);
+            showToast("Đã sao chép mã nguồn tích hợp!", "success");
+        }
+
+        window.onload = initPage;
+    </script>
+</body>
+</html>

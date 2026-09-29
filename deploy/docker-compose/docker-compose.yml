@@ -112,7 +112,7 @@ services:
   control-plane:
     build:
       context: ../..
-      dockerfile: control-plane/Dockerfile
+      dockerfile: apps/control-plane/Dockerfile
     container_name: aip-control-plane
     ports:
       - "8000:8000"
@@ -138,7 +138,7 @@ services:
       - MODERATION_SERVER_URL=http://host.docker.internal:8006
       - TTS_SERVER_URL=http://host.docker.internal:8007
     volumes:
-      - ../../control-plane/src:/app/control-plane/src
+      - ../../apps/control-plane/src:/app/apps/control-plane/src
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
@@ -153,7 +153,7 @@ services:
 
   frontend:
     build:
-      context: ../../frontend
+      context: ../../apps/frontend
       dockerfile: Dockerfile
     container_name: aip-frontend
     ports:
@@ -161,7 +161,7 @@ services:
     environment:
       - VITE_BACKEND_URL=http://control-plane:8000
     volumes:
-      - ../../frontend:/app
+      - ../../apps/frontend:/app
       - /app/node_modules
     depends_on:
       - control-plane
@@ -170,7 +170,7 @@ services:
   dispatcher-worker:
     build:
       context: ../..
-      dockerfile: workers/orchestration/dispatcher-worker/Dockerfile
+      dockerfile: apps/dispatcher-worker/Dockerfile
     container_name: aip-dispatcher-worker
     environment:
       - ENVIRONMENT=development
@@ -180,8 +180,8 @@ services:
       - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
       - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
     volumes:
-      - ../../workers/orchestration/dispatcher-worker/dispatcher:/app/workers/orchestration/dispatcher-worker/dispatcher
-      - ../../control-plane/src:/app/control-plane/src
+      - ../../apps/dispatcher-worker/src:/app/apps/dispatcher-worker/src
+      - ../../apps/control-plane/src:/app/apps/control-plane/src
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     depends_on:
@@ -191,7 +191,7 @@ services:
   callback-worker:
     build:
       context: ../..
-      dockerfile: workers/orchestration/callback-worker/Dockerfile
+      dockerfile: apps/callback-worker/Dockerfile
     container_name: aip-callback-worker
     environment:
       - ENVIRONMENT=development
@@ -201,8 +201,8 @@ services:
       - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
       - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
     volumes:
-      - ../../workers/orchestration/callback-worker/worker:/app/workers/orchestration/callback-worker/worker
-      - ../../control-plane/src:/app/control-plane/src
+      - ../../apps/callback-worker/worker:/app/apps/callback-worker/worker
+      - ../../apps/control-plane/src:/app/apps/control-plane/src
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     depends_on:
@@ -213,14 +213,14 @@ services:
     profiles: ["ai-specialized", "gpu-workers", "all"]
     build:
       context: ../..
-      dockerfile: workers/gpu-workloads/image-worker/Dockerfile
+      dockerfile: apps/image-worker/Dockerfile
     container_name: aip-image-worker
     environment:
       - ENVIRONMENT=development
       - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
       - AIP_IMAGE_QUEUE=q.aip.tasks.image
     volumes:
-      - ../../workers/gpu-workloads/image-worker:/app/workers/gpu-workloads/image-worker
+      - ../../apps/image-worker:/app/apps/image-worker
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     depends_on:
@@ -232,7 +232,7 @@ services:
     profiles: ["ai-llm", "all"]
     build:
       context: ../..
-      dockerfile: data-plane/vllm-engine/Dockerfile
+      dockerfile: apps/data-plane/vllm-engine/Dockerfile
     container_name: aip-vllm-engine
     expose:
       - "8001"
@@ -245,7 +245,7 @@ services:
       - TEST_MODE=${VLLM_TEST_MODE:-false}
     volumes:
       - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-      - ../../data-plane/vllm-engine:/app/data-plane/vllm-engine
+      - ../../apps/data-plane/vllm-engine:/app/apps/data-plane/vllm-engine
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
@@ -262,7 +262,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: data-plane/translation-server/Dockerfile
+      dockerfile: apps/data-plane/translation-server/Dockerfile
     container_name: aip-translation-server
     expose:
       - "8003"
@@ -272,7 +272,7 @@ services:
       - HF_HOME=/root/.cache/huggingface
     volumes:
       - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-      - ../../data-plane/translation-server:/app/data-plane/translation-server
+      - ../../apps/data-plane/translation-server:/app/apps/data-plane/translation-server
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]
@@ -282,7 +282,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: data-plane/stt-server/Dockerfile
+      dockerfile: apps/data-plane/stt-server/Dockerfile
     container_name: aip-stt-server
     expose:
       - "8002"
@@ -292,7 +292,7 @@ services:
       - HF_HOME=/root/.cache/huggingface
     volumes:
       - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-      - ../../data-plane/stt-server:/app/data-plane/stt-server
+      - ../../apps/data-plane/stt-server:/app/apps/data-plane/stt-server
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
     restart: unless-stopped
@@ -301,7 +301,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: data-plane/ocr-server/Dockerfile
+      dockerfile: apps/data-plane/ocr-server/Dockerfile
     container_name: aip-ocr-server
     expose:
       - "8004"
@@ -309,7 +309,7 @@ services:
       - PORT=8004
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
     volumes:
-      - ../../data-plane/ocr-server:/app/data-plane/ocr-server
+      - ../../apps/data-plane/ocr-server:/app/apps/data-plane/ocr-server
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8004", "--reload"]
     restart: unless-stopped
@@ -318,7 +318,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: data-plane/moderation-server/Dockerfile
+      dockerfile: apps/data-plane/moderation-server/Dockerfile
     container_name: aip-moderation-server
     expose:
       - "8006"
@@ -326,7 +326,7 @@ services:
       - PORT=8006
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
     volumes:
-      - ../../data-plane/moderation-server:/app/data-plane/moderation-server
+      - ../../apps/data-plane/moderation-server:/app/apps/data-plane/moderation-server
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8006", "--reload"]
     restart: unless-stopped
@@ -335,7 +335,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: data-plane/tts-adapter/Dockerfile
+      dockerfile: apps/data-plane/tts-adapter/Dockerfile
     container_name: aip-tts-adapter
     expose:
       - "8007"
@@ -343,7 +343,7 @@ services:
       - PORT=8007
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
     volumes:
-      - ../../data-plane/tts-adapter:/app/data-plane/tts-adapter
+      - ../../apps/data-plane/tts-adapter:/app/apps/data-plane/tts-adapter
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8007", "--reload"]
     restart: unless-stopped

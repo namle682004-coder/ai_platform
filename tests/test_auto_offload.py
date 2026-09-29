@@ -83,7 +83,7 @@ def test_chat_heavy_context_auto_offloads_to_rabbitmq():
 def test_tts_heavy_auto_offloads_to_rabbitmq():
     """TTS with input text > 300 chars should automatically offload with HTTP 202."""
     long_speech = (
-        "Chào mừng quý khách đến với dịch vụ tổng đài tự động thông minh của Everwin AI Platform. "
+        "Chào mừng quý khách đến với dịch vụ tổng đài tự động thông minh của hệ thống AIP Platform doanh nghiệp. "
         "Để gặp nhân viên tư vấn về các giải pháp trí tuệ nhân tạo và chuyển đổi số, vui lòng nhấn phím một. "
         "Để tra cứu thông tin hóa đơn điện tử và các giao dịch gần đây, vui lòng nhấn phím hai hoặc giữ máy để được trợ giúp."
     )

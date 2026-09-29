@@ -24,5 +24,8 @@ else
         "${PROTO_DIR}"/*.proto 2>/dev/null || echo "grpc_tools not installed yet. Run: pip install grpcio-tools"
 fi
 
+# Fix protoc relative imports for module resolution
+sed -i -E 's/^import (.*_pb2) as/from . import \1 as/' "${OUT_DIR}"/*_pb2_grpc.py 2>/dev/null || true
+
 touch "${OUT_DIR}/__init__.py"
 echo "Protobuf generation completed successfully."
