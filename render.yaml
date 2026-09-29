@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: aip-control-plane
+    runtime: python
+    buildCommand: uv pip install -r requirements.txt
+    startCommand: uvicorn src.main:app --app-dir control-plane --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.14
+      - key: PYTHONPATH
+        value: control-plane:packages/common:packages/contracts:packages/sdk
+      - key: TEST_MODE
+        value: "true"
+      - key: VLLM_TEST_MODE
+        value: "true"
+      - key: MASTER_PEPPER
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
