@@ -9,7 +9,7 @@ COPY packages/contracts /app/packages/contracts
 COPY apps/data-plane/vllm-engine /app/apps/data-plane/vllm-engine
 
 RUN pip install --no-cache-dir torch transformers accelerate
-RUN pip install --no-cache-dir -e /app/packages/common -e /app/apps/data-plane/vllm-engine
+RUN pip install --no-cache-dir -e /app/packages/common -e /app/packages/contracts -e /app/apps/data-plane/vllm-engine
 
 WORKDIR /app/apps/data-plane/vllm-engine
 ENV PYTHONPATH=/app/apps/data-plane/vllm-engine:/app/packages/common:/app/packages/contracts

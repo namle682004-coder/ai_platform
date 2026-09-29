@@ -58,7 +58,9 @@ jobs:
                          -e apps/data-plane/vllm-engine \
                          -e apps/data-plane/translation-server \
                          -e apps/data-plane/stt-server \
+                         -e apps/data-plane/ocr-server \
                          -e apps/data-plane/moderation-server \
+                         -e apps/data-plane/tts-adapter \
                          -e apps/dispatcher-worker \
                          -e apps/callback-worker \
                          -e apps/image-worker \
@@ -71,7 +73,7 @@ jobs:
         env:
           TEST_MODE: "true"
           VLLM_TEST_MODE: "true"
-          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src:apps/dispatcher-worker:apps/callback-worker:apps/image-worker:apps/data-plane/translation-server:apps/data-plane/vllm-engine"
+          PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src:apps/dispatcher-worker:apps/callback-worker:apps/image-worker:apps/data-plane/vllm-engine:apps/data-plane/translation-server:apps/data-plane/stt-server:apps/data-plane/ocr-server:apps/data-plane/moderation-server:apps/data-plane/tts-adapter"
         run: uv run pytest -v
 
       - name: Export & verify OpenAPI assets

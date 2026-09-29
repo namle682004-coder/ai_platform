@@ -125,38 +125,15 @@
         ],
         "summary": "Vector Embeddings Extraction",
         "operationId": "create_embeddings_v1_embeddings_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EmbeddingRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -179,7 +156,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/audio/transcriptions": {
@@ -189,38 +171,15 @@
         ],
         "summary": "Speech to Text (ASR Transcription)",
         "operationId": "create_transcription_v1_audio_transcriptions_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_create_transcription_v1_audio_transcriptions_post"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -241,10 +200,79 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/audio/speech": {
+      "get": {
+        "tags": [
+          "Audio (STT & TTS)"
+        ],
+        "summary": "Quick Browser Audio Synthesis (GET)",
+        "operationId": "create_speech_browser_v1_audio_speech_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "Xin chào, đây là hệ thống chuyển đổi văn bản thành giọng nói.",
+              "title": "Input"
+            }
+          },
+          {
+            "name": "voice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "northern_female",
+              "title": "Voice"
+            }
+          },
+          {
+            "name": "response_format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "mp3",
+              "title": "Response Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Audio (STT & TTS)"
@@ -254,24 +282,6 @@
         "security": [
           {
             "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
           }
         ],
         "requestBody": {
@@ -311,7 +321,7 @@
         "tags": [
           "Image Generations"
         ],
-        "summary": "Generate Images",
+        "summary": "Text to Image Generation (Timeout: 60s)",
         "operationId": "generate_images_v1_images_generations_post",
         "requestBody": {
           "content": {
@@ -352,12 +362,58 @@
         ]
       }
     },
+    "/v1/images/edits": {
+      "post": {
+        "tags": [
+          "Image Generations"
+        ],
+        "summary": "Image Inpainting & Edits (Timeout: 60s)",
+        "operationId": "edit_images_v1_images_edits_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_edit_images_v1_images_edits_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageGenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/moderations": {
       "post": {
         "tags": [
           "Moderations"
         ],
-        "summary": "Content Safety & Policy Moderation (Llama-Guard)",
+        "summary": "Content Safety & Policy Moderation (AI-Powered Multimodal, Timeout: 30s)",
         "operationId": "create_moderation_v1_moderations_post",
         "requestBody": {
           "content": {
@@ -498,38 +554,15 @@
         ],
         "summary": "General Document OCR (PaddleOCR-VL)",
         "operationId": "ocr_process_document_v1_ocr_process_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_ocr_process_document_v1_ocr_process_post"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -550,7 +583,56 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/ocr": {
+      "post": {
+        "tags": [
+          "Document OCR & Intelligent Document Processing"
+        ],
+        "summary": "General Document OCR (PaddleOCR-VL)",
+        "operationId": "ocr_process_document_v1_ocr_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ocr_process_document_v1_ocr_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/ocr/driver-license": {
@@ -560,38 +642,15 @@
         ],
         "summary": "Driver License OCR Extraction",
         "operationId": "ocr_driver_license_v1_ocr_driver_license_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_ocr_driver_license_v1_ocr_driver_license_post"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -612,7 +671,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/ocr/id-card": {
@@ -621,49 +685,9 @@
           "Document OCR & Intelligent Document Processing"
         ],
         "summary": "National ID (CCCD/CMND) OCR Extraction",
-        "description": "Extract structured identity information from Vietnamese ID cards (CCCD/CMND).\nSpecifications:\n- CMND 9 digits front/back (old, old_back, cmnd_09_front)\n- CMND 12 digits front/back (new, cmnd_12_front)\n- CCCD 12 digits with chip front/back (new, new_back, cccd_12_front)\n- 4-tier Address Entities decomposition: province, district, ward, street",
+        "description": "Extract structured identity information from Vietnamese ID cards (CCCD/CMND).\nSupports single-side (front/back) or 2-sided recognition simultaneously.",
         "operationId": "ocr_id_card_v1_ocr_id_card_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "api-key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Api-Key"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
@@ -691,7 +715,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/ocr/passport": {
@@ -701,38 +730,15 @@
         ],
         "summary": "Passport OCR Extraction",
         "operationId": "ocr_passport_v1_ocr_passport_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_ocr_passport_v1_ocr_passport_post"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -753,7 +759,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/vision/facematch": {
@@ -763,45 +774,24 @@
         ],
         "summary": "Biometric Face Match (1:1 Verification)",
         "operationId": "vision_facematch_v1_vision_facematch_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_vision_facematch_v1_vision_facematch_post"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/FaceMatchResponse"
+                }
               }
             }
           },
@@ -815,7 +805,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/vision/liveness": {
@@ -825,45 +820,24 @@
         ],
         "summary": "Anti-spoofing Liveness Detection",
         "operationId": "vision_liveness_v1_vision_liveness_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_vision_liveness_v1_vision_liveness_post"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/LivenessResponse"
+                }
               }
             }
           },
@@ -877,7 +851,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/nlp/translation": {
@@ -885,47 +864,26 @@
         "tags": [
           "Natural Language Processing (Translation & Summarization)"
         ],
-        "summary": "Bilingual Text Translation (Helsinki-NLP)",
+        "summary": "Bilingual Text Translation (Helsinki-NLP / Opus-MT)",
         "operationId": "nlp_translation_v1_nlp_translation_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TranslationRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationResponse"
+                }
               }
             }
           },
@@ -939,7 +897,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/nlp/summarization": {
@@ -949,38 +912,15 @@
         ],
         "summary": "Intelligent Text Summarization",
         "operationId": "nlp_summarization_v1_nlp_summarization_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SummarizationRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -1001,7 +941,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/v1/jobs": {
@@ -1121,6 +1066,7 @@
           "Async Jobs"
         ],
         "summary": "Get Job Result",
+        "description": "SRS Section 3.3: Client retrieves result via pre-signed URL with default 24h TTL.",
         "operationId": "get_job_result_v1_jobs__job_id__result_get",
         "security": [
           {
@@ -1210,7 +1156,7 @@
         "tags": [
           "Predictions (Custom Inference)"
         ],
-        "summary": "Create Prediction",
+        "summary": "Execute Custom Model Prediction (Timeout: 120s)",
         "operationId": "create_prediction_v1_predictions_post",
         "requestBody": {
           "content": {
@@ -1247,6 +1193,63 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/v1/predictions/{alias}": {
+      "post": {
+        "tags": [
+          "Predictions (Custom Inference)"
+        ],
+        "summary": "Execute Custom Model Prediction by URL alias (Timeout: 120s)",
+        "operationId": "create_prediction_by_alias_v1_predictions__alias__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alias",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alias"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/mcp/sse": {
@@ -4665,6 +4668,66 @@
         ],
         "title": "Body_create_transcription_v1_audio_transcriptions_post"
       },
+      "Body_edit_images_v1_images_edits_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "mask": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mask"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "image-gen-standard"
+          },
+          "n": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N",
+            "default": 1
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size",
+            "default": "1024x1024"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image",
+          "prompt"
+        ],
+        "title": "Body_edit_images_v1_images_edits_post"
+      },
       "Body_ocr_driver_license_v1_ocr_driver_license_post": {
         "properties": {
           "image": {
@@ -4682,9 +4745,40 @@
       "Body_ocr_id_card_v1_ocr_id_card_post": {
         "properties": {
           "image": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Image"
+          },
+          "image_back": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Back"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
           },
           "side": {
             "anyOf": [
@@ -4710,9 +4804,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "image"
-        ],
         "title": "Body_ocr_id_card_v1_ocr_id_card_post"
       },
       "Body_ocr_passport_v1_ocr_passport_post": {
@@ -4728,6 +4819,20 @@
           "image"
         ],
         "title": "Body_ocr_passport_v1_ocr_passport_post"
+      },
+      "Body_ocr_process_document_v1_ocr_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ocr_process_document_v1_ocr_post"
       },
       "Body_ocr_process_document_v1_ocr_process_post": {
         "properties": {
@@ -5324,6 +5429,150 @@
         ],
         "title": "EndpointStatusUpdateRequest"
       },
+      "FaceMatchData": {
+        "properties": {
+          "matched": {
+            "type": "boolean",
+            "title": "Matched",
+            "description": "Whether the two face images belong to the same person"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "description": "Cosine similarity / match probability score (0.0 to 1.0)",
+            "example": 0.965
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold",
+            "description": "Verification decision threshold",
+            "default": 0.8
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Verification result description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "matched",
+          "confidence",
+          "message"
+        ],
+        "title": "FaceMatchData"
+      },
+      "FaceMatchMetadata": {
+        "properties": {
+          "backend": {
+            "type": "string",
+            "title": "Backend",
+            "description": "Biometric verification engine"
+          },
+          "device": {
+            "type": "string",
+            "title": "Device",
+            "description": "Compute accelerator"
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "description": "Inference latency in milliseconds"
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "description": "Whether result was served from cache",
+            "default": false
+          },
+          "cache_node": {
+            "type": "string",
+            "title": "Cache Node",
+            "description": "Serving cache node",
+            "default": "direct-gpu-compute"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id",
+            "description": "Request transaction ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "backend",
+          "device",
+          "latency_ms"
+        ],
+        "title": "FaceMatchMetadata"
+      },
+      "FaceMatchResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Transaction tracking ID",
+            "example": "face_66fd3b8a1c90"
+          },
+          "object": {
+            "type": "string",
+            "title": "Object",
+            "description": "Entity type identifier",
+            "default": "vision.facematch"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created",
+            "description": "Unix timestamp"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model alias used",
+            "default": "vision-facematch"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Status",
+            "default": "success"
+          },
+          "matched": {
+            "type": "boolean",
+            "title": "Matched",
+            "description": "Convenience flag for match status"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "description": "Match confidence score"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FaceMatchData",
+            "description": "Detailed verification payload"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/FaceMatchMetadata",
+            "description": "Operational & hardware telemetry"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created",
+          "matched",
+          "confidence",
+          "data",
+          "metadata"
+        ],
+        "title": "FaceMatchResponse"
+      },
       "FeedbackRequest": {
         "properties": {
           "category": {
@@ -5457,8 +5706,7 @@
         "properties": {
           "created": {
             "type": "integer",
-            "title": "Created",
-            "default": 1770970000
+            "title": "Created"
           },
           "data": {
             "items": {
@@ -5589,6 +5837,99 @@
           "updated_at"
         ],
         "title": "JobStatusResponse"
+      },
+      "LivenessData": {
+        "properties": {
+          "is_live": {
+            "type": "boolean",
+            "title": "Is Live",
+            "description": "Whether the subject is a live person (anti-spoofing)"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "Liveness certainty score (0.0 to 1.0)",
+            "example": 0.995
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "Detection mode (passive / active)",
+            "default": "passive"
+          },
+          "details": {
+            "type": "string",
+            "title": "Details",
+            "description": "Verification diagnostics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_live",
+          "score",
+          "details"
+        ],
+        "title": "LivenessData"
+      },
+      "LivenessResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Transaction tracking ID"
+          },
+          "object": {
+            "type": "string",
+            "title": "Object",
+            "description": "Entity type identifier",
+            "default": "vision.liveness"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created",
+            "description": "Unix timestamp"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model alias used",
+            "default": "vision-liveness"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Status",
+            "default": "success"
+          },
+          "is_live": {
+            "type": "boolean",
+            "title": "Is Live",
+            "description": "Convenience flag for liveness status"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "Liveness score"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LivenessData",
+            "description": "Detailed liveness metrics"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/FaceMatchMetadata",
+            "description": "Operational & hardware telemetry"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created",
+          "is_live",
+          "score",
+          "data",
+          "metadata"
+        ],
+        "title": "LivenessResponse"
       },
       "LoginRequest": {
         "properties": {
@@ -6126,6 +6467,118 @@
         ],
         "title": "ToggleMaintenanceRequest"
       },
+      "TranslationMetadata": {
+        "properties": {
+          "backend": {
+            "type": "string",
+            "title": "Backend",
+            "description": "Inference engine backend runtime"
+          },
+          "device": {
+            "type": "string",
+            "title": "Device",
+            "description": "Target compute hardware accelerator (cuda / cpu)"
+          },
+          "compute_type": {
+            "type": "string",
+            "title": "Compute Type",
+            "description": "Quantization precision (int8 / float16)"
+          },
+          "beam_size": {
+            "type": "integer",
+            "title": "Beam Size",
+            "description": "Beam size used for decoding"
+          },
+          "repetition_penalty": {
+            "type": "number",
+            "title": "Repetition Penalty",
+            "description": "Penalty applied to repeated n-grams",
+            "default": 1.2
+          },
+          "no_repeat_ngram_size": {
+            "type": "integer",
+            "title": "No Repeat Ngram Size",
+            "description": "N-gram repetition suppression window",
+            "default": 3
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms",
+            "description": "Execution latency in milliseconds"
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "description": "Whether the inference response was served from cache",
+            "default": false
+          },
+          "cache_node": {
+            "type": "string",
+            "title": "Cache Node",
+            "description": "Serving cache node / hardware tier",
+            "default": "direct-gpu-compute"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id",
+            "description": "System request tracing ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "backend",
+          "device",
+          "compute_type",
+          "beam_size",
+          "latency_ms"
+        ],
+        "title": "TranslationMetadata"
+      },
+      "TranslationPayloadData": {
+        "properties": {
+          "translated_text": {
+            "type": "string",
+            "title": "Translated Text",
+            "description": "The translated result text"
+          },
+          "source_language": {
+            "type": "string",
+            "title": "Source Language",
+            "description": "Resolved source language code"
+          },
+          "target_language": {
+            "type": "string",
+            "title": "Target Language",
+            "description": "Resolved target language code"
+          },
+          "detected_source_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detected Source Language",
+            "description": "Auto-detected language code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "translated_text",
+          "source_language",
+          "target_language"
+        ],
+        "title": "TranslationPayloadData"
+      },
       "TranslationRequest": {
         "properties": {
           "text": {
@@ -6144,6 +6597,20 @@
             "title": "Target Lang",
             "default": "en",
             "example": "en"
+          },
+          "beam_size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beam Size",
+            "description": "Beam search width (1 to 10)"
           }
         },
         "type": "object",
@@ -6151,6 +6618,117 @@
           "text"
         ],
         "title": "TranslationRequest"
+      },
+      "TranslationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique transaction ID for this translation request",
+            "example": "trans_66fd3b8a1c90"
+          },
+          "object": {
+            "type": "string",
+            "title": "Object",
+            "description": "Response entity type",
+            "default": "nlp.translation"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created",
+            "description": "Unix timestamp when translation was generated"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model alias / ID used for inference",
+            "example": "translate-vi-standard"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Execution status",
+            "default": "success"
+          },
+          "translated_text": {
+            "type": "string",
+            "title": "Translated Text",
+            "description": "Direct convenience field for translated text"
+          },
+          "source_lang": {
+            "type": "string",
+            "title": "Source Lang",
+            "description": "Source language code"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang",
+            "description": "Target language code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TranslationPayloadData",
+            "description": "Detailed structured translation payload"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/TranslationUsage",
+            "description": "Token and character consumption metrics for quota/billing"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/TranslationMetadata",
+            "description": "Operational & hardware telemetry metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created",
+          "model",
+          "translated_text",
+          "source_lang",
+          "target_lang",
+          "data",
+          "usage",
+          "metadata"
+        ],
+        "title": "TranslationResponse"
+      },
+      "TranslationUsage": {
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer",
+            "title": "Prompt Tokens",
+            "description": "Number of tokens in source text input"
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "title": "Completion Tokens",
+            "description": "Number of tokens generated in translation"
+          },
+          "total_tokens": {
+            "type": "integer",
+            "title": "Total Tokens",
+            "description": "Total tokens processed (prompt + completion)"
+          },
+          "character_count": {
+            "type": "integer",
+            "title": "Character Count",
+            "description": "Total characters in input string"
+          },
+          "word_count": {
+            "type": "integer",
+            "title": "Word Count",
+            "description": "Total words in input string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt_tokens",
+          "completion_tokens",
+          "total_tokens",
+          "character_count",
+          "word_count"
+        ],
+        "title": "TranslationUsage"
       },
       "UpdateQuotaRequest": {
         "properties": {

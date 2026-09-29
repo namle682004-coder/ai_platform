@@ -147,6 +147,35 @@
       }
     },
     {
+      "name": "Quick Browser Audio Synthesis (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/audio/speech",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "audio",
+            "speech"
+          ]
+        }
+      }
+    },
+    {
       "name": "Text to Speech (Audio Synthesis)",
       "request": {
         "method": "POST",
@@ -176,7 +205,7 @@
       }
     },
     {
-      "name": "Generate Images",
+      "name": "Text to Image Generation (Timeout: 60s)",
       "request": {
         "method": "POST",
         "header": [
@@ -205,7 +234,36 @@
       }
     },
     {
-      "name": "Content Safety & Policy Moderation (Llama-Guard)",
+      "name": "Image Inpainting & Edits (Timeout: 60s)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/images/edits",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "images",
+            "edits"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Content Safety & Policy Moderation (AI-Powered Multimodal, Timeout: 30s)",
       "request": {
         "method": "POST",
         "header": [
@@ -343,6 +401,34 @@
             "v1",
             "ocr",
             "process"
+          ]
+        }
+      }
+    },
+    {
+      "name": "General Document OCR (PaddleOCR-VL)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/ocr",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "ocr"
           ]
         }
       }
@@ -493,7 +579,7 @@
       }
     },
     {
-      "name": "Bilingual Text Translation (Helsinki-NLP)",
+      "name": "Bilingual Text Translation (Helsinki-NLP / Opus-MT)",
       "request": {
         "method": "POST",
         "header": [
@@ -668,7 +754,7 @@
       }
     },
     {
-      "name": "Create Prediction",
+      "name": "Execute Custom Model Prediction (Timeout: 120s)",
       "request": {
         "method": "POST",
         "header": [
@@ -691,6 +777,35 @@
           "path": [
             "v1",
             "predictions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Execute Custom Model Prediction by URL alias (Timeout: 120s)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/predictions/{alias}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "predictions",
+            "{alias}"
           ]
         }
       }

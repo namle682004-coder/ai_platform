@@ -2,15 +2,19 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl && rm -rf /var/lib/apt/lists/*
 
 COPY packages/common /app/packages/common
+COPY packages/contracts /app/packages/contracts
 COPY apps/data-plane/stt-server /app/apps/data-plane/stt-server
 
-RUN pip install --no-cache-dir -e /app/packages/common -e /app/apps/data-plane/stt-server
+RUN pip install --no-cache-dir \
+    -e /app/packages/common \
+    -e /app/packages/contracts \
+    -e /app/apps/data-plane/stt-server
 
 WORKDIR /app/apps/data-plane/stt-server
-ENV PYTHONPATH=/app/apps/data-plane/stt-server:/app/packages/common
+ENV PYTHONPATH=/app/apps/data-plane/stt-server:/app/packages/common:/app/packages/contracts
 
 EXPOSE 8002
 

@@ -4,8 +4,8 @@ import sys
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT_DIR)
-sys.path.insert(0, os.path.join(ROOT_DIR, "control-plane"))
-sys.path.insert(0, os.path.join(ROOT_DIR, "control-plane", "src"))
+sys.path.insert(0, os.path.join(ROOT_DIR, "apps", "control-plane"))
+sys.path.insert(0, os.path.join(ROOT_DIR, "apps", "control-plane", "src"))
 sys.path.insert(0, os.path.join(ROOT_DIR, "packages", "common"))
 sys.path.insert(0, os.path.join(ROOT_DIR, "packages", "contracts"))
 sys.path.insert(0, os.path.join(ROOT_DIR, "packages", "sdk"))

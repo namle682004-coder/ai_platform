@@ -3,17 +3,23 @@ services:
     name: aip-control-plane
     runtime: python
     buildCommand: uv sync
-    startCommand: uv run uvicorn src.main:app --app-dir control-plane --host 0.0.0.0 --port $PORT
+    startCommand: uv run uvicorn src.main:app --app-dir apps/control-plane --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.14
       - key: PYTHONPATH
-        value: control-plane:packages/common:packages/contracts:packages/sdk
+        value: apps/control-plane:packages/common:packages/contracts:packages/sdk
       - key: TEST_MODE
         value: "true"
       - key: VLLM_TEST_MODE
+        value: "true"
+      - key: ALLOW_IN_PROCESS_FALLBACK
         value: "true"
       - key: MASTER_PEPPER
         generateValue: true
       - key: JWT_SECRET
         generateValue: true
+      - key: MINIO_ROOT_PASSWORD
+        generateValue: true
+      - key: MONGO_URI
+        value: "mongodb://localhost:27017/ai_platform"
