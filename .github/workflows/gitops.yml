@@ -48,6 +48,8 @@ jobs:
       - name: Deploy Staging Charts
         if: steps.kubeconfig.outputs.skip != 'true'
         run: |
+          kubectl apply -f deploy/k8s/namespaces/namespaces.yaml
+
           helm upgrade --install aip-infra deploy/helm/aip-infra \
             -n aip-infra --create-namespace --atomic --wait --timeout 5m
 
@@ -100,6 +102,8 @@ jobs:
       - name: Deploy Production Charts
         if: steps.kubeconfig.outputs.skip != 'true'
         run: |
+          kubectl apply -f deploy/k8s/namespaces/namespaces.yaml
+
           helm upgrade --install aip-control deploy/helm/aip-control \
             -n aip-control --atomic --wait --timeout 5m \
             --set image.tag=${{ github.sha }} \

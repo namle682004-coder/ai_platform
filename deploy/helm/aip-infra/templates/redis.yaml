@@ -17,6 +17,15 @@ spec:
       labels:
         app.kubernetes.io/name: aip-redis
     spec:
+      {{- if $.Values.highAvailability.enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: aip-redis
+              topologyKey: {{ $.Values.highAvailability.topologyKey | quote }}
+      {{- end }}
       containers:
         - name: redis
           image: {{ .Values.redis.image }}
@@ -41,12 +50,12 @@ spec:
             {{- toYaml .Values.redis.resources | nindent 12 }}
           livenessProbe:
             exec:
-              command: ["redis-cli", "ping"]
+              command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping"]
             initialDelaySeconds: 10
             periodSeconds: 5
           readinessProbe:
             exec:
-              command: ["redis-cli", "ping"]
+              command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping"]
             initialDelaySeconds: 5
             periodSeconds: 3
 ---

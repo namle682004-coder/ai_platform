@@ -148,6 +148,27 @@ vllm:
   nodeSelector:
     pool: gpu-multimodal
 
+# --- Triton Inference Server (SRS Section 2.3 & 4.2: PhoBERT, bge-reranker, PaddleOCR) ---
+triton:
+  enabled: true
+  image:
+    repository: nvcr.io/nvidia/tritonserver
+    tag: "24.08-py3"
+  replicas: 1
+  port: 8000
+  namespace: aip-text
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+      nvidia.com/gpu: 1
+  nodeSelector:
+    pool: text-inference
+
 # --- Image Generation Worker (FLUX.1 / SDXL) ---
 image:
   enabled: true
@@ -212,8 +233,9 @@ lipsync:
     pool: gpu-multimodal
 
 # --- Common Secret Endpoints for Runtimes ---
-commonSecrets:
-  mongoUri: "mongodb://aip_root:aip_mongo_secure_password_prod@mongodb.aip-infra.svc.cluster.local:27017/ai_platform?authSource=admin"
-  redisUri: "redis://:aip_redis_secure_password_prod@redis.aip-infra.svc.cluster.local:6379/0"
-  rabbitmqUri: "amqp://aip:aip_rabbitmq_secure_password_prod@rabbitmq.aip-infra.svc.cluster.local:5672/aip"
-
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: aip-platform
+    kind: ClusterSecretStore
+  remoteKey: aip-platform/runtimes

@@ -23,4 +23,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
+
+        # SRS Section 6.2: Deprecated Aliases return header X-AIP-Alias-Deprecated: true
+        if getattr(request.state, "alias_deprecated", False):
+            response.headers["X-AIP-Alias-Deprecated"] = "true"
+
         return response

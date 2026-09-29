@@ -126,6 +126,27 @@ spec:
   policyTypes:
     - Egress
 ---
+# Allow the ingress controller to reach the public gateway service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-gateway
+  namespace: aip-control
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: aip-gateway
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8000
+          protocol: TCP
+  policyTypes:
+    - Ingress
+---
 # Allow runtime services egress to infra + DNS
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

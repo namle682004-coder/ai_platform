@@ -115,11 +115,11 @@ class AliasRouterService:
         """
         canonical_name = self.ALIAS_SYNONYMS.get(alias_name, alias_name)
         item = self._registry.get(canonical_name)
-        if not item:
-            return None
-        if item.get("status") not in ("enabled", "active"):
+        if not item or item.get("status") in ("disabled", "inactive"):
             return None
         res = dict(item)
+        if item.get("status") == "deprecated":
+            res["is_deprecated"] = True
         return res
 
     async def resolve_target_url(self, alias_name: str, fallback_url: str) -> Optional[str]:

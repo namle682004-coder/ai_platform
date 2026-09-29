@@ -50,6 +50,10 @@ async def create_chat_completion(
         )
         return JSONResponse(status_code=404, content=error_payload.model_dump())
 
+    # SRS Section 6.2: Deprecated Aliases flag
+    if resolved_target.get("status") == "deprecated":
+        request.state.alias_deprecated = True
+
     target_url = await alias_router.resolve_target_url(
         payload.model,
         f"{gateway_settings.vllm_server_url}",

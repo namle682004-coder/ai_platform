@@ -24,7 +24,12 @@ from common.models.catalog import AIP_MODEL_CATALOG
 
 logger = logging.getLogger("aip-messaging.topology")
 
-# ── Exchange names ──────────────────────────────────────────────────
+# ── Exchange names (SRS Section 7.4 Topology) ─────────────────────────
+EXCHANGE_JOBS = "aip.jobs"
+EXCHANGE_JOBS_RETRY = "aip.jobs.retry"
+EXCHANGE_JOBS_DLX = "aip.jobs.dlx"
+
+# Legacy / Alternative aliases
 EXCHANGE_TASKS = "aip.tasks"
 EXCHANGE_DLX = "aip.dlx"
 EXCHANGE_EVENTS = "aip.events"
@@ -33,6 +38,18 @@ QUEUE_CALLBACKS = "q.aip.events.callbacks"
 # ── Priority tiers ──────────────────────────────────────────────────
 PRIORITIES = ("high", "normal", "batch")
 MAX_PRIORITY = 10
+
+# Canonical SRS Section 7.1 Job Types
+SRS_JOB_TYPES: tuple[str, ...] = (
+    "video_generation",
+    "lip_sync",
+    "image_generation",
+    "audio_transcription",
+    "tts_synthesis",
+    "idp_batch",
+    "embedding_batch",
+    "translation_batch",
+)
 
 # ── Canonical Intuitive Service Domains ──────────────────────────────
 CORE_TASK_DOMAINS: tuple[str, ...] = (
@@ -153,7 +170,12 @@ async def setup_rabbitmq_topology(rabbitmq_url: str) -> None:
     channel = await connection.channel()
 
     try:
-        # 1. Dead-Letter Exchange & Queue
+        # 1. Dead-Letter Exchange & Queue (SRS Section 7.4: aip.jobs.dlx & aip.dlx)
+        jobs_dlx_exchange = await channel.declare_exchange(
+            EXCHANGE_JOBS_DLX,
+            ExchangeType.TOPIC,
+            durable=True,
+        )
         dlx_exchange = await channel.declare_exchange(
             EXCHANGE_DLX,
             ExchangeType.TOPIC,
@@ -161,13 +183,34 @@ async def setup_rabbitmq_topology(rabbitmq_url: str) -> None:
         )
         dlq = await channel.declare_queue(QUEUE_DLQ, durable=True)
         await dlq.bind(dlx_exchange, routing_key="aip.dlx.#")
+        await dlq.bind(jobs_dlx_exchange, routing_key="aip.jobs.dlq.#")
 
-        # 2. Main Tasks Topic Exchange
+        # 2. Main Topic Exchanges (SRS Section 7.4: aip.jobs, legacy: aip.tasks)
+        jobs_exchange = await channel.declare_exchange(
+            EXCHANGE_JOBS,
+            ExchangeType.TOPIC,
+            durable=True,
+        )
         tasks_exchange = await channel.declare_exchange(
             EXCHANGE_TASKS,
             ExchangeType.TOPIC,
             durable=True,
         )
+
+        # 3. Canonical Job Queues (SRS Section 7.4: q.aip.jobs.<job_type>)
+        job_queue_args = {
+            "x-dead-letter-exchange": EXCHANGE_JOBS_DLX,
+            "x-dead-letter-routing-key": "aip.jobs.dlq.failed",
+            "x-max-priority": 10,
+        }
+        for j_type in SRS_JOB_TYPES:
+            q_job = await channel.declare_queue(
+                f"q.aip.jobs.{j_type}",
+                durable=True,
+                arguments=job_queue_args,
+            )
+            await q_job.bind(jobs_exchange, routing_key=f"aip.jobs.{j_type}.#")
+            await q_job.bind(tasks_exchange, routing_key=f"aip.tasks.{j_type}.#")
 
         # 3. One durable queue per canonical domain with DLX + Native Priority (x-max-priority: 10)
         queue_args = {
