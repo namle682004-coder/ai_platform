@@ -26,7 +26,12 @@ stt:
     targetCPU: 70
     targetMemory: 80
   nodeSelector:
-    pool: gpu-multimodal
+    pool: multimodal
+  tolerations:
+    - key: "aip/multimodal"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Text to Speech ---
 tts:
@@ -49,7 +54,12 @@ tts:
     maxReplicas: 4
     targetCPU: 70
   nodeSelector:
-    pool: gpu-multimodal
+    pool: multimodal
+  tolerations:
+    - key: "aip/multimodal"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Translation Server ---
 translation:
@@ -72,7 +82,12 @@ translation:
     maxReplicas: 6
     targetCPU: 70
   nodeSelector:
-    pool: cpu-text
+    pool: text-inference
+  tolerations:
+    - key: "aip/text"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Moderation Server ---
 moderation:
@@ -97,7 +112,12 @@ moderation:
     maxReplicas: 4
     targetCPU: 70
   nodeSelector:
-    pool: gpu-multimodal
+    pool: text-inference
+  tolerations:
+    - key: "aip/text"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- OCR Server ---
 ocr:
@@ -120,7 +140,12 @@ ocr:
     maxReplicas: 4
     targetCPU: 70
   nodeSelector:
-    pool: gpu-multimodal
+    pool: multimodal
+  tolerations:
+    - key: "aip/multimodal"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Unified vLLM Serving Engine ---
 vllm:
@@ -146,7 +171,12 @@ vllm:
     targetCPU: 75
     targetMemory: 85
   nodeSelector:
-    pool: gpu-multimodal
+    pool: text-inference
+  tolerations:
+    - key: "aip/text"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Triton Inference Server (SRS Section 2.3 & 4.2: PhoBERT, bge-reranker, PaddleOCR) ---
 triton:
@@ -168,6 +198,11 @@ triton:
       nvidia.com/gpu: 1
   nodeSelector:
     pool: text-inference
+  tolerations:
+    - key: "aip/text"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Image Generation Worker (FLUX.1 / SDXL) ---
 image:
@@ -188,7 +223,12 @@ image:
       memory: 12Gi
       nvidia.com/gpu: 1
   nodeSelector:
-    pool: gpu-multimodal
+    pool: multimodal
+  tolerations:
+    - key: "aip/multimodal"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Video Generation Worker (Wan2.2 / CogVideoX) ---
 video:
@@ -209,7 +249,12 @@ video:
       memory: 24Gi
       nvidia.com/gpu: 1
   nodeSelector:
-    pool: gpu-video
+    pool: video
+  tolerations:
+    - key: "aip/video"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- LipSync Avatar Worker (LivePortrait) ---
 lipsync:
@@ -230,7 +275,12 @@ lipsync:
       memory: 12Gi
       nvidia.com/gpu: 1
   nodeSelector:
-    pool: gpu-multimodal
+    pool: multimodal
+  tolerations:
+    - key: "aip/multimodal"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
 
 # --- Common Secret Endpoints for Runtimes ---
 externalSecrets:

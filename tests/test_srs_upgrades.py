@@ -68,3 +68,45 @@ def test_srs_7_4_rabbitmq_topology_constants():
         "translation_batch",
     }
     assert expected_jobs.issubset(set(SRS_JOB_TYPES))
+
+
+def test_srs_11_2_migrations_exist():
+    """Verify that migrations directory and runners exist per SRS Section 11.2."""
+    from pathlib import Path
+    migrations_dir = Path("migrations")
+    assert migrations_dir.is_dir()
+    assert (migrations_dir / "001_initial_mongo_indexes.py").is_file()
+    assert (migrations_dir / "002_seed_catalogs.py").is_file()
+    assert (migrations_dir / "runner.py").is_file()
+
+
+def test_srs_11_3_kubernetes_node_pools_and_tolerations():
+    """Verify Helm values match SRS Section 11.3 Node Pools, Labels & Taints."""
+    import yaml
+    from pathlib import Path
+
+    values_path = Path("deploy/helm/aip-runtimes/values.yaml")
+    assert values_path.is_file()
+    with open(values_path, "r", encoding="utf-8") as f:
+        values = yaml.safe_load(f)
+
+    # 1. Text Inference pool (taint: aip/text=true:NoSchedule)
+    for svc_name in ["translation", "moderation", "vllm", "triton"]:
+        svc = values.get(svc_name, {})
+        assert svc.get("nodeSelector", {}).get("pool") == "text-inference", f"{svc_name} nodeSelector invalid"
+        tolerations = svc.get("tolerations", [])
+        assert any(t.get("key") == "aip/text" and t.get("effect") == "NoSchedule" for t in tolerations), f"{svc_name} missing text taint toleration"
+
+    # 2. Multimodal pool (taint: aip/multimodal=true:NoSchedule)
+    for svc_name in ["stt", "tts", "ocr", "image", "lipsync"]:
+        svc = values.get(svc_name, {})
+        assert svc.get("nodeSelector", {}).get("pool") == "multimodal", f"{svc_name} nodeSelector invalid"
+        tolerations = svc.get("tolerations", [])
+        assert any(t.get("key") == "aip/multimodal" and t.get("effect") == "NoSchedule" for t in tolerations), f"{svc_name} missing multimodal taint toleration"
+
+    # 3. Video pool (taint: aip/video=true:NoSchedule)
+    video_svc = values.get("video", {})
+    assert video_svc.get("nodeSelector", {}).get("pool") == "video"
+    tolerations = video_svc.get("tolerations", [])
+    assert any(t.get("key") == "aip/video" and t.get("effect") == "NoSchedule" for t in tolerations)
+
