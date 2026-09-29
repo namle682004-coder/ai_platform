@@ -1,4 +1,4 @@
-name: AIP CD Pipeline
+name: "GitOps: Staging & Production Deployment"
 
 on:
   push:
@@ -6,69 +6,23 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment"
+        description: "Target deployment environment"
         required: true
         default: "staging"
         type: choice
         options: [staging, production]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
-  KUBECONFIG: $HOME/.kube/config
+concurrency:
+  group: gitops-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build-and-push:
-    name: Build & Push (${{ matrix.service.name }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - { name: control-plane,      dockerfile: apps/control-plane/Dockerfile,                           port: 8000 }
-          - { name: vllm-engine,        dockerfile: apps/data-plane/vllm-engine/Dockerfile,                   port: 8001 }
-          - { name: stt-server,         dockerfile: apps/data-plane/stt-server/Dockerfile,                    port: 8002 }
-          - { name: translation-server, dockerfile: apps/data-plane/translation-server/Dockerfile,            port: 8003 }
-          - { name: ocr-server,         dockerfile: apps/data-plane/ocr-server/Dockerfile,                    port: 8004 }
-          - { name: moderation-server,  dockerfile: apps/data-plane/moderation-server/Dockerfile,             port: 8006 }
-          - { name: tts-adapter,        dockerfile: apps/data-plane/tts-adapter/Dockerfile,                   port: 8007 }
-          - { name: dispatcher-worker,  dockerfile: apps/dispatcher-worker/Dockerfile, port: 0 }
-          - { name: callback-worker,    dockerfile: apps/callback-worker/Dockerfile,   port: 0 }
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ${{ matrix.service.dockerfile }}
-          push: true
-          provenance: true
-          sbom: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.service.name }}
-          cache-to:   type=gha,mode=max,scope=${{ matrix.service.name }}
-
   deploy-staging:
     name: Deploy Staging
-    needs: build-and-push
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.environment == 'staging')
-    environment:
-      name: staging
+    environment: staging
     steps:
       - uses: actions/checkout@v4
 
@@ -86,12 +40,12 @@ jobs:
             echo "::warning::KUBE_CONFIG_STAGING not set — skipping deploy."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "$KUBE_CONFIG" | base64 -d > $KUBECONFIG
-            chmod 600 $KUBECONFIG
+            echo "$KUBE_CONFIG" | base64 -d > $HOME/.kube/config
+            chmod 600 $HOME/.kube/config
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy
+      - name: Deploy Staging Charts
         if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           helm upgrade --install aip-infra deploy/helm/aip-infra \
@@ -118,12 +72,10 @@ jobs:
 
   deploy-production:
     name: Deploy Production
-    needs: build-and-push          # ✅ sửa: không phụ thuộc staging
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.event_name == 'workflow_dispatch' && inputs.environment == 'production'
-    environment:
-      name: ${{ inputs.environment }}        # require reviewers trong GitHub repo settings
+    environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v4
 
@@ -140,12 +92,12 @@ jobs:
             echo "::warning::KUBE_CONFIG_PRODUCTION not set — skipping deploy."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "$KUBE_CONFIG" | base64 -d > $KUBECONFIG
-            chmod 600 $KUBECONFIG
+            echo "$KUBE_CONFIG" | base64 -d > $HOME/.kube/config
+            chmod 600 $HOME/.kube/config
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy
+      - name: Deploy Production Charts
         if: steps.kubeconfig.outputs.skip != 'true'
         run: |
           helm upgrade --install aip-control deploy/helm/aip-control \

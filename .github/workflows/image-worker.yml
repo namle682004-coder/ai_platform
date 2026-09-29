@@ -1,0 +1,65 @@
+name: "Worker: Image"
+
+on:
+  push:
+    branches: [main, master, dev]
+    paths:
+      - 'apps/image-worker/**'
+      - 'packages/common/**'
+      - 'packages/contracts/**'
+      - '.github/workflows/image-worker.yml'
+      - '.github/actions/**'
+  pull_request:
+    paths:
+      - 'apps/image-worker/**'
+      - 'packages/common/**'
+      - 'packages/contracts/**'
+      - '.github/workflows/image-worker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: image-worker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-test:
+    name: Validate (Image Worker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & UV
+        uses: ./.github/actions/setup-env
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          uv pip install -e packages/common \
+                         -e packages/contracts \
+                         -e apps/image-worker \
+                         ruff
+
+      - name: Lint with Ruff
+        shell: bash
+        run: uv run ruff check apps/image-worker/
+
+  build-image:
+    name: Docker Image (Image Worker)
+    needs: validate-and-test
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build & Push Container
+        uses: ./.github/actions/docker-build
+        with:
+          service-name: image-worker
+          dockerfile: apps/image-worker/Dockerfile
+          image-prefix: ${{ github.repository }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push: "true"

@@ -9,10 +9,6 @@ services:
         value: 3.10.14
       - key: PYTHONPATH
         value: apps/control-plane:packages/common:packages/contracts:packages/sdk
-      - key: TEST_MODE
-        value: "true"
-      - key: VLLM_TEST_MODE
-        value: "true"
       - key: ALLOW_IN_PROCESS_FALLBACK
         value: "true"
       - key: MASTER_PEPPER

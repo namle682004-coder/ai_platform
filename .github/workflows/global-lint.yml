@@ -1,0 +1,43 @@
+name: "Global: Syntax & Lint Gate"
+
+on:
+  push:
+    branches: [main, master, dev]
+  pull_request:
+    branches: [main, master, dev]
+
+concurrency:
+  group: global-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-lint:
+    name: "Ruff Lint & Format Gate"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Path Filter (Skip if Docs Only)
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/**'
+              - 'packages/**'
+              - 'tests/**'
+              - 'scripts/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+
+      - name: Setup Python & UV
+        if: steps.filter.outputs.code == 'true'
+        uses: ./.github/actions/setup-env
+
+      - name: Run Lightning Ruff Check
+        if: steps.filter.outputs.code == 'true'
+        shell: bash
+        run: |
+          uv pip install ruff
+          uv run ruff check apps/ packages/ tests/ scripts/

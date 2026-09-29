@@ -1,0 +1,71 @@
+name: "Worker: Callback"
+
+on:
+  push:
+    branches: [main, master, dev]
+    paths:
+      - 'apps/callback-worker/**'
+      - 'packages/common/**'
+      - 'packages/contracts/**'
+      - '.github/workflows/callback.yml'
+      - '.github/actions/**'
+  pull_request:
+    paths:
+      - 'apps/callback-worker/**'
+      - 'packages/common/**'
+      - 'packages/contracts/**'
+      - '.github/workflows/callback.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: callback-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-test:
+    name: Validate & Test (Callback Worker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: ".:packages/common:packages/contracts:apps/callback-worker:apps/control-plane"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & UV
+        uses: ./.github/actions/setup-env
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          uv pip install -e packages/common \
+                         -e packages/contracts \
+                         -e apps/callback-worker \
+                         pytest httpx ruff
+
+      - name: Lint with Ruff
+        shell: bash
+        run: uv run ruff check apps/callback-worker/
+
+      - name: Callback Worker Tests
+        shell: bash
+        run: uv run pytest tests/test_webhook.py tests/test_jobs_maintenance.py --tb=short
+
+  build-image:
+    name: Docker Image (Callback Worker)
+    needs: validate-and-test
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build & Push Container
+        uses: ./.github/actions/docker-build
+        with:
+          service-name: callback-worker
+          dockerfile: apps/callback-worker/Dockerfile
+          image-prefix: ${{ github.repository }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push: "true"
