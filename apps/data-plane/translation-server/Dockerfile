@@ -6,13 +6,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 
 COPY packages/common /app/packages/common
 COPY packages/contracts /app/packages/contracts
-COPY data-plane/translation-server /app/data-plane/translation-server
+COPY apps/data-plane/translation-server /app/apps/data-plane/translation-server
 
 RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch
-RUN pip install --no-cache-dir -e /app/packages/common -e /app/packages/contracts -e /app/data-plane/translation-server
+RUN pip install --no-cache-dir -e /app/packages/common -e /app/packages/contracts -e /app/apps/data-plane/translation-server
 
-WORKDIR /app/data-plane/translation-server
-ENV PYTHONPATH=/app/data-plane/translation-server:/app/packages/common:/app/packages/contracts
+WORKDIR /app/apps/data-plane/translation-server
+ENV PYTHONPATH=/app/apps/data-plane/translation-server:/app/packages/common:/app/packages/contracts
 
 EXPOSE 8003
 
