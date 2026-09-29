@@ -6,13 +6,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl gcc g++ &&
 
 COPY packages/common /app/packages/common
 COPY packages/contracts /app/packages/contracts
-COPY data-plane/vllm-engine /app/data-plane/vllm-engine
+COPY apps/data-plane/vllm-engine /app/apps/data-plane/vllm-engine
 
 RUN pip install --no-cache-dir torch transformers accelerate
-RUN pip install --no-cache-dir -e /app/packages/common -e /app/data-plane/vllm-engine
+RUN pip install --no-cache-dir -e /app/packages/common -e /app/apps/data-plane/vllm-engine
 
-WORKDIR /app/data-plane/vllm-engine
-ENV PYTHONPATH=/app/data-plane/vllm-engine:/app/packages/common:/app/packages/contracts
+WORKDIR /app/apps/data-plane/vllm-engine
+ENV PYTHONPATH=/app/apps/data-plane/vllm-engine:/app/packages/common:/app/packages/contracts
 
 EXPOSE 8001
 

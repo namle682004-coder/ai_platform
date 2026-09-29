@@ -5,9 +5,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 
 COPY packages/common /app/packages/common
-COPY data-plane/stt-server /app/data-plane/stt-server
+COPY apps/data-plane/stt-server /app/apps/data-plane/stt-server
 
-RUN pip install --no-cache-dir -e /app/packages/common -e /app/data-plane/stt-server
+RUN pip install --no-cache-dir -e /app/packages/common -e /app/apps/data-plane/stt-server
+
+WORKDIR /app/apps/data-plane/stt-server
+ENV PYTHONPATH=/app/apps/data-plane/stt-server:/app/packages/common
 
 EXPOSE 8002
 

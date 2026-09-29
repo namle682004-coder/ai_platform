@@ -3,9 +3,12 @@ FROM python:3.10-slim
 WORKDIR /app
 
 COPY packages/common /app/packages/common
-COPY data-plane/moderation-server /app/data-plane/moderation-server
+COPY apps/data-plane/moderation-server /app/apps/data-plane/moderation-server
 
-RUN pip install --no-cache-dir -e /app/packages/common -e /app/data-plane/moderation-server
+RUN pip install --no-cache-dir -e /app/packages/common -e /app/apps/data-plane/moderation-server
+
+WORKDIR /app/apps/data-plane/moderation-server
+ENV PYTHONPATH=/app/apps/data-plane/moderation-server:/app/packages/common
 
 EXPOSE 8006
 
