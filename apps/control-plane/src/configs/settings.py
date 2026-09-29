@@ -98,10 +98,12 @@ class GatewaySettings(BaseSettings):
 
     # Security & Master Pepper
     master_pepper: SecretStr = Field(
-        alias="MASTER_PEPPER"
+        default=SecretStr("aip-default-master-pepper-change-in-production-min32"),
+        alias="MASTER_PEPPER",
     )
     jwt_secret: SecretStr = Field(
-        alias="JWT_SECRET"
+        default=SecretStr("aip-default-jwt-secret-change-in-production-min32"),
+        alias="JWT_SECRET",
     )
     api_key_salt_rounds: PositiveInt = Field(default=12, alias="API_KEY_SALT_ROUNDS")
     dev_api_key: SecretStr | None = Field(default=None, alias="AIP_API_KEY")
@@ -112,7 +114,7 @@ class GatewaySettings(BaseSettings):
     mongo_root_username: str = Field(default="aip_root", alias="MONGO_ROOT_USERNAME")
     mongo_root_password: SecretStr | None = Field(default=None, alias="MONGO_ROOT_PASSWORD")
     mongo_database: str = Field(default="ai_platform", alias="MONGO_DATABASE")
-    mongo_uri: str = Field(..., alias="MONGO_URI")
+    mongo_uri: str = Field(default="mongodb://localhost:27017/ai_platform", alias="MONGO_URI")
     mongodb_uri: str | None = Field(default=None, alias="MONGODB_URI")
 
     # Redis Settings
@@ -129,7 +131,7 @@ class GatewaySettings(BaseSettings):
 
     # MinIO Settings
     minio_root_user: str = Field(default="minioadmin", alias="MINIO_ROOT_USER")
-    minio_root_password: SecretStr = Field(..., alias="MINIO_ROOT_PASSWORD")
+    minio_root_password: SecretStr = Field(default=SecretStr("minioadmin123"), alias="MINIO_ROOT_PASSWORD")
     minio_endpoint: str = Field(default="http://localhost:9000", alias="MINIO_ENDPOINT")
     minio_console_endpoint: str = Field(default="http://localhost:9001", alias="MINIO_CONSOLE_ENDPOINT")
     minio_bucket_name: str = Field(default="aip-data", alias="MINIO_BUCKET_NAME")
@@ -169,12 +171,11 @@ class GatewaySettings(BaseSettings):
     @classmethod
     def _reconcile_variables(cls, values: dict) -> dict:
         if isinstance(values, dict):
-            # Test mode defaults if not set in environment
-            if os.getenv("TEST_MODE") == "true" or values.get("TEST_MODE") == "true":
-                values.setdefault("MASTER_PEPPER", "test-master-pepper-for-testing-purposes-min-32-chars")
-                values.setdefault("JWT_SECRET", "test-jwt-secret-for-testing-purposes-min-32-chars")
-                values.setdefault("MONGO_URI", "mongodb://localhost:27017/test_ai_platform")
-                values.setdefault("MINIO_ROOT_PASSWORD", "minioadmin123")
+            # Supply safe defaults if not provided in environment
+            values.setdefault("MASTER_PEPPER", "aip-default-master-pepper-change-in-production-min32")
+            values.setdefault("JWT_SECRET", "aip-default-jwt-secret-change-in-production-min32")
+            values.setdefault("MONGO_URI", "mongodb://localhost:27017/ai_platform")
+            values.setdefault("MINIO_ROOT_PASSWORD", "minioadmin123")
 
             # 1. MongoDB URI reconciliation
             if values.get("MONGODB_URI") and not values.get("MONGO_URI"):
