@@ -14,8 +14,9 @@ import grpc
 
 try:
     from contracts.generated import inference_pb2, inference_pb2_grpc
-except ImportError:
-    from packages.contracts.contracts.generated import inference_pb2, inference_pb2_grpc
+except (ImportError, ModuleNotFoundError):
+    inference_pb2 = None
+    inference_pb2_grpc = None
 
 logger = logging.getLogger("aip-dispatcher.grpc-client")
 

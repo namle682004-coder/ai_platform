@@ -47,6 +47,10 @@ async def get_model_alias(alias: str, request: Request):
             detail=f"Model alias '{alias}' not found or currently disabled."
         )
 
+    # SRS Section 6.2: Deprecated Aliases flag
+    if resolved.get("status") == "deprecated":
+        request.state.alias_deprecated = True
+
     return {
         "id": resolved["alias"],
         "object": "model",

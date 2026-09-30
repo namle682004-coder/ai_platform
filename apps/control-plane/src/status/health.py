@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import time
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 import httpx
 
 from common.database.mongodb import mongo_manager
@@ -196,16 +196,70 @@ async def health_check():
 
 @router.get("/health/live", summary="Kubernetes Liveness Probe")
 async def liveness_probe():
-    return {"status": "live"}
+    """
+    Kubernetes Liveness Probe.
+    Verifies that the ASGI event loop and HTTP server process are responsive.
+    """
+    return {
+        "status": "live",
+        "service": "aip-control-plane",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @router.get("/health/ready", summary="Kubernetes Readiness Probe")
-async def readiness_probe():
+async def readiness_probe(request: Request, response: Response):
+    """
+    Kubernetes Readiness Probe.
+    Probes all essential upstream dependencies (MongoDB, Redis, RabbitMQ).
+    Returns HTTP 200 if dependencies are healthy or running in allowed fallback mode,
+    or HTTP 503 if critical storage/message broker infrastructure is down in production.
+    """
+    mongo_task = asyncio.create_task(probe_mongodb())
+    redis_task = asyncio.create_task(probe_redis())
+    rmq_task = asyncio.create_task(probe_rabbitmq(request))
+
+    mongo_res, redis_res, rmq_res = await asyncio.gather(
+        mongo_task, redis_task, rmq_task, return_exceptions=True
+    )
+
+    mongo_stat = mongo_res if isinstance(mongo_res, dict) else {"status": "unhealthy", "error": str(mongo_res)}
+    redis_stat = redis_res if isinstance(redis_res, dict) else {"status": "unhealthy", "error": str(redis_res)}
+    rmq_stat = rmq_res if isinstance(rmq_res, dict) else {"status": "unhealthy", "error": str(rmq_res)}
+
+    mongo_healthy = mongo_stat.get("status") == "healthy"
+    redis_healthy = redis_stat.get("status") == "healthy"
+    rmq_healthy = rmq_stat.get("status") == "healthy"
+
+    is_production = gateway_settings.environment.lower() in ("production", "prod", "staging")
+    is_fallback_allowed = gateway_settings.allow_in_process_fallback
+
+    # In production, if MongoDB is unreachable and fallback is not allowed, mark Pod not ready
+    if not mongo_healthy and (is_production or not is_fallback_allowed):
+        response.status_code = 503
+        return {
+            "status": "not_ready",
+            "ready": False,
+            "environment": gateway_settings.environment,
+            "dependencies": {
+                "mongodb": mongo_stat,
+                "redis": redis_stat,
+                "rabbitmq": rmq_stat,
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    all_healthy = mongo_healthy and redis_healthy and rmq_healthy
     return {
-        "status": "ready",
-        "mongodb": "connected",
-        "redis": "connected",
-        "rabbitmq": "connected",
+        "status": "ready" if all_healthy else "degraded",
+        "ready": True,
+        "environment": gateway_settings.environment,
+        "dependencies": {
+            "mongodb": mongo_stat,
+            "redis": redis_stat,
+            "rabbitmq": rmq_stat,
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

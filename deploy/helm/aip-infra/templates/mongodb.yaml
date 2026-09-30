@@ -17,6 +17,15 @@ spec:
       labels:
         app.kubernetes.io/name: aip-mongodb
     spec:
+      {{- if $.Values.highAvailability.enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: aip-mongodb
+              topologyKey: {{ $.Values.highAvailability.topologyKey | quote }}
+      {{- end }}
       containers:
         - name: mongodb
           image: {{ .Values.mongodb.image }}
@@ -41,12 +50,18 @@ spec:
             {{- toYaml .Values.mongodb.resources | nindent 12 }}
           livenessProbe:
             exec:
-              command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+              command:
+                - sh
+                - -c
+                - mongosh --host 127.0.0.1 --username "$MONGO_INITDB_ROOT_USERNAME" --password "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "db.adminCommand('ping')"
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+              command:
+                - sh
+                - -c
+                - mongosh --host 127.0.0.1 --username "$MONGO_INITDB_ROOT_USERNAME" --password "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "db.adminCommand('ping')"
             initialDelaySeconds: 5
             periodSeconds: 5
   volumeClaimTemplates:

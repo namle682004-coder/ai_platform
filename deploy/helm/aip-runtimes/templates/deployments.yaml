@@ -1,4 +1,4 @@
-{{- range $name, $svc := dict "stt" .Values.stt "tts" .Values.tts "translation" .Values.translation "moderation" .Values.moderation "ocr" .Values.ocr "vllm" .Values.vllm "image" .Values.image "video" .Values.video "lipsync" .Values.lipsync }}
+{{- range $name, $svc := dict "stt" .Values.stt "tts" .Values.tts "translation" .Values.translation "moderation" .Values.moderation "ocr" .Values.ocr "vllm" .Values.vllm "triton" .Values.triton "image" .Values.image "video" .Values.video "lipsync" .Values.lipsync }}
 {{- if and $svc $svc.enabled }}
 ---
 apiVersion: apps/v1
@@ -24,6 +24,10 @@ spec:
     spec:
       nodeSelector:
         {{- toYaml $svc.nodeSelector | nindent 8 }}
+      {{- if $svc.tolerations }}
+      tolerations:
+        {{- toYaml $svc.tolerations | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ $name }}
           image: "{{ $svc.image.repository }}:{{ $svc.image.tag }}"

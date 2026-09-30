@@ -17,6 +17,18 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: control-plane
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: gateway
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -24,17 +36,69 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
               name: http
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if .Values.config.mongoUri }}
+            - name: MONGO_URI
+              value: {{ .Values.config.mongoUri | quote }}
+            {{- end }}
+            {{- if .Values.config.redisUrl }}
+            - name: REDIS_URL
+              value: {{ .Values.config.redisUrl | quote }}
+            {{- end }}
+            {{- if .Values.config.rabbitmqUrl }}
+            - name: RABBITMQ_URL
+              value: {{ .Values.config.rabbitmqUrl | quote }}
+            {{- end }}
+            {{- if .Values.config.minioEndpoint }}
+            - name: MINIO_ENDPOINT
+              value: {{ .Values.config.minioEndpoint | quote }}
+            {{- end }}
+            {{- if .Values.existingSecret }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: jwt-secret
+            - name: MASTER_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: master-pepper
+            {{- else if .Values.secrets }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: jwt-secret
+            - name: MASTER_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: master-pepper
+            {{- end }}
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: http
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

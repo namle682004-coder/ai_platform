@@ -1,0 +1,18 @@
+{{- if .Values.highAvailability.enabled }}
+{{- range $name := list "mongodb" "redis" "rabbitmq" "minio" }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: aip-{{ $name }}-pdb
+  namespace: aip-infra
+  labels:
+    app.kubernetes.io/name: aip-{{ $name }}
+    app.kubernetes.io/part-of: aip-platform
+spec:
+  minAvailable: {{ $.Values.highAvailability.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aip-{{ $name }}
+{{- end }}
+{{- end }}

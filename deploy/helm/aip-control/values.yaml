@@ -56,6 +56,13 @@ ingress:
       hosts:
         - aip-api.enterprise.internal
 
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
 resources:
   limits:
     cpu: 2000m
@@ -70,3 +77,21 @@ env:
   DEFAULT_RPM_LIMIT: "300"
   DEFAULT_TPM_LIMIT: "500000"
   DEFAULT_CONCURRENCY_LIMIT: "20"
+  LOG_LEVEL: "INFO"
+
+config:
+  mongoUri: "mongodb://aip-mongodb.aip-infra.svc.cluster.local:27017/ai_platform"
+  redisUrl: "redis://aip-redis.aip-infra.svc.cluster.local:6379/0"
+  rabbitmqUrl: "amqp://aip:aip_pass@aip-rabbitmq.aip-infra.svc.cluster.local:5672/aip"
+  minioEndpoint: "http://aip-minio.aip-infra.svc.cluster.local:9000"
+
+existingSecret: ""
+
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: aip-platform
+    kind: ClusterSecretStore
+  remoteKeys:
+    jwtSecret: aip-platform/control-plane
+    masterPepper: aip-platform/control-plane

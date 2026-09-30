@@ -17,6 +17,15 @@ spec:
       labels:
         app.kubernetes.io/name: aip-minio
     spec:
+      {{- if $.Values.highAvailability.enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: aip-minio
+              topologyKey: {{ $.Values.highAvailability.topologyKey | quote }}
+      {{- end }}
       containers:
         - name: minio
           image: {{ .Values.minio.image }}

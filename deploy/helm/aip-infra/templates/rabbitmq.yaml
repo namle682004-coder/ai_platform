@@ -17,6 +17,15 @@ spec:
       labels:
         app.kubernetes.io/name: aip-rabbitmq
     spec:
+      {{- if $.Values.highAvailability.enabled }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: aip-rabbitmq
+              topologyKey: {{ $.Values.highAvailability.topologyKey | quote }}
+      {{- end }}
       containers:
         - name: rabbitmq
           image: {{ .Values.rabbitmq.image }}

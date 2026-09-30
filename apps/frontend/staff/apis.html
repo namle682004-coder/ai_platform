@@ -6,100 +6,463 @@
     <title>AIP Platform - APIs Catalog</title>
     <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
     <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --aip-blue: #0f4c81;
-            --aip-blue-light: #2563eb;
-            --aip-cyan: #00a4b8;
-            --aip-orange: #f97316;
             --bg-page: #f8fafc;
-            --card-bg: #ffffff;
-            --text-dark: #0f172a;
-            --text-sub: #64748b;
+            --bg-card: #ffffff;
+            --bg-subtle: #f1f5f9;
+            --header-bg: #0f172a;
+            --header-border: #1e293b;
             --border-color: #e2e8f0;
-            --font-heading: 'Outfit', sans-serif;
-            --font-body: 'Inter', sans-serif;
+            --border-hover: #cbd5e1;
+            --text-dark: #0f172a;
+            --text-body: #334155;
+            --text-sub: #64748b;
+            --text-muted: #94a3b8;
+            --primary: #0f172a;
+            --primary-hover: #1e293b;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-code: 'Fira Code', 'SF Mono', Consolas, monospace;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+        body { 
+            background: var(--bg-page); 
+            color: var(--text-dark); 
+            font-family: var(--font-family); 
+            font-size: 13px;
+            line-height: 1.45;
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        .top-header { background: var(--aip-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px;  position: sticky; top: 0; z-index: 1000; }
-        .header-left { display: flex; align-items: center; gap: 20px; }
-        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        /* Top Enterprise Navigation Header */
+        .top-header { 
+            background: var(--header-bg); 
+            height: 46px; 
+            padding: 0 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            color: #ffffff; 
+            font-size: 12.5px;  
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            border-bottom: 1px solid var(--header-border);
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .brand-logo { 
+            font-size: 14px; 
+            font-weight: 600; 
+            color: #ffffff; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            letter-spacing: -0.01em;
+        }
+        .brand-logo i { color: #94a3b8; font-size: 14px; }
+        .project-selector { 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 4px; 
+            padding: 4px 10px; 
+            font-size: 12px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 7px; 
+            color: #e2e8f0;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .project-selector:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.25); }
+        .project-selector i { color: #94a3b8; font-size: 11px; }
 
-        .header-right { display: flex; align-items: center; gap: 20px; }
-        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 500; color: #e2e8f0; }
+        .user-menu i { color: #94a3b8; font-size: 14px; }
+
+        /* Icon button utility */
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .btn-icon:hover {
+            background: var(--bg-subtle);
+            border-color: var(--border-hover);
+            color: var(--text-dark);
+        }
 
         .layout-body { display: flex; flex: 1; }
 
+        /* Enterprise Sidebar */
         .sidebar {
-            width: 220px;
+            width: 210px;
             background: #ffffff;
             border-right: 1px solid var(--border-color);
-            padding: 20px 0;
+            padding: 16px 0;
             position: sticky;
-            top: 50px;
-            height: calc(100vh - 50px);
+            top: 46px;
+            height: calc(100vh - 46px);
             overflow-y: auto;
             flex-shrink: 0;
         }
-        .nav-section { margin-bottom: 24px; }
-        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 0 20px 8px 20px; letter-spacing: 0.5px; }
+        .nav-section { margin-bottom: 18px; }
+        .section-title { 
+            font-size: 10.5px; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            color: var(--text-muted); 
+            padding: 0 16px 6px 16px; 
+            letter-spacing: 0.05em; 
+        }
         .nav-list { list-style: none; }
-        .nav-item a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13.5px; font-weight: 500; color: #475569; text-decoration: none; transition: all 0.15s ease; border-left: 3px solid transparent; }
-        .nav-item.active a, .nav-item a:hover { background: #f1f5f9; color: var(--aip-cyan); border-left-color: var(--aip-cyan); }
+        .nav-item a { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 7px 16px; 
+            font-size: 12.5px; 
+            font-weight: 500; 
+            color: var(--text-body); 
+            text-decoration: none; 
+            transition: all 0.12s ease; 
+            border-left: 2px solid transparent; 
+        }
+        .nav-item a i { color: var(--text-sub); font-size: 12px; width: 14px; text-align: center; }
+        .nav-item.active a, .nav-item a:hover { 
+            background: var(--bg-subtle); 
+            color: var(--text-dark); 
+            border-left-color: var(--primary); 
+        }
+        .nav-item.active a i, .nav-item a:hover i { color: var(--text-dark); }
 
-        .main-content { flex: 1; padding: 24px 32px; background: #f8fafc; }
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 20px 28px; background: var(--bg-page); }
 
-        .welcome-banner { background: linear-gradient(135deg, #0b2545 0%, #134074 100%); border-radius: 12px; padding: 24px 28px; color: #ffffff; margin-bottom: 24px; }
-        .welcome-banner h1 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-        .welcome-banner p { font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px; }
-        .btn-explore { background: var(--aip-cyan); color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+        /* Breadcrumb & Console Header */
+        .console-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            color: var(--text-sub);
+            margin-bottom: 10px;
+        }
+        .console-breadcrumb a { color: var(--text-sub); text-decoration: none; }
+        .console-breadcrumb a:hover { color: var(--text-dark); }
+        .console-breadcrumb span.sep { color: var(--text-muted); }
+        .console-breadcrumb span.active { color: var(--text-dark); font-weight: 600; }
 
-        .page-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
+        .catalog-header-bar {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .catalog-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .catalog-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            letter-spacing: -0.01em;
+        }
+        .catalog-badge {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 7px;
+            background: var(--bg-subtle);
+            color: var(--text-sub);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
 
-        .api-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .api-card { background: #ffffff; border-radius: 10px; border: 1px solid var(--border-color); padding: 20px; transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
-        .api-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08); border-color: var(--aip-cyan); }
+        .catalog-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-box-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-box-wrap input {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 5px 28px 5px 10px;
+            font-size: 12px;
+            color: var(--text-dark);
+            width: 210px;
+            outline: none;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .search-box-wrap input:focus {
+            background: #ffffff;
+            border-color: var(--text-dark);
+        }
+        .search-box-wrap i {
+            position: absolute;
+            right: 9px;
+            color: var(--text-muted);
+            font-size: 11px;
+            pointer-events: none;
+        }
 
-        .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-        .api-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--aip-cyan); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .card-title { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
-        .card-desc { font-size: 12.5px; color: var(--text-sub); line-height: 1.4; margin-bottom: 16px; }
+        /* Category Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 14px;
+        }
+        .filter-tab {
+            border: 1px solid transparent;
+            background: transparent;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .filter-tab:hover {
+            color: var(--text-dark);
+            background: var(--bg-subtle);
+        }
+        .filter-tab.active {
+            background: #ffffff;
+            border-color: var(--border-color);
+            color: var(--text-dark);
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
 
-        .btn-enable-api { background: #007bff; color: #ffffff; border: none; padding: 6px 16px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.15s; }
-        .btn-enable-api:hover { background: #0056b3; }
-        .btn-enable-api.active { background: #10b981; }
+        /* API Grid & Cards */
+        .api-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); 
+            gap: 14px; 
+        }
+        .api-card { 
+            background: #ffffff; 
+            border-radius: 6px; 
+            border: 1px solid var(--border-color); 
+            padding: 16px; 
+            transition: border-color 0.15s, box-shadow 0.15s; 
+            cursor: pointer; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+        }
+        .api-card:hover { 
+            border-color: var(--border-hover); 
+            box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05); 
+        }
 
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .card-top { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 12px; 
+        }
+        /* Monochrome enterprise icon */
+        .api-icon { 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 5px; 
+            background: var(--bg-subtle); 
+            border: 1px solid var(--border-color);
+            color: #334155; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 13.5px; 
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .api-card:hover .api-icon {
+            background: #ffffff;
+            border-color: var(--border-hover);
+            color: var(--text-dark);
+        }
+
+        .card-title { 
+            font-size: 13.5px; 
+            font-weight: 600; 
+            color: var(--text-dark); 
+            margin-bottom: 4px; 
+            letter-spacing: -0.01em;
+        }
+        .card-desc { 
+            font-size: 12px; 
+            color: var(--text-sub); 
+            line-height: 1.45; 
+            margin-bottom: 12px; 
+            min-height: 34px;
+        }
+        .card-footer-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-code);
+        }
+
+        /* Minimal enterprise switch */
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: #00a4b8; }
-        input:checked + .slider:before { transform: translateX(22px); }
+        .slider { 
+            position: absolute; 
+            cursor: pointer; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: #cbd5e1; 
+            transition: .2s ease; 
+            border-radius: 18px; 
+        }
+        .slider:before { 
+            position: absolute; 
+            content: ""; 
+            height: 14px; 
+            width: 14px; 
+            left: 2px; 
+            bottom: 2px; 
+            background-color: #ffffff; 
+            transition: .2s ease; 
+            border-radius: 50%; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
-        /* AIP CONFIRM POPUP MODAL */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; align-items: center; justify-content: center; }
+        /* Modal Overlays */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.45); 
+            z-index: 9999; 
+            align-items: center; 
+            justify-content: center; 
+        }
         .modal-overlay.active { display: flex; }
-        .confirm-box { background: #ffffff; width: 440px; border-radius: 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); overflow: hidden; font-family: var(--font-body); }
-        .confirm-header { background: #e5e7eb; padding: 14px 20px; font-family: var(--font-heading); font-size: 17px; font-weight: 600; color: #1f2937; }
-        .confirm-body { padding: 24px 20px; font-size: 14px; color: #374151; }
-        .confirm-footer { padding: 12px 20px 16px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-        .btn-confirm-cancel { background: transparent; color: #007bff; border: none; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
-        .btn-confirm-cancel:hover { background: #f3f4f6; }
-        .btn-confirm-ok { background: #007bff; color: #ffffff; border: none; font-weight: 700; font-size: 13px; padding: 8px 20px; cursor: pointer; text-transform: uppercase; border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3); }
-        .btn-confirm-ok:hover { background: #0056b3; }
+        .confirm-box { 
+            background: #ffffff; 
+            width: 440px; 
+            border-radius: 6px; 
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); 
+            overflow: hidden; 
+        }
+        .confirm-header { 
+            background: #f8fafc; 
+            padding: 12px 18px; 
+            font-size: 13.5px; 
+            font-weight: 600; 
+            color: var(--text-dark); 
+            border-bottom: 1px solid var(--border-color);
+        }
+        .confirm-body { padding: 18px; font-size: 12.5px; color: var(--text-body); }
+        .confirm-footer { 
+            padding: 10px 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: flex-end; 
+            gap: 8px; 
+            border-top: 1px solid #f1f5f9;
+            background: #ffffff;
+        }
+        .btn-confirm-cancel { 
+            background: #ffffff; 
+            color: var(--text-body); 
+            border: 1px solid var(--border-color); 
+            font-weight: 500; 
+            font-size: 12px; 
+            padding: 6px 12px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            transition: all 0.15s;
+        }
+        .btn-confirm-cancel:hover { background: var(--bg-subtle); border-color: var(--border-hover); }
+        .btn-confirm-ok { 
+            background: var(--primary); 
+            color: #ffffff; 
+            border: 1px solid var(--primary); 
+            font-weight: 500; 
+            font-size: 12px; 
+            padding: 6px 14px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            transition: background 0.15s;
+        }
+        .btn-confirm-ok:hover { background: var(--primary-hover); }
 
-        .form-control-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; margin-top: 6px; outline: none; }
+        .form-control-input { 
+            width: 100%; 
+            padding: 7px 10px; 
+            border-radius: 4px; 
+            border: 1px solid var(--border-color); 
+            font-size: 12.5px; 
+            margin-top: 5px; 
+            outline: none; 
+            color: var(--text-dark);
+            background: #ffffff;
+            transition: border-color 0.15s;
+        }
+        .form-control-input:focus { border-color: var(--text-dark); }
 
         /* Toast Container */
-        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
-        .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
+        #toast-container { position: fixed; top: 16px; right: 16px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; }
+        .toast-msg { 
+            min-width: 260px; 
+            padding: 10px 14px; 
+            border-radius: 4px; 
+            color: #ffffff; 
+            font-size: 12px; 
+            font-weight: 500; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 10px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12); 
+            background: #0f172a;
+        }
     </style>
     <script src="/assets/js/staff_layout.js"></script>
 </head>
@@ -107,399 +470,323 @@
 
     <div id="toast-container"></div>
 
+    <!-- Top Header -->
     <div class="top-header">
         <div class="header-left">
-            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> AIP Platform</a>
-            <div class="project-selector" onclick="openSelectProjectModal()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <a href="/staff/dashboard" class="brand-logo">
+                <i class="fa-solid fa-cube"></i>
+                <span>AIP Platform</span>
+            </a>
+            <div class="project-selector" onclick="openSelectProjectModal()" title="Switch active project">
+                <i class="fa-solid fa-folder"></i>
+                <span id="current-project-label">Select a project</span>
+                <i class="fa-solid fa-chevron-down" style="font-size: 9px; margin-left: 2px;"></i>
+            </div>
         </div>
         <div class="header-right">
-            <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
+            <!-- Language selector -->
             <div style="position:relative; cursor:pointer;" onclick="toggleLangDropdown(event)">
-                <i class="fa-solid fa-globe"></i> <span id="current-lang-text">English</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
-                <div id="lang-dropdown-menu" style="display:none; position:absolute; top:35px; right:0; background:#fff; color:#0f172a; border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,0.15); border:1px solid #cbd5e1; width:140px; z-index:10000; overflow:hidden;">
-                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;" onclick="setAppLanguage('en'); event.stopPropagation();">
+                <span style="font-size: 12px; color: #cbd5e1; display:flex; align-items:center; gap:5px;">
+                    <i class="fa-solid fa-globe" style="font-size: 12px;"></i>
+                    <span id="current-lang-text">English</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 9px;"></i>
+                </span>
+                <div id="lang-dropdown-menu" style="display:none; position:absolute; top:32px; right:0; background:#fff; color:#0f172a; border-radius:4px; box-shadow:0 6px 18px rgba(0,0,0,0.12); border:1px solid #cbd5e1; width:130px; z-index:10000; overflow:hidden;">
+                    <div style="padding:8px 12px; font-weight:500; font-size:12px; display:flex; align-items:center; gap:8px;" onclick="setAppLanguage('en'); event.stopPropagation();">
                         🇬🇧 English
                     </div>
-                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; border-top:1px solid #f1f5f9;" onclick="setAppLanguage('vi'); event.stopPropagation();">
+                    <div style="padding:8px 12px; font-weight:500; font-size:12px; display:flex; align-items:center; gap:8px; border-top:1px solid #f1f5f9;" onclick="setAppLanguage('vi'); event.stopPropagation();">
                         🇻🇳 Tiếng Việt
                     </div>
                 </div>
             </div>
             <div class="user-menu">
-                <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
-                <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left:6px; cursor:pointer;" onclick="logoutUser()"></i>
+                <span id="header-username">Nam Lê</span>
+                <button class="btn-icon" style="background:transparent; border:none; color:#94a3b8;" title="Logout" onclick="logoutUser()">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
             </div>
         </div>
     </div>
 
     <div class="layout-body">
+        <!-- Sidebar Navigation -->
         <div class="sidebar">
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
-                    <span id="txt-nav-console"><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> Console</span>
-                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
-                </div>
+                <div class="section-title">Console</div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/dashboard" id="txt-nav-dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
-                    <li class="nav-item active"><a href="/staff/apis" id="txt-nav-apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
-                    <li class="nav-item"><a href="/staff/keys" id="txt-nav-keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
-                    <li class="nav-item"><a href="/staff/report" id="txt-nav-report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
+                    <li class="nav-item"><a href="/staff/dashboard" id="txt-nav-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                    <li class="nav-item active"><a href="/staff/apis" id="txt-nav-apis"><i class="fa-solid fa-cubes"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys" id="txt-nav-keys"><i class="fa-solid fa-key"></i> API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report" id="txt-nav-report"><i class="fa-solid fa-chart-line"></i> API report</a></li>
                 </ul>
             </div>
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
-                    <span id="txt-nav-applications"><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
-                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
-                </div>
-                                <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone-lines" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
-                    <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
-                    <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
-                    <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image" style="width: 16px; text-align: center;"></i> Image Gen API</a></li>
-                    <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield-halved" style="width: 16px; text-align: center;"></i> Moderation API</a></li>
+                <div class="section-title">Applications</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone-lines"></i> Speech to Text</a></li>
+                    <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high"></i> Text to Speech</a></li>
+                    <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments"></i> LLM Chatbot</a></li>
+                    <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image"></i> Image Gen API</a></li>
+                    <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield-halved"></i> Moderation API</a></li>
                 </ul>
             </div>
             <div class="nav-section">
-                <div class="section-title">
-                    <a href="/staff/payment" id="txt-nav-payment" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-credit-card" style="width: 14px;"></i> Payment history
-                    </a>
-                </div>
-            </div>
-            <div class="nav-section">
-                <div class="section-title">
-                    <a href="/staff/contact" id="txt-nav-contact" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-headset" style="width: 14px;"></i> Contact us
-                    </a>
-                </div>
+                <div class="section-title">Billing & Support</div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/payment" id="txt-nav-payment"><i class="fa-solid fa-credit-card"></i> Payment history</a></li>
+                    <li class="nav-item"><a href="/staff/contact" id="txt-nav-contact"><i class="fa-solid fa-headset"></i> Contact us</a></li>
+                </ul>
             </div>
         </div>
 
+        <!-- Main Workspace Content -->
         <div class="main-content">
-            <div class="welcome-banner">
-                <h1 id="welcome-title">Welcome, Nam Lê</h1>
-                <p id="welcome-desc">Important notice: AIP Platform AI Console provides Enterprise-grade AI Cloud Middleware infrastructure for businesses. Read more here <a href="/docs" style="color:#fff; text-decoration:underline;">Link</a></p>
-                <a href="#apis-anchor" class="btn-explore" id="btn-explore-text">EXPLORE</a>
+            <!-- Breadcrumb Navigation -->
+            <div class="console-breadcrumb">
+                <a href="/staff/dashboard"><i class="fa-solid fa-house" style="font-size: 11px;"></i> Console</a>
+                <span class="sep">/</span>
+                <span id="breadcrumb-project-name">Projects</span>
+                <span class="sep">/</span>
+                <span class="active">API Services Catalog</span>
             </div>
 
-            <!-- GPU Infrastructure Warning Banner (Triggered at >= 80% Utilization) -->
-            <div id="gpu-warning-banner" style="display: none; background: #fff7ed; border: 1.5px solid #ffedd5; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px; color: #c2410c; font-size: 13.5px; font-weight: 500; align-items: center; gap: 10px; font-family: var(--font-body);">
-                <i class="fa-solid fa-triangle-exclamation" style="font-size: 16px; color: #ea580c;"></i>
-                <span id="gpu-warning-text">CẢNH BÁO HẠ TẦNG: Bộ nhớ VRAM / tải hạ tầng đã vượt ngưỡng 80% an toàn. Vui lòng cân nhắc mở rộng GPU hoặc tối ưu tải!</span>
+            <!-- Header Toolbar -->
+            <div class="catalog-header-bar">
+                <div class="catalog-header-left">
+                    <a href="/staff/dashboard" class="btn-icon" title="Back to Dashboard">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <div class="catalog-title" id="txt-catalog-title">API Services Catalog</div>
+                        <div style="font-size: 11.5px; color: var(--text-sub);">Enterprise-grade AI inference microservices with dedicated SLA</div>
+                    </div>
+                    <span class="catalog-badge" id="catalog-count-badge">13 Services</span>
+                </div>
+                <div class="catalog-toolbar">
+                    <div class="search-box-wrap">
+                        <input type="text" id="api-search-input" onkeyup="filterApiCards()" placeholder="Filter services...">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <button class="btn-icon" title="Refresh API status" onclick="syncUIState()">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <a href="/docs" target="_blank" class="btn-icon" title="Interactive OpenAPI Documentation">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                </div>
             </div>
 
-            <div id="apis-anchor" class="page-title" style="display:flex; align-items:center;">
-                <a href="/staff/dashboard" style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:12px; font-size:14px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to Dashboard">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </a>
-                <span id="txt-catalog-title">APIs Catalog</span>
+            <!-- Category Filter Pills -->
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterCategory('all', this)">All (13)</button>
+                <button class="filter-tab" onclick="filterCategory('generative', this)">Generative AI</button>
+                <button class="filter-tab" onclick="filterCategory('vision', this)">Vision & OCR</button>
+                <button class="filter-tab" onclick="filterCategory('voice', this)">Voice & Speech</button>
+                <button class="filter-tab" onclick="filterCategory('nlp', this)">NLP & Text</button>
             </div>
 
+            <!-- GPU Infrastructure Warning Banner (only displayed if >= 80%) -->
+            <div id="gpu-warning-banner" style="display: none; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; color: #b45309; font-size: 12px; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 13px; color: #d97706;"></i>
+                <span id="gpu-warning-text">CẢNH BÁO: Bộ nhớ VRAM hạ tầng đã vượt ngưỡng 80% an toàn.</span>
+            </div>
+
+            <!-- Dynamic API Cards Grid -->
             <div class="api-grid" id="api-cards-grid-container">
-                <!-- Speech to Text Card -->
-                <div class="api-card" onclick="navigateToService('Speech to Text')">
-                    <div class="card-top">
-                        <div class="api-icon"><i class="fa-solid fa-microphone-lines"></i></div>
-                        <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="toggle-stt" onchange="handleApiToggleClick('Speech to Text', this, event)">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="card-title">Speech to Text</div>
-                    <div class="card-desc">Convert your voice into text using PhoWhisper STT model</div>
-                </div>
-
-                <!-- Text to Speech Card -->
-                <div class="api-card" onclick="navigateToService('Text to Speech')">
-                    <div class="card-top">
-                        <div class="api-icon"><i class="fa-solid fa-volume-high"></i></div>
-                        <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="toggle-tts" onchange="handleApiToggleClick('Text to Speech', this, event)">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="card-title">Text to Speech</div>
-                    <div class="card-desc">Convert text to natural-sounding voices with viXTTS synthesis</div>
-                </div>
-
-                <!-- LLM Chatbot Card -->
-                <div class="api-card" onclick="navigateToService('LLM Chatbot API')">
-                    <div class="card-top">
-                        <div class="api-icon" style="background:#2563eb;"><i class="fa-solid fa-comments"></i></div>
-                        <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="toggle-llm" onchange="handleApiToggleClick('LLM Chatbot API', this, event)">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="card-title">LLM Chatbot API</div>
-                    <div class="card-desc">Qwen3-8B & 14B High Quality LLM Reasoning Endpoints</div>
-                </div>
-                <!-- Image Generation Card -->
-                <div class="api-card" onclick="navigateToService('Image Generation API')">
-                    <div class="card-top">
-                        <div class="api-icon" style="background:#8b5cf6;"><i class="fa-solid fa-image"></i></div>
-                        <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="toggle-image" onchange="handleApiToggleClick('Image Generation API', this, event)">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="card-title">Image Generation API</div>
-                    <div class="card-desc">Generate images from text using Stable Diffusion XL</div>
-                </div>
-
-                <!-- Content Moderation Card -->
-                <div class="api-card" onclick="navigateToService('Content Moderation API')">
-                    <div class="card-top">
-                        <div class="api-icon" style="background:#ef4444;"><i class="fa-solid fa-shield-halved"></i></div>
-                        <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="toggle-moderation" onchange="handleApiToggleClick('Content Moderation API', this, event)">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="card-title">Content Moderation API</div>
-                    <div class="card-desc">Scan and filter bad language / toxic text content</div>
-                </div>
+                <!-- Injected dynamically via JS with clean monochrome cards -->
             </div>
         </div>
     </div>
 
-    <!-- MODAL 1: EXACT AIP CONFIRM POPUP -->
+    <!-- MODAL 1: CONFIRM TOGGLE POPUP -->
     <div class="modal-overlay" id="confirm-modal">
         <div class="confirm-box">
-            <div class="confirm-header" id="modal-confirm-header">Confirm</div>
-            <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API</div>
+            <div class="confirm-header" id="modal-confirm-header">Confirm API State Change</div>
+            <div class="confirm-body" id="modal-confirm-body">Do you want to enable this API service for your active project?</div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" id="btn-confirm-cancel" onclick="cancelConfirmModal()">CANCEL</button>
-                <button class="btn-confirm-ok" id="btn-confirm-ok" onclick="onConfirmEnableClick()">CONFIRM</button>
+                <button class="btn-confirm-cancel" id="btn-confirm-cancel" onclick="cancelConfirmModal()">Cancel</button>
+                <button class="btn-confirm-ok" id="btn-confirm-ok" onclick="onConfirmEnableClick()">Confirm</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL 2: CREATE FIRST PROJECT & API KEY FORM MODAL -->
+    <!-- MODAL 2: CREATE FIRST PROJECT & API KEY -->
     <div class="modal-overlay" id="project-modal">
-        <div class="confirm-box" style="width: 480px;">
-            <div class="confirm-header" style="background:var(--aip-blue); color:#fff;" id="modal-proj-header">Tạo Dự Án & API Key Đầu Tiên</div>
+        <div class="confirm-box" style="width: 440px;">
+            <div class="confirm-header" id="modal-proj-header">Initialize Project & API Key</div>
             <div class="confirm-body">
-                <p style="font-size:13px; color:#64748b; margin-bottom:14px;" id="modal-proj-desc">Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:</p>
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:12.5px; font-weight:600; color:#334155;" id="lbl-proj-name">Tên Dự Án (Project Name)</label>
-                    <input type="text" id="input-project-name" class="form-control-input" placeholder="Ví dụ: Banking AI Project" value="AIP Platform Primary Project">
+                <p style="font-size:12px; color:var(--text-sub); margin-bottom:12px;" id="modal-proj-desc">No active project found. Please provide a project name to enable this service:</p>
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:11.5px; font-weight:600; color:var(--text-body);" id="lbl-proj-name">Project Name</label>
+                    <input type="text" id="input-project-name" class="form-control-input" placeholder="e.g. Core Banking AI" value="Primary Project">
                 </div>
                 <div>
-                    <label style="font-size:12.5px; font-weight:600; color:#334155;" id="lbl-key-name">Tên API Key</label>
-                    <input type="text" id="input-key-name" class="form-control-input" placeholder="Ví dụ: Production Main Key" value="Default Live Key">
+                    <label style="font-size:11.5px; font-weight:600; color:var(--text-body);" id="lbl-key-name">API Key Label</label>
+                    <input type="text" id="input-key-name" class="form-control-input" placeholder="e.g. Production Key" value="Default Key">
                 </div>
             </div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" id="btn-proj-cancel" onclick="cancelProjectModal()">HỦY BỎ</button>
-                <button class="btn-confirm-ok" style="background:var(--aip-cyan);" id="btn-proj-submit" onclick="submitFirstProjectForm()">KÍCH HOẠT DỊCH VỤ</button>
+                <button class="btn-confirm-cancel" id="btn-proj-cancel" onclick="cancelProjectModal()">Cancel</button>
+                <button class="btn-confirm-ok" id="btn-proj-submit" onclick="submitFirstProjectForm()">Activate Service</button>
             </div>
         </div>
     </div>
 
-    <!-- SELECT A PROJECT MODAL (Exact Replica of User Screenshot) -->
+    <!-- MODAL 3: SELECT PROJECT -->
     <div class="modal-overlay" id="select-project-modal">
-        <div class="confirm-box" style="width: 620px; border-radius: 4px;">
-            <div class="confirm-header" style="background: #e5e7eb; color: #1f2937; font-size: 20px; font-weight: 500; padding: 18px 24px;">Select a project</div>
-            <div class="confirm-body" style="padding: 24px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px;">
+        <div class="confirm-box" style="width: 580px;">
+            <div class="confirm-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Select Active Project</span>
+                <button class="btn-icon" style="border:none; background:transparent;" onclick="closeSelectProjectModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="confirm-body" style="padding: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
                     <div style="position: relative; flex: 1;">
-                        <input type="text" id="project-search-input" onkeyup="filterProjectsList()" placeholder="Search" style="width: 100%; border: none; border-bottom: 1.5px solid #cbd5e1; padding: 8px 32px 8px 0; font-size: 13.5px; outline: none;">
-                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 8px; top: 10px; color: #64748b; font-size: 14px;"></i>
+                        <input type="text" id="project-search-input" onkeyup="filterProjectsList()" placeholder="Search project name..." class="form-control-input" style="margin-top:0;">
                     </div>
-                    <button class="btn-confirm-ok" style="background: #007bff; text-transform: uppercase; font-size: 12.5px; padding: 9px 18px;" onclick="openCreatePrepaidProjectModal()">CREATE PREPAID PROJECT</button>
+                    <button class="btn-confirm-ok" style="font-size: 11.5px; padding: 7px 12px;" onclick="openCreatePrepaidProjectModal()">
+                        <i class="fa-solid fa-plus" style="font-size: 10px; margin-right: 4px;"></i> New Project
+                    </button>
                 </div>
 
-                <div style="border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                <div style="border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
                         <thead>
-                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Created time ↓</th>
-                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Name</th>
-                                <th style="padding: 12px 16px; color: #475569; font-weight: 700;">Type</th>
+                            <tr style="background: var(--bg-subtle); border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 8px 12px; color: var(--text-sub); font-weight: 600;">Created</th>
+                                <th style="padding: 8px 12px; color: var(--text-sub); font-weight: 600;">Project Name</th>
+                                <th style="padding: 8px 12px; color: var(--text-sub); font-weight: 600;">Billing</th>
                             </tr>
                         </thead>
                         <tbody id="projects-modal-tbody">
-                            <!-- Injected dynamically via JS -->
+                            <!-- Injected dynamically -->
                         </tbody>
                     </table>
                 </div>
 
-                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; font-size: 12px; color: #64748b;">
-                    <span>Rows per page</span>
-                    <select style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 8px; font-size: 12px;"><option>5</option><option>10</option></select>
-                    <span id="proj-count-label">1-1 of 1</span>
-                    <i class="fa-solid fa-chevron-left" style="cursor: pointer;"></i>
-                    <i class="fa-solid fa-chevron-right" style="cursor: pointer;"></i>
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; font-size: 11.5px; color: var(--text-sub);">
+                    <span id="proj-count-label">1 of 1</span>
                 </div>
             </div>
-            <div class="confirm-footer" style="border-top: 1px solid #f1f5f9; padding: 12px 24px;">
-                <button class="btn-confirm-cancel" onclick="closeSelectProjectModal()">CLOSE</button>
+            <div class="confirm-footer">
+                <button class="btn-confirm-cancel" onclick="closeSelectProjectModal()">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: CREATE NEW PREPAID PROJECT -->
+    <!-- MODAL 4: CREATE NEW PROJECT -->
     <div class="modal-overlay" id="create-project-modal">
-        <div class="confirm-box" style="width: 460px;">
-            <div class="confirm-header" style="background: var(--aip-blue); color: #fff;">Create Prepaid Project</div>
-            <div class="confirm-body" style="padding: 24px;">
-                <div style="margin-bottom: 14px;">
-                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Project Name</label>
-                    <input type="text" id="input-new-project-name" class="form-control-input" placeholder="e.g. wwrwer23" value="wwrwer23">
+        <div class="confirm-box" style="width: 420px;">
+            <div class="confirm-header">Create Project</div>
+            <div class="confirm-body">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 11.5px; font-weight: 600; color: var(--text-body);">Project Name</label>
+                    <input type="text" id="input-new-project-name" class="form-control-input" placeholder="e.g. NLP Production" value="NLP Production">
                 </div>
                 <div>
-                    <label style="font-size: 12.5px; font-weight: 600; color: #334155;">Billing Type</label>
+                    <label style="font-size: 11.5px; font-weight: 600; color: var(--text-body);">Billing Type</label>
                     <select id="input-new-project-type" class="form-control-input">
-                        <option value="prepaid">prepaid</option>
-                        <option value="postpaid">postpaid</option>
+                        <option value="prepaid">Prepaid (Quota Based)</option>
+                        <option value="postpaid">Postpaid (Monthly Invoiced)</option>
                     </select>
                 </div>
             </div>
             <div class="confirm-footer">
-                <button class="btn-confirm-cancel" onclick="closeCreatePrepaidProjectModal()">CANCEL</button>
-                <button class="btn-confirm-ok" style="background: var(--aip-cyan);" onclick="submitCreatePrepaidProject()">CREATE</button>
+                <button class="btn-confirm-cancel" onclick="closeCreatePrepaidProjectModal()">Cancel</button>
+                <button class="btn-confirm-ok" onclick="submitCreatePrepaidProject()">Create Project</button>
             </div>
         </div>
     </div>
 
     <script>
-        let targetPendingApi = null;
         let currentLang = localStorage.getItem('aip_lang') || 'en';
+        let currentCategoryFilter = 'all';
 
         const i18nDict = {
             en: {
-                langText: "English",
-                selectProj: "Select a project",
-                console: "Console",
-                dashboard: "Dashboard",
-                apis: "APIs",
-                keys: "API Keys",
-                report: "API report",
-                apps: "Applications",
-                welcomeTitle: "Welcome, ",
-                welcomeDesc: "Important notice: AIP Platform AI Console provides Enterprise-grade AI Cloud Middleware infrastructure for businesses. Read more here ",
-                explore: "EXPLORE",
-                catalogTitle: "APIs Catalog",
-                confirmHeader: "Confirm",
-                confirmBody: "Do you want to enable this API",
-                btnCancel: "CANCEL",
-                btnConfirm: "CONFIRM",
-                btnEnable: "ENABLE",
-                btnEnabled: "ENABLED",
-                projHeader: "Create First Project & API Key",
-                projDesc: "You don't have a project yet. Please enter Project Name and API Key Name to enable service:",
-                projNameLbl: "Project Name",
-                keyNameLbl: "API Key Name",
-                btnProjCancel: "CANCEL",
-                btnProjSubmit: "ENABLE SERVICE"
+                navDashboard: 'Dashboard',
+                navApis: 'APIs',
+                navKeys: 'API Keys',
+                navReport: 'API report',
+                navPayment: 'Payment history',
+                navContact: 'Contact us',
+                catalogTitle: 'API Services Catalog',
+                selectProj: 'Select a project'
             },
             vi: {
-                langText: "Tiếng Việt",
-                selectProj: "Chọn một dự án",
-                console: "Bảng điều khiển",
-                dashboard: "Bảng điều khiển",
-                apis: "Danh mục APIs",
-                keys: "Mã API Keys",
-                report: "Báo cáo API",
-                apps: "Ứng dụng AI",
-                welcomeTitle: "Xin chào, ",
-                welcomeDesc: "Thông báo quan trọng: AIP Platform AI Console cung cấp hạ tầng AI Cloud Middleware chuẩn Enterprise cho doanh nghiệp. Xem thêm tại đây ",
-                explore: "KHÁM PHÁ",
-                catalogTitle: "Danh Mục APIs",
-                confirmHeader: "Xác nhận",
-                confirmBody: "Bạn có muốn kích hoạt API này không?",
-                btnCancel: "HỦY BỎ",
-                btnConfirm: "XÁC NHẬN",
-                btnEnable: "KÍCH HOẠT",
-                btnEnabled: "ĐÃ KÍCH HOẠT",
-                projHeader: "Tạo Dự Án & API Key Đầu Tiên",
-                projDesc: "Bạn chưa có Dự án nào. Vui lòng nhập Tên Dự Án và Tên API Key để kích hoạt dịch vụ:",
-                projNameLbl: "Tên Dự Án (Project Name)",
-                keyNameLbl: "Tên API Key",
-                btnProjCancel: "HỦY BỎ",
-                btnProjSubmit: "KÍCH HOẠT DỊCH VỤ"
+                navDashboard: 'Bảng điều khiển',
+                navApis: 'Danh mục APIs',
+                navKeys: 'Quản lý API Keys',
+                navReport: 'Báo cáo API',
+                navPayment: 'Lịch sử thanh toán',
+                navContact: 'Liên hệ hỗ trợ',
+                catalogTitle: 'Danh mục API Doanh nghiệp',
+                selectProj: 'Chọn dự án'
             }
         };
-
-        function toggleLangDropdown(e) {
-            if (e) e.stopPropagation();
-            const menu = document.getElementById('lang-dropdown-menu');
-            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
-        }
-
-        document.addEventListener('click', () => {
-            const menu = document.getElementById('lang-dropdown-menu');
-            if (menu) menu.style.display = 'none';
-        });
 
         function setAppLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('aip_lang', lang);
             applyLanguage();
-            const menu = document.getElementById('lang-dropdown-menu');
-            if (menu) menu.style.display = 'none';
+            document.getElementById('lang-dropdown-menu').style.display = 'none';
         }
+
+        function toggleLangDropdown(e) {
+            e.stopPropagation();
+            const el = document.getElementById('lang-dropdown-menu');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        document.addEventListener('click', () => {
+            const el = document.getElementById('lang-dropdown-menu');
+            if (el) el.style.display = 'none';
+        });
 
         function applyLanguage() {
             const t = i18nDict[currentLang] || i18nDict.en;
-            const setTxt = (id, text) => {
-                const el = document.getElementById(id);
-                if (el && text !== undefined) el.innerText = text;
-            };
-
-            setTxt('current-lang-text', t.langText);
-            setTxt('txt-nav-console', t.console);
-            setTxt('txt-nav-dashboard', t.dashboard);
-            setTxt('txt-nav-apis', t.apis);
-            setTxt('txt-nav-keys', t.keys);
-            setTxt('txt-nav-report', t.report);
-            setTxt('txt-nav-applications', t.apps);
-            setTxt('txt-nav-apps', t.apps);
-            setTxt('txt-nav-payment', t.payment);
-            setTxt('txt-nav-contact', t.contact);
-
-            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
-            const userName = userSession ? JSON.parse(userSession).full_name : 'Nam Lê';
-            setTxt('welcome-title', t.welcomeTitle + userName);
-            setTxt('btn-explore-text', t.explore);
-
-            setTxt('modal-confirm-header', t.confirmHeader);
-            setTxt('modal-confirm-body', t.confirmBody);
-            setTxt('btn-confirm-cancel', t.btnCancel);
-            setTxt('btn-confirm-ok', t.btnConfirm);
-
-            setTxt('modal-proj-header', t.projHeader);
-            setTxt('modal-proj-desc', t.projDesc);
-            setTxt('lbl-proj-name', t.projNameLbl);
-            setTxt('lbl-key-name', t.keyNameLbl);
-            setTxt('btn-proj-cancel', t.btnProjCancel);
-            setTxt('btn-proj-submit', t.btnProjSubmit);
-
-            syncUIState();
+            document.getElementById('current-lang-text').innerText = currentLang === 'vi' ? 'Tiếng Việt' : 'English';
+            if (document.getElementById('txt-nav-dashboard')) document.getElementById('txt-nav-dashboard').innerHTML = `<i class="fa-solid fa-chart-pie"></i> ${t.navDashboard}`;
+            if (document.getElementById('txt-nav-apis')) document.getElementById('txt-nav-apis').innerHTML = `<i class="fa-solid fa-cubes"></i> ${t.navApis}`;
+            if (document.getElementById('txt-nav-keys')) document.getElementById('txt-nav-keys').innerHTML = `<i class="fa-solid fa-key"></i> ${t.navKeys}`;
+            if (document.getElementById('txt-nav-report')) document.getElementById('txt-nav-report').innerHTML = `<i class="fa-solid fa-chart-line"></i> ${t.navReport}`;
+            if (document.getElementById('txt-nav-payment')) document.getElementById('txt-nav-payment').innerHTML = `<i class="fa-solid fa-credit-card"></i> ${t.navPayment}`;
+            if (document.getElementById('txt-nav-contact')) document.getElementById('txt-nav-contact').innerHTML = `<i class="fa-solid fa-headset"></i> ${t.navContact}`;
+            if (document.getElementById('txt-catalog-title')) document.getElementById('txt-catalog-title').innerText = t.catalogTitle;
         }
 
-        /* Centralized getEnabledAPIs and setEnabledAPIs from staff_layout.js */
+        // Project helpers
+        async function getProjects() {
+            try {
+                const res = await fetch('/v1/user/projects');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) return data;
+                }
+            } catch (err) {}
 
-        function getProjects() {
-            const data = localStorage.getItem('aip_projects');
-            return data ? JSON.parse(data) : [];
+            const raw = localStorage.getItem('aip_projects');
+            if (raw) {
+                try { return JSON.parse(raw); } catch (e) {}
+            }
+            return [{ project_id: 'f40b6a70-ea64-4d01-90dc-53a2d7a81395', project_name: 'Default Enterprise Project', type: 'prepaid', created_at: '2026-08-16' }];
         }
 
-        function setProjects(projList) {
-            localStorage.setItem('aip_projects', JSON.stringify(projList));
+        function setProjects(projs) {
+            localStorage.setItem('aip_projects', JSON.stringify(projs));
         }
 
         function getActiveProjectName() {
-            const active = localStorage.getItem('aip_active_project');
-            const projects = getProjects();
-            if (active) return active;
-            return projects.length > 0 ? projects[0].project_name : 'Select a project';
+            return localStorage.getItem('aip_active_project') || 'Default Enterprise Project';
         }
 
         function setActiveProjectName(name) {
             localStorage.setItem('aip_active_project', name);
-            document.getElementById('current-project-label').innerText = name;
+            const label = document.getElementById('current-project-label');
+            if (label) label.innerText = name;
+            const breadcrumb = document.getElementById('breadcrumb-project-name');
+            if (breadcrumb) breadcrumb.innerText = name;
         }
 
         function openSelectProjectModal() {
@@ -511,12 +798,8 @@
             document.getElementById('select-project-modal').classList.remove('active');
         }
 
-        function renderProjectsModalTable() {
-            const projects = getProjects();
-            if (projects.length === 0) {
-                projects.push({ project_id: 'proj_default', project_name: 'wwrwer23', created_at: '2026-08-16', type: 'prepaid' });
-                setProjects(projects);
-            }
+        async function renderProjectsModalTable() {
+            const projects = await getProjects();
             const activeName = getActiveProjectName();
             const tbody = document.getElementById('projects-modal-tbody');
             tbody.innerHTML = '';
@@ -527,22 +810,25 @@
                 const isActive = p.project_name === activeName;
 
                 const tr = document.createElement('tr');
-                tr.className = `proj-row-selectable ${isActive ? 'active-proj' : ''}`;
                 tr.style.cursor = 'pointer';
+                tr.style.background = isActive ? 'var(--bg-subtle)' : 'transparent';
                 tr.innerHTML = `
-                    <td style="padding: 12px 16px;">${dateStr}</td>
-                    <td style="padding: 12px 16px;"><strong>${p.project_name}</strong></td>
-                    <td style="padding: 12px 16px;"><strong>${typeStr}</strong></td>
+                    <td style="padding: 8px 12px; color: var(--text-sub);">${dateStr}</td>
+                    <td style="padding: 8px 12px; font-weight: ${isActive ? '600' : '500'}; color: var(--text-dark);">
+                        ${p.project_name} ${isActive ? '<span style="font-size:10px; color:#16a34a; margin-left:4px;">● Active</span>' : ''}
+                    </td>
+                    <td style="padding: 8px 12px; text-transform: uppercase; font-size: 11px; color: var(--text-sub);">${typeStr}</td>
                 `;
                 tr.onclick = () => {
                     setActiveProjectName(p.project_name);
+                    if (p.project_id) localStorage.setItem('aip_active_project_id', p.project_id);
                     closeSelectProjectModal();
-                    showToast(`Active project changed to: "${p.project_name}"`, 'success');
+                    showToast(`Active project: "${p.project_name}"`, 'success');
                 };
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('proj-count-label').innerText = `1-${projects.length} of ${projects.length}`;
+            document.getElementById('proj-count-label').innerText = `${projects.length} project(s)`;
         }
 
         function filterProjectsList() {
@@ -564,7 +850,7 @@
         }
 
         async function submitCreatePrepaidProject() {
-            const name = document.getElementById('input-new-project-name').value.trim() || 'New Prepaid Project';
+            const name = document.getElementById('input-new-project-name').value.trim() || 'New Enterprise Project';
             const type = document.getElementById('input-new-project-type').value;
 
             try {
@@ -573,9 +859,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ project_name: name, billing_type: type })
                 });
-            } catch(err) {
-                console.error("Failed to persist prepaid project to backend:", err);
-            }
+            } catch(err) {}
 
             const projects = await getProjects();
             const newProj = {
@@ -589,77 +873,187 @@
 
             setActiveProjectName(name);
             closeCreatePrepaidProjectModal();
-            showToast(`Prepaid Project "${name}" created successfully!`, 'success');
+            showToast(`Project "${name}" created successfully.`, 'success');
+        }
+
+        // Enabled APIs helpers
+        function getEnabledAPIs() {
+            const raw = localStorage.getItem('aip_enabled_apis');
+            if (raw) {
+                try { return JSON.parse(raw); } catch (e) {}
+            }
+            return {
+                "Speech to Text API": true,
+                "Text to Speech API": true,
+                "LLM Chatbot API": true,
+                "Content Moderation API": true,
+                "Image Generation API": true
+            };
+        }
+
+        async function setEnabledAPIs(apis) {
+            localStorage.setItem('aip_enabled_apis', JSON.stringify(apis));
+            try {
+                await fetch('/v1/user/apis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled_apis: apis })
+                });
+            } catch (e) {}
+        }
+
+        async function fetchEnabledAPIsFromBackend() {
+            try {
+                const res = await fetch('/v1/user/apis');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.enabled_apis) {
+                        localStorage.setItem('aip_enabled_apis', JSON.stringify(data.enabled_apis));
+                        return data.enabled_apis;
+                    }
+                }
+            } catch (err) {}
+            return getEnabledAPIs();
+        }
+
+        async function fetchApiCatalogFromBackend() {
+            try {
+                const res = await fetch('/v1/user/catalog');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) return data;
+                }
+            } catch (err) {}
+            return null;
+        }
+
+        function isApiActive(apis, name) {
+            if (!apis) return false;
+            if (apis[name] !== undefined) return !!apis[name];
+            const nameLow = name.toLowerCase();
+            for (const k in apis) {
+                if (k.toLowerCase() === nameLow || nameLow.includes(k.toLowerCase()) || k.toLowerCase().includes(nameLow)) {
+                    return !!apis[k];
+                }
+            }
+            return false;
+        }
+
+        let fullCatalogCache = [];
+
+        function categorizeApi(name) {
+            const n = name.toLowerCase();
+            if (n.includes('llm') || n.includes('chatbot') || n.includes('image')) return 'generative';
+            if (n.includes('ocr') || n.includes('driver') || n.includes('passport') || n.includes('id') || n.includes('facematch') || n.includes('liveness')) return 'vision';
+            if (n.includes('speech') || n.includes('stt') || n.includes('tts') || n.includes('voice')) return 'voice';
+            if (n.includes('translation') || n.includes('translat') || n.includes('summariz') || n.includes('embedding') || n.includes('moderation')) return 'nlp';
+            return 'nlp';
         }
 
         function renderCardsGrid(catalog, apis) {
+            fullCatalogCache = catalog;
             const grid = document.getElementById('api-cards-grid-container');
             if (!grid) return;
             grid.innerHTML = '';
+
+            const badge = document.getElementById('catalog-count-badge');
+            if (badge) badge.innerText = `${catalog.length} Services`;
+
             catalog.forEach(item => {
                 const isChecked = isApiActive(apis, item.name);
-                let iconClass = 'fa-plug';
-                let bgColor = '#64748b';
+                let iconClass = 'fa-cube';
                 let desc = item.description || '';
+                const category = categorizeApi(item.name);
                 
                 const nameLow = item.name.toLowerCase();
                 if (nameLow.includes('speech to text')) {
-                    iconClass = 'fa-microphone-lines'; bgColor = '#10b981';
-                    desc = desc || 'Convert your voice into text using PhoWhisper STT model';
+                    iconClass = 'fa-microphone-lines';
+                    desc = desc || 'Convert voice audio into text using PhoWhisper STT model';
                 } else if (nameLow.includes('text to speech')) {
-                    iconClass = 'fa-volume-high'; bgColor = '#10b981';
-                    desc = desc || 'Convert text to natural-sounding voices with viTTS';
+                    iconClass = 'fa-volume-high';
+                    desc = desc || 'Convert text into natural Vietnamese voices with viTTS';
                 } else if (nameLow.includes('llm') || nameLow.includes('chatbot')) {
-                    iconClass = 'fa-robot'; bgColor = '#3b82f6';
+                    iconClass = 'fa-comments';
                     desc = desc || 'Qwen3-8B & 14B High Quality LLM Reasoning Endpoints';
                 } else if (nameLow.includes('image')) {
-                    iconClass = 'fa-image'; bgColor = '#8b5cf6';
-                    desc = desc || 'Generate images from text using Stable Diffusion XL';
+                    iconClass = 'fa-image';
+                    desc = desc || 'Generate high-fidelity images from text prompts';
                 } else if (nameLow.includes('moderation')) {
-                    iconClass = 'fa-shield-halved'; bgColor = '#ef4444';
-                    desc = desc || 'Scan and filter bad language / toxic text content';
+                    iconClass = 'fa-shield-halved';
+                    desc = desc || 'Scan and filter toxic, unsafe, or non-compliant content';
                 } else if (nameLow.includes('driver')) {
-                    iconClass = 'fa-id-card-clip'; bgColor = '#f59e0b';
-                    desc = desc || 'Extract rich information from driver\'s license cards';
-                } else if (nameLow.includes('id recognition') || nameLow.includes('identity')) {
-                    iconClass = 'fa-address-card'; bgColor = '#f59e0b';
-                    desc = desc || 'Extract rich information from citizen identity cards (CCCD)';
+                    iconClass = 'fa-id-card-clip';
+                    desc = desc || 'Extract structured data from driver license document images';
+                } else if (nameLow.includes('id recognition') || nameLow.includes('identity') || nameLow.includes('cccd')) {
+                    iconClass = 'fa-address-card';
+                    desc = desc || 'Extract key fields from citizen identity cards (CCCD)';
                 } else if (nameLow.includes('passport')) {
-                    iconClass = 'fa-passport'; bgColor = '#f59e0b';
-                    desc = desc || 'Extract structured information from passport document images';
+                    iconClass = 'fa-passport';
+                    desc = desc || 'Structured information extraction from passport pages';
                 } else if (nameLow.includes('facematch')) {
-                    iconClass = 'fa-user-check'; bgColor = '#06b6d4';
-                    desc = desc || 'Compare two face images to verify if they belong to the same person';
+                    iconClass = 'fa-user-check';
+                    desc = desc || '1:1 facial biometric matching and similarity verification';
                 } else if (nameLow.includes('liveness')) {
-                    iconClass = 'fa-user-shield'; bgColor = '#06b6d4';
-                    desc = desc || 'Liveness Detection v3 to prevent spoofing & identity fraud';
+                    iconClass = 'fa-user-shield';
+                    desc = desc || 'Anti-spoofing facial liveness detection v3';
                 } else if (nameLow.includes('embedding')) {
-                    iconClass = 'fa-magnifying-glass'; bgColor = '#3b82f6';
-                    desc = desc || 'Generate dense vector representations for RAG systems';
+                    iconClass = 'fa-network-wired';
+                    desc = desc || 'Dense vector representations for RAG and semantic search';
                 } else if (nameLow.includes('summariz')) {
-                    iconClass = 'fa-file-lines'; bgColor = '#3b82f6';
-                    desc = desc || 'Summarize long articles or documents into concise bullet points';
+                    iconClass = 'fa-file-lines';
+                    desc = desc || 'Concise executive summarization for lengthy documents';
                 } else if (nameLow.includes('translat')) {
-                    iconClass = 'fa-language'; bgColor = '#3b82f6';
-                    desc = desc || 'High-quality machine translation between English and Vietnamese';
+                    iconClass = 'fa-language';
+                    desc = desc || 'Bidirectional Vietnamese-English enterprise translation';
                 }
 
                 const card = document.createElement('div');
                 card.className = 'api-card';
-                card.onclick = () => navigateToService(item.name);
+                card.dataset.category = category;
+                card.dataset.name = item.name.toLowerCase();
+                card.onclick = () => navigateToService(item);
                 const safeName = item.name.replace(/'/g, "\\'");
+
+                const method = item.method || 'POST';
+                const epShort = item.endpoint_id || '/v1/ai';
+
                 card.innerHTML = `
-                    <div class="card-top">
-                        <div class="api-icon" style="background:${bgColor};"><i class="fa-solid ${iconClass}"></i></div>
-                        <label class="switch" onclick="event.stopPropagation()">
-                            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${safeName}', this, event)">
-                            <span class="slider"></span>
-                        </label>
+                    <div>
+                        <div class="card-top">
+                            <div class="api-icon"><i class="fa-solid ${iconClass}"></i></div>
+                            <label class="switch" onclick="event.stopPropagation()" title="${isChecked ? 'Disable API' : 'Enable API'}">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="handleApiToggleClick('${safeName}', this, event)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="card-title">${item.name}</div>
+                        <div class="card-desc">${desc}</div>
                     </div>
-                    <div class="card-title">${item.name}</div>
-                    <div class="card-desc">${desc}</div>
+                    <div class="card-footer-meta">
+                        <span><strong style="color:var(--text-dark);">${method}</strong> ${epShort}</span>
+                        <span style="color:${isChecked ? '#16a34a' : 'var(--text-muted)'}; font-family:var(--font-family); font-weight:500;">
+                            ${isChecked ? '● Active' : '○ Standby'}
+                        </span>
+                    </div>
                 `;
                 grid.appendChild(card);
+            });
+        }
+
+        function filterCategory(cat, btnEl) {
+            currentCategoryFilter = cat;
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            filterApiCards();
+        }
+
+        function filterApiCards() {
+            const query = (document.getElementById('api-search-input')?.value || '').toLowerCase().trim();
+            const cards = document.querySelectorAll('.api-card');
+            cards.forEach(c => {
+                const matchesCat = currentCategoryFilter === 'all' || c.dataset.category === currentCategoryFilter;
+                const matchesQuery = !query || c.dataset.name.includes(query) || c.innerText.toLowerCase().includes(query);
+                c.style.display = matchesCat && matchesQuery ? 'flex' : 'none';
             });
         }
 
@@ -668,39 +1062,37 @@
             const t = i18nDict[currentLang] || i18nDict.en;
 
             if (projects.length > 0) {
-                document.getElementById('current-project-label').innerText = projects[0].project_name;
+                setActiveProjectName(projects[0].project_name);
             } else {
-                document.getElementById('current-project-label').innerText = t.selectProj;
+                setActiveProjectName(t.selectProj);
             }
 
-            // 1. Instant zero-latency render (prevents toggle jump/flicker)
             const cachedApis = getEnabledAPIs();
             const defaultCatalog = [
-                { name: "Speech to Text API" },
-                { name: "Text to Speech API" },
-                { name: "LLM Chatbot API" },
-                { name: "Image Generation API" },
-                { name: "Content Moderation API" },
-                { name: "Driver's license recognition" },
-                { name: "ID Recognition" },
-                { name: "Passport Recognition" },
-                { name: "FaceMatch" },
-                { name: "Liveness v3" },
-                { name: "Text Embedding API" },
-                { name: "Text Summarization API" },
-                { name: "Translation API" }
+                { name: "Speech to Text API", method: "POST", endpoint_id: "/v1/audio/transcriptions" },
+                { name: "Text to Speech API", method: "POST", endpoint_id: "/v1/audio/speech" },
+                { name: "LLM Chatbot API", method: "POST", endpoint_id: "/v1/chat/completions" },
+                { name: "Image Generation API", method: "POST", endpoint_id: "/v1/images/generations" },
+                { name: "Content Moderation API", method: "POST", endpoint_id: "/v1/moderations" },
+                { name: "Driver's license recognition", method: "POST", endpoint_id: "/v1/ocr/driver-license" },
+                { name: "ID Recognition", method: "POST", endpoint_id: "/v1/ocr/id-card" },
+                { name: "Passport Recognition", method: "POST", endpoint_id: "/v1/ocr/passport" },
+                { name: "FaceMatch", method: "POST", endpoint_id: "/v1/vision/facematch" },
+                { name: "Liveness v3", method: "POST", endpoint_id: "/v1/vision/liveness" },
+                { name: "Text Embedding API", method: "POST", endpoint_id: "/v1/embeddings" },
+                { name: "Text Summarization API", method: "POST", endpoint_id: "/v1/nlp/summarize" },
+                { name: "Translation API", method: "POST", endpoint_id: "/v1/nlp/translate" }
             ];
             renderCardsGrid(defaultCatalog, cachedApis);
 
-            // 2. Background revalidation from MongoDB Atlas
             const apis = await fetchEnabledAPIsFromBackend();
             const catalog = await fetchApiCatalogFromBackend();
             renderCardsGrid(catalog && catalog.length ? catalog : defaultCatalog, apis);
 
-            // 3. Check GPU infrastructure telemetry (>= 80% warning)
             await checkInfrastructureGpuStatus();
         }
 
+        let targetPendingApi = '';
         let targetPendingAction = 'enable';
         let pendingCheckboxEl = null;
 
@@ -721,9 +1113,7 @@
                     }
                     return data;
                 }
-            } catch (err) {
-                console.error("Failed to check GPU status:", err);
-            }
+            } catch (err) {}
             return null;
         }
 
@@ -737,20 +1127,18 @@
             if (!currentState) {
                 targetPendingAction = 'enable';
                 checkboxEl.checked = true;
-                document.getElementById('modal-confirm-body').innerText = `Do you want to enable API "${apiName}"?`;
+                document.getElementById('modal-confirm-body').innerText = `Do you want to enable "${apiName}" for the active project?`;
                 openConfirmModal();
             } else {
                 targetPendingAction = 'disable';
                 checkboxEl.checked = false;
-                document.getElementById('modal-confirm-body').innerText = `Do you want to disable API "${apiName}"?`;
+                document.getElementById('modal-confirm-body').innerText = `Do you want to disable "${apiName}"?`;
                 openConfirmModal();
             }
         }
 
         function openConfirmModal() { document.getElementById('confirm-modal').classList.add('active'); }
-        function closeConfirmModal() { 
-            document.getElementById('confirm-modal').classList.remove('active'); 
-        }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
         function cancelConfirmModal() {
             closeConfirmModal();
             if (pendingCheckboxEl) {
@@ -767,27 +1155,21 @@
                 const apis = getEnabledAPIs();
                 apis[targetPendingApi] = false;
                 await setEnabledAPIs(apis);
-                if (pendingCheckboxEl) {
-                    pendingCheckboxEl.checked = false;
-                }
-                showToast(`API "${targetPendingApi}" đã được tắt thành công.`, 'warning');
+                if (pendingCheckboxEl) pendingCheckboxEl.checked = false;
+                showToast(`API "${targetPendingApi}" disabled.`, 'warning');
                 await checkInfrastructureGpuStatus();
             } else {
                 if (projects.length === 0) {
                     openProjectModal();
                 } else {
                     await activateApi(targetPendingApi);
-                    if (pendingCheckboxEl) {
-                        pendingCheckboxEl.checked = true;
-                    }
+                    if (pendingCheckboxEl) pendingCheckboxEl.checked = true;
                 }
             }
         }
 
         function openProjectModal() { document.getElementById('project-modal').classList.add('active'); }
-        function closeProjectModal() { 
-            document.getElementById('project-modal').classList.remove('active'); 
-        }
+        function closeProjectModal() { document.getElementById('project-modal').classList.remove('active'); }
         function cancelProjectModal() {
             closeProjectModal();
             if (pendingCheckboxEl) {
@@ -797,7 +1179,7 @@
         }
 
         async function submitFirstProjectForm() {
-            const projName = document.getElementById('input-project-name').value.trim() || 'AIP Platform Main Project';
+            const projName = document.getElementById('input-project-name').value.trim() || 'Primary Project';
             const keyName = document.getElementById('input-key-name').value.trim() || 'Default Key';
 
             try {
@@ -811,9 +1193,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: keyName, project_name: projName })
                 });
-            } catch (err) {
-                console.error("Failed to persist project & key to backend:", err);
-            }
+            } catch (err) {}
 
             const rawKey = 'aip_live_valid_test_key_12345';
             const newProj = {
@@ -831,9 +1211,7 @@
 
             closeProjectModal();
             await activateApi(targetPendingApi, projName);
-            if (pendingCheckboxEl) {
-                pendingCheckboxEl.checked = true;
-            }
+            if (pendingCheckboxEl) pendingCheckboxEl.checked = true;
         }
 
         async function activateApi(apiName, projName = '') {
@@ -843,80 +1221,101 @@
 
             const gpuData = await checkInfrastructureGpuStatus();
             if (gpuData && gpuData.vram_percentage >= 80) {
-                showToast(`CẢNH BÁO HẠ TẦNG: Kích hoạt "${apiName}" thành công, nhưng tài nguyên GPU/VRAM đã chạm ${gpuData.vram_percentage}% (ngưỡng an toàn: 80%). Vui lòng theo dõi tải cụm worker!`, 'warning');
+                showToast(`Warning: GPU memory high (${gpuData.vram_percentage}%). "${apiName}" enabled.`, 'warning');
             } else {
-                const msg = projName 
-                    ? `Đã tạo dự án "${projName}" và kích hoạt thành công API ${apiName}!` 
-                    : `Đã kích hoạt thành công API ${apiName}!`;
-                showToast(msg, 'success');
+                showToast(`API "${apiName}" enabled successfully.`, 'success');
             }
         }
 
-        function navigateToService(apiName) {
-            const nameLow = (apiName || '').toLowerCase();
-            if (nameLow.includes('cccd') || nameLow.includes('id card') || nameLow.includes('id recognition') || nameLow.includes('identity') || nameLow.includes('căn cước')) {
-                window.location.href = '/staff/service-ocr-id';
-            } else if (nameLow.includes('driver') || nameLow.includes('bằng lái') || nameLow.includes('gplx')) {
-                window.location.href = '/staff/service-ocr-dl';
-            } else if (nameLow.includes('passport') || nameLow.includes('hộ chiếu')) {
-                window.location.href = '/staff/service-ocr-passport';
-            } else if (nameLow.includes('speech to text') || nameLow.includes('stt') || nameLow.includes('nhận dạng giọng nói') || nameLow.includes('transcription')) {
-                window.location.href = '/staff/service-stt';
-            } else if (nameLow.includes('text to speech') || nameLow.includes('tts') || nameLow.includes('tổng hợp giọng nói') || nameLow.includes('speech synthesis')) {
-                window.location.href = '/staff/service-tts';
-            } else if (nameLow.includes('llm') || nameLow.includes('chatbot') || nameLow.includes('chat completions')) {
-                window.location.href = '/staff/service-llm';
-            } else if (nameLow.includes('image') || nameLow.includes('hình ảnh')) {
-                window.location.href = '/staff/service-image';
-            } else if (nameLow.includes('moderation') || nameLow.includes('kiểm duyệt')) {
-                window.location.href = '/staff/service-moderation';
-            } else if (nameLow.includes('facematch') || nameLow.includes('khuôn mặt')) {
-                window.location.href = '/staff/service-vision-facematch';
-            } else if (nameLow.includes('liveness')) {
-                window.location.href = '/staff/service-vision-liveness';
-            } else if (nameLow.includes('embedding')) {
-                window.location.href = '/staff/service-nlp-embeddings';
-            } else if (nameLow.includes('summariz') || nameLow.includes('tóm tắt')) {
-                window.location.href = '/staff/service-nlp-summarization';
-            } else if (nameLow.includes('translat') || nameLow.includes('dịch')) {
-                window.location.href = '/staff/service-nlp-translation';
-            } else {
-                window.location.href = '/staff/service-ocr-id';
+        const API_UUID_MAP = {
+            "api_llm": "efb24a03-059d-440c-bd35-0b5b3a776983",
+            "api_stt": "3a72d1f9-46c8-472e-8395-cb091a136701",
+            "api_tts": "8b51ef94-912a-4367-bf16-36701a09cb12",
+            "api_ocr_id": "c194a2b3-5710-4821-9472-a08361b09234",
+            "api_ocr_dl": "d285b3c4-6821-4932-a583-b19472c10345",
+            "api_ocr_passport": "e396c4d5-7932-4a43-b694-c20583d21456",
+            "api_image": "f4a7d5e6-8043-4b54-c705-d31694e32567",
+            "api_moderation": "a5b8e6f7-9154-4c65-d816-e42705f43678",
+            "api_vision_facematch": "b6c9f7a8-0265-4d76-e927-f53816a54789",
+            "api_vision_liveness": "c7da08b9-1376-4e87-fa38-064927b65890",
+            "api_embeddings": "d8eb19ca-2487-4f98-0b49-175038c76901",
+            "api_summarization": "fa0d3bec-46a9-41ba-2d6b-39725ae98123",
+            "api_translation": "e9fc2adb-3598-40a9-1c5a-286149d87012"
+        };
+
+        function getCurrentProjectId() {
+            const pathMatch = window.location.pathname.match(/\/project\/([a-zA-Z0-9_-]+)/);
+            if (pathMatch && pathMatch[1]) return pathMatch[1];
+
+            const stored = localStorage.getItem('aip_active_project_id');
+            if (stored) return stored;
+
+            const rawProjs = localStorage.getItem('aip_projects');
+            if (rawProjs) {
+                try {
+                    const arr = JSON.parse(rawProjs);
+                    if (arr.length > 0 && arr[0].project_id) return arr[0].project_id;
+                } catch(e) {}
             }
+            return 'f40b6a70-ea64-4d01-90dc-53a2d7a81395';
         }
 
-        function toggleNavSection(headerEl) {
-            const navList = headerEl.nextElementSibling;
-            const icon = headerEl.querySelector('.toggle-icon');
-            if (navList) {
-                if (navList.style.display === 'none') {
-                    navList.style.display = 'block';
-                    if (icon) icon.style.transform = 'rotate(0deg)';
+        function navigateToService(item) {
+            let apiId = '';
+            let apiName = '';
+            if (typeof item === 'object' && item !== null) {
+                apiId = item.id || item.api_id || '';
+                apiName = item.name || '';
+            } else if (typeof item === 'string') {
+                apiName = item;
+            }
+
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apiId);
+            if (!isUuid) {
+                const nameLow = apiName.toLowerCase();
+                if (nameLow.includes('llm') || nameLow.includes('chatbot') || nameLow.includes('chat completions')) {
+                    apiId = API_UUID_MAP['api_llm'];
+                } else if (nameLow.includes('speech to text') || nameLow.includes('stt') || nameLow.includes('transcription')) {
+                    apiId = API_UUID_MAP['api_stt'];
+                } else if (nameLow.includes('text to speech') || nameLow.includes('tts') || nameLow.includes('speech synthesis')) {
+                    apiId = API_UUID_MAP['api_tts'];
+                } else if (nameLow.includes('cccd') || nameLow.includes('id card') || nameLow.includes('id recognition') || nameLow.includes('identity')) {
+                    apiId = API_UUID_MAP['api_ocr_id'];
+                } else if (nameLow.includes('driver') || nameLow.includes('gplx') || nameLow.includes('bằng lái')) {
+                    apiId = API_UUID_MAP['api_ocr_dl'];
+                } else if (nameLow.includes('passport') || nameLow.includes('hộ chiếu')) {
+                    apiId = API_UUID_MAP['api_ocr_passport'];
+                } else if (nameLow.includes('image') || nameLow.includes('hình ảnh')) {
+                    apiId = API_UUID_MAP['api_image'];
+                } else if (nameLow.includes('moderation') || nameLow.includes('kiểm duyệt')) {
+                    apiId = API_UUID_MAP['api_moderation'];
+                } else if (nameLow.includes('facematch') || nameLow.includes('khuôn mặt')) {
+                    apiId = API_UUID_MAP['api_vision_facematch'];
+                } else if (nameLow.includes('liveness')) {
+                    apiId = API_UUID_MAP['api_vision_liveness'];
+                } else if (nameLow.includes('embedding')) {
+                    apiId = API_UUID_MAP['api_embeddings'];
+                } else if (nameLow.includes('summariz') || nameLow.includes('tóm tắt')) {
+                    apiId = API_UUID_MAP['api_summarization'];
+                } else if (nameLow.includes('translat') || nameLow.includes('dịch')) {
+                    apiId = API_UUID_MAP['api_translation'];
                 } else {
-                    navList.style.display = 'none';
-                    if (icon) icon.style.transform = 'rotate(-90deg)';
+                    apiId = API_UUID_MAP['api_ocr_id'];
                 }
             }
+
+            const projectId = getCurrentProjectId();
+            window.location.href = `/project/${projectId}/apis/${apiId}`;
         }
 
         function showToast(msg, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast-msg ${type}`;
-            toast.style.background = type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#00a4b8');
-            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            toast.style.background = type === 'success' ? '#0f172a' : (type === 'warning' ? '#b45309' : '#0f172a');
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto; font-size:14px;" onclick="this.parentElement.remove()">&times;</span>`;
             container.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 3500);
-        }
-
-        function showProjectSelectorToast() {
-            const projects = getProjects();
-            if (projects.length > 0) {
-                showToast(`Project: ${projects[0].project_name}`, 'info');
-            } else {
-                const t = i18nDict[currentLang] || i18nDict.en;
-                showToast(t.selectProj, 'warning');
-            }
+            setTimeout(() => { toast.remove(); }, 3200);
         }
 
         function checkMandatoryAuth() {

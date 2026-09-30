@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
+import uuid
 import secrets
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
@@ -57,6 +58,9 @@ class RechargeBalanceRequest(BaseModel):
     project: Optional[str] = "default"
 
 
+DEFAULT_PROJECT_ID = "f40b6a70-ea64-4d01-90dc-53a2d7a81395"
+
+
 # --- 1. PROJECTS REST ENDPOINTS ---
 @router.get("/projects", response_model=List[dict])
 async def list_user_projects():
@@ -64,8 +68,8 @@ async def list_user_projects():
     projects = await project_repository.list_user_projects(user_id="user_staff_01")
     if not projects:
         default_proj = {
-            "project_id": "proj_default",
-            "project_name": "wwrwer23",
+            "project_id": DEFAULT_PROJECT_ID,
+            "project_name": "Default Project",
             "type": "prepaid",
             "user_id": "user_staff_01",
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -78,7 +82,7 @@ async def list_user_projects():
 @router.post("/projects", status_code=status.HTTP_201_CREATED)
 async def create_user_project(req: ProjectCreateRequest):
     """Create a new project in MongoDB Atlas."""
-    proj_id = f"proj_{secrets.token_hex(6)}"
+    proj_id = str(uuid.uuid4())
     proj_doc = {
         "project_id": proj_id,
         "project_name": req.project_name,

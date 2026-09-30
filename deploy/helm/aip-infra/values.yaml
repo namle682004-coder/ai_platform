@@ -51,3 +51,20 @@ minio:
     limits:
       cpu: 1000m
       memory: 2Gi
+
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: aip-platform
+    kind: ClusterSecretStore
+  remoteKeys:
+    mongodb: aip-platform/mongodb
+    redis: aip-platform/redis
+    rabbitmq: aip-platform/rabbitmq
+    minio: aip-platform/minio
+
+highAvailability:
+  enabled: true
+  podDisruptionBudget:
+    minAvailable: 2
+  topologyKey: kubernetes.io/hostname

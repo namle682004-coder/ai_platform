@@ -44,6 +44,19 @@ AIP is an **enterprise-grade, self-hosted AI inference middleware platform** tha
 - **No End-User Consumer UI:** Serves raw APIs; the web portal is strictly for developer testing and admin governance.
 - **No Automatic Fallback:** Does not silently route requests to alternative models unless explicitly defined in tenant alias policy.
 
+### 1.3 Implementation Status & Deployment Readiness Matrix
+
+| Tier / Component | Target Artifact | Implementation State | Deployment Target | Notes |
+| --- | --- | :---: | :---: | --- |
+| **Control Plane** | `apps/control-plane` | Production Implemented | Render PaaS / K8s `aip-control` | FastAPI, Argon2id, Quota Lua scripts, Active `/health/ready` probe, Model Aliases, Dynamic UUID Routing |
+| **Developer Console** | `apps/frontend` | Production Implemented | Render PaaS / Vite Static | Inter/Monochrome Enterprise UI, `/project/{id}/apis/{id}` routing, Sandbox playgrounds |
+| **Text & Audio Runtimes** | `apps/data-plane` | Production Implemented | Docker Compose / K8s `aip-text`, `aip-multimodal` | CTranslate2 MarianMT, Faster-Whisper, EasyOCR, PhoBERT, vi-VN-Neural (Dual HTTP + gRPC) |
+| **Dispatcher Worker** | `apps/dispatcher-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | Modular DCP Consumer, TaskResolver, gRPC Client, Jittered Retry, Stale Reconciler |
+| **Callback Worker** | `apps/callback-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | HMAC-SHA256 Signed Webhook Delivery with exponential backoff |
+| **Image Worker** | `apps/image-worker` | Implemented (Diffusers / MinIO) | Docker Compose / K8s `aip-multimodal` | Async task consumer for FLUX.1 / SDXL image generation |
+| **Video & LipSync Workers**| `apps/{video,lipsync}-worker` | Specification / Blueprint | Future GPU Nodes (`aip-video`) | AMQP schema and task envelope contracts defined in `packages/contracts` |
+| **Storage & Messaging** | MongoDB, Redis, RabbitMQ, MinIO | Production Implemented | Atlas (Mongo) / Docker / K8s `aip-infra` | Native priority queues, dead-letter exchanges, multi-namespace synchronized secrets |
+
 ---
 
 ## 2. Monorepo Organization & Component Mapping (`apps/` Layout)
@@ -53,26 +66,30 @@ All deployable applications are consolidated under `apps/`, accompanied by share
 ```text
 ai_platform/
 ├── apps/                               # Deployable Applications
-│   ├── control-plane/                  # Tầng 1: API Gateway (FastAPI :8000), Auth, Quotas, Model Aliases, Web Console
+│   ├── control-plane/                  # Tier 1: API Gateway (FastAPI :8000), Auth, Quotas, Model Aliases, Web Console
 │   ├── frontend/                       # Developer & Staff Web UI Portal (Vite + Vanilla JS :5173)
-│   ├── data-plane/                     # Tầng 2: Unified Inference Serving Nodes (Dual HTTP & gRPC)
+│   ├── data-plane/                     # Tier 2: Unified Inference Serving Nodes (Dual HTTP & gRPC)
 │   │   ├── vllm-engine/                # LLM & Embedding Server (HTTP :8001 / gRPC :50051)
-│   │   ├── stt-server/                 # Faster-Whisper Vietnamese Speech-to-Text (HTTP :8002 / gRPC :50052)
-│   │   ├── translation-server/         # MarianMT/CTranslate2 En ↔ Vi Live on GPU (HTTP :8003 / gRPC :50053)
+│   │   ├── stt-server/                 # Faster-Whisper Speech-to-Text (HTTP :8002 / gRPC :50052)
+│   │   ├── translation-server/         # MarianMT/CTranslate2 En <-> Vi Live on GPU (HTTP :8003 / gRPC :50053)
 │   │   ├── ocr-server/                 # EasyOCR Document & Identity Digitization (HTTP :8004 / gRPC :50054)
 │   │   ├── moderation-server/          # PhoBERT Safety & Content Moderation (HTTP :8006 / gRPC :50055)
 │   │   ├── tts-adapter/                # vi-VN-Neural Speech Synthesis (HTTP :8007 / gRPC :50056)
 │   │   └── runtime-probe/              # Hardware telemetry probe & NVML health checker
-│   ├── dispatcher-worker/              # Tầng 3: Modular DCP Task Dispatcher, Resolver, gRPC Client & Reconciler
+│   ├── dispatcher-worker/              # Tier 3: Modular DCP Task Dispatcher, Resolver, gRPC Client & Reconciler
 │   │   └── src/                        # consumer/, resolver/, grpc_client/, retry/, publisher/, reconciler/
-│   ├── callback-worker/                # Tầng 3: HMAC-SHA256 Signed Webhook Notification Delivery
-│   ├── image-worker/                   # Tầng 3: FLUX.1 & SDXL High-Res Image Generation Worker
-│   ├── video-worker/                   # Tầng 3: Wan2.2 & CogVideoX Text-to-Video Generation Worker
-│   └── lipsync-worker/                 # Tầng 3: LivePortrait Audio-Driven Lip Synchronization Worker
+│   ├── callback-worker/                # Tier 3: HMAC-SHA256 Signed Webhook Notification Delivery
+│   ├── image-worker/                   # Tier 3: FLUX.1 & SDXL High-Res Image Generation Worker
+│   ├── video-worker/                   # Tier 3: Wan2.2 & CogVideoX Text-to-Video Generation Worker
+│   └── lipsync-worker/                 # Tier 3: LivePortrait Audio-Driven Lip Synchronization Worker
 ├── packages/                           # Shared Kernel Libraries
 │   ├── common/                         # Core domain schemas, Argon2id security, Mongo & Redis repositories
 │   ├── contracts/                      # Protobuf contracts (inference.proto, jobs.proto), compiled stubs & AMQP schemas
-│   └── sdk/                            # Official Python Client SDK (`aip-sdk`)
+│   └── sdk/                            # Official Python Client SDK (aip-sdk)
+├── migrations/                         # Database Migrations & Seeding (SRS Section 11.2)
+│   ├── 001_initial_mongo_indexes.py    # Production indexes for API keys, users, jobs TTL, audit logs
+│   ├── 002_seed_catalogs.py            # Idempotent seed for verified model catalog
+│   └── runner.py                       # Migration runner tracking status in _migrations_meta
 ├── infrastructure/                     # Observability (Prometheus, Grafana, Alertmanager)
 ├── deploy/                             # Deployment Manifests (Docker Compose, Helm, K8s)
 ├── sdks/                               # Multi-language Client SDKs (AIP.Platform.SDK for .NET 8)

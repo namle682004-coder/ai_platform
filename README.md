@@ -11,29 +11,42 @@
 
 ---
 
-## 🌟 Overview
+## Overview
 
 **AIP Platform** is an enterprise-grade, self-hosted AI inference middleware platform and developer console. Built with **Clean Architecture & Domain-Driven Design (DDD)**, it acts as an intelligent distribution, governance, and execution layer between downstream business applications and upstream heterogeneous AI compute nodes (NVIDIA GPUs & CPUs).
 
 ### Core Capabilities:
-- 🚀 **Standardized `/v1` AI APIs**: Drop-in unified endpoints for 21 enterprise AI models across 13 specialized domains.
-- ⚡ **Dual Arterial Communication Protocols**: High-throughput multiplexed **gRPC binary data-plane** (:50051–:50056) for sub-millisecond inference combined with **RabbitMQ message queuing** for resilient asynchronous task offloading.
-- 🛡️ **Zero-Trust Security & Governance**: Argon2id salted API key hashing with Master Pepper, strict CIDR IP allowlisting, and project-based tenant isolation.
-- 🚦 **Intelligent Task Routing & Dispatch**: Modular DCP-pattern `dispatcher-worker` with dynamic task resolution (`task_resolver`), gRPC client execution (`inference_client`), jittered exponential backoff (`retry`), and dead-letter queue routing (`DLQ`).
-- 🔄 **Event-Driven Resilience**: Native DLQ dead-lettering, TTL message expirations, Redis-backed idempotency protection, HMAC-SHA256 signed webhooks, and automatic stale job reconciliation.
-- 📊 **Real-time Hardware Telemetry**: Native NVIDIA NVML integration monitoring real GPU core temperatures, VRAM consumption, and wattage with automated hardware allocation guards.
-- 🖥️ **Developer & Staff Self-Service Portal**: Integrated Web Console, interactive API Sandbox, Key Management, and public System Status page.
+- **Standardized `/v1` AI APIs**: Drop-in unified endpoints for 7 verified core AI models aligned with local 4GB VRAM GPU hardware.
+- **Dual Arterial Communication Protocols**: High-throughput multiplexed **gRPC binary data-plane** (:50051–:50056) for sub-millisecond inference combined with **RabbitMQ message queuing** for resilient asynchronous task offloading.
+- **Zero-Trust Security & Governance**: Argon2id salted API key hashing with Master Pepper, strict CIDR IP allowlisting, and project-based tenant isolation.
+- **Intelligent Task Routing & Dispatch**: Modular DCP-pattern `dispatcher-worker` with dynamic task resolution (`task_resolver`), gRPC client execution (`inference_client`), jittered exponential backoff (`retry`), and dead-letter queue routing (`DLQ`).
+- **Event-Driven Resilience**: Native DLQ dead-lettering, TTL message expirations, Redis-backed idempotency protection, HMAC-SHA256 signed webhooks, and automatic stale job reconciliation.
+- **Real-time Hardware Telemetry**: Native NVIDIA NVML integration monitoring real GPU core temperatures, VRAM consumption, and wattage with automated hardware allocation guards.
+- **Developer & Staff Self-Service Portal**: Integrated Web Console, interactive API Sandbox, Key Management, and public System Status page.
+
+### Implementation Status & Deployment Readiness
+
+| Tier / Component | Target Artifact | Implementation State | Deployment Target | Notes |
+| --- | --- | :---: | :---: | --- |
+| **Control Plane** | `apps/control-plane` | Production Implemented | Render PaaS / K8s `aip-control` | FastAPI, Argon2id, Quota Lua scripts, Active `/health/ready` probe, Model Aliases, Dynamic UUID Routing |
+| **Developer Console** | `apps/frontend` | Production Implemented | Render PaaS / Vite Static | Inter/Monochrome Enterprise UI, `/project/{id}/apis/{id}` routing, Sandbox playgrounds |
+| **Text & Audio Runtimes** | `apps/data-plane` | Production Implemented | Docker Compose / K8s `aip-text`, `aip-multimodal` | CTranslate2 MarianMT, Faster-Whisper, EasyOCR, PhoBERT, vi-VN-Neural (Dual HTTP + gRPC) |
+| **Dispatcher Worker** | `apps/dispatcher-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | Modular DCP Consumer, TaskResolver, gRPC Client, Jittered Retry, Stale Reconciler |
+| **Callback Worker** | `apps/callback-worker` | Production Implemented | Docker Compose / K8s `aip-infra` | HMAC-SHA256 Signed Webhook Delivery with exponential backoff |
+| **Image Worker** | `apps/image-worker` | Implemented (Diffusers / MinIO) | Docker Compose / K8s `aip-multimodal` | Async task consumer for FLUX.1 / SDXL image generation |
+| **Video & LipSync Workers**| `apps/{video,lipsync}-worker` | Specification / Blueprint | Future GPU Nodes (`aip-video`) | AMQP schema and task envelope contracts defined in `packages/contracts` |
+| **Storage & Messaging** | MongoDB, Redis, RabbitMQ, MinIO | Production Implemented | Atlas (Mongo) / Docker / K8s `aip-infra` | Native priority queues, dead-letter exchanges, multi-namespace synchronized secrets |
 
 ---
 
-## 🏛️ Clean Architecture Monorepo Structure (`apps/` Layout)
+## Clean Architecture Monorepo Structure (`apps/` Layout)
 
 The codebase follows the enterprise monorepo workspace standard, consolidating all runnable microservices and workers cleanly under `apps/` with shared kernels in `packages/`:
 
 ```text
 ai_platform/
 ├── apps/                               # Core Monorepo Deployable Applications
-│   ├── control-plane/                  # Tầng 1: API Gateway (FastAPI), Auth (Argon2id), Quotas, Model Aliases, Web Console
+│   ├── control-plane/                  # Tier 1: API Gateway (FastAPI), Auth (Argon2id), Quotas, Model Aliases, Web Console
 │   │   ├── src/api/                    # REST routers (/v1/chat, /v1/nlp, /v1/audio, /v1/vision, /v1/jobs, etc.)
 │   │   ├── src/auth/                   # Argon2id hasher, key validation, Master Pepper security
 │   │   ├── src/quota/                  # Redis Lua atomic rate limits (RPM, TPM, in-flight concurrency)
@@ -41,16 +54,16 @@ ai_platform/
 │   │   ├── src/publisher/              # RabbitMQ AMQP 0-9-1 topology & task publisher
 │   │   └── src/grpc_helpers/           # Control Plane gRPC client manager & channel pooling
 │   │
-│   ├── data-plane/                     # Tầng 2: Unified Inference Serving Nodes (Dual HTTP & gRPC)
+│   ├── data-plane/                     # Tier 2: Unified Inference Serving Nodes (Dual HTTP & gRPC)
 │   │   ├── vllm-engine/                # High-Throughput LLM & Embedding Server (HTTP :8001 / gRPC :50051)
-│   │   ├── stt-server/                 # Faster-Whisper Vietnamese Speech-to-Text (HTTP :8002 / gRPC :50052)
-│   │   ├── translation-server/         # MarianMT/CTranslate2 En ↔ Vi Live on GPU (HTTP :8003 / gRPC :50053)
+│   │   ├── stt-server/                 # Faster-Whisper Speech-to-Text (HTTP :8002 / gRPC :50052)
+│   │   ├── translation-server/         # MarianMT/CTranslate2 En <-> Vi Live on GPU (HTTP :8003 / gRPC :50053)
 │   │   ├── ocr-server/                 # EasyOCR Document & Identity Digitization (HTTP :8004 / gRPC :50054)
 │   │   ├── moderation-server/          # PhoBERT Safety & Content Moderation (HTTP :8006 / gRPC :50055)
 │   │   ├── tts-adapter/                # vi-VN-Neural Speech Synthesis (HTTP :8007 / gRPC :50056)
 │   │   └── runtime-probe/              # Hardware telemetry probe & NVML health checker
 │   │
-│   ├── dispatcher-worker/              # Tầng 3: Modular DCP Task Dispatcher & Reconciler
+│   ├── dispatcher-worker/              # Tier 3: Modular DCP Task Dispatcher & Reconciler
 │   │   └── src/
 │   │       ├── consumer/               # AMQP queue listener with prefetch=5 & connection recovery
 │   │       ├── resolver/               # Dynamic TaskResolver mapping domain/alias to gRPC endpoints
@@ -60,10 +73,10 @@ ai_platform/
 │   │       ├── reconciler/             # StaleReconciler auto-healing orphan/stuck jobs (> 15m)
 │   │       └── main.py                 # Single unified async entrypoint with graceful shutdown
 │   │
-│   ├── callback-worker/                # Tầng 3: HMAC-SHA256 Signed Webhook Notification Delivery
-│   ├── image-worker/                   # Tầng 3: FLUX.1 & SDXL High-Res Image Generation Worker
-│   ├── video-worker/                   # Tầng 3: Wan2.2 & CogVideoX Text-to-Video Generation Worker
-│   ├── lipsync-worker/                 # Tầng 3: LivePortrait Audio-Driven Lip Synchronization Worker
+│   ├── callback-worker/                # Tier 3: HMAC-SHA256 Signed Webhook Notification Delivery
+│   ├── image-worker/                   # Tier 3: FLUX.1 & SDXL High-Res Image Generation Worker
+│   ├── video-worker/                   # Tier 3: Wan2.2 & CogVideoX Text-to-Video Generation Worker
+│   ├── lipsync-worker/                 # Tier 3: LivePortrait Audio-Driven Lip Synchronization Worker
 │   └── frontend/                       # Developer & Staff Web UI Portal (Vite + Vanilla JS)
 │
 ├── packages/                           # Shared Kernel Libraries
@@ -71,12 +84,17 @@ ai_platform/
 │   ├── contracts/                      # Protobuf contracts (inference.proto, jobs.proto), compiled stubs & AMQP schemas
 │   └── sdk/                            # Official Python Client SDK (`aip-sdk`)
 │
+├── migrations/                         # Database Schema & Data Migrations (SRS Section 11.2)
+│   ├── 001_initial_mongo_indexes.py    # Production indexes for API keys, users, jobs TTL, audit logs
+│   ├── 002_seed_catalogs.py            # Idempotent seed for verified 7 core model catalog
+│   └── runner.py                       # Migration runner tracking execution state in _migrations_meta
+│
 ├── infrastructure/                     # Observability & Monitoring
 │   ├── prometheus/                     # Prometheus scrape configs & alert rules
 │   ├── grafana/                        # Pre-configured Grafana dashboards & datasources
 │   └── alertmanager/                   # Alertmanager notification routing
 │
-├── deploy/                             # Enterprise Deployment Manifests
+├── deploy/                             # Enterprise Deployment Manifests (SRS Section 11.1 & 11.3)
 │   ├── docker-compose/                 # Local multi-service stack (Mongo, Redis, RabbitMQ, MinIO, Monitoring)
 │   ├── helm/                           # Kubernetes Helm Charts (aip-control, aip-runtimes, aip-infra)
 │   └── k8s/                            # Raw K8s manifests, NetworkPolicies, Namespaces & Secrets
@@ -87,36 +105,32 @@ ai_platform/
 │   ├── export_api_assets.py            # OpenAPI JSON, Postman Collection & Redoc documentation generator
 │   ├── manage_services.sh              # 1-Click native lifecycle management (start/stop/status/restart)
 │   ├── prepare_translation_model.py    # MarianMT model weight conversion for CTranslate2
-│   ├── quick_check.sh                  # Instant health probe across all AI runtimes and gateway
-│   └── seed_13_apis.py                 # Automated MongoDB Atlas seeding for the 13-service / 21-model catalog
+│   └── quick_check.sh                  # Instant health probe across all AI runtimes and gateway
 └── tests/                              # Automated Pytest CI/CD test suite (112 tests, 100% pass)
 ```
 
 ---
 
-## 🎯 13 AI Services & 21-Model Catalog (Local 4GB VRAM Baseline)
+## Core Model Catalog (Local 4GB VRAM Hardware Baseline)
 
 In strict adherence to real local hardware capabilities (**4GB VRAM GPU baseline**), the platform standardizes on **7 core production models** optimized for low footprint and sub-millisecond response:
 
-| # | Service Domain | Route | Target Model / Engine | gRPC Port | HTTP Port | Mode |
+| # | Logical Alias | Route | Physical Model / Runtime Engine | VRAM | Ports | Mode |
 |---|---|---|---|:---:|:---:|---|
-| 1 | **Translation** | `/v1/nlp/translate` | `opus-mt-vi-en` (CTranslate2, 1GB) | `:50053` | `:8003` | Sync / Async |
-| 2 | **Speech-to-Text (STT)** | `/v1/audio/transcriptions` | `faster-whisper-small` (ASR, CPU/GPU) | `:50052` | `:8002` | Sync / Async |
-| 3 | **Text-to-Speech (TTS)** | `/v1/audio/speech` | `vi-VN-Neural` (tts-adapter, CPU/GPU) | `:50056` | `:8007` | Sync / Async |
-| 4 | **LLM Chat Completion** | `/v1/chat/completions` | `Qwen2.5-1.5B-Instruct` (vLLM, 2GB) | `:50051` | `:8001` | Sync / Async |
-| 5 | **Vector Embedding** | `/v1/embeddings` | `Qwen2.5-1.5B-Instruct` (Mean-pooled, 0GB) | `:50051` | `:8001` | Sync |
-| 6 | **Text Summarization** | `/v1/nlp/summarize` | `Qwen2.5-1.5B-Instruct` (Zero-shot NLP) | `:50051` | `:8001` | Sync / Async |
-| 7 | **Content Moderation** | `/v1/moderations` | `PhoBERT-base + Rules` (Safety Engine, 1GB) | `:50055` | `:8006` | Sync |
-| 8 | **OCR & Document Reading** | `/v1/ocr/id`, `/v1/ocr/dl` | `EasyOCR-Vietnamese-ID` (IDP, 2GB) | `:50054` | `:8004` | Sync / Async |
-| 9 | **FaceMatch eKYC** | `/v1/vision/facematch` | `InsightFace ArcFace Biometrics` | - | `:8000` | Sync |
-| 10 | **Liveness Detection** | `/v1/vision/liveness` | `MiniFASNetV2 Anti-Spoofing` | - | `:8000` | Sync |
-| 11 | **Image Generation** | `/v1/images/generations` | `FLUX.1-schnell` / `SDXL Turbo` | - | - | Async Worker |
-| 12 | **Video Generation** | `/v1/videos/generations` | `Wan2.2-T2V-14B` / `CogVideoX-5b` | - | - | Async Worker |
-| 13 | **LipSync Synchronization** | `/v1/videos/lipsync` | `LivePortrait Audio-Driven Facial Rigging` | - | - | Async Worker |
+| 1 | `chat-general-standard` | `/v1/chat/completions` | `Qwen2.5-1.5B-Instruct` (vLLM) | 2GB | `:8001` / `:50051` | Sync / SSE Stream |
+| 2 | `embed-standard` | `/v1/embeddings` | `Qwen2.5-1.5B-Instruct` (Mean-pooled) | 0GB | `:8001` / `:50051` | Sync |
+| 3 | `translate-vi-standard` | `/v1/nlp/translate` | `opus-mt-vi-en` (CTranslate2) | 1GB | `:8003` / `:50053` | Sync / Async |
+| 4 | `stt-whisper-small` | `/v1/audio/transcriptions` | `faster-whisper-small` (ASR) | 1GB | `:8002` / `:50052` | Sync / Async |
+| 5 | `tts-vi-standard` | `/v1/audio/speech` | `vi-VN-Neural` (tts-adapter) | 0.5GB | `:8007` / `:50056` | Sync / Async |
+| 6 | `ocr-vietnamese-id` | `/v1/ocr/id` | `EasyOCR-Vietnamese-ID` (EasyOCR) | 1GB | `:8004` / `:50054` | Sync / Async |
+| 7 | `moderation-standard` | `/v1/moderations` | `PhoBERT-base + Rules` (Safety Engine) | 0.5GB | `:8006` / `:50055` | Sync |
+
+> [!NOTE]
+> Heavy asynchronous workloads (Image generation with FLUX.1, Video generation with Wan2.2, and LipSync with LivePortrait) are structurally defined in `apps/image-worker`, `apps/video-worker`, and `apps/lipsync-worker`. Their task contracts and queues (`q.aip.jobs.*`) are fully wired, ready for execution when dedicated high-VRAM GPU compute nodes (>= 40GB VRAM) are added to the cluster.
 
 ---
 
-## ⚡ Two Arterial Protocols: RabbitMQ & gRPC
+## Two Arterial Protocols: RabbitMQ & gRPC
 
 AIP Platform integrates two complementary arterial communication protocols to achieve high throughput, strict governance, and zero data loss:
 
@@ -175,7 +189,7 @@ flowchart TD
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 - **OS**: Linux (Ubuntu 22.04 LTS) or Windows WSL2 (Ubuntu 22.04)
@@ -201,14 +215,14 @@ make dev-env-full
 
 ### 4. Run Services
 
-#### Tầng 1: Control-Plane API Gateway
+#### Tier 1: Control-Plane API Gateway
 ```bash
 make dev-gateway
 # API Gateway runs on http://localhost:8000
 # Interactive Swagger: http://localhost:8000/docs
 ```
 
-#### Tầng 2: Data-Plane AI Microservices (1-Click or Individual)
+#### Tier 2: Data-Plane AI Microservices (1-Click or Individual)
 ```bash
 # 1-Click start all native data-plane services
 make start-all
@@ -216,13 +230,13 @@ make start-all
 # Or start individually:
 make dev-vllm         # vLLM Serving Engine (:8001 / :50051)
 make dev-translation  # MarianMT Translation (:8003 / :50053)
-make dev-stt          # PhoWhisper Speech-to-Text (:8002 / :50052)
+make dev-stt          # Speech-to-Text (:8002 / :50052)
 make dev-ocr          # EasyOCR Vietnamese ID (:8004 / :50054)
 make dev-moderation   # PhoBERT Content Moderation (:8006 / :50055)
 make dev-tts          # vi-VN-Neural TTS Adapter (:8007 / :50056)
 ```
 
-#### Tầng 3: Distributed Asynchronous Workers
+#### Tier 3: Distributed Asynchronous Workers
 ```bash
 # Dispatcher Worker (Domain Tasks & Stale Reconciler)
 make dev-dispatcher
@@ -242,18 +256,18 @@ make ui
 
 ---
 
-## 🖥️ Developer & Staff Web Portal
+## Developer & Staff Web Portal
 
 Access the developer console directly in your browser:
-- 📊 **Staff Dashboard**: [http://localhost:5173/staff/dashboard](http://localhost:5173/staff/dashboard) — Live GPU telemetry, active request counters, and credit balances.
-- 🧪 **API Playground & Sandboxes**: [http://localhost:5173/staff/apis](http://localhost:5173/staff/apis) — Test all 13 AI services directly in your browser.
-- 🔑 **API Key Management**: [http://localhost:5173/staff/keys](http://localhost:5173/staff/keys) — Generate and revoke secure Argon2id API keys.
-- 📈 **Usage & Cost Reports**: [http://localhost:5173/staff/report](http://localhost:5173/staff/report) — Historical invocation graphs and breakdown by model.
-- 🚦 **System Status Page**: [http://localhost:5173/status.html](http://localhost:5173/status.html) — Public cluster uptime and component health status.
+- **Staff Dashboard**: [http://localhost:5173/staff/dashboard](http://localhost:5173/staff/dashboard) — Live GPU telemetry, active request counters, and credit balances.
+- **API Playground & Sandboxes**: [http://localhost:5173/staff/apis](http://localhost:5173/staff/apis) — Test verified core AI services directly in your browser.
+- **API Key Management**: [http://localhost:5173/staff/keys](http://localhost:5173/staff/keys) — Generate and revoke secure Argon2id API keys.
+- **Usage & Cost Reports**: [http://localhost:5173/staff/report](http://localhost:5173/staff/report) — Historical invocation graphs and breakdown by model.
+- **System Status Page**: [http://localhost:5173/status.html](http://localhost:5173/status.html) — Public cluster uptime and component health status.
 
 ---
 
-## 💻 API Integration Examples
+## API Integration Examples
 
 ### Mandatory Authentication Header
 All requests must include an active API key:
@@ -332,7 +346,7 @@ In case of errors, the Gateway guarantees a standardized SRS Error Envelope:
 
 ---
 
-## 🚢 Kubernetes & Helm Deployment
+## Kubernetes & Helm Deployment
 
 For enterprise container orchestration, use the included Helm charts in `deploy/`:
 
@@ -361,7 +375,7 @@ helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## Testing & Quality Assurance
 
 The codebase includes a comprehensive 112-test automated test suite covering all architecture tiers:
 ```bash
