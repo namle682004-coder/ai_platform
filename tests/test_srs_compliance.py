@@ -43,7 +43,7 @@ def test_srs_model_detail_metadata():
     assert response.status_code == 200
     m = response.json()
     assert m["id"] == "chat-general-standard"
-    assert m["physical_model"] == "Qwen2.5-1.5B-Instruct"
+    assert m["physical_model"] == "Qwen/Qwen2.5-1.5B-Instruct"
     assert m["runtime"] == "vLLM"
     assert m["namespace"] == "aip-text"
     assert m["min_vram_gb"] == 2

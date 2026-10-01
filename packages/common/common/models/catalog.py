@@ -28,7 +28,7 @@ AIP_MODEL_CATALOG: dict[str, ModelAlias] = {
     # 1. Text / LLM & Reasoning
     "chat-general-standard": ModelAlias(
         id="chat-general-standard",
-        physical_model="Qwen2.5-1.5B-Instruct",
+        physical_model="Qwen/Qwen2.5-1.5B-Instruct",
         runtime="vLLM",
         namespace="aip-text",
         min_vram_gb=2,
