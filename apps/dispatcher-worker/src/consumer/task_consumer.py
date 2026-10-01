@@ -18,21 +18,20 @@ import aio_pika
 from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, AbstractRobustConnection
 
 from common.repositories.mongo_repositories import job_repository
+from common.messaging.topology import CORE_TASK_DOMAINS, PRIORITIES, task_queue_name
 
-from ..grpc_client.inference_client import inference_grpc_client
+from ..grpc_client.inference_client import (
+    InferenceTerminalError,
+    inference_grpc_client,
+)
 from ..publisher.callback_publisher import callback_publisher
 from ..resolver.task_resolver import task_resolver
-from ..retry.backoff import RetryPolicy, execute_with_retry
+from ..retry.delayed_retry import RetryPublisher, MAX_RETRIES
 
 logger = logging.getLogger("aip-dispatcher.task-consumer")
 
 WORKER_NODE_ID = os.getenv("AIP_NODE_ID", f"dispatcher-{socket.gethostname()}")
 
-# Domain queue list matching topology
-CORE_TASK_DOMAINS = [
-    "chat", "completion", "embedding", "translation",
-    "stt", "tts", "ocr", "moderation", "image", "video", "lipsync", "batch"
-]
 
 
 def queue_name(domain: str) -> str:
@@ -45,12 +44,11 @@ class TaskConsumer:
     def __init__(
         self,
         rabbitmq_url: str,
-        prefetch_count: int = 5,
-        retry_policy: Optional[RetryPolicy] = None,
+        prefetch_count: int = 1,
     ):
         self.rabbitmq_url = rabbitmq_url
         self.prefetch_count = prefetch_count
-        self.retry_policy = retry_policy or RetryPolicy(max_retries=3, base_delay=1.0)
+        self._retry_publisher = RetryPublisher(rabbitmq_url)
         self._connection: Optional[AbstractRobustConnection] = None
         self._channel: Optional[AbstractChannel] = None
         self._running: bool = False
@@ -60,6 +58,7 @@ class TaskConsumer:
         self._connection = await aio_pika.connect_robust(self.rabbitmq_url)
         self._channel = await self._connection.channel()
         await self._channel.set_qos(prefetch_count=self.prefetch_count)
+        await self._retry_publisher.connect()
 
         self._running = True
         logger.info(
@@ -67,14 +66,16 @@ class TaskConsumer:
             WORKER_NODE_ID, self.prefetch_count
         )
 
-        for domain in CORE_TASK_DOMAINS:
-            q_name = queue_name(domain)
-            try:
-                queue = await self._channel.get_queue(q_name)
-                await queue.consume(self._process_message)
-                logger.debug("TaskConsumer listening on: %s", q_name)
-            except Exception as exc:
-                logger.warning("Could not subscribe to queue %s: %s", q_name, exc)
+        # Subscribe in physical priority order: high -> normal -> batch (DCP Pattern)
+        for priority in PRIORITIES:
+            for domain in CORE_TASK_DOMAINS:
+                q_name = task_queue_name(domain, priority)
+                try:
+                    queue = await self._channel.get_queue(q_name)
+                    await queue.consume(self._process_message)
+                    logger.debug("TaskConsumer subscribed: %s (priority=%s)", q_name, priority)
+                except Exception as exc:
+                    logger.warning("Could not subscribe to queue %s: %s", q_name, exc)
 
         logger.info("TaskConsumer successfully attached to all domain queues")
 
@@ -82,6 +83,7 @@ class TaskConsumer:
         """Gracefully close channel and connection."""
         self._running = False
         await inference_grpc_client.close()
+        await self._retry_publisher.close()
         if self._channel and not self._channel.is_closed:
             await self._channel.close()
         if self._connection and not self._connection.is_closed:
@@ -101,8 +103,24 @@ class TaskConsumer:
         alias_name = body.get("alias_name", "chat-general-standard")
         domain = body.get("domain", "chat")
         priority = body.get("priority", "normal")
-        payload_data = body.get("data", {})
-        webhook_url = payload_data.get("webhook_url") or body.get("webhook_url")
+        payload_data = body.get("data")
+        webhook_url = body.get("webhook_url")
+
+        # Thin Task Envelope (DCP Pattern): Load full state from MongoDB if data was not embedded
+        if not payload_data:
+            try:
+                job_doc = await job_repository.get_job(task_id)
+                if job_doc:
+                    payload_data = job_doc.get("payload") or {}
+                    alias_name = job_doc.get("alias_name", alias_name)
+                    webhook_url = webhook_url or job_doc.get("webhook_url")
+                else:
+                    payload_data = {}
+            except Exception as exc:
+                logger.warning("Failed to fetch full job document for %s from DB: %s", task_id, exc)
+                payload_data = {}
+        else:
+            webhook_url = payload_data.get("webhook_url") or webhook_url
 
         start_time = datetime.now(timezone.utc)
         start_iso = start_time.isoformat()
@@ -134,26 +152,53 @@ class TaskConsumer:
             task_id, target.grpc_target, target.rpc_method
         )
 
-        # 3. Execute inference via gRPC client with retry policy
+        # 3. Execute inference via gRPC client directly (Broker handles retries asynchronously)
         success = True
         error_msg: Optional[str] = None
         result_payload: dict[str, Any] = {}
 
         try:
-            result_payload = await execute_with_retry(
-                inference_grpc_client.execute_inference,
+            result_payload = await inference_grpc_client.execute_inference(
                 target_endpoint=target.grpc_target,
                 rpc_method=target.rpc_method,
                 domain=domain,
                 alias_name=alias_name,
                 data=payload_data,
                 timeout=target.timeout_seconds,
-                policy=self.retry_policy,
             )
+        except InferenceTerminalError as exc:
+            success = False
+            error_msg = f"Terminal Error: {exc}"
+            logger.error("✖ Task %s encountered terminal error: %s (skipping retries)", task_id, exc)
         except Exception as exc:
             success = False
             error_msg = str(exc)
-            logger.error("Task %s failed after retries: %s", task_id, exc)
+            logger.warning("Task %s inference call failed: %s", task_id, exc)
+
+            retry_count = int(body.get("retry_count", 0))
+            if retry_count < MAX_RETRIES:
+                # DCP Pattern: Publish to RabbitMQ delayed exchange and ACK immediately!
+                try:
+                    await self._retry_publisher.publish_retry(
+                        task_id=task_id,
+                        tenant_id=body.get("tenant_id", "default"),
+                        domain=domain,
+                        priority=priority,
+                        retry_count=retry_count,
+                        failure_code="INFERENCE_FAILED",
+                        failure_message=error_msg,
+                        alias_name=alias_name,
+                    )
+                    await job_repository.update_job_status(
+                        job_id=task_id,
+                        status="queued",
+                        extra_updates={"error_message": f"Retry {retry_count + 1}/{MAX_RETRIES}: {error_msg}"},
+                    )
+                    await message.ack()
+                    logger.info("✔ Task %s handed over to RabbitMQ delayed retry exchange (0ms blocking)", task_id)
+                    return
+                except Exception as retry_err:
+                    logger.error("Failed to publish delayed retry for %s: %s", task_id, retry_err)
 
         end_time = datetime.now(timezone.utc)
         end_iso = end_time.isoformat()
@@ -197,5 +242,6 @@ class TaskConsumer:
             await message.ack()
             logger.info("✔ Task %s finished successfully in %sms", task_id, duration_ms)
         else:
-            # Dead letter routing or redelivery limit
-            await message.nack(requeue=not message.redelivered)
+            # Exhausted retries -> Dead-letter to DLQ directly
+            await message.reject(requeue=False)
+            logger.warning("✖ Task %s exhausted retries. Rejected to DLQ.", task_id)

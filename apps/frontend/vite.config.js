@@ -4,6 +4,10 @@ import { defineConfig } from 'vite';
 
 // Plugin to support extensionless URLs and path aliases
 function cleanUrlsPlugin() {
+  const apiRouteConfig = JSON.parse(
+    fs.readFileSync(resolve(__dirname, 'staff/api_detail_routes.json'), 'utf8')
+  );
+
   return {
     name: 'clean-urls-plugin',
     configureServer(server) {
@@ -12,6 +16,32 @@ function cleanUrlsPlugin() {
         const urlParts = req.url.split('?');
         const pathname = urlParts[0];
         const search = urlParts[1] ? `?${urlParts[1]}` : '';
+
+        const projectApiMatch = pathname.match(/^\/(?:staff\/)?project\/[^/]+\/apis\/([^/]+)\/?$/i);
+        if (projectApiMatch) {
+          const page = apiRouteConfig.apiPages[projectApiMatch[1].toLowerCase()];
+          if (!page) {
+            res.statusCode = 404;
+            res.end('API detail page not found');
+            return;
+          }
+          req.url = `/staff/${page}${search}`;
+          return next();
+        }
+
+        const legacyServiceMatch = pathname.match(/^\/staff\/(service[-_][a-z_-]+?)(?:\.html)?\/?$/i);
+        if (legacyServiceMatch) {
+          const apiId = apiRouteConfig.legacyAliases[legacyServiceMatch[1].toLowerCase()];
+          if (apiId && apiRouteConfig.apiPages[apiId]) {
+            res.statusCode = 302;
+            res.setHeader(
+              'Location',
+              `/project/${apiRouteConfig.defaultProjectId}/apis/${apiId}${search}`
+            );
+            res.end();
+            return;
+          }
+        }
 
         // Handle root or static asset requests with explicit extensions
         if (pathname === '/' || pathname.includes('.')) {
@@ -33,11 +63,7 @@ function cleanUrlsPlugin() {
           return next();
         }
 
-        // 3. Enterprise FPT.AI-compliant dynamic project & API routing
-        if (pathname.match(/^\/(?:staff\/)?project\/[^/]+\/apis\/[^/]+/)) {
-          req.url = `/staff/service_detail.html${search}`;
-          return next();
-        }
+        // 3. Enterprise FPT.AI-compliant dynamic project routing
         if (pathname.match(/^\/(?:staff\/)?project\/[^/]+\/apis\/?$/)) {
           req.url = `/staff/apis.html${search}`;
           return next();
@@ -46,11 +72,6 @@ function cleanUrlsPlugin() {
           req.url = `/staff/dashboard.html${search}`;
           return next();
         }
-        if (pathname.startsWith('/staff/service-') || pathname.startsWith('/staff/service_')) {
-          req.url = `/staff/service_detail.html${search}`;
-          return next();
-        }
-
         // 4. Common path rewrites
         if (pathname === '/login') {
           req.url = `/auth/login.html${search}`;
@@ -142,7 +163,6 @@ export default defineConfig(() => {
         staff_payment: resolve(__dirname, 'staff/payment.html'),
         staff_contact: resolve(__dirname, 'staff/contact.html'),
         staff_portal: resolve(__dirname, 'staff/portal.html'),
-        staff_service_detail: resolve(__dirname, 'staff/service_detail.html'),
         staff_service_llm: resolve(__dirname, 'staff/service_llm.html'),
         staff_service_stt: resolve(__dirname, 'staff/service_stt.html'),
         staff_service_tts: resolve(__dirname, 'staff/service_tts.html'),

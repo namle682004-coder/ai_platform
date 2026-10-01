@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package aip.ocr.v1;
+
+import "common.proto";
+
+service OcrService {
+  rpc ExtractDocument(OcrRequest) returns (OcrResponse);
+  rpc GetHealth(aip.common.v1.HealthRequest) returns (aip.common.v1.HealthResponse);
+  rpc Cancel(aip.common.v1.CancelRequest) returns (aip.common.v1.CancelResponse);
+}
+
+message OcrRequest {
+  bytes document_data = 1;
+  string file_type = 2;
+  string model_alias = 3;
+}
+
+message OcrBlock {
+  string text = 1;
+  float confidence = 2;
+  repeated float box = 3;
+}
+
+message OcrResponse {
+  string full_text = 1;
+  repeated OcrBlock blocks = 2;
+  int64 latency_ms = 3;
+}

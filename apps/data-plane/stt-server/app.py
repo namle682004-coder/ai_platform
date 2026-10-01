@@ -1,9 +1,9 @@
-"""
-AIP Speech-to-Text Microservice (Faster-Whisper).
-"""
-
+import logging
+import os
 from contextlib import asynccontextmanager
 from typing import Optional
+
+logger = logging.getLogger("aip-stt.app")
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -25,11 +25,34 @@ except (ImportError, ValueError):
     from stt_engine import stt_engine
     from stt_schemas import TranscriptionResponse
 
+import importlib.util
+
+_grpc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grpc_server.py")
+_grpc_spec = importlib.util.spec_from_file_location("stt_engine_grpc_server", _grpc_path)
+_grpc_mod = importlib.util.module_from_spec(_grpc_spec)
+_grpc_spec.loader.exec_module(_grpc_mod)
+create_stt_grpc_server = _grpc_mod.create_stt_grpc_server
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     stt_engine.initialize()
+
+    grpc_server = None
+    grpc_port = int(os.getenv("GRPC_PORT", "50052"))
+
+    try:
+        grpc_server = await create_stt_grpc_server(host="0.0.0.0", port=grpc_port)
+        await grpc_server.start()
+        logger.info("[Dual Arterial] STT gRPC server running on port %d", grpc_port)
+    except Exception as exc:
+        logger.error("[Dual Arterial] Failed to start STT gRPC server on port %d: %s", grpc_port, exc)
+
     yield
+
+    if grpc_server:
+        logger.info("[Dual Arterial] Shutting down STT gRPC server...")
+        await grpc_server.stop(grace=5.0)
 
 
 stt_app = FastAPI(

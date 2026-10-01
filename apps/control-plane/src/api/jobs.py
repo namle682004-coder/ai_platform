@@ -96,6 +96,7 @@ async def create_async_job(
         "error_message": None,
         "result_urls": None,
         "webhook_url": request.webhook_url,
+        "payload": request.model_dump(),
         "created_at": now,
         "updated_at": now,
     }
@@ -205,9 +206,27 @@ async def get_job_result(job_id: str, repo: IJobRepository = Depends(get_job_rep
 
 @router.post("/jobs/{job_id}/cancel", status_code=200)
 async def cancel_job(job_id: str, repo: IJobRepository = Depends(get_job_repo)):
-    now = datetime.now(timezone.utc).isoformat()
-    updated = await repo.update_job_status(job_id, "cancelled", {"updated_at": now})
-    if not updated:
+    job = await repo.get_job(job_id)
+    if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+
+    current_status = job.get("status")
+    if current_status in ("completed", "failed", "cancelled"):
+        return {"message": f"Job is already {current_status}", "job_id": job_id, "status": current_status}
+
+    # DCP Pattern: Send gRPC CancelInference signal to active data-plane runtime
+    if current_status == "running":
+        try:
+            from src.grpc_helpers.client import grpc_manager
+            job_type = job.get("job_type", "translation")
+            # Map job_type to data-plane gRPC port
+            target_url = "localhost:50053" if job_type == "translation" else "localhost:50051"
+            await grpc_manager.cancel_inference(target_url, task_id=job_id, reason="User cancelled job")
+            logger.info("Dispatched gRPC CancelInference for running job_id=%s to %s", job_id, target_url)
+        except Exception as exc:
+            logger.warning("Could not dispatch gRPC cancel for job_id=%s: %s", job_id, exc)
+
+    now = datetime.now(timezone.utc).isoformat()
+    await repo.update_job_status(job_id, "cancelled", {"updated_at": now})
 
     return {"message": "Job cancelled successfully", "job_id": job_id}

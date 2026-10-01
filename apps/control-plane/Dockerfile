@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 COPY packages/common /app/packages/common
 COPY packages/contracts /app/packages/contracts
 COPY apps/control-plane /app/apps/control-plane
+COPY apps/frontend /app/apps/frontend
 
 RUN pip install --no-cache-dir \
     -e /app/packages/common \

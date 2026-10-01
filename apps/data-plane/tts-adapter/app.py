@@ -19,6 +19,9 @@ from common.errors import (
     aip_validation_exception_handler,
 )
 
+import os
+import importlib.util
+
 try:
     from .config import tts_settings
     from .tts_engine import tts_engine
@@ -28,6 +31,12 @@ except (ImportError, ValueError):
     from tts_engine import tts_engine
     from tts_schemas import TTSRequest, VoiceListResponse
 
+_grpc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grpc_server.py")
+_grpc_spec = importlib.util.spec_from_file_location("tts_engine_grpc_server", _grpc_path)
+_grpc_mod = importlib.util.module_from_spec(_grpc_spec)
+_grpc_spec.loader.exec_module(_grpc_mod)
+create_tts_grpc_server = _grpc_mod.create_tts_grpc_server
+
 from common.storage import minio_storage
 
 logger = logging.getLogger("aip-tts.app")
@@ -36,7 +45,22 @@ logger = logging.getLogger("aip-tts.app")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     tts_engine.initialize()
+
+    grpc_server = None
+    grpc_port = int(os.getenv("GRPC_PORT", "50055"))
+
+    try:
+        grpc_server = await create_tts_grpc_server(host="0.0.0.0", port=grpc_port)
+        await grpc_server.start()
+        logger.info("[Dual Arterial] TTS gRPC server running on port %d", grpc_port)
+    except Exception as exc:
+        logger.error("[Dual Arterial] Failed to start TTS gRPC server on port %d: %s", grpc_port, exc)
+
     yield
+
+    if grpc_server:
+        logger.info("[Dual Arterial] Shutting down TTS gRPC server...")
+        await grpc_server.stop(grace=5.0)
 
 
 tts_app = FastAPI(

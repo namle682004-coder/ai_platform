@@ -1,11 +1,17 @@
+import pytest
 from fastapi.testclient import TestClient
 from src.main import app
 
-client = TestClient(app)
 AUTH_HEADERS = {"Authorization": "Bearer aip_live_valid_test_key_12345"}
 
 
-def test_health_check_endpoint():
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+def test_health_check_endpoint(client):
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
@@ -14,14 +20,14 @@ def test_health_check_endpoint():
     assert "timestamp" in data
 
 
-def test_admin_list_exported_endpoints():
+def test_admin_list_exported_endpoints(client):
     response = client.get("/admin/v1/endpoints")
     assert response.status_code == 200
     data = response.json()
     assert len(data["data"]) >= 7
 
 
-def test_admin_update_endpoint_export_status():
+def test_admin_update_endpoint_export_status(client):
     response = client.put("/admin/v1/endpoints/chat_completions", json={"status": "disabled"})
     assert response.status_code == 200
     assert response.json()["endpoint"]["status"] == "disabled"
@@ -30,7 +36,7 @@ def test_admin_update_endpoint_export_status():
     assert restore_res.status_code == 200
 
 
-def test_admin_quota_management_api():
+def test_admin_quota_management_api(client):
     # 1. Create API key with initial quota
     create_res = client.post("/admin/v1/keys", json={
         "tenant_id": "TENANT_MARKETING",
@@ -53,10 +59,15 @@ def test_admin_quota_management_api():
     # 3. List keys
     list_res = client.get("/admin/v1/keys")
     assert list_res.status_code == 200
-    assert len(list_res.json()["data"]) >= 2
+    listed_key = next(
+        (key for key in list_res.json()["data"] if key["key_id"] == key_id),
+        None,
+    )
+    assert listed_key is not None
+    assert listed_key["rpm_limit"] == 180
 
 
-def test_staff_portal_endpoints():
+def test_staff_portal_endpoints(client):
     # 1. Staff APIs Catalog HTML
     res = client.get("/staff/apis")
     assert res.status_code == 200
@@ -78,4 +89,3 @@ def test_staff_portal_endpoints():
     res_asset = client.get("/assets/css/admin.css")
     assert res_asset.status_code == 200
     assert "text/css" in res_asset.headers["content-type"]
-

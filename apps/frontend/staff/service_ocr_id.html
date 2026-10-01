@@ -1097,7 +1097,11 @@
             setTimeout(() => { toast.remove(); }, 3500);
         }
 
-        window.addEventListener('DOMContentLoaded', initPage);
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initPage, { once: true });
+        } else {
+            initPage();
+        }
     </script>
 </body>
 </html>

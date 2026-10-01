@@ -41,6 +41,12 @@ class AliasRouterService:
             "status": model.status,
         }
 
+    @staticmethod
+    def _normalize_runtime(runtime: str, fallback_runtime: str) -> str:
+        if runtime.casefold() == fallback_runtime.casefold():
+            return fallback_runtime
+        return runtime
+
     async def refresh(self) -> None:
         """Load MongoDB aliases while retaining catalog metadata as a fallback."""
         aliases = await alias_repository.list_aliases()
@@ -58,7 +64,10 @@ class AliasRouterService:
             item.update({
                 "alias": document.get("alias_name", alias_name),
                 "physical_model": document.get("physical_model", document.get("model_name", fallback["physical_model"])),
-                "runtime": document.get("runtime", fallback["runtime"]),
+                "runtime": self._normalize_runtime(
+                    document.get("runtime", fallback["runtime"]),
+                    fallback["runtime"],
+                ),
                 "target_url": document.get("target_url", fallback["target_url"]),
                 "min_vram_gb": document.get("min_vram_gb", fallback["min_vram_gb"]),
                 "timeout_seconds": document.get("timeout_seconds", fallback["timeout_seconds"]),

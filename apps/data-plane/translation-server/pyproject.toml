@@ -10,6 +10,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "common",
+    "aip-contracts",
+    "grpcio>=1.62.0",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "pydantic-settings>=2.4.0",
@@ -22,6 +24,7 @@ dependencies = [
 
 [tool.uv.sources]
 common = { workspace = true }
+aip-contracts = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]

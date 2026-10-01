@@ -2,10 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-try:
-    from . import jobs_pb2 as jobs__pb2
-except ImportError:
-    import jobs_pb2 as jobs__pb2
+from . import jobs_pb2 as jobs__pb2
 
 GRPC_GENERATED_VERSION = '1.84.0'
 GRPC_VERSION = grpc.__version__

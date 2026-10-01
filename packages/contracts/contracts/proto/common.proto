@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package aip.common.v1;
+
+message HealthRequest {
+  string service = 1;
+}
+
+message HealthResponse {
+  string status = 1;
+  int32 active_tasks = 2;
+  map<string, string> metadata = 3;
+}
+
+message CancelRequest {
+  string task_id = 1;
+  string reason = 2;
+}
+
+message CancelResponse {
+  bool success = 1;
+  string message = 2;
+  string task_id = 3;
+}

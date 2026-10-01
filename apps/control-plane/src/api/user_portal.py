@@ -11,7 +11,6 @@ from common.repositories.notification_repository import notification_repository
 from common.repositories.tenant_repository import tenant_repository
 from common.repositories.endpoint_repository import endpoint_repository
 from common.repositories.api_subscription_repository import api_subscription_repository
-from common.repositories.api_log_repository import AI_API_LOG_PATHS
 from common.security.argon2_hasher import generate_api_key
 
 router = APIRouter(prefix="/v1/user", tags=["User Portal & Console API"])
@@ -169,7 +168,7 @@ async def record_user_payment(req: PaymentCreateRequest):
         "status": "SUCCESS",
         "amount": req.amount,
         "package": req.package,
-        "project": req.project or "wwrwer23",
+        "project": req.project or "Default Project",
         "txn_no": str(secrets.randbelow(89999999) + 10000000),
     }
     if hasattr(tenant_repository, "save_payment"):
@@ -245,6 +244,7 @@ async def submit_user_contact(req: ContactMessageRequest):
 
 # --- 6. CATALOG OF ALL APIS IN DATABASE WITH 4 TABS SPECIFICATIONS ---
 
+@router.get("/catalog", response_model=List[dict])
 @router.get("/apis-catalog", response_model=List[dict])
 async def list_database_apis_catalog():
     """Fetch all available API services catalog from MongoDB Atlas endpoints."""
@@ -289,6 +289,56 @@ async def get_user_gpu_status():
     }
 
 
+@router.get("/api-summary", summary="Get API usage counts from MongoDB")
+async def get_user_api_usage_summary():
+    """Aggregate request and error counts for API endpoints in the database catalog."""
+    from common.database.mongodb import mongo_manager
+
+    db = mongo_manager.get_database()
+    if db is None:
+        raise RuntimeError("MongoDB is unavailable; API usage summary cannot be loaded")
+
+    endpoints = await endpoint_repository.list_endpoints()
+    paths = {
+        endpoint.get("path") or endpoint.get("endpoint_id")
+        for endpoint in endpoints.values()
+        if endpoint.get("path") or endpoint.get("endpoint_id")
+    }
+    if not paths:
+        return {"data": []}
+
+    pipeline = [
+        {"$match": {"path": {"$in": list(paths)}}},
+        {
+            "$group": {
+                "_id": "$path",
+                "requests": {"$sum": 1},
+                "errors": {
+                    "$sum": {
+                        "$cond": [
+                            {"$gte": [{"$ifNull": ["$status_code", 0]}, 400]},
+                            1,
+                            0,
+                        ]
+                    }
+                },
+            }
+        },
+    ]
+    cursor = db.api_logs.aggregate(pipeline)
+    counts = await cursor.to_list(length=None)
+    return {
+        "data": [
+            {
+                "path": item["_id"],
+                "requests": item["requests"],
+                "errors": item["errors"],
+            }
+            for item in counts
+        ]
+    }
+
+
 # --- 8. API USAGE REPORT LOGS FOR STAFF REPORT PAGE ---
 
 @router.get("/api-report", summary="List API Call Logs with Filtering (Staff Report)")
@@ -330,9 +380,13 @@ async def list_api_report_logs(
             "page_size": page_size,
         }
 
-    # Build MongoDB query
-    # Keep historical control-plane records out of the report as well.
-    query: Dict = {"path": {"$in": AI_API_LOG_PATHS}}
+    catalog = await endpoint_repository.list_endpoints()
+    catalog_paths = {
+        endpoint.get("path") or endpoint.get("endpoint_id")
+        for endpoint in catalog.values()
+        if endpoint.get("endpoint_id") or endpoint.get("path")
+    }
+    query: Dict = {"path": {"$in": list(catalog_paths)}}
 
     if status:
         if status == "200":
@@ -343,19 +397,15 @@ async def list_api_report_logs(
             query["status_code"] = {"$gte": 500, "$lt": 600}
 
     if api:
-        # Map friendly name to path substring
-        api_path_map = {
-            "Speech to Text": "/v1/audio/transcriptions",
-            "Text to Speech": "/v1/audio/speech",
-            "LLM Chatbot": "/v1/chat/completions",
-            "Embeddings": "/v1/embeddings",
-            "Image Generation": "/v1/images",
-            "Moderation": "/v1/moderations",
-            "OCR": "/v1/ocr",
-            "Translation": "/v1/translations",
-        }
-        path_fragment = api_path_map.get(api, api.lower())
-        query["path"] = {"$regex": path_fragment, "$options": "i"}
+        if api not in catalog_paths:
+            return {
+                "object": "list",
+                "data": [],
+                "total": 0,
+                "page": page,
+                "page_size": page_size,
+            }
+        query["path"] = api
 
     if from_date or to_date:
         ts_filter = {}
@@ -368,14 +418,10 @@ async def list_api_report_logs(
         if ts_filter:
             query["timestamp"] = ts_filter
 
-    try:
-        total = await db.api_logs.count_documents(query)
-        skip = (page - 1) * page_size
-        cursor = db.api_logs.find(query, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(page_size)
-        logs = await cursor.to_list(length=page_size)
-    except Exception:
-        logs = []
-        total = 0
+    total = await db.api_logs.count_documents(query)
+    skip = (page - 1) * page_size
+    cursor = db.api_logs.find(query, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(page_size)
+    logs = await cursor.to_list(length=page_size)
 
     return {
         "object": "list",
@@ -397,8 +443,7 @@ def _filter_logs(logs: list, status: str = None, api: str = None, from_date: str
         elif status == "500":
             result = [log_item for log_item in result if 500 <= log_item.get("status_code", 0) < 600]
     if api:
-        api_lower = api.lower()
-        result = [log_item for log_item in result if api_lower in log_item.get("path", "").lower()]
+        result = [log_item for log_item in result if log_item.get("path") == api]
     if from_date:
         clean = from_date.replace("/", "-")
         result = [log_item for log_item in result if log_item.get("timestamp", "") >= f"{clean}T00:00:00"]
@@ -406,4 +451,3 @@ def _filter_logs(logs: list, status: str = None, api: str = None, from_date: str
         clean = to_date.replace("/", "-")
         result = [log_item for log_item in result if log_item.get("timestamp", "") <= f"{clean}T23:59:59"]
     return result
-

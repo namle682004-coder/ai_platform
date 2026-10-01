@@ -8,6 +8,7 @@
     <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" src="/staff/staff_layout.js"></script>
     
     <style>
         :root {
@@ -16,91 +17,209 @@
             --aip-orange: #f97316;
             --bg-page: #f8fafc;
             --sidebar-bg: #ffffff;
-            --text-dark: #0f172a;
-            --text-sub: #64748b;
-            --border-color: #e2e8f0;
+            --text-dark: #001e2b;
+            --text-sub: #5c6c75;
+            --border-color: #e8edeb;
             --font-heading: 'Outfit', sans-serif;
             --font-body: 'Inter', sans-serif;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --font-code: 'Fira Code', monospace;
+            --card-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg-page); color: var(--text-dark); font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column; }
+        html {
+            overflow-y: scroll;
+            box-sizing: border-box;
+        }
+        *, *:before, *:after { box-sizing: inherit; margin: 0; padding: 0; }
+        body { 
+            background: var(--bg-page); 
+            color: var(--text-dark); 
+            font-family: var(--font-body); 
+            font-size: 13px;
+            line-height: 1.45;
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            -webkit-font-smoothing: antialiased; 
+        }
 
-        .top-header { background: var(--aip-blue); height: 50px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 13px;  position: sticky; top: 0; z-index: 1000; }
+        .top-header { 
+            background: var(--aip-blue); 
+            height: 50px; 
+            min-height: 50px;
+            max-height: 50px;
+            padding: 0 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            color: #fff; 
+            font-size: 13px;  
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14); 
+        }
         .header-left { display: flex; align-items: center; gap: 20px; }
-        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-        .project-selector { background: rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em; }
+        .project-selector { background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 7px; color: #fff; transition: background 0.15s, border-color 0.15s; }
+        .project-selector:hover { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.35); }
 
-        .header-right { display: flex; align-items: center; gap: 20px; }
-        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+        .header-right { display: flex; align-items: center; gap: 18px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; }
 
-        .layout-body { display: flex; flex: 1; }
+        .layout-body { display: flex; flex: 1; min-height: calc(100vh - 50px); }
 
         .sidebar {
             width: 220px;
+            min-width: 220px;
+            max-width: 220px;
             background: #ffffff;
             border-right: 1px solid var(--border-color);
-            padding: 20px 0;
+            padding: 16px 0;
             position: sticky;
             top: 50px;
             height: calc(100vh - 50px);
+            max-height: calc(100vh - 50px);
+            align-self: flex-start;
             overflow-y: auto;
             flex-shrink: 0;
+            box-sizing: border-box;
         }
-        .nav-section { margin-bottom: 6px; }
-        .section-title { padding: 8px 20px; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .nav-list { list-style: none; }
-        .nav-item a { width: 100%; text-align: left; padding: 9px 20px 9px 32px; border: none; background: transparent; color: var(--text-sub); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: block; text-decoration: none; }
-        .nav-item a:hover { background: #f8fafc; color: var(--aip-cyan); }
-        .nav-item.active a { background: #f0fafb; color: var(--aip-cyan); font-weight: 600; border-left: 3px solid var(--aip-cyan); padding-left: 29px; }
+        .nav-section { margin-bottom: 14px; }
+        .section-title { 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            color: #5c6c75; 
+            padding: 8px 18px; 
+            letter-spacing: 0.05em; 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+        .section-title span { display: flex; align-items: center; gap: 8px; }
+        .section-title .toggle-icon { font-size: 10px; transition: transform 0.2s; color: #64748b; }
+        .nav-list { list-style: none; margin: 0; padding: 0; }
+        .nav-item a { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 8px 18px; 
+            font-size: 13px; 
+            font-weight: 500; 
+            color: #334155; 
+            text-decoration: none; 
+            transition: background 0.12s ease, color 0.12s ease; 
+            border-left: 4px solid transparent; 
+        }
+        .nav-item a i { color: #64748b; font-size: 13px; width: 16px; text-align: center; }
+        .nav-item.active a, .nav-item a:hover { 
+            background: #f0f4f8; 
+            color: #001e2b; 
+            border-left-color: #0f4c81; 
+            font-weight: 700; 
+        }
+        .nav-item.active a i, .nav-item a:hover i { color: #001e2b; }
 
-        .main-content { flex: 1; padding: 28px 36px; overflow-y: auto; }
+        /* Direct links: PAYMENT HISTORY & CONTACT US */
+        .nav-direct-link a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 18px;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #5c6c75;
+            text-decoration: none;
+            transition: background 0.12s ease, color 0.12s ease;
+            border-left: 4px solid transparent;
+        }
+        .nav-direct-link a i {
+            color: #5c6c75;
+            font-size: 13px;
+            width: 16px;
+            text-align: center;
+        }
+        .nav-direct-link.active a,
+        .nav-direct-link a:hover {
+            background: #f0f4f8;
+            color: #001e2b;
+            border-left-color: #0f4c81;
+            font-weight: 700;
+        }
+        .nav-direct-link.active a i,
+        .nav-direct-link a:hover i {
+            color: #001e2b;
+        }
 
-        .page-title { font-family: var(--font-heading); font-size: 26px; font-weight: 700; color: #0f172a; margin-bottom: 24px; }
+        .main-content { flex: 1; padding: 20px 28px; background: var(--bg-page); min-width: 0; }
 
-        /* FILTER ROW - 100% PERFECT STRAIGHT HORIZONTAL ALIGNMENT */
-        .filter-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; gap: 24px; flex-wrap: wrap; }
-        .filter-group { display: flex; align-items: flex-end; gap: 28px; }
-        
-        .filter-item { display: flex; flex-direction: column; gap: 4px; position: relative; min-width: 150px; }
-        .filter-label { font-size: 11.5px; font-weight: 600; color: #007bff; height: 16px; line-height: 16px; }
-        
-        .filter-input { padding: 6px 4px; border: none; border-bottom: 1.5px solid #cbd5e1; background: transparent; font-size: 13.5px; font-weight: 500; outline: none; color: #0f172a; cursor: pointer; width: 100%; transition: border-color 0.15s; }
-        .filter-input:focus, .filter-input.active { border-bottom-color: #007bff; }
-        select.filter-input { appearance: none; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%20f172a' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>") no-repeat right 4px center; padding-right: 20px; }
+        /* Console Breadcrumb */
+        .console-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-sub); margin-bottom: 10px; }
+        .console-breadcrumb a { color: var(--text-sub); text-decoration: none; }
+        .console-breadcrumb a:hover { color: var(--text-dark); }
+        .console-breadcrumb span.sep { color: #cbd5e1; }
+        .console-breadcrumb span.active { color: var(--text-dark); font-weight: 600; }
 
-        .btn-export { background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 8px 20px; border-radius: 4px; font-weight: 600; font-size: 12.5px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background 0.15s; align-self: flex-end; height: 34px; }
-        .btn-export:hover { background: #f8fafc; border-color: #94a3b8; }
+        /* Atlas Page Header */
+        .atlas-page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 20px; }
+        .atlas-title { font-family: var(--font-heading); font-size: 28px; font-weight: 700; color: #001e2b; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 6px; }
+        .atlas-desc { font-size: 13.5px; color: #5c6c75; line-height: 1.5; }
+        .atlas-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
-        /* MATERIAL DESIGN DATEPICKER CALENDAR POPUP (Exact Replica of User Screenshot) */
-        .datepicker-popup { display: none; position: absolute; top: 58px; left: 0; background: #ffffff; width: 280px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid #cbd5e1; z-index: 10000; padding: 16px; font-family: var(--font-body); }
+        .btn-atlas-primary { background: #00684a; color: #ffffff; border: 1px solid #00684a; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; transition: all 0.15s ease; }
+        .btn-atlas-primary:hover { background: #025039; border-color: #025039; }
+        .btn-atlas-secondary { background: #ffffff; color: #001e2b; border: 1px solid #e8edeb; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; transition: all 0.15s ease; }
+        .btn-atlas-secondary:hover { background: #f4f6f5; border-color: #c1d1cb; color: #00684a; }
+
+        /* FILTER ROW */
+        .filter-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; gap: 20px; flex-wrap: wrap; }
+        .filter-group { display: flex; align-items: flex-end; gap: 16px; flex: 1 1 auto; flex-wrap: wrap; }
+        .filter-item { display: flex; flex-direction: column; gap: 2px; position: relative; flex: 0 1 160px; min-width: 130px; }
+        .filter-item:has(#input-from-date),
+        .filter-item:has(#input-to-date) { flex-basis: 170px; }
+        .filter-label { font-size: 11.5px; font-weight: 600; color: #00684a; line-height: 14px; }
+        .filter-label:empty { display: none; }
+        .filter-input { padding: 5px 24px 5px 0; border: 0; border-bottom: 1px solid #cbd5e1; border-radius: 0; background: transparent; font: 500 12.5px var(--font-body); outline: none; color: #001e2b; cursor: pointer; width: 100%; height: 30px; transition: border-color 0.15s; }
+        .filter-input:focus, .filter-input.active { border-bottom-color: #00684a; }
+        select.filter-input { appearance: none; background: transparent url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23001e2b' viewBox='0 0 16 16'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>") no-repeat right 2px center; padding-right: 20px; }
+
+        .btn-export { background: #ffffff; border: 1px solid #e8edeb; color: #001e2b; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; transition: all 0.15s; align-self: flex-end; height: 34px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-export:hover { background: #f4f6f5; border-color: #c1d1cb; color: #00684a; }
+
+        /* MATERIAL DESIGN DATEPICKER CALENDAR POPUP */
+        .datepicker-popup { display: none; position: absolute; top: calc(100% + 8px); left: 0; background: #ffffff; width: 280px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid #e8edeb; z-index: 10000; padding: 16px; font-family: var(--font-body); }
         .datepicker-popup.active { display: block; }
-        .dp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-weight: 700; font-size: 14px; color: #1e293b; }
+        .dp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-weight: 700; font-size: 14px; color: #001e2b; }
         .dp-nav-btn { background: transparent; border: none; font-size: 14px; color: #64748b; cursor: pointer; padding: 4px 8px; border-radius: 50%; }
-        .dp-nav-btn:hover { background: #f1f5f9; color: #007bff; }
+        .dp-nav-btn:hover { background: #f1f5f9; color: #00684a; }
 
         .dp-days-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11.5px; font-weight: 600; color: #94a3b8; margin-bottom: 8px; }
-        .dp-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 12.5px; color: #334155; }
+        .dp-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 12.5px; color: #001e2b; }
         .dp-day-cell { height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.15s; }
-        .dp-day-cell:hover { background: #f1f5f9; color: #007bff; }
-        .dp-day-cell.selected { background: #007bff; color: #ffffff; font-weight: 700; box-shadow: 0 2px 6px rgba(0,123,255,0.4); }
+        .dp-day-cell:hover { background: #f1f5f9; color: #00684a; }
+        .dp-day-cell.selected { background: #00684a; color: #ffffff; font-weight: 700; }
         .dp-day-cell.disabled { color: #cbd5e1; cursor: default; }
 
-        .table-card { background: #ffffff; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th { color: var(--text-sub); font-weight: 600; font-size: 11.5px; padding: 14px 18px; border-bottom: 1px solid var(--border-color); background: #ffffff; }
-        td { padding: 16px 18px; border-bottom: 1px solid var(--border-color); color: var(--text-dark); }
+        .table-card { background: #ffffff; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12.5px; }
+        th { color: #5c6c75; font-weight: 600; font-size: 11px; padding: 12px 18px; border-bottom: 1px solid var(--border-color); background: #f9fbfa; text-transform: uppercase; letter-spacing: 0.04em; }
+        td { padding: 14px 18px; border-bottom: 1px solid #f4f6f5; color: #001e2b; }
+        tr:hover td { background: #f9fbfa; }
         .table-empty { padding: 36px; text-align: center; color: var(--text-sub); font-size: 13.5px; }
 
-        .table-footer { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 12px 24px; font-size: 12px; color: var(--text-sub); background: #ffffff; border-top: 1px solid var(--border-color); }
-        .table-footer select { padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; outline: none; }
+        .table-footer { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 12px 20px; font-size: 12px; color: #5c6c75; background: #ffffff; border-top: 1px solid var(--border-color); }
+        .table-footer select { padding: 3px 18px 3px 0; border: 0; border-bottom: 1px solid #cbd5e1; border-radius: 0; font: 12px var(--font-body); outline: none; background: transparent; }
+        .table-footer select:focus { border-bottom-color: #00684a; }
 
         /* Toast Container */
         #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
         .toast-msg { min-width: 280px; padding: 12px 18px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0.96; }
     </style>
-    <script src="/assets/js/staff_layout.js"></script>
 </head>
 <body>
 
@@ -108,8 +227,8 @@
 
     <div class="top-header">
         <div class="header-left">
-            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-network-wired"></i> AIP Platform</a>
-            <div class="project-selector" onclick="openSelectProjectModal()"><i class="fa-solid fa-folder-tree"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-cube"></i> AIP Platform</a>
+            <div class="project-selector" onclick="openSelectProjectModal()"><i class="fa-solid fa-folder"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
         </div>
         <div class="header-right">
             <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
@@ -134,52 +253,58 @@
     <div class="layout-body">
         <div class="sidebar">
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
-                    <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> Console</span>
-                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                <div class="section-title" onclick="toggleNavSection(this)">
+                    <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> CONSOLE</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
                 </div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard</a></li>
-                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> APIs</a></li>
-                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
-                    <li class="nav-item active"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key"></i> API Keys</a></li>
+                    <li class="nav-item active"><a href="/staff/report"><i class="fa-solid fa-chart-line"></i> API report</a></li>
                 </ul>
             </div>
             <div class="nav-section">
-                <div class="section-title" onclick="toggleNavSection(this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; color:#64748b;">
-                    <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
-                    <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+                <div class="section-title" onclick="toggleNavSection(this)">
+                    <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> APPLICATIONS</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
                 </div>
-                                <ul class="nav-list">
-                    <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone-lines" style="width: 16px; text-align: center;"></i> Speech to Text</a></li>
-                    <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high" style="width: 16px; text-align: center;"></i> Text to Speech</a></li>
-                    <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments" style="width: 16px; text-align: center;"></i> LLM Chatbot</a></li>
-                    <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image" style="width: 16px; text-align: center;"></i> Image Gen API</a></li>
-                    <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield-halved" style="width: 16px; text-align: center;"></i> Moderation API</a></li>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone"></i> Speech to Text</a></li>
+                    <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high"></i> Text to Speech</a></li>
+                    <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments"></i> LLM Chatbot</a></li>
+                    <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image"></i> Image Gen API</a></li>
+                    <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield"></i> Moderation API</a></li>
                 </ul>
             </div>
-            <div class="nav-section">
-                <div class="section-title">
-                    <a href="/staff/payment" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-credit-card" style="width: 14px;"></i> Payment history
-                    </a>
-                </div>
+            <div class="nav-direct-link">
+                <a href="/staff/payment">
+                    <i class="fa-solid fa-credit-card"></i> PAYMENT HISTORY
+                </a>
             </div>
-            <div class="nav-section">
-                <div class="section-title">
-                    <a href="/staff/contact" style="color:#64748b; text-decoration:none; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-headset" style="width: 14px;"></i> Contact us
-                    </a>
-                </div>
+            <div class="nav-direct-link">
+                <a href="/staff/contact">
+                    <i class="fa-solid fa-headset"></i> CONTACT US
+                </a>
             </div>
         </div>
 
         <div class="main-content">
-            <div class="page-title" id="txt-report-title" style="display:flex; align-items:center;">
-                <a href="/staff/dashboard" style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; background:#f1f5f9; color:#475569; text-decoration:none; margin-right:12px; font-size:14px; transition:all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#475569';" title="Back to Dashboard">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </a>
-                <span>API Report</span>
+            <!-- Breadcrumb Navigation -->
+            <div class="console-breadcrumb">
+                <a href="/staff/dashboard"><i class="fa-solid fa-house" style="font-size: 11px;"></i> Console</a>
+                <span class="sep">/</span>
+                <span id="breadcrumb-project-name">Default Enterprise Project</span>
+                <span class="sep">/</span>
+                <span class="active">API Report</span>
+            </div>
+
+            <!-- MongoDB Atlas Page Header -->
+            <div class="atlas-page-header">
+                <div>
+                    <h1 class="atlas-title" id="txt-report-title">API Usage Report</h1>
+                    <p class="atlas-desc">Historical usage logs, billing metrics, and request analytics per project</p>
+                </div>
             </div>
 
             <!-- FILTER ROW - 100% PERFECT SINGLE HORIZONTAL LINE ALIGNMENT -->
@@ -201,14 +326,6 @@
                         <span class="filter-label"></span>
                         <select class="filter-input" id="select-api" onchange="filterReportData()">
                             <option value="">Select API</option>
-                            <option value="Speech to Text">Speech to Text</option>
-                            <option value="Text to Speech">Text to Speech</option>
-                            <option value="LLM Chatbot">LLM Chatbot API</option>
-                            <option value="Embeddings">Embeddings</option>
-                            <option value="Image Generation">Image Generation</option>
-                            <option value="Moderation">Moderation</option>
-                            <option value="OCR">OCR</option>
-                            <option value="Translation">Translation</option>
                         </select>
                     </div>
 
@@ -290,6 +407,7 @@
         let currentPage = 1;
         let currentPageSize = 10;
         let totalRows = 0;
+        let apiCatalog = [];
 
         let datePickerState = {
             from: { year: 2026, month: 6, selectedDay: 16 },
@@ -298,27 +416,28 @@
 
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-        // === API Name Mapping (path → friendly name) ===
-        const apiNameMap = {
-            '/v1/audio/transcriptions': 'Speech to Text',
-            '/v1/audio/speech': 'Text to Speech',
-            '/v1/chat/completions': 'LLM Chatbot',
-            '/v1/completions': 'Completions',
-            '/v1/embeddings': 'Embeddings',
-            '/v1/images': 'Image Generation',
-            '/v1/moderations': 'Moderation',
-            '/v1/ocr': 'OCR',
-            '/v1/translations': 'Translation',
-            '/v1/predictions': 'Predictions',
-            '/v1/user': 'User Portal',
-            '/admin/v1': 'Admin API',
-        };
-
         function getApiName(path) {
-            for (const [prefix, name] of Object.entries(apiNameMap)) {
-                if (path.startsWith(prefix)) return name;
+            const api = apiCatalog.find(item => (item.path || item.endpoint_id) === path);
+            return api?.name || path;
+        }
+
+        async function loadReportApiCatalog() {
+            const response = await fetch('/v1/user/apis-catalog');
+            if (!response.ok) {
+                throw new Error(`Unable to load API catalog (${response.status})`);
             }
-            return path;
+            const catalog = await response.json();
+            if (!Array.isArray(catalog)) {
+                throw new Error('The API catalog response is invalid');
+            }
+
+            apiCatalog = catalog;
+            const select = document.getElementById('select-api');
+            select.replaceChildren(new Option('Select API', ''));
+            catalog.forEach(item => {
+                const path = item.path || item.endpoint_id;
+                if (path) select.add(new Option(item.name || path, path));
+            });
         }
 
         // === Status Badge ===
@@ -582,12 +701,30 @@
             window.location.href = '/login';
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        const initializeReportPage = async () => {
             checkMandatoryAuth();
+            const activeProj = (window.StaffLayout && window.StaffLayout.getActiveProjectName) 
+                ? window.StaffLayout.getActiveProjectName() 
+                : (localStorage.getItem('aip_active_project') || 'Default Project');
+            const projLabel = document.getElementById('current-project-label');
+            if (projLabel) projLabel.innerText = activeProj;
+            const breadcrumbProj = document.getElementById('breadcrumb-project-name');
+            if (breadcrumbProj) breadcrumbProj.innerText = activeProj;
             renderDatePickerGrid('from');
             renderDatePickerGrid('to');
+            try {
+                await loadReportApiCatalog();
+            } catch (error) {
+                console.error('Failed to load API catalog:', error);
+                showToast('Unable to load API filters from the database', 'error');
+            }
             fetchReportData();
-        });
+        };
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initializeReportPage, { once: true });
+        } else {
+            initializeReportPage();
+        }
     </script>
 </body>
 </html>

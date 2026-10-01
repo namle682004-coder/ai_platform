@@ -1,8 +1,11 @@
+import logging
 import os
 import sys
 import time
 import uuid
 from typing import Optional
+
+logger = logging.getLogger("aip-gateway.nlp")
 
 import httpx
 from fastapi import APIRouter, Header, HTTPException, Request, Response
@@ -137,7 +140,71 @@ async def nlp_translation(
             result_dict["metadata"]["request_id"] = req_id
         return result_dict
 
-    # 2. Attempt to call real Data-Plane Translation Microservice (GPU/CUDA)
+    # 2. Fast-Lane Binary gRPC Translation (sub-millisecond protocol - Điểm 14)
+    try:
+        from src.grpc_helpers.client import grpc_manager
+        grpc_target = os.getenv("TRANSLATION_GRPC_URL", "localhost:50053")
+        grpc_resp = await grpc_manager.translate(
+            target_url=grpc_target,
+            text=req.text,
+            source_lang=req.source_lang,
+            target_lang=req.target_lang,
+            model_alias="translate-vi-standard",
+            timeout=10.0,
+        )
+        if grpc_resp and grpc_resp.status == "success":
+            elapsed_ms = round((time.time() - start_time) * 1000, 2)
+            translated_text = grpc_resp.translated_text
+            full_resp = {
+                "id": req_id,
+                "object": "nlp.translation",
+                "created": int(time.time()),
+                "model": "translate-vi-standard",
+                "status": "success",
+                "translated_text": translated_text,
+                "source_lang": req.source_lang,
+                "target_lang": req.target_lang,
+                "data": {
+                    "translated_text": translated_text,
+                    "source_language": req.source_lang,
+                    "target_language": req.target_lang,
+                    "detected_source_language": req.source_lang,
+                },
+                "usage": {
+                    "prompt_tokens": len(req.text.split()),
+                    "completion_tokens": len(translated_text.split()),
+                    "total_tokens": len(req.text.split()) + len(translated_text.split()),
+                    "character_count": len(req.text),
+                    "word_count": len(req.text.split()),
+                },
+                "metadata": {
+                    "backend": grpc_resp.engine or "CTranslate2 Native C++ Engine (CUDA, int8)",
+                    "device": "cuda",
+                    "compute_type": "int8",
+                    "beam_size": req.beam_size or 4,
+                    "repetition_penalty": 1.2,
+                    "no_repeat_ngram_size": 3,
+                    "latency_ms": elapsed_ms,
+                    "protocol": "grpc_fast_lane",
+                    "cached": False,
+                    "cache_node": "grpc-fast-lane",
+                    "request_id": req_id,
+                }
+            }
+            await inference_cache.set(
+                domain="translation",
+                model_or_alias="translate-vi-standard",
+                payload_data=req.model_dump(),
+                response_data=full_resp,
+                ttl_seconds=86400,
+            )
+            if response:
+                inference_cache.inject_headers(response, is_hit=False, duration_ms=elapsed_ms)
+            return full_resp
+    except Exception as grpc_err:
+        logger.debug("[gRPC Fast-Lane] Fallback to HTTP for translation: %s", grpc_err)
+
+    # 3. HTTP Fallback to Data-Plane Translation Microservice
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             src = "vie_Latn" if req.source_lang == "vi" else ("eng_Latn" if req.source_lang == "en" else req.source_lang)

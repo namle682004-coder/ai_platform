@@ -19,7 +19,7 @@ from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, AbstractRobus
 
 from common.security.netguard import is_safe_public_url
 from common.security.webhook_signer import sign_webhook_payload
-from src.publisher.topology import QUEUE_CALLBACKS
+from common.messaging.topology import QUEUE_CALLBACKS
 
 logger = logging.getLogger("aip-callback.consumer")
 

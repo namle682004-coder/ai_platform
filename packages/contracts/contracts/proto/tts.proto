@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package aip.tts.v1;
+
+import "common.proto";
+
+service TtsService {
+  rpc SynthesizeSpeech(SpeechRequest) returns (SpeechResponse);
+  rpc GetHealth(aip.common.v1.HealthRequest) returns (aip.common.v1.HealthResponse);
+  rpc Cancel(aip.common.v1.CancelRequest) returns (aip.common.v1.CancelResponse);
+}
+
+message SpeechRequest {
+  string text = 1;
+  string voice = 2;
+  string format = 3;
+  string model_alias = 4;
+}
+
+message SpeechResponse {
+  bytes audio_data = 1;
+  string format = 2;
+  int64 duration_ms = 3;
+}

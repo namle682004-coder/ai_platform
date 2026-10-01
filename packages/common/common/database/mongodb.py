@@ -31,6 +31,19 @@ class MongoDBManager:
                 logger.warning(f"MongoDB Atlas connection warning: {e}")
 
     def get_database(self) -> Optional[AsyncIOMotorDatabase]:
+        import asyncio
+        current_loop = None
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+
+        if self.client is not None:
+            client_loop = getattr(self.client, "io_loop", None)
+            if client_loop is not None and (client_loop.is_closed() or (current_loop and client_loop != current_loop)):
+                self.client = None
+                self.db = None
+
         if self.db is None and self.client is None:
             try:
                 uri = os.getenv("MONGO_URI")

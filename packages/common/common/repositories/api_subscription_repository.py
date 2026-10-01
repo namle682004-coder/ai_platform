@@ -1,112 +1,49 @@
 from typing import Dict, Any
 from common.database.mongodb import mongo_manager
 
-CANONICAL_APIS = [
-    "LLM Chatbot API",
-    "Speech to Text API",
-    "Text to Speech API",
-    "CCCD / ID Card OCR API",
-    "Content Moderation API",
-    "Text Embeddings API",
-    "Translation API",
-]
-
-def normalize_api_name(name: str) -> str:
-    if not name:
-        return ""
-    n = name.strip()
-    low = n.lower()
-    if "speech to text" in low:
-        return "Speech to Text API"
-    if "text to speech" in low:
-        return "Text to Speech API"
-    if "llm" in low or "chatbot" in low:
-        return "LLM Chatbot API"
-    if "id" in low or "cccd" in low or "ocr" in low:
-        return "CCCD / ID Card OCR API"
-    if "moderation" in low:
-        return "Content Moderation API"
-    if "embedding" in low:
-        return "Text Embeddings API"
-    if "translat" in low:
-        return "Translation API"
-    return n
-
 class MongoApiSubscriptionRepository:
     """MongoDB Atlas implementation for User API Subscriptions."""
 
-    def __init__(self):
-        self._subscriptions_cache: Dict[str, Dict[str, Any]] = {}
-
     def _sanitize_api_dict(self, apis: Dict[str, Any]) -> Dict[str, bool]:
-        """Normalize dictionary down to strictly the 7 canonical API keys."""
-        cleaned: Dict[str, bool] = {k: True for k in CANONICAL_APIS}
-        if not apis:
-            return cleaned
-
-        for k, v in apis.items():
-            norm = normalize_api_name(k)
-            if norm in cleaned:
-                cleaned[norm] = bool(v)
-
-        return cleaned
+        """Keep subscription state for APIs present in the database."""
+        return {str(name): bool(enabled) for name, enabled in apis.items()}
 
     async def get_user_subscriptions(self, user_id: str) -> Dict[str, Any]:
-        """Fetch user API toggle state from MongoDB or fallback to default."""
+        """Fetch user API toggle state from MongoDB."""
         db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                sub = await db.api_subscriptions.find_one({"user_id": user_id}, {"_id": 0})
-                if sub and "enabled_apis" in sub:
-                    sanitized = self._sanitize_api_dict(sub["enabled_apis"])
-                    self._subscriptions_cache[user_id] = sanitized
-                    return sanitized
-            except Exception:
-                pass
+        if db is None:
+            raise RuntimeError("MongoDB is unavailable; API subscription state cannot be loaded")
 
-        if user_id in self._subscriptions_cache:
-            return self._subscriptions_cache[user_id]
-
-        default_state = {k: True for k in CANONICAL_APIS}
-        return default_state
+        sub = await db.api_subscriptions.find_one({"user_id": user_id}, {"_id": 0})
+        return self._sanitize_api_dict((sub or {}).get("enabled_apis", {}))
 
     async def update_user_subscriptions(self, user_id: str, enabled_apis: Dict[str, bool]) -> Dict[str, Any]:
         """Directly update / upsert the user's API toggle state to MongoDB."""
         current_state = await self.get_user_subscriptions(user_id)
-
-        for k, v in enabled_apis.items():
-            norm = normalize_api_name(k)
-            if norm in current_state:
-                current_state[norm] = bool(v)
-
-        self._subscriptions_cache[user_id] = current_state
+        current_state.update(self._sanitize_api_dict(enabled_apis))
         db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                await db.api_subscriptions.update_one(
-                    {"user_id": user_id},
-                    {"$set": {"enabled_apis": current_state}},
-                    upsert=True
-                )
-            except Exception:
-                pass
+        if db is None:
+            raise RuntimeError("MongoDB is unavailable; API subscription state was not saved")
+
+        await db.api_subscriptions.update_one(
+            {"user_id": user_id},
+            {"$set": {"enabled_apis": current_state}},
+            upsert=True
+        )
         return current_state
 
     async def toggle_api_subscription(self, user_id: str, api_name: str, enabled: bool) -> Dict[str, Any]:
-        norm = normalize_api_name(api_name)
-        return await self.update_user_subscriptions(user_id, {norm: enabled})
+        return await self.update_user_subscriptions(user_id, {api_name: enabled})
 
     async def get_user_paid_balance(self, user_id: str) -> int:
         """Fetch paid balance credits for user from MongoDB Atlas."""
         db = mongo_manager.get_database()
-        if db is not None:
-            try:
-                sub = await db.api_subscriptions.find_one({"user_id": user_id}, {"_id": 0, "paid_balance": 1})
-                if sub and "paid_balance" in sub:
-                    return int(sub["paid_balance"])
-            except Exception:
-                pass
-        return 500000
+        if db is None:
+            raise RuntimeError("MongoDB is unavailable; paid balance cannot be loaded")
+        sub = await db.api_subscriptions.find_one(
+            {"user_id": user_id}, {"_id": 0, "paid_balance": 1}
+        )
+        return int(sub.get("paid_balance", 0)) if sub else 0
 
     async def recharge_user_balance(
         self,
@@ -147,4 +84,3 @@ class MongoApiSubscriptionRepository:
         return new_bal
 
 api_subscription_repository = MongoApiSubscriptionRepository()
-

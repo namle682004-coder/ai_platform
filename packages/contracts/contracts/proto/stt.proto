@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package aip.stt.v1;
+
+import "common.proto";
+
+service SttService {
+  rpc TranscribeAudio(TranscriptionRequest) returns (TranscriptionResponse);
+  rpc GetHealth(aip.common.v1.HealthRequest) returns (aip.common.v1.HealthResponse);
+  rpc Cancel(aip.common.v1.CancelRequest) returns (aip.common.v1.CancelResponse);
+}
+
+message TranscriptionRequest {
+  bytes audio_data = 1;
+  string format = 2;
+  string language = 3;
+  string model_alias = 4;
+}
+
+message TranscriptionResponse {
+  string text = 1;
+  string detected_language = 2;
+  float duration_seconds = 3;
+}

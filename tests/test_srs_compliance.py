@@ -8,9 +8,18 @@ Covers:
 
 from fastapi.testclient import TestClient
 from src.main import app
+from src.items.alias_router import AliasRouterService
 
 client = TestClient(app)
 VALID_AUTH = {"Authorization": "Bearer aip_live_valid_test_key_12345"}
+
+
+def test_srs_legacy_runtime_name_is_normalized_without_rewriting_custom_runtimes():
+    assert AliasRouterService._normalize_runtime("vllm", "vLLM") == "vLLM"
+    assert (
+        AliasRouterService._normalize_runtime("custom-vllm", "vLLM")
+        == "custom-vllm"
+    )
 
 
 def test_srs_model_catalog_completeness():
@@ -35,6 +44,10 @@ def test_srs_model_catalog_completeness():
     ]
     for expected in expected_models:
         assert expected in model_ids, f"Expected alias '{expected}' not found in catalog"
+    chat_model = next(
+        model for model in models if model["id"] == "chat-general-standard"
+    )
+    assert chat_model["runtime"].startswith("vLLM ")
 
 
 def test_srs_model_detail_metadata():
@@ -43,7 +56,7 @@ def test_srs_model_detail_metadata():
     assert response.status_code == 200
     m = response.json()
     assert m["id"] == "chat-general-standard"
-    assert m["physical_model"] == "Qwen2.5-1.5B-Instruct"
+    assert m["physical_model"] == "Qwen/Qwen2.5-1.5B-Instruct"
     assert m["runtime"] == "vLLM"
     assert m["namespace"] == "aip-text"
     assert m["min_vram_gb"] == 2

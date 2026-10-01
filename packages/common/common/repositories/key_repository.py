@@ -26,7 +26,7 @@ DEFAULT_ALIASES = [
         "alias_name": "chat-general-standard",
         "model_name": "Qwen2.5-1.5B-Instruct",
         "physical_model": "Qwen/Qwen2.5-1.5B-Instruct",
-        "runtime": "vllm",
+        "runtime": "vLLM",
         "target_url": "http://vllm-engine:8001/v1",
         "min_vram_gb": 2,
         "status": "enabled",
