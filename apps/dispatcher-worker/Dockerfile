@@ -6,16 +6,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 
 COPY packages/common /app/packages/common
 COPY packages/contracts /app/packages/contracts
-COPY apps/control-plane /app/apps/control-plane
 COPY apps/dispatcher-worker /app/apps/dispatcher-worker
 
 RUN pip install --no-cache-dir \
     -e /app/packages/common \
     -e /app/packages/contracts \
-    -e /app/apps/control-plane \
     -e /app/apps/dispatcher-worker
 
 WORKDIR /app/apps/dispatcher-worker
-ENV PYTHONPATH=/app/apps/dispatcher-worker:/app/apps/dispatcher-worker/src:/app/apps/control-plane:/app/packages/common:/app/packages/contracts
+ENV PYTHONPATH=/app/apps/dispatcher-worker:/app/apps/dispatcher-worker/src:/app/packages/common:/app/packages/contracts
 
 CMD ["python", "-m", "src.main"]

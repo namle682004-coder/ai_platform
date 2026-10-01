@@ -80,7 +80,7 @@ async def lifespan(app: FastAPI):
         logger.info("Alias and endpoint registries loaded")
     except Exception as exc:
         logger.warning(
-            f"Registry preload failed; catalog fallbacks remain active: {exc}"
+            f"Registry preload failed; database-backed endpoint data may be unavailable: {exc}"
         )
 
     alias_sync_task = asyncio.create_task(alias_router.listen_for_updates())

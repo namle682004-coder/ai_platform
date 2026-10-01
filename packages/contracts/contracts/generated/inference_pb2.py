@@ -24,31 +24,45 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0finference.proto\x12\x10\x61ip.inference.v1\"a\n\x12TranslationRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x13\n\x0bsource_lang\x18\x02 \x01(\t\x12\x13\n\x0btarget_lang\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"c\n\x13TranslationResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x17\n\x0ftranslated_text\x18\x02 \x01(\t\x12\x0e\n\x06\x65ngine\x18\x03 \x01(\t\x12\x13\n\x0b\x64uration_ms\x18\x04 \x01(\x03\",\n\x0b\x43hatMessage\x12\x0c\n\x04role\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\"v\n\x0b\x43hatRequest\x12\r\n\x05model\x18\x01 \x01(\t\x12/\n\x08messages\x18\x02 \x03(\x0b\x32\x1d.aip.inference.v1.ChatMessage\x12\x13\n\x0btemperature\x18\x03 \x01(\x02\x12\x12\n\nmax_tokens\x18\x04 \x01(\x05\"l\n\x0c\x43hatResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\x15\n\rprompt_tokens\x18\x04 \x01(\x05\x12\x19\n\x11\x63ompletion_tokens\x18\x05 \x01(\x05\"a\n\x14TranscriptionRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\x10\n\x08language\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"Z\n\x15TranscriptionResponse\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x19\n\x11\x64\x65tected_language\x18\x02 \x01(\t\x12\x18\n\x10\x64uration_seconds\x18\x03 \x01(\x02\"Q\n\rSpeechRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\r\n\x05voice\x18\x02 \x01(\t\x12\x0e\n\x06\x66ormat\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"I\n\x0eSpeechResponse\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\x13\n\x0b\x64uration_ms\x18\x03 \x01(\x03\x32\xf8\x02\n\x10InferenceService\x12X\n\tTranslate\x12$.aip.inference.v1.TranslationRequest\x1a%.aip.inference.v1.TranslationResponse\x12O\n\x0e\x43hatCompletion\x12\x1d.aip.inference.v1.ChatRequest\x1a\x1e.aip.inference.v1.ChatResponse\x12\x62\n\x0fTranscribeAudio\x12&.aip.inference.v1.TranscriptionRequest\x1a\'.aip.inference.v1.TranscriptionResponse\x12U\n\x10SynthesizeSpeech\x12\x1f.aip.inference.v1.SpeechRequest\x1a .aip.inference.v1.SpeechResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0finference.proto\x12\x10\x61ip.inference.v1\"a\n\x12TranslationRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x13\n\x0bsource_lang\x18\x02 \x01(\t\x12\x13\n\x0btarget_lang\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"\xa1\x01\n\x13TranslationResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x17\n\x0ftranslated_text\x18\x02 \x01(\t\x12\x0e\n\x06\x65ngine\x18\x03 \x01(\t\x12\x13\n\x0b\x64uration_ms\x18\x04 \x01(\x03\x12\x13\n\x0bsource_lang\x18\x05 \x01(\t\x12\x13\n\x0btarget_lang\x18\x06 \x01(\t\x12\x12\n\nlatency_ms\x18\x07 \x01(\x03\",\n\x0b\x43hatMessage\x12\x0c\n\x04role\x18\x01 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x02 \x01(\t\"\x87\x01\n\x0b\x43hatRequest\x12\r\n\x05model\x18\x01 \x01(\t\x12/\n\x08messages\x18\x02 \x03(\x0b\x32\x1d.aip.inference.v1.ChatMessage\x12\x13\n\x0btemperature\x18\x03 \x01(\x02\x12\x12\n\nmax_tokens\x18\x04 \x01(\x05\x12\x0f\n\x07task_id\x18\x05 \x01(\t\"\x97\x01\n\x0c\x43hatResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\x15\n\rprompt_tokens\x18\x04 \x01(\x05\x12\x19\n\x11\x63ompletion_tokens\x18\x05 \x01(\x05\x12\x12\n\nlatency_ms\x18\x06 \x01(\x03\x12\x15\n\rfinish_reason\x18\x07 \x01(\t\"f\n\tChatChunk\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12\x15\n\rdelta_content\x18\x03 \x01(\t\x12\x10\n\x08is_final\x18\x04 \x01(\x08\x12\x15\n\rfinish_reason\x18\x05 \x01(\t\"a\n\x14TranscriptionRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\x10\n\x08language\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"Z\n\x15TranscriptionResponse\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x19\n\x11\x64\x65tected_language\x18\x02 \x01(\t\x12\x18\n\x10\x64uration_seconds\x18\x03 \x01(\x02\"Q\n\rSpeechRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\r\n\x05voice\x18\x02 \x01(\t\x12\x0e\n\x06\x66ormat\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"I\n\x0eSpeechResponse\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\x13\n\x0b\x64uration_ms\x18\x03 \x01(\x03\"0\n\rCancelRequest\x12\x0f\n\x07task_id\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\"C\n\x0e\x43\x61ncelResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x0f\n\x07task_id\x18\x03 \x01(\t\" \n\rHealthRequest\x12\x0f\n\x07service\x18\x01 \x01(\t\"\xa9\x01\n\x0eHealthResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x14\n\x0c\x61\x63tive_tasks\x18\x02 \x01(\x05\x12@\n\x08metadata\x18\x03 \x03(\x0b\x32..aip.inference.v1.HealthResponse.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32\xf4\x04\n\x10InferenceService\x12X\n\tTranslate\x12$.aip.inference.v1.TranslationRequest\x1a%.aip.inference.v1.TranslationResponse\x12O\n\x0e\x43hatCompletion\x12\x1d.aip.inference.v1.ChatRequest\x1a\x1e.aip.inference.v1.ChatResponse\x12T\n\x14StreamChatCompletion\x12\x1d.aip.inference.v1.ChatRequest\x1a\x1b.aip.inference.v1.ChatChunk0\x01\x12\x62\n\x0fTranscribeAudio\x12&.aip.inference.v1.TranscriptionRequest\x1a\'.aip.inference.v1.TranscriptionResponse\x12U\n\x10SynthesizeSpeech\x12\x1f.aip.inference.v1.SpeechRequest\x1a .aip.inference.v1.SpeechResponse\x12T\n\x0f\x43\x61ncelInference\x12\x1f.aip.inference.v1.CancelRequest\x1a .aip.inference.v1.CancelResponse\x12N\n\tGetHealth\x12\x1f.aip.inference.v1.HealthRequest\x1a .aip.inference.v1.HealthResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'inference_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
+  _globals['_HEALTHRESPONSE_METADATAENTRY']._loaded_options = None
+  _globals['_HEALTHRESPONSE_METADATAENTRY']._serialized_options = b'8\001'
   _globals['_TRANSLATIONREQUEST']._serialized_start=37
   _globals['_TRANSLATIONREQUEST']._serialized_end=134
-  _globals['_TRANSLATIONRESPONSE']._serialized_start=136
-  _globals['_TRANSLATIONRESPONSE']._serialized_end=235
-  _globals['_CHATMESSAGE']._serialized_start=237
-  _globals['_CHATMESSAGE']._serialized_end=281
-  _globals['_CHATREQUEST']._serialized_start=283
-  _globals['_CHATREQUEST']._serialized_end=401
-  _globals['_CHATRESPONSE']._serialized_start=403
-  _globals['_CHATRESPONSE']._serialized_end=511
-  _globals['_TRANSCRIPTIONREQUEST']._serialized_start=513
-  _globals['_TRANSCRIPTIONREQUEST']._serialized_end=610
-  _globals['_TRANSCRIPTIONRESPONSE']._serialized_start=612
-  _globals['_TRANSCRIPTIONRESPONSE']._serialized_end=702
-  _globals['_SPEECHREQUEST']._serialized_start=704
-  _globals['_SPEECHREQUEST']._serialized_end=785
-  _globals['_SPEECHRESPONSE']._serialized_start=787
-  _globals['_SPEECHRESPONSE']._serialized_end=860
-  _globals['_INFERENCESERVICE']._serialized_start=863
-  _globals['_INFERENCESERVICE']._serialized_end=1239
+  _globals['_TRANSLATIONRESPONSE']._serialized_start=137
+  _globals['_TRANSLATIONRESPONSE']._serialized_end=298
+  _globals['_CHATMESSAGE']._serialized_start=300
+  _globals['_CHATMESSAGE']._serialized_end=344
+  _globals['_CHATREQUEST']._serialized_start=347
+  _globals['_CHATREQUEST']._serialized_end=482
+  _globals['_CHATRESPONSE']._serialized_start=485
+  _globals['_CHATRESPONSE']._serialized_end=636
+  _globals['_CHATCHUNK']._serialized_start=638
+  _globals['_CHATCHUNK']._serialized_end=740
+  _globals['_TRANSCRIPTIONREQUEST']._serialized_start=742
+  _globals['_TRANSCRIPTIONREQUEST']._serialized_end=839
+  _globals['_TRANSCRIPTIONRESPONSE']._serialized_start=841
+  _globals['_TRANSCRIPTIONRESPONSE']._serialized_end=931
+  _globals['_SPEECHREQUEST']._serialized_start=933
+  _globals['_SPEECHREQUEST']._serialized_end=1014
+  _globals['_SPEECHRESPONSE']._serialized_start=1016
+  _globals['_SPEECHRESPONSE']._serialized_end=1089
+  _globals['_CANCELREQUEST']._serialized_start=1091
+  _globals['_CANCELREQUEST']._serialized_end=1139
+  _globals['_CANCELRESPONSE']._serialized_start=1141
+  _globals['_CANCELRESPONSE']._serialized_end=1208
+  _globals['_HEALTHREQUEST']._serialized_start=1210
+  _globals['_HEALTHREQUEST']._serialized_end=1242
+  _globals['_HEALTHRESPONSE']._serialized_start=1245
+  _globals['_HEALTHRESPONSE']._serialized_end=1414
+  _globals['_HEALTHRESPONSE_METADATAENTRY']._serialized_start=1367
+  _globals['_HEALTHRESPONSE_METADATAENTRY']._serialized_end=1414
+  _globals['_INFERENCESERVICE']._serialized_start=1417
+  _globals['_INFERENCESERVICE']._serialized_end=2045
 # @@protoc_insertion_point(module_scope)

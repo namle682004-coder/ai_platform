@@ -894,10 +894,15 @@
             });
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        const initializePortalPage = () => {
             checkMandatoryAuth();
             initDashboardCharts();
-        });
+        };
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initializePortalPage, { once: true });
+        } else {
+            initializePortalPage();
+        }
     </script>
 </body>
 </html>

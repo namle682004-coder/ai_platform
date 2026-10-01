@@ -15,6 +15,10 @@ from common.errors import (
     aip_validation_exception_handler,
 )
 
+import os
+import importlib.util
+import logging
+
 try:
     from .config import ocr_settings
     from .ocr_engine import ocr_engine
@@ -24,11 +28,33 @@ except (ImportError, ValueError):
     from ocr_engine import ocr_engine
     from ocr_schemas import OCRResponse
 
+_grpc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grpc_server.py")
+_grpc_spec = importlib.util.spec_from_file_location("ocr_engine_grpc_server", _grpc_path)
+_grpc_mod = importlib.util.module_from_spec(_grpc_spec)
+_grpc_spec.loader.exec_module(_grpc_mod)
+create_ocr_grpc_server = _grpc_mod.create_ocr_grpc_server
+logger = logging.getLogger("aip-ocr.app")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ocr_engine.initialize()
+
+    grpc_server = None
+    grpc_port = int(os.getenv("GRPC_PORT", "50054"))
+
+    try:
+        grpc_server = await create_ocr_grpc_server(host="0.0.0.0", port=grpc_port)
+        await grpc_server.start()
+        logger.info("[Dual Arterial] OCR gRPC server running on port %d", grpc_port)
+    except Exception as exc:
+        logger.error("[Dual Arterial] Failed to start OCR gRPC server on port %d: %s", grpc_port, exc)
+
     yield
+
+    if grpc_server:
+        logger.info("[Dual Arterial] Shutting down OCR gRPC server...")
+        await grpc_server.stop(grace=5.0)
 
 
 ocr_app = FastAPI(

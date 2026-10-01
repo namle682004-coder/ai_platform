@@ -45,10 +45,34 @@ _model_error = None
 _device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+import importlib.util
+
+_grpc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grpc_server.py")
+_grpc_spec = importlib.util.spec_from_file_location("vllm_engine_grpc_server", _grpc_path)
+_grpc_mod = importlib.util.module_from_spec(_grpc_spec)
+_grpc_spec.loader.exec_module(_grpc_mod)
+create_vllm_grpc_server = _grpc_mod.create_vllm_grpc_server
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     threading.Thread(target=ensure_model_loaded, daemon=True).start()
+
+    grpc_server = None
+    grpc_port = int(os.getenv("GRPC_PORT", "50051"))
+
+    try:
+        grpc_server = await create_vllm_grpc_server(host="0.0.0.0", port=grpc_port)
+        await grpc_server.start()
+        logger.info("[Dual Arterial] vLLM gRPC server running on port %d", grpc_port)
+    except Exception as exc:
+        logger.error("[Dual Arterial] Failed to start vLLM gRPC server on port %d: %s", grpc_port, exc)
+
     yield
+
+    if grpc_server:
+        logger.info("[Dual Arterial] Shutting down vLLM gRPC server...")
+        await grpc_server.stop(grace=5.0)
 
 
 app = FastAPI(

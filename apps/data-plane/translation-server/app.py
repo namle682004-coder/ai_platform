@@ -1,8 +1,12 @@
 """
 AIP CTranslate2 Machine Translation Microservice.
 Compliant with Clean Architecture Data-Plane & SRS Section 2.3 & 6.1.
+Supports Dual Arterial: FastAPI HTTP (:8003) + gRPC (:50053).
 """
 
+import asyncio
+import logging
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -14,6 +18,8 @@ from common.errors import (
     aip_unhandled_exception_handler,
     aip_validation_exception_handler,
 )
+
+logger = logging.getLogger("aip.data-plane.translation")
 
 try:
     from .config import translation_settings
@@ -30,17 +36,39 @@ except (ImportError, ValueError):
         TranslationResponse,
     )
 
+import importlib.util
+
+_grpc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grpc_server.py")
+_grpc_spec = importlib.util.spec_from_file_location("translation_engine_grpc_server", _grpc_path)
+_grpc_mod = importlib.util.module_from_spec(_grpc_spec)
+_grpc_spec.loader.exec_module(_grpc_mod)
+create_grpc_server = _grpc_mod.create_grpc_server
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     translation_engine.initialize()
+
+    grpc_server = None
+    grpc_port = int(os.getenv("GRPC_PORT", "50053"))
+    try:
+        grpc_server = await create_grpc_server(host="0.0.0.0", port=grpc_port)
+        await grpc_server.start()
+        logger.info(f"[Dual-Arterial] Translation gRPC server running on port {grpc_port}")
+    except Exception as exc:
+        logger.error(f"[Dual-Arterial] Failed to start gRPC server on port {grpc_port}: {exc}")
+
     yield
+
+    if grpc_server:
+        logger.info("[Dual-Arterial] Gracefully shutting down Translation gRPC server...")
+        await grpc_server.stop(grace=5.0)
 
 
 translation_app = FastAPI(
     title=f"AIP Neural Translation Microservice ({translation_settings.service_name})",
     version=translation_settings.version,
-    description="CTranslate2 High-Performance Machine Translation Microservice",
+    description="CTranslate2 High-Performance Machine Translation Microservice (HTTP + gRPC Dual Arterial)",
     lifespan=lifespan,
 )
 
@@ -116,4 +144,5 @@ async def capabilities():
         "inference_path": "/v1/predictions",
         "accepted_content_type": "application/json",
         "model": translation_settings.model_name,
+        "grpc_port": int(os.getenv("GRPC_PORT", "50053")),
     }

@@ -23,6 +23,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="/staff/staff_layout.js"></script>
 
     <style>
       :root {
@@ -31,15 +32,20 @@
         --aip-orange: #f97316;
         --bg-page: #f8fafc;
         --card-bg: #ffffff;
-        --text-dark: #0f172a;
-        --text-sub: #64748b;
-        --border-color: #e2e8f0;
+        --text-dark: #001e2b;
+        --text-sub: #5c6c75;
+        --border-color: #e8edeb;
         --font-heading: "Outfit", sans-serif;
         --font-body: "Inter", sans-serif;
+        --font-code: "Fira Code", monospace;
       }
 
-      * {
+      html {
+        overflow-y: scroll;
         box-sizing: border-box;
+      }
+      *, *:before, *:after {
+        box-sizing: inherit;
         margin: 0;
         padding: 0;
       }
@@ -47,21 +53,28 @@
         background: var(--bg-page);
         color: var(--text-dark);
         font-family: var(--font-body);
+        font-size: 13px;
+        line-height: 1.45;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+        -webkit-font-smoothing: antialiased;
       }
 
       .top-header {
         background: var(--aip-blue);
         height: 50px;
+        min-height: 50px;
+        max-height: 50px;
         padding: 0 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         color: #fff;
         font-size: 13px;
-       position: sticky; top: 0; z-index: 1000; }
+        position: sticky; top: 0; z-index: 1000;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+      }
       .header-left {
         display: flex;
         align-items: center;
@@ -76,9 +89,11 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        letter-spacing: -0.01em;
       }
       .project-selector {
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
         border-radius: 4px;
         padding: 5px 12px;
         font-size: 12px;
@@ -86,88 +101,225 @@
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
+        color: #ffffff;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .project-selector:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.35);
       }
 
       .header-right {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 18px;
       }
       .user-menu {
         display: flex;
         align-items: center;
         gap: 8px;
         font-weight: 600;
+        color: #ffffff;
       }
 
       .layout-body {
         display: flex;
         flex: 1;
+        min-height: calc(100vh - 50px);
       }
 
       .sidebar {
-            width: 220px;
-            background: #ffffff;
-            border-right: 1px solid var(--border-color);
-            padding: 20px 0;
-            position: sticky;
-            top: 50px;
-            height: calc(100vh - 50px);
-            overflow-y: auto;
-            flex-shrink: 0;
-        }
+        width: 220px;
+        min-width: 220px;
+        max-width: 220px;
+        background: #ffffff;
+        border-right: 1px solid var(--border-color);
+        padding: 16px 0;
+        position: sticky;
+        top: 50px;
+        height: calc(100vh - 50px);
+        max-height: calc(100vh - 50px);
+        align-self: flex-start;
+        overflow-y: auto;
+        flex-shrink: 0;
+        box-sizing: border-box;
+      }
       .nav-section {
-        margin-bottom: 24px;
+        margin-bottom: 14px;
       }
       .section-title {
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
-        color: #94a3b8;
-        padding: 0 20px 8px 20px;
-        letter-spacing: 0.5px;
+        color: #5c6c75;
+        padding: 8px 18px;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        user-select: none;
       }
+      .section-title span { display: flex; align-items: center; gap: 8px; }
+      .section-title .toggle-icon { font-size: 10px; transition: transform 0.2s; color: #64748b; }
       .nav-list {
         list-style: none;
+        margin: 0;
+        padding: 0;
       }
       .nav-item a {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 10px 20px;
-        font-size: 13.5px;
+        padding: 8px 18px;
+        font-size: 13px;
         font-weight: 500;
-        color: #475569;
+        color: #334155;
         text-decoration: none;
-        transition: all 0.15s ease;
-        border-left: 3px solid transparent;
+        transition: background 0.12s ease, color 0.12s ease;
+        border-left: 4px solid transparent;
+      }
+      .nav-item a i {
+        color: #64748b;
+        font-size: 13px;
+        width: 16px;
+        text-align: center;
       }
       .nav-item.active a,
       .nav-item a:hover {
-        background: #f1f5f9;
-        color: var(--aip-cyan);
-        border-left-color: var(--aip-cyan);
+        background: #f0f4f8;
+        color: #001e2b;
+        border-left-color: #0f4c81;
+        font-weight: 700;
+      }
+      .nav-item.active a i,
+      .nav-item a:hover i {
+        color: #001e2b;
+      }
+
+      /* Direct links: PAYMENT HISTORY & CONTACT US */
+      .nav-direct-link a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 18px;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #5c6c75;
+        text-decoration: none;
+        transition: background 0.12s ease, color 0.12s ease;
+        border-left: 4px solid transparent;
+      }
+      .nav-direct-link a i {
+        color: #5c6c75;
+        font-size: 13px;
+        width: 16px;
+        text-align: center;
+      }
+      .nav-direct-link.active a,
+      .nav-direct-link a:hover {
+        background: #f0f4f8;
+        color: #001e2b;
+        border-left-color: #0f4c81;
+        font-weight: 700;
+      }
+      .nav-direct-link.active a i,
+      .nav-direct-link a:hover i {
+        color: #001e2b;
       }
 
       .main-content {
         flex: 1;
-        padding: 24px 32px;
-        background: #f8fafc;
+        padding: 20px 28px;
+        background: var(--bg-page);
+        min-width: 0;
       }
 
-      .page-title-row {
+      /* Console Breadcrumb */
+      .console-breadcrumb {
         display: flex;
         align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        color: var(--text-sub);
+        margin-bottom: 10px;
+      }
+      .console-breadcrumb a { color: var(--text-sub); text-decoration: none; }
+      .console-breadcrumb a:hover { color: var(--text-dark); }
+      .console-breadcrumb span.sep { color: #cbd5e1; }
+      .console-breadcrumb span.active { color: var(--text-dark); font-weight: 600; }
+
+      /* Atlas Page Header */
+      .atlas-page-header {
+        display: flex;
+        align-items: flex-start;
         justify-content: space-between;
-        margin-bottom: 20px;
+        margin-bottom: 24px;
+        gap: 20px;
       }
-      .page-title {
+      .atlas-title {
         font-family: var(--font-heading);
-        font-size: 22px;
+        font-size: 28px;
         font-weight: 700;
-        color: #0f172a;
+        color: #001e2b;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin-bottom: 6px;
       }
+      .atlas-desc {
+        font-size: 13.5px;
+        color: #5c6c75;
+        line-height: 1.5;
+      }
+      .atlas-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .btn-atlas-primary {
+        background: #00684a;
+        color: #ffffff;
+        border: 1px solid #00684a;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12.5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+      }
+      .btn-atlas-primary:hover {
+        background: #025039;
+        border-color: #025039;
+      }
+      .btn-atlas-secondary {
+        background: #ffffff;
+        color: #001e2b;
+        border: 1px solid #e8edeb;
+        padding: 7px 14px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12.5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+      }
+      .btn-atlas-secondary:hover {
+        background: #f4f6f5;
+        border-color: #c1d1cb;
+        color: #00684a;
+      }
+
       .time-filter-box {
         display: flex;
         align-items: center;
@@ -182,13 +334,22 @@
         background: #fff;
       }
       .btn-filter-active {
-        background: #e2e8f0;
-        border: none;
-        padding: 6px 12px;
+        background: #ffffff;
+        border: 1px solid #e8edeb;
+        padding: 7px 14px;
         border-radius: 6px;
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+        color: #001e2b;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+      .btn-filter-active:hover {
+        background: #f4f6f5;
+        border-color: #c1d1cb;
       }
       .time-picker-panel {
         display: none;
@@ -320,56 +481,68 @@
       }
       .chart-card {
         background: #ffffff;
-        border-radius: 10px;
+        border-radius: 14px;
         border: 1px solid var(--border-color);
-        padding: 18px;
+        padding: 20px 22px;
+        box-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
       }
       .chart-header {
         font-size: 13px;
         font-weight: 700;
-        color: #475569;
-        margin-bottom: 12px;
+        color: #001e2b;
+        font-family: var(--font-heading);
+        margin-bottom: 14px;
+        letter-spacing: -0.01em;
       }
 
       .table-card {
         background: #ffffff;
-        border-radius: 10px;
+        border-radius: 14px;
         border: 1px solid var(--border-color);
+        box-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
         overflow: hidden;
       }
       table {
         width: 100%;
         border-collapse: collapse;
         text-align: left;
-        font-size: 13px;
+        font-size: 12.5px;
       }
       th {
-        background: #f8fafc;
+        background: #f9fbfa;
         border-bottom: 1px solid var(--border-color);
-        padding: 12px 16px;
-        font-weight: 700;
-        color: #475569;
+        padding: 12px 18px;
+        font-weight: 600;
+        font-size: 11px;
+        color: #5c6c75;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
       td {
-        border-bottom: 1px solid var(--border-color);
-        padding: 14px 16px;
-        color: #334155;
+        border-bottom: 1px solid #f4f6f5;
+        padding: 14px 18px;
+        color: #001e2b;
       }
       tr:last-child td {
         border-bottom: none;
       }
+      tr:hover td {
+        background: #f9fbfa;
+      }
 
       .btn-buy-link {
-        color: #007bff;
-        font-weight: 700;
+        color: #00684a;
+        font-weight: 600;
         text-decoration: none;
         cursor: pointer;
         background: transparent;
         border: none;
         font-family: var(--font-body);
+        font-size: 12.5px;
       }
       .btn-buy-link:hover {
         text-decoration: underline;
+        color: #025039;
       }
 
       /* MODAL OVERLAY */
@@ -665,18 +838,17 @@
         opacity: 0.96;
       }
     </style>
-    <script src="/assets/js/staff_layout.js"></script>
   </head>
   <body>
     <div id="toast-container"></div>
 
     <div class="top-header">
       <div class="header-left">
-        <a href="/staff/dashboard" class="brand-logo"
-          ><i class="fa-solid fa-network-wired"></i> AIP Platform</a
-        >
+        <a href="/staff/dashboard" class="brand-logo">
+          <i class="fa-solid fa-cube"></i> AIP Platform
+        </a>
         <div class="project-selector" onclick="openSelectProjectModal()">
-          <i class="fa-solid fa-folder-tree"></i>
+          <i class="fa-solid fa-folder"></i>
           <span id="current-project-label">Select a project</span>
           <i class="fa-solid fa-chevron-down" style="font-size: 10px"></i>
         </div>
@@ -758,240 +930,101 @@
     <div class="layout-body">
       <div class="sidebar">
         <div class="nav-section">
-          <div
-            class="section-title"
-            onclick="toggleNavSection(this)"
-            style="
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              color: #64748b;
-            "
-          >
-            <span
-              ><i
-                class="fa-solid fa-terminal"
-                style="margin-right: 8px; width: 14px"
-              ></i>
-              Console</span
-            >
-            <i
-              class="fa-solid fa-chevron-down toggle-icon"
-              style="font-size: 10px; transition: transform 0.2s"
-            ></i>
+          <div class="section-title" onclick="toggleNavSection(this)">
+            <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> CONSOLE</span>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
           </div>
           <ul class="nav-list">
-            <li class="nav-item active">
-              <a href="/staff/dashboard"
-                ><i
-                  class="fa-solid fa-chart-pie"
-                  style="width: 16px; text-align: center"
-                ></i>
-                Dashboard</a
-              >
-            </li>
-            <li class="nav-item">
-              <a href="/staff/apis"
-                ><i
-                  class="fa-solid fa-cubes"
-                  style="width: 16px; text-align: center"
-                ></i>
-                APIs</a
-              >
-            </li>
-            <li class="nav-item">
-              <a href="/staff/keys"
-                ><i
-                  class="fa-solid fa-key"
-                  style="width: 16px; text-align: center"
-                ></i>
-                API Keys</a
-              >
-            </li>
-            <li class="nav-item">
-              <a href="/staff/report"
-                ><i
-                  class="fa-solid fa-chart-line"
-                  style="width: 16px; text-align: center"
-                ></i>
-                API report</a
-              >
-            </li>
+            <li class="nav-item active"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes"></i> APIs</a></li>
+            <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key"></i> API Keys</a></li>
+            <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line"></i> API report</a></li>
           </ul>
         </div>
         <div class="nav-section">
-          <div
-            class="section-title"
-            onclick="toggleNavSection(this)"
-            style="
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              color: #64748b;
-            "
-          >
-            <span
-              ><i
-                class="fa-solid fa-layer-group"
-                style="margin-right: 8px; width: 14px"
-              ></i>
-              Applications</span
-            >
-            <i
-              class="fa-solid fa-chevron-down toggle-icon"
-              style="font-size: 10px; transition: transform 0.2s"
-            ></i>
+          <div class="section-title" onclick="toggleNavSection(this)">
+            <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> APPLICATIONS</span>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
           </div>
           <ul class="nav-list">
-            <li class="nav-item">
-              <a href="/staff/service-stt"
-                ><i
-                  class="fa-solid fa-microphone-lines"
-                  style="width: 16px; text-align: center"
-                ></i>
-                Speech to Text</a
-              >
-            </li>
-            <li class="nav-item">
-              <a href="/staff/service-tts"
-                ><i
-                  class="fa-solid fa-volume-high"
-                  style="width: 16px; text-align: center"
-                ></i>
-                Text to Speech</a
-              >
-            </li>
-            <li class="nav-item">
-              <a href="/staff/service-llm"
-                ><i
-                  class="fa-solid fa-comments"
-                  style="width: 16px; text-align: center"
-                ></i>
-                LLM Chatbot</a
-              >
-            </li>
-            <li class="nav-item">
-              <a href="/staff/service-image"
-                ><i
-                  class="fa-solid fa-image"
-                  style="width: 16px; text-align: center"
-                ></i>
-                Image Gen API</a
-              >
-            </li>
-            <li class="nav-item">
-              <a href="/staff/service-moderation"
-                ><i
-                  class="fa-solid fa-shield-halved"
-                  style="width: 16px; text-align: center"
-                ></i>
-                Moderation API</a
-              >
-            </li>
+            <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone"></i> Speech to Text</a></li>
+            <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high"></i> Text to Speech</a></li>
+            <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments"></i> LLM Chatbot</a></li>
+            <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image"></i> Image Gen API</a></li>
+            <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield"></i> Moderation API</a></li>
           </ul>
         </div>
-        <div class="nav-section">
-          <div class="section-title">
-            <a
-              href="/staff/payment"
-              style="
-                color: #64748b;
-                text-decoration: none;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-              "
-            >
-              <i class="fa-solid fa-credit-card" style="width: 14px"></i>
-              Payment history
-            </a>
-          </div>
+        <div class="nav-direct-link">
+          <a href="/staff/payment">
+            <i class="fa-solid fa-credit-card"></i> PAYMENT HISTORY
+          </a>
         </div>
-        <div class="nav-section">
-          <div class="section-title">
-            <a
-              href="/staff/contact"
-              style="
-                color: #64748b;
-                text-decoration: none;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-              "
-            >
-              <i class="fa-solid fa-headset" style="width: 14px"></i> Contact us
-            </a>
-          </div>
+        <div class="nav-direct-link">
+          <a href="/staff/contact">
+            <i class="fa-solid fa-headset"></i> CONTACT US
+          </a>
         </div>
       </div>
 
       <div class="main-content">
-        <div
-          class="page-title-row"
-          style="
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-          "
-        >
-          <div class="page-title">Dashboard</div>
-          <div class="time-filter-box">
-            <button
-              id="dashboard-time-range"
-              class="btn-filter-active"
-              style="
-                background: #ffffff;
-                border: 1px solid #cbd5e1;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 12px;
-                font-weight: 700;
-                color: #334155;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                cursor: pointer;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-              "
-            >
-              <i class="fa-regular fa-calendar" style="color: #64748b"></i> LAST
-              1 DAY
-            </button>
-            <div id="dashboard-time-picker" class="time-picker-panel">
-              <div class="time-picker-tabs">
-                <button class="time-picker-tab active" data-time-tab="quick">
-                  QUICK</button
-                ><button class="time-picker-tab" data-time-tab="absolute">
-                  ABSOLUTE
-                </button>
-                <button class="time-picker-tab" data-time-tab="interval">
-                  INTERVAL
-                </button>
-              </div>
-              <div class="time-picker-view active" data-time-view="quick">
-                <div class="quick-grid" id="quick-range-options"></div>
-              </div>
-              <div class="time-picker-view" data-time-view="absolute">
-                <div class="absolute-fields">
-                  <label>From<input id="absolute-from" type="date" /></label
-                  ><label>To<input id="absolute-to" type="date" /></label>
+        <!-- Breadcrumb Navigation -->
+        <div class="console-breadcrumb">
+          <a href="/staff/dashboard"><i class="fa-solid fa-house" style="font-size: 11px;"></i> Console</a>
+          <span class="sep">/</span>
+          <span id="breadcrumb-project-name">Default Enterprise Project</span>
+          <span class="sep">/</span>
+          <span class="active">Dashboard</span>
+        </div>
+
+        <!-- MongoDB Atlas Page Header -->
+        <div class="atlas-page-header">
+          <div>
+            <h1 class="atlas-title">Analytics Overview</h1>
+            <p class="atlas-desc">Real-time AI inference telemetry, requests throughput and usage monitoring</p>
+          </div>
+          <div class="atlas-header-actions">
+            <div class="time-filter-box">
+              <button
+                id="dashboard-time-range"
+                class="btn-atlas-secondary"
+                style="cursor: pointer;"
+              >
+                <i class="fa-regular fa-calendar"></i> LAST 1 DAY <i class="fa-solid fa-chevron-down" style="font-size: 9px; margin-left: 2px;"></i>
+              </button>
+              <div id="dashboard-time-picker" class="time-picker-panel">
+                <div class="time-picker-tabs">
+                  <button class="time-picker-tab active" data-time-tab="quick">
+                    QUICK</button
+                  ><button class="time-picker-tab" data-time-tab="absolute">
+                    ABSOLUTE
+                  </button>
+                  <button class="time-picker-tab" data-time-tab="interval">
+                    INTERVAL
+                  </button>
+                </div>
+                <div class="time-picker-view active" data-time-view="quick">
+                  <div class="quick-grid" id="quick-range-options"></div>
+                </div>
+                <div class="time-picker-view" data-time-view="absolute">
+                  <div class="absolute-fields">
+                    <label>From<input id="absolute-from" type="date" /></label
+                    ><label>To<input id="absolute-to" type="date" /></label>
+                  </div>
+                </div>
+                <div class="time-picker-view" data-time-view="interval">
+                  <div class="interval-list" id="interval-options"></div>
+                </div>
+                <div class="time-picker-footer">
+                  <button
+                    class="btn-atlas-primary"
+                    onclick="applyDashboardTimeFilter()"
+                  >
+                    APPLY
+                  </button>
                 </div>
               </div>
-              <div class="time-picker-view" data-time-view="interval">
-                <div class="interval-list" id="interval-options"></div>
-              </div>
-              <div class="time-picker-footer">
-                <button
-                  class="time-picker-apply"
-                  onclick="applyDashboardTimeFilter()"
-                >
-                  APPLY
-                </button>
-              </div>
             </div>
+            <a href="/staff/apis" class="btn-atlas-primary"><i class="fa-solid fa-cubes"></i> Explore APIs</a>
           </div>
         </div>
 
@@ -1447,12 +1480,13 @@
       let targetPendingApi = "";
       let targetPendingAction = "enable";
 
-      function getProjects() {
+      async function getProjects() {
+        if (window.StaffLayout && window.StaffLayout.getProjects) {
+          return await window.StaffLayout.getProjects();
+        }
         const data = localStorage.getItem("aip_projects");
         return data ? JSON.parse(data) : [];
       }
-
-      /* Centralized getEnabledAPIs and setEnabledAPIs from staff_layout.js */
 
       function getPaidBalance() {
         return parseInt(localStorage.getItem("aip_paid_balance") || "0");
@@ -1462,7 +1496,71 @@
         localStorage.setItem("aip_paid_balance", val.toString());
       }
 
-      function renderDashboardRows(catalog, apis, paidBal) {
+      async function fetchEnabledAPIsFromBackend() {
+        const response = await fetch("/v1/user/apis-state");
+        if (!response.ok) {
+          throw new Error(`Unable to load API states (${response.status})`);
+        }
+        const data = await response.json();
+        return data.enabled_apis || {};
+      }
+
+      async function fetchApiCatalogFromBackend() {
+        const response = await fetch("/v1/user/apis-catalog");
+        if (!response.ok) {
+          throw new Error(`Unable to load API catalog (${response.status})`);
+        }
+        const catalog = await response.json();
+        if (!Array.isArray(catalog)) {
+          throw new Error("The API catalog response is invalid");
+        }
+        return catalog;
+      }
+
+      async function fetchPaidBalanceFromBackend() {
+        const response = await fetch("/v1/user/balance");
+        if (!response.ok) {
+          throw new Error(`Unable to load API balance (${response.status})`);
+        }
+        const data = await response.json();
+        return Number(data.paid_balance) || 0;
+      }
+
+      async function fetchApiUsageSummaryFromBackend() {
+        const response = await fetch("/v1/user/api-summary");
+        if (!response.ok) {
+          throw new Error(`Unable to load API usage counts (${response.status})`);
+        }
+        const data = await response.json();
+        if (!Array.isArray(data.data)) {
+          throw new Error("The API usage summary response is invalid");
+        }
+        return Object.fromEntries(data.data.map((item) => [item.path, item]));
+      }
+
+      function isApiActive(apis, name) {
+        const entry = Object.entries(apis || {}).find(
+          ([apiName]) => apiName.toLowerCase() === String(name).toLowerCase(),
+        );
+        return Boolean(entry?.[1]);
+      }
+
+      async function setEnabledAPIs(apis) {
+        const response = await fetch("/v1/user/apis-state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled_apis: apis }),
+        });
+        if (!response.ok) {
+          throw new Error(`Unable to save API states (${response.status})`);
+        }
+        const data = await response.json();
+        const saved = data.enabled_apis || {};
+        localStorage.setItem("aip_enabled_apis", JSON.stringify(saved));
+        return saved;
+      }
+
+      function renderDashboardRows(catalog, apis, paidBal, usageSummary) {
         const hasAnyActiveApi = Object.keys(apis).some((k) =>
           isApiActive(apis, k),
         );
@@ -1474,32 +1572,41 @@
         if (!hasAnyActiveApi) {
           if (banner) banner.style.display = "block";
           if (chartGrid) chartGrid.style.display = "none";
-          if (tableCard) tableCard.style.display = "none";
-          if (summaryTitle) summaryTitle.style.display = "none";
         } else {
           if (banner) banner.style.display = "none";
           if (chartGrid) chartGrid.style.display = "grid";
-          if (tableCard) tableCard.style.display = "block";
-          if (summaryTitle) summaryTitle.style.display = "block";
         }
+        if (tableCard) tableCard.style.display = "block";
+        if (summaryTitle) summaryTitle.style.display = "block";
 
         const tbody = document.getElementById("apis-summary-tbody");
         if (!tbody) return;
         tbody.innerHTML = "";
 
+        if (!catalog.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:24px;">No APIs found in the database.</td></tr>';
+          return;
+        }
+
         catalog.forEach((item) => {
-          const isEnabled = isApiActive(apis, item.name);
+          const apiName = item.name || item.endpoint_id || item.path || "Unnamed API";
+          const apiPath = item.path || item.endpoint_id;
+          const usage = usageSummary?.[apiPath];
+          const isEnabled = isApiActive(apis, apiName);
           const paidUnit =
             item.unit === "character" ? 1 : item.unit === "block" ? 150 : 10;
           const freeVal = item.free_quota
             ? item.free_quota.split(" ")[0]
-            : "10,000";
+            : "—";
           const statusBadge = isEnabled
-            ? `<span style="background: #10b981; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${item.name}', true)">ACTIVE</span>`
-            : `<span style="background: #94a3b8; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${item.name}', false)">DISABLED</span>`;
+            ? `<span style="background: #10b981; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', true)">ACTIVE</span>`
+            : `<span style="background: #94a3b8; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', false)">DISABLED</span>`;
 
           const paidStr = isEnabled
-            ? paidUnit === 1
+            ? paidBal == null
+              ? "—"
+              : paidUnit === 1
               ? paidBal.toLocaleString()
               : paidBal > 0
                 ? Math.floor(paidBal / paidUnit).toLocaleString()
@@ -1540,113 +1647,70 @@
 
           const tr = document.createElement("tr");
           tr.innerHTML = `
-                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${item.name}</strong></td>
+                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${apiName}</strong></td>
                     <td>${statusBadge}</td>
-                    <td>0</td>
-                    <td>0</td>
+                    <td>${usage?.requests ?? "—"}</td>
+                    <td>${usage?.errors ?? "—"}</td>
                     <td>${isEnabled ? freeVal : "0 (OFF)"}</td>
                     <td>${paidStr}</td>
-                    <td>${item.unit || "request"}</td>
-                    <td><button class="btn-buy-link" onclick="openPricingModalFor('${item.name}')">buy more</button></td>
+                    <td>${item.unit || "—"}</td>
+                    <td><button class="btn-buy-link" onclick="openPricingModalFor('${apiName}')">buy more</button></td>
                 `;
           tbody.appendChild(tr);
         });
       }
 
       async function renderApisSummaryTable() {
+        const tbody = document.getElementById("apis-summary-tbody");
+        if (tbody) {
+          tbody.innerHTML =
+            '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:24px;">Loading APIs from database…</td></tr>';
+        }
+
         const projects = await getProjects();
         if (projects.length > 0) {
           document.getElementById("current-project-label").innerText =
             projects[0].project_name;
         }
 
-        // 1. Instant zero-latency render with local cache
-        let paidBal = getPaidBalance();
-        const cachedApis = getEnabledAPIs();
-
-        const defaultCatalog = [
-          {
-            name: "Speech to Text API",
-            unit: "block",
-            free_quota: "10,000 blocks",
-          },
-          {
-            name: "Text to Speech API",
-            unit: "character",
-            free_quota: "100,000 characters",
-          },
-          {
-            name: "LLM Chatbot API",
-            unit: "token",
-            free_quota: "50,000 tokens",
-          },
-          {
-            name: "Image Generation API",
-            unit: "image",
-            free_quota: "100 images",
-          },
-          {
-            name: "Content Moderation API",
-            unit: "request",
-            free_quota: "10,000 requests",
-          },
-          {
-            name: "Driver's license recognition",
-            unit: "request",
-            free_quota: "500 requests",
-          },
-          {
-            name: "ID Recognition",
-            unit: "request",
-            free_quota: "500 requests",
-          },
-          {
-            name: "Passport Recognition",
-            unit: "request",
-            free_quota: "500 requests",
-          },
-          {
-            name: "FaceMatch",
-            unit: "request",
-            free_quota: "500 requests",
-          },
-          {
-            name: "Liveness v3",
-            unit: "request",
-            free_quota: "500 requests",
-          },
-          {
-            name: "Text Embedding API",
-            unit: "token",
-            free_quota: "100,000 tokens",
-          },
-          {
-            name: "Text Summarization API",
-            unit: "request",
-            free_quota: "1,000 requests",
-          },
-          {
-            name: "Translation API",
-            unit: "character",
-            free_quota: "100,000 characters",
-          },
-        ];
-        renderDashboardRows(defaultCatalog, cachedApis, paidBal);
-
-        // 2. Background revalidation from MongoDB Atlas
         try {
-          const [apis, catalog, backendBal] = await Promise.all([
+          const catalog = await fetchApiCatalogFromBackend();
+          const [apiStateResult, balanceResult, usageResult] = await Promise.allSettled([
             fetchEnabledAPIsFromBackend(),
-            fetchApiCatalogFromBackend(),
             fetchPaidBalanceFromBackend(),
+            fetchApiUsageSummaryFromBackend(),
           ]);
+          const apis =
+            apiStateResult.status === "fulfilled" ? apiStateResult.value : {};
+          const backendBal =
+            balanceResult.status === "fulfilled" ? balanceResult.value : null;
+          const usageSummary =
+            usageResult.status === "fulfilled" ? usageResult.value : null;
 
-          renderDashboardRows(
-            catalog && catalog.length ? catalog : defaultCatalog,
-            apis,
-            backendBal,
-          );
-        } catch (e) {}
+          if (apiStateResult.status === "fulfilled") {
+            localStorage.setItem("aip_enabled_apis", JSON.stringify(apis));
+          } else {
+            console.error("Failed to load API states:", apiStateResult.reason);
+            showToast("Unable to load API status from the database.", "error");
+          }
+          if (balanceResult.status === "fulfilled") setPaidBalance(backendBal);
+          else {
+            console.error("Failed to load API balance:", balanceResult.reason);
+            showToast("Unable to load API balance from the database.", "error");
+          }
+          if (usageResult.status === "rejected") {
+            console.error("Failed to load API usage counts:", usageResult.reason);
+            showToast("Unable to load API request counts from the database.", "error");
+          }
+          renderDashboardRows(catalog, apis, backendBal, usageSummary);
+        } catch (error) {
+          console.error("Failed to load dashboard API data:", error);
+          if (tbody) {
+            tbody.innerHTML =
+              '<tr><td colspan="8" style="text-align:center;color:#b42318;padding:24px;">Unable to load APIs from the database.</td></tr>';
+          }
+          showToast("Unable to load APIs from the database.", "error");
+        }
       }
 
       function toggleDashboardApiStatus(apiName, isCurrentlyEnabled) {
@@ -1672,7 +1736,7 @@
 
       async function onConfirmEnableClick() {
         closeConfirmModal();
-        const apis = getEnabledAPIs();
+        const apis = await fetchEnabledAPIsFromBackend();
         if (targetPendingAction === "disable") {
           apis[targetPendingApi] = false;
           await setEnabledAPIs(apis);
@@ -2227,14 +2291,8 @@
       }
 
       function showProjectSelectorToast() {
-        const projects = getProjects();
-        if (projects.length > 0) {
-          showToast(`Project hiện tại: ${projects[0].project_name}`, "info");
-        } else {
-          showToast(
-            "Chưa có dự án. Vui lòng tạo dự án ở trang APIs.",
-            "warning",
-          );
+        if (window.StaffLayout && window.StaffLayout.openSelectProjectModal) {
+          window.StaffLayout.openSelectProjectModal();
         }
       }
 
@@ -2303,12 +2361,17 @@
         );
       }
 
-      window.addEventListener("DOMContentLoaded", () => {
+      const initializeDashboardPage = () => {
         checkMandatoryAuth();
         renderApisSummaryTable();
         initCharts();
         setupDashboardTimePicker();
-      });
+      };
+      if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", initializeDashboardPage, { once: true });
+      } else {
+        initializeDashboardPage();
+      }
     </script>
   </body>
 </html>

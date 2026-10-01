@@ -248,25 +248,11 @@ async function setEnabledAPIs(apiObj) {
 }
 
 async function fetchApiCatalogFromBackend() {
-    try {
-        const res = await fetch('/v1/user/apis-catalog?t=' + new Date().getTime());
-        if (res.ok) {
-            const data = await res.json();
-            localStorage.setItem('aip_catalog', JSON.stringify(data));
-            return data;
-        }
-    } catch(err) {}
-    const cached = localStorage.getItem('aip_catalog');
-    return cached ? JSON.parse(cached) : [
-        { name: "CCCD / ID Card OCR API", endpoint_id: "/v1/ocr/id-card", unit: "image", free_quota: "500 images" },
-        { name: "Speech to Text API", endpoint_id: "/v1/audio/transcriptions", unit: "block", free_quota: "10,000 blocks" },
-        { name: "Text to Speech API", endpoint_id: "/v1/audio/speech", unit: "character", free_quota: "100,000 characters" },
-        { name: "LLM Chatbot API", endpoint_id: "/v1/chat/completions", unit: "token", free_quota: "50,000 tokens" },
-        { name: "Image Generation API", endpoint_id: "/v1/images/generations", unit: "image", free_quota: "100 images" },
-        { name: "Content Moderation API", endpoint_id: "/v1/moderations", unit: "request", free_quota: "10,000 requests" },
-        { name: "Text Embeddings API", endpoint_id: "/v1/embeddings", unit: "token", free_quota: "100,000 tokens" },
-        { name: "Translation API", endpoint_id: "/v1/nlp/translation", unit: "character", free_quota: "100,000 characters" }
-    ];
+    const res = await fetch('/v1/user/apis-catalog?t=' + new Date().getTime());
+    if (!res.ok) throw new Error(`Unable to load API catalog (${res.status})`);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('The API catalog response is invalid');
+    return data;
 }
 
 function findCatalogItemForPath(catalog, pathOrName) {
@@ -405,6 +391,34 @@ async function initMasterTopbar() {
     const label = document.getElementById('current-project-label');
     if (label) label.innerText = activeName;
 }
+
+function loadApplicationsNavigation() {
+    if (Array.isArray(window.AIP_APPLICATION_NAV_GROUPS)) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = '/staff/applications_nav.js';
+        script.onload = () => {
+            if (Array.isArray(window.AIP_APPLICATION_NAV_GROUPS)) resolve();
+            else reject(new Error('Applications navigation config did not load'));
+        };
+        script.onerror = () => reject(new Error(`Failed to load applications navigation: ${script.src}`));
+        document.head.appendChild(script);
+    });
+}
+
+function syncProjectRouteContext() {
+    const match = window.location.pathname.match(/^\/project\/([^/]+)\/apis\/[^/]+\/?$/i);
+    if (!match) return;
+
+    const projectId = decodeURIComponent(match[1]);
+    localStorage.setItem('aip_active_project_id', projectId);
+    document.querySelectorAll('a[href="/staff/apis"], a[href="/staff/apis/"]').forEach(link => {
+        link.href = `/project/${encodeURIComponent(projectId)}/apis`;
+    });
+}
+
+syncProjectRouteContext();
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -546,6 +560,20 @@ function initStaffChrome() {
             .table-card table { max-width: 100%; }
             .aip-sidebar-toggle { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: rgba(255,255,255,0.14); color: #fff; cursor: pointer; font-size: 15px; }
             .aip-sidebar-toggle:hover { background: rgba(255,255,255,0.25); }
+            .app-category { list-style: none; }
+            .app-category-toggle {
+                width: calc(100% - 24px); min-height: 32px; margin: 3px 12px; padding: 5px 8px 5px 10px;
+                display: flex; align-items: center; justify-content: space-between; gap: 8px;
+                border: 1px solid transparent; border-radius: 6px; background: transparent; color: #5c6c75;
+                font: 600 11px/1.3 Inter, sans-serif; text-align: left; cursor: pointer;
+            }
+            .app-category-toggle:hover { background: #f4f6f5; color: #001e2b; }
+            .app-category-toggle[aria-expanded="true"] { background: #eaf2f8; color: #0f4c81; font-weight: 700; }
+            .app-category-label { min-width: 0; }
+            .app-category-chevron { color: #8495a2; font-size: 9px; transition: transform 0.15s ease; }
+            .app-category-toggle[aria-expanded="true"] .app-category-chevron { transform: rotate(180deg); }
+            .app-category-items[hidden] { display: none; }
+            .app-category-items .nav-item a { padding-left: 30px; font-size: 12px; }
             @media (max-width: 700px) { .aip-sidebar-toggle { display: inline-flex; } }
         `;
         document.head.appendChild(style);
@@ -577,6 +605,13 @@ function initMasterSidebar() {
     if (!sidebar) return;
 
     const path = window.location.pathname;
+    const activeApplication = AIP_APPLICATION_NAV_GROUPS
+        .flatMap(group => group.items.map(item => ({ group, item })))
+        .find(({ item }) => path.endsWith(`/apis/${item[2].toLowerCase()}`));
+    const savedCategory = sessionStorage.getItem('aip_staff_application_category');
+    const selectedCategory = activeApplication?.group.id ||
+        AIP_APPLICATION_NAV_GROUPS.find(group => group.id === savedCategory)?.id ||
+        AIP_APPLICATION_NAV_GROUPS[0].id;
 
     sidebar.innerHTML = `
         <div class="nav-section">
@@ -590,6 +625,14 @@ function initMasterSidebar() {
                 <li class="nav-item ${path === '/staff/keys' ? 'active' : ''}"><a href="/staff/keys"><i class="fa-solid fa-key" style="width: 16px; text-align: center;"></i> API Keys</a></li>
                 <li class="nav-item ${path === '/staff/report' ? 'active' : ''}"><a href="/staff/report"><i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> API report</a></li>
             </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="section-title" onclick="toggleNavSection(this)">
+                <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> Applications</span>
+                <i class="fa-solid fa-chevron-down toggle-icon" style="font-size: 10px; transition: transform 0.2s;"></i>
+            </div>
+            <ul class="nav-list" id="applications-nav-list"></ul>
         </div>
 
         <div class="nav-section">
@@ -607,6 +650,58 @@ function initMasterSidebar() {
             </div>
         </div>
     `;
+
+    const applicationsList = sidebar.querySelector('#applications-nav-list');
+    AIP_APPLICATION_NAV_GROUPS.forEach(group => {
+        const groupItem = document.createElement('li');
+        groupItem.className = 'app-category';
+        groupItem.dataset.category = group.id;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'app-category-toggle';
+        button.setAttribute('aria-expanded', 'false');
+        button.innerHTML = `<span class="app-category-label">${group.label}</span>
+            <i class="fa-solid fa-chevron-down app-category-chevron" aria-hidden="true"></i>`;
+
+        const childList = document.createElement('ul');
+        childList.className = 'nav-list app-category-items';
+        childList.hidden = true;
+        group.items.forEach(([label, icon, href]) => {
+            const item = document.createElement('li');
+            item.className = `nav-item${activeApplication?.item[2] === href ? ' active' : ''}`;
+            const link = document.createElement('a');
+            link.href = window.aipProjectApiHref(href);
+            const iconElement = document.createElement('i');
+            iconElement.className = `fa-solid ${icon}`;
+            link.append(iconElement, document.createTextNode(label));
+            item.appendChild(link);
+            childList.appendChild(item);
+        });
+
+        button.addEventListener('click', () => {
+            const wasExpanded = button.getAttribute('aria-expanded') === 'true';
+            applicationsList.querySelectorAll('.app-category').forEach(category => {
+                const isActive = !wasExpanded && category === groupItem;
+                category.querySelector('.app-category-toggle').setAttribute('aria-expanded', String(isActive));
+                category.querySelector('.app-category-items').hidden = !isActive;
+            });
+            if (wasExpanded) sessionStorage.removeItem('aip_staff_application_category');
+            else sessionStorage.setItem('aip_staff_application_category', group.id);
+        });
+
+        groupItem.append(button, childList);
+        applicationsList.appendChild(groupItem);
+    });
+    applicationsList.querySelector(`[data-category="${selectedCategory}"] .app-category-toggle`)?.click();
+    const applicationsSection = applicationsList.closest('.nav-section');
+    if (activeApplication) {
+        applicationsSection.querySelector('.nav-list').style.display = 'block';
+    } else {
+        applicationsSection.querySelector('.nav-list').style.display = 'none';
+        applicationsSection.querySelector('.toggle-icon').style.transform = 'rotate(-90deg)';
+    }
+    applyCommonTranslations();
 }
 
 function toggleNavSection(headerEl) {
@@ -649,7 +744,10 @@ window.addEventListener('storage', function(e) {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+    syncProjectRouteContext();
     ensureStaffAuth();
     initStaffChrome();
-    initMasterSidebar();
+    loadApplicationsNavigation()
+        .then(initMasterSidebar)
+        .catch(error => console.error('Unable to initialize staff applications navigation.', error));
 });

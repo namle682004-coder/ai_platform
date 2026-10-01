@@ -26,7 +26,9 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    build:
+      context: ../../infrastructure/rabbitmq
+      dockerfile: Dockerfile
     container_name: aip-rabbitmq
     ports:
       - "5672:5672"
@@ -139,6 +141,7 @@ services:
       - TTS_SERVER_URL=http://host.docker.internal:8007
     volumes:
       - ../../apps/control-plane/src:/app/apps/control-plane/src
+      - ../../apps/frontend:/app/apps/frontend:ro
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
@@ -181,7 +184,6 @@ services:
       - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
     volumes:
       - ../../apps/dispatcher-worker/src:/app/apps/dispatcher-worker/src
-      - ../../apps/control-plane/src:/app/apps/control-plane/src
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     depends_on:
@@ -203,7 +205,6 @@ services:
       - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
     volumes:
       - ../../apps/callback-worker/worker:/app/apps/callback-worker/worker
-      - ../../apps/control-plane/src:/app/apps/control-plane/src
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     depends_on:

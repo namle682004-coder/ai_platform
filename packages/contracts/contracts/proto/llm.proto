@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package aip.llm.v1;
+
+import "common.proto";
+
+service LlmService {
+  rpc ChatCompletion(ChatRequest) returns (ChatResponse);
+  rpc StreamChatCompletion(ChatRequest) returns (stream ChatChunk);
+  rpc GetHealth(aip.common.v1.HealthRequest) returns (aip.common.v1.HealthResponse);
+  rpc Cancel(aip.common.v1.CancelRequest) returns (aip.common.v1.CancelResponse);
+}
+
+message ChatMessage {
+  string role = 1;
+  string content = 2;
+}
+
+message ChatRequest {
+  string model = 1;
+  repeated ChatMessage messages = 2;
+  float temperature = 3;
+  int32 max_tokens = 4;
+  string task_id = 5;
+}
+
+message ChatResponse {
+  string id = 1;
+  string model = 2;
+  string content = 3;
+  int32 prompt_tokens = 4;
+  int32 completion_tokens = 5;
+  int64 latency_ms = 6;
+  string finish_reason = 7;
+}
+
+message ChatChunk {
+  string id = 1;
+  string model = 2;
+  string delta_content = 3;
+  bool is_final = 4;
+  string finish_reason = 5;
+}
