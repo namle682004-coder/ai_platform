@@ -47,6 +47,7 @@ from src.admin.keys import router as admin_keys_router
 from src.admin.aliases import router as admin_aliases_router
 from src.admin.audit import router as admin_audit_router
 from src.admin.endpoints import router as admin_endpoints_router
+from src.admin.endpoint_catalog import seed_endpoint_catalog
 from src.admin.metrics import router as admin_metrics_router
 from src.admin.maintenance import router as admin_maintenance_router
 from src.admin.users import router as admin_users_router
@@ -76,6 +77,7 @@ async def lifespan(app: FastAPI):
     # Prime DB-backed routing and endpoint state before serving requests.
     try:
         await alias_router.refresh()
+        await seed_endpoint_catalog()
         await endpoint_repository.list_endpoints()
         logger.info("Alias and endpoint registries loaded")
     except Exception as exc:
