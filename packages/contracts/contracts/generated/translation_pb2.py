@@ -22,6 +22,7 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from . import common_pb2 as common__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11translation.proto\x12\x12\x61ip.translation.v1\x1a\x0c\x63ommon.proto\"a\n\x12TranslationRequest\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x13\n\x0bsource_lang\x18\x02 \x01(\t\x12\x13\n\x0btarget_lang\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"\xa1\x01\n\x13TranslationResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x17\n\x0ftranslated_text\x18\x02 \x01(\t\x12\x0e\n\x06\x65ngine\x18\x03 \x01(\t\x12\x13\n\x0b\x64uration_ms\x18\x04 \x01(\x03\x12\x13\n\x0bsource_lang\x18\x05 \x01(\t\x12\x13\n\x0btarget_lang\x18\x06 \x01(\t\x12\x12\n\nlatency_ms\x18\x07 \x01(\x03\x32\x83\x02\n\x12TranslationService\x12\\\n\tTranslate\x12&.aip.translation.v1.TranslationRequest\x1a\'.aip.translation.v1.TranslationResponse\x12H\n\tGetHealth\x12\x1c.aip.common.v1.HealthRequest\x1a\x1d.aip.common.v1.HealthResponse\x12\x45\n\x06\x43\x61ncel\x12\x1c.aip.common.v1.CancelRequest\x1a\x1d.aip.common.v1.CancelResponseb\x06proto3')
