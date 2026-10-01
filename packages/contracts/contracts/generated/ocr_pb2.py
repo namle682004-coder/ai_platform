@@ -22,7 +22,6 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from . import common_pb2 as common__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tocr.proto\x12\naip.ocr.v1\x1a\x0c\x63ommon.proto\"K\n\nOcrRequest\x12\x15\n\rdocument_data\x18\x01 \x01(\x0c\x12\x11\n\tfile_type\x18\x02 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x03 \x01(\t\"9\n\x08OcrBlock\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x12\n\nconfidence\x18\x02 \x01(\x02\x12\x0b\n\x03\x62ox\x18\x03 \x03(\x02\"Z\n\x0bOcrResponse\x12\x11\n\tfull_text\x18\x01 \x01(\t\x12$\n\x06\x62locks\x18\x02 \x03(\x0b\x32\x14.aip.ocr.v1.OcrBlock\x12\x12\n\nlatency_ms\x18\x03 \x01(\x03\x32\xe1\x01\n\nOcrService\x12\x42\n\x0f\x45xtractDocument\x12\x16.aip.ocr.v1.OcrRequest\x1a\x17.aip.ocr.v1.OcrResponse\x12H\n\tGetHealth\x12\x1c.aip.common.v1.HealthRequest\x1a\x1d.aip.common.v1.HealthResponse\x12\x45\n\x06\x43\x61ncel\x12\x1c.aip.common.v1.CancelRequest\x1a\x1d.aip.common.v1.CancelResponseb\x06proto3')

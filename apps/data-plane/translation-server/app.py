@@ -4,7 +4,6 @@ Compliant with Clean Architecture Data-Plane & SRS Section 2.3 & 6.1.
 Supports Dual Arterial: FastAPI HTTP (:8003) + gRPC (:50053).
 """
 
-import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager

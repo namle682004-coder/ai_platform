@@ -22,7 +22,6 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from . import common_pb2 as common__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tstt.proto\x12\naip.stt.v1\x1a\x0c\x63ommon.proto\"a\n\x14TranscriptionRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\x10\n\x08language\x18\x03 \x01(\t\x12\x13\n\x0bmodel_alias\x18\x04 \x01(\t\"Z\n\x15TranscriptionResponse\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x19\n\x11\x64\x65tected_language\x18\x02 \x01(\t\x12\x18\n\x10\x64uration_seconds\x18\x03 \x01(\x02\x32\xf5\x01\n\nSttService\x12V\n\x0fTranscribeAudio\x12 .aip.stt.v1.TranscriptionRequest\x1a!.aip.stt.v1.TranscriptionResponse\x12H\n\tGetHealth\x12\x1c.aip.common.v1.HealthRequest\x1a\x1d.aip.common.v1.HealthResponse\x12\x45\n\x06\x43\x61ncel\x12\x1c.aip.common.v1.CancelRequest\x1a\x1d.aip.common.v1.CancelResponseb\x06proto3')

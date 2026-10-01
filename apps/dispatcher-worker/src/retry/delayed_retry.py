@@ -10,13 +10,12 @@ from __future__ import annotations
 import json
 import logging
 import random
-from typing import Any
 
 import aio_pika
 from aio_pika import DeliveryMode, Message
 from aio_pika.abc import AbstractChannel, AbstractExchange, AbstractRobustConnection
 
-from common.messaging.topology import EXCHANGE_RETRIES, dead_routing_key, task_routing_key
+from common.messaging.topology import EXCHANGE_RETRIES, task_routing_key
 
 logger = logging.getLogger("aip-dispatcher.retry")
 

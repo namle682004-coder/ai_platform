@@ -218,7 +218,6 @@ async def cancel_job(job_id: str, repo: IJobRepository = Depends(get_job_repo)):
     if current_status == "running":
         try:
             from src.grpc_helpers.client import grpc_manager
-            from src.configs.settings import gateway_settings
             job_type = job.get("job_type", "translation")
             # Map job_type to data-plane gRPC port
             target_url = "localhost:50053" if job_type == "translation" else "localhost:50051"

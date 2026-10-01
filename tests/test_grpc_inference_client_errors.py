@@ -12,12 +12,10 @@ sys.path.insert(0, os.path.join(BASE_DIR, "packages/common"))
 sys.path.insert(0, os.path.join(BASE_DIR, "packages/contracts"))
 sys.path.insert(0, os.path.join(BASE_DIR, "apps/dispatcher-worker/src"))
 
-import pytest
 from grpc_client.inference_client import (
     InferenceGrpcClient,
     InferenceTerminalError,
     InferenceTransientError,
-    InferenceError,
 )
 
 

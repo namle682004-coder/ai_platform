@@ -6,7 +6,7 @@ Compliant with Clean Architecture contracts, HTTP/2 multiplexing, ISP, and dedic
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict
 import grpc
 
 from contracts.generated import (
@@ -15,7 +15,6 @@ from contracts.generated import (
     jobs_pb2_grpc,
     llm_pb2,
     llm_pb2_grpc,
-    ocr_pb2,
     ocr_pb2_grpc,
     stt_pb2,
     stt_pb2_grpc,

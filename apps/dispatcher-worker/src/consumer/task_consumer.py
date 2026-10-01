@@ -22,7 +22,6 @@ from common.messaging.topology import CORE_TASK_DOMAINS, PRIORITIES, task_queue_
 
 from ..grpc_client.inference_client import (
     InferenceTerminalError,
-    InferenceTransientError,
     inference_grpc_client,
 )
 from ..publisher.callback_publisher import callback_publisher
@@ -33,11 +32,6 @@ logger = logging.getLogger("aip-dispatcher.task-consumer")
 
 WORKER_NODE_ID = os.getenv("AIP_NODE_ID", f"dispatcher-{socket.gethostname()}")
 
-# Domain queue list matching topology
-CORE_TASK_DOMAINS = [
-    "chat", "completion", "embedding", "translation",
-    "stt", "tts", "ocr", "moderation", "image", "video", "lipsync", "batch"
-]
 
 
 def queue_name(domain: str) -> str:

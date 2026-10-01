@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(BASE_DIR, "packages/contracts"))
 sys.path.insert(0, os.path.join(BASE_DIR, "apps/data-plane/ocr-server"))
 
 import grpc
-from contracts.generated import ocr_pb2, ocr_pb2_grpc, common_pb2
+from contracts.generated import ocr_pb2_grpc, common_pb2
 import importlib.util
 
 _spec = importlib.util.spec_from_file_location("ocr_grpc_server_test_mod", os.path.join(BASE_DIR, "apps/data-plane/ocr-server/grpc_server.py"))
