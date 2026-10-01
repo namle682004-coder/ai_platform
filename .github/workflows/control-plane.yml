@@ -28,6 +28,16 @@ jobs:
     name: Validate & Test (Control Plane)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       MASTER_PEPPER: "test-master-pepper-for-testing-purposes-min-32-chars"
       JWT_SECRET: "test-jwt-secret-for-testing-purposes-min-32-chars"
