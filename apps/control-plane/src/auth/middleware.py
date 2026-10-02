@@ -178,49 +178,62 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # 5. Database lookup in MongoDB key_repository
         try:
             db_keys = await key_repository.list_keys(limit=200)
-            matched_key = None
-            master_pepper = gateway_settings.master_pepper.get_secret_value()
-
-            for k in db_keys:
-                if k.get("status") == "active":
-                    hashed = k.get("hashed_key", "")
-                    if verify_api_key(raw_api_key, hashed, master_pepper=master_pepper):
-                        matched_key = k
-                        break
-
-            if matched_key:
-                tenant_id = request.headers.get("X-Tenant-ID") or matched_key.get("tenant_id", "TENANT_RETAIL_BANK")
-                if tenant_id in ("TENANT_AUTOMATION_TEST", "TENANT_DEFAULT"):
-                    tenant_id = "TENANT_RETAIL_BANK"
-                cost_center = matched_key.get("cost_center", "CC_DIGITAL_BANKING")
-                if cost_center in ("CC_TEST", "CC_DEFAULT"):
-                    cost_center = "CC_DIGITAL_BANKING"
-
-                key_data = {
-                    "tenant_id": tenant_id,
-                    "cost_center": cost_center,
-                    "allowed_aliases": matched_key.get("allowed_aliases", ["*"]),
-                    "allowed_endpoints": matched_key.get("allowed_endpoints", ["*"]),
-                    "rpm_limit": matched_key.get("rpm_limit", 60),
-                    "tpm_limit": matched_key.get("tpm_limit", 100000),
-                    "concurrency_limit": matched_key.get("concurrency_limit", 5),
-                }
-                _LOCAL_KEY_CACHE[raw_api_key] = key_data
-                await redis_service.set_json(redis_key, key_data, ttl_seconds=60)
-                request.state.raw_api_key = raw_api_key
-                request.state.tenant_id = key_data["tenant_id"]
-                request.state.cost_center = key_data["cost_center"]
-                request.state.allowed_aliases = key_data["allowed_aliases"]
-                request.state.rpm_limit = key_data["rpm_limit"]
-                request.state.tpm_limit = key_data["tpm_limit"]
-                request.state.concurrency_limit = key_data["concurrency_limit"]
-                request.state.allowed_endpoints = key_data["allowed_endpoints"]
-                if not _endpoint_allowed(request):
-                    return _endpoint_forbidden(request, request_id)
-                return await call_next(request)
-
         except Exception as exc:
-            logger.warning(f"Key verification database error: {exc}")
+            logger.warning(
+                "API key verification database lookup failed (%s)",
+                type(exc).__name__,
+            )
+            error_payload = AIPErrorResponse(
+                error=AIPError(
+                    type="service_unavailable",
+                    code="authentication_backend_unavailable",
+                    message="API key verification is temporarily unavailable. Please retry shortly.",
+                    request_id=request_id,
+                    retryable=True,
+                )
+            )
+            return JSONResponse(status_code=503, content=error_payload.model_dump())
+
+        matched_key = None
+        master_pepper = gateway_settings.master_pepper.get_secret_value()
+
+        for k in db_keys:
+            if k.get("status") == "active":
+                hashed = k.get("hashed_key", "")
+                if verify_api_key(raw_api_key, hashed, master_pepper=master_pepper):
+                    matched_key = k
+                    break
+
+        if matched_key:
+            tenant_id = request.headers.get("X-Tenant-ID") or matched_key.get("tenant_id", "TENANT_RETAIL_BANK")
+            if tenant_id in ("TENANT_AUTOMATION_TEST", "TENANT_DEFAULT"):
+                tenant_id = "TENANT_RETAIL_BANK"
+            cost_center = matched_key.get("cost_center", "CC_DIGITAL_BANKING")
+            if cost_center in ("CC_TEST", "CC_DEFAULT"):
+                cost_center = "CC_DIGITAL_BANKING"
+
+            key_data = {
+                "tenant_id": tenant_id,
+                "cost_center": cost_center,
+                "allowed_aliases": matched_key.get("allowed_aliases", ["*"]),
+                "allowed_endpoints": matched_key.get("allowed_endpoints", ["*"]),
+                "rpm_limit": matched_key.get("rpm_limit", 60),
+                "tpm_limit": matched_key.get("tpm_limit", 100000),
+                "concurrency_limit": matched_key.get("concurrency_limit", 5),
+            }
+            _LOCAL_KEY_CACHE[raw_api_key] = key_data
+            await redis_service.set_json(redis_key, key_data, ttl_seconds=60)
+            request.state.raw_api_key = raw_api_key
+            request.state.tenant_id = key_data["tenant_id"]
+            request.state.cost_center = key_data["cost_center"]
+            request.state.allowed_aliases = key_data["allowed_aliases"]
+            request.state.rpm_limit = key_data["rpm_limit"]
+            request.state.tpm_limit = key_data["tpm_limit"]
+            request.state.concurrency_limit = key_data["concurrency_limit"]
+            request.state.allowed_endpoints = key_data["allowed_endpoints"]
+            if not _endpoint_allowed(request):
+                return _endpoint_forbidden(request, request_id)
+            return await call_next(request)
 
         # If key is not verified
         error_payload = AIPErrorResponse(
