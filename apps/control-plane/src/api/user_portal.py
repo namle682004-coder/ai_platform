@@ -124,6 +124,13 @@ async def create_user_api_key(req: ApiKeyCreateRequest):
         "prefix": raw_key[:12] + "...",
         "hashed_key": hashed_key,
         "project_name": req.project_name or "Default Project",
+        "tenant_id": "TENANT_RETAIL_BANK",
+        "status": "enabled",
+        "rpm_limit": 120,
+        "tpm_limit": 200000,
+        "concurrency_limit": 10,
+        "allowed_aliases": ["*"],
+        "allowed_endpoints": ["*"],
         "created_at": datetime.now(timezone.utc).strftime("%Y/%m/%d %H:%M"),
     }
     saved = await key_repository.create_key(key_doc)
@@ -178,6 +185,7 @@ async def record_user_payment(req: PaymentCreateRequest):
 
 # --- 4. API ACTIVATION STATES REST ENDPOINTS ---
 @router.get("/apis-state")
+@router.get("/apis")
 async def get_user_apis_state():
     """Get active API states for user from MongoDB Atlas api_subscriptions collection."""
     enabled = await api_subscription_repository.get_user_subscriptions("user_staff_01")
@@ -185,6 +193,7 @@ async def get_user_apis_state():
 
 
 @router.post("/apis-state")
+@router.post("/apis")
 async def update_user_apis_state(req: ApisStateUpdateRequest):
     """Update active API states for user in MongoDB Atlas api_subscriptions collection."""
     updated = await api_subscription_repository.update_user_subscriptions("user_staff_01", req.enabled_apis)

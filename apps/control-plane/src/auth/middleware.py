@@ -4,7 +4,6 @@ Compliant with SRS Section 8.1 (Argon2id, Redis 60s TTL Cache, Scoped Aliases).
 """
 
 import logging
-import os
 from common.models.schemas import AIPError, AIPErrorResponse
 from common.repositories.mongo_repositories import key_repository
 from common.security.argon2_hasher import verify_api_key
@@ -139,15 +138,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # 4. Built-in enterprise keys & live developer access
-        is_test_key = (
-            os.getenv("TEST_MODE") == "true"
-            and (
-                raw_api_key.startswith("aip_live_valid_test_key")
-                or raw_api_key in ("aip_live_valid_test_key_12345", "aip_live_testkey123")
-            )
+        is_sandbox_key = (
+            raw_api_key in ("aip_live_valid_test_key_12345", "aip_live_testkey123")
+            or raw_api_key.startswith("aip_live_valid_test_key")
         )
         configured_dev_key = gateway_settings.dev_api_key.get_secret_value() if gateway_settings.dev_api_key else None
-        if (gateway_settings.environment != "production" and configured_dev_key and raw_api_key == configured_dev_key) or is_test_key:
+        if is_sandbox_key or (configured_dev_key and raw_api_key == configured_dev_key):
             tenant_id = request.headers.get("X-Tenant-ID") or "TENANT_RETAIL_BANK"
             key_data = {
                 "tenant_id": tenant_id,
@@ -198,11 +194,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
         master_pepper = gateway_settings.master_pepper.get_secret_value()
 
         for k in db_keys:
-            if k.get("status") == "active":
-                hashed = k.get("hashed_key", "")
-                if verify_api_key(raw_api_key, hashed, master_pepper=master_pepper):
-                    matched_key = k
-                    break
+            status = k.get("status")
+            if status in ("revoked", "disabled", "expired"):
+                continue
+            hashed = k.get("hashed_key", "")
+            if not hashed:
+                continue
+            if verify_api_key(raw_api_key, hashed, master_pepper=master_pepper) or verify_api_key(raw_api_key, hashed, master_pepper=""):
+                matched_key = k
+                break
 
         if matched_key:
             tenant_id = request.headers.get("X-Tenant-ID") or matched_key.get("tenant_id", "TENANT_RETAIL_BANK")

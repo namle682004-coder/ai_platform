@@ -20,6 +20,12 @@ def test_health_check_endpoint(client):
     assert "timestamp" in data
 
 
+def test_root_head_request_succeeds_without_body(client):
+    response = client.head("/")
+    assert response.status_code == 200
+    assert response.content == b""
+
+
 def test_admin_list_exported_endpoints(client):
     response = client.get("/admin/v1/endpoints")
     assert response.status_code == 200
