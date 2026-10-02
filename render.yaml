@@ -18,4 +18,8 @@ services:
       - key: MINIO_ROOT_PASSWORD
         generateValue: true
       - key: MONGO_URI
-        value: "mongodb://localhost:27017/ai_platform"
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: RABBITMQ_URL
+        sync: false
