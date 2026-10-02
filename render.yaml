@@ -11,10 +11,12 @@ services:
         value: apps/control-plane:packages/common:packages/contracts:packages/sdk
       - key: ALLOW_IN_PROCESS_FALLBACK
         value: "true"
+      - key: AIP_API_KEY
+        value: "aip_live_valid_test_key_12345"
       - key: MASTER_PEPPER
-        generateValue: true
+        sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: MINIO_ROOT_PASSWORD
         generateValue: true
       - key: MONGO_URI

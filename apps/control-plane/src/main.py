@@ -295,6 +295,11 @@ async def root(request: Request):
     }
 
 
+@app.head("/", include_in_schema=False)
+async def root_head():
+    return Response(status_code=200)
+
+
 # 1. Standard AI Routers (OpenAI-compatible)
 app.include_router(chat_router)
 app.include_router(completions_router)

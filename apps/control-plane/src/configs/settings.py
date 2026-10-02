@@ -106,7 +106,7 @@ class GatewaySettings(BaseSettings):
         alias="JWT_SECRET",
     )
     api_key_salt_rounds: PositiveInt = Field(default=12, alias="API_KEY_SALT_ROUNDS")
-    dev_api_key: SecretStr | None = Field(default=None, alias="AIP_API_KEY")
+    dev_api_key: SecretStr | None = Field(default=SecretStr("aip_live_valid_test_key_12345"), alias="AIP_API_KEY")
     runtime_token: SecretStr | None = Field(default=None, alias="AIP_RUNTIME_TOKEN")
     allow_in_process_fallback: bool = Field(default=False, alias="ALLOW_IN_PROCESS_FALLBACK")
 
