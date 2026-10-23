@@ -10,11 +10,9 @@ from __future__ import annotations
 from dataclasses import is_dataclass, replace
 import logging
 import os
-import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from ...domain.entities import RetrievalCandidate
 from ...domain.ports import CandidateType, RerankerPort
 
 logger = logging.getLogger("aip-rag.reranker")

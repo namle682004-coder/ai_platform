@@ -61,7 +61,7 @@ class RagPromptBuilder:
             scored_sents.append((i, s, score))
 
         selected_indices = set()
-        for i, s, score in sorted(scored_sents, key=lambda x: x[2], reverse=True)[:8]:
+        for i, _s, score in sorted(scored_sents, key=lambda x: x[2], reverse=True)[:8]:
             if score > 0:
                 selected_indices.add(i)
                 if i > 0:
@@ -102,7 +102,7 @@ class RagPromptBuilder:
                 linearized = []
                 for r in data_rows:
                     row_cells = [c.strip() for c in r.strip("|").split("|")]
-                    for h, v in zip(header_cells, row_cells):
+                    for h, v in zip(header_cells, row_cells, strict=False):
                         if h and v:
                             linearized.append(f"- {h}: {v}")
                 if linearized:

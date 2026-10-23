@@ -19,7 +19,7 @@ Index & Query Time Integration:
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import lru_cache
 import json
 import logging
@@ -29,7 +29,6 @@ import unicodedata
 
 from .vietnamese_resources import (
     ENTERPRISE_ACRONYMS,
-    strip_accents as _res_strip_accents,
 )
 
 logger = logging.getLogger("aip-rag.acronym_harvester")

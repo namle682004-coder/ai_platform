@@ -98,7 +98,7 @@ async def parse_adhoc_document(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Không thể đọc file đính kèm: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/chat", response_model=RagChatResponseDTO, dependencies=[Depends(_chat_limiter)])

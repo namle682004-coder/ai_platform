@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package aip.embedding.v1;
+
+import "common.proto";
+
+// Service definition for high-performance Vector Embedding & Reranking
+service EmbeddingService {
+  rpc GetEmbeddings (EmbeddingRequest) returns (EmbeddingResponse);
+  rpc BatchGetEmbeddings (BatchEmbeddingRequest) returns (BatchEmbeddingResponse);
+  rpc Rerank (RerankRequest) returns (RerankResponse);
+  rpc GetHealth (aip.common.v1.HealthRequest) returns (aip.common.v1.HealthResponse);
+}
+
+message EmbeddingRequest {
+  string text = 1;
+  string model_alias = 2; // e.g. "embed-standard"
+  int32 dimensions = 3;   // optional target dimension
+}
+
+message EmbeddingResponse {
+  repeated float vector = 1;
+  int32 prompt_tokens = 2;
+  int64 latency_ms = 3;
+  string model = 4;
+}
+
+message BatchEmbeddingRequest {
+  repeated string texts = 1;
+  string model_alias = 2;
+  int32 dimensions = 3;
+}
+
+message EmbeddingVector {
+  repeated float values = 1;
+  int32 index = 2;
+}
+
+message BatchEmbeddingResponse {
+  repeated EmbeddingVector vectors = 1;
+  int32 total_tokens = 2;
+  int64 latency_ms = 3;
+  string model = 4;
+}
+
+message RerankRequest {
+  string query = 1;
+  repeated string documents = 2;
+  int32 top_n = 3;
+  string model_alias = 4;
+}
+
+message RerankResult {
+  int32 index = 1;
+  float relevance_score = 2;
+  string document = 3;
+}
+
+message RerankResponse {
+  repeated RerankResult results = 1;
+  int64 latency_ms = 2;
+  string model = 3;
+}
+

@@ -17,43 +17,73 @@ class ModelAlias(BaseModel):
     timeout_seconds: int = Field(default=60, description="Inference timeout before gateway 504")
     active_version: str = Field(default="v1.0", description="Currently routed production version")
     stream_capable: bool = Field(default=False, description="Whether runtime natively supports SSE chunk streaming")
-    category: Literal["llm", "embedding", "translation", "stt", "tts", "vision", "idp", "image_gen", "video_gen", "lipsync", "moderation", "lid"]
+    category: Literal["llm", "embedding", "reranker", "translation", "stt", "tts", "vision", "idp", "image_gen", "video_gen", "lipsync", "moderation", "lid"]
     description: str = Field(..., description="Enterprise use-case specification")
     target_url: str = Field(..., description="Internal service/runtime HTTP endpoint")
     status: str = Field(default="active", description="Operational status: active, deprecated, disabled")
 
 
-# Standardized 7 Core Models matching real local weights on disk
+# Standardized Core Models matching real local weights on disk
 AIP_MODEL_CATALOG: dict[str, ModelAlias] = {
     # 1. Text / LLM & Reasoning
     "chat-general-standard": ModelAlias(
         id="chat-general-standard",
-        physical_model="Qwen/Qwen2.5-1.5B-Instruct",
-        runtime="vLLM",
+        physical_model="Qwen/Qwen2.5-7B-Instruct",
+        runtime="llama.cpp",
         namespace="aip-text",
-        min_vram_gb=2,
+        min_vram_gb=5,
         timeout_seconds=120,
         active_version="v1.0",
         stream_capable=True,
         category="llm",
-        description="Standard OpenAI-compatible Chat Completions (/v1/chat/completions) via Qwen2.5-1.5B-Instruct",
-        target_url="http://vllm-engine:8001/v1",
+        description="Standard OpenAI-compatible Chat Completions (/v1/chat/completions) via Qwen2.5-7B-Instruct on TITAN Xp GPU",
+        target_url="http://172.16.20.2:8011/v1",
+        status="active",
+    ),
+    "chat-qwen2.5-7b": ModelAlias(
+        id="chat-qwen2.5-7b",
+        physical_model="Qwen/Qwen2.5-7B-Instruct",
+        runtime="llama.cpp",
+        namespace="aip-text",
+        min_vram_gb=5,
+        timeout_seconds=120,
+        active_version="v1.0",
+        stream_capable=True,
+        category="llm",
+        description="Qwen2.5-7B-Instruct GPU-accelerated on TITAN Xp (llama-server)",
+        target_url="http://172.16.20.2:8011/v1",
         status="active",
     ),
 
     # 2. Embeddings & Semantic Search
     "embed-standard": ModelAlias(
         id="embed-standard",
-        physical_model="Qwen/Qwen2.5-1.5B-Instruct (mean-pooled embeddings)",
-        runtime="transformers-embeddings",
+        physical_model="BAAI/bge-m3",
+        runtime="FlagEmbedding",
         namespace="aip-text",
-        min_vram_gb=0,
+        min_vram_gb=1,
         timeout_seconds=30,
         active_version="v1.0",
         stream_capable=False,
         category="embedding",
-        description="Mean-pooled normalized embeddings from the configured Transformers model (/v1/embeddings)",
-        target_url="http://vllm-engine:8001/v1",
+        description="1024-dim multi-lingual dense and sparse embeddings via BGE-M3 (/v1/embeddings)",
+        target_url="http://172.16.20.2:8012/v1",
+        status="active",
+    ),
+
+    # 2b. Neural Cross-Encoder Reranker
+    "rerank-standard": ModelAlias(
+        id="rerank-standard",
+        physical_model="BAAI/bge-reranker-v2-m3",
+        runtime="FlagEmbedding",
+        namespace="aip-text",
+        min_vram_gb=1,
+        timeout_seconds=30,
+        active_version="v1.0",
+        stream_capable=False,
+        category="reranker",
+        description="Cross-Encoder relevance re-ranking for two-stage semantic retrieval via BGE-Reranker-v2-m3",
+        target_url="http://172.16.20.2:8012/v1",
         status="active",
     ),
 

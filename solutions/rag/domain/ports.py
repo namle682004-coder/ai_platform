@@ -11,11 +11,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
 
 from .entities import (
     DEFAULT_TENANT_ID,
-    ChatMessage,
-    ChatSession,
-    Document,
     DocumentChunk,
-    DocumentStatus,
     ParsedDocument,
     RetrievalCandidate,
 )
@@ -229,7 +225,7 @@ class SessionRepositoryPort(ABC):
         """Rename session title."""
         ...
 
-    async def delete_message(self, session_id: str, message_id: str, user_id: str, tenant_id: str) -> bool:
+    async def delete_message(self, session_id: str, message_id: str, user_id: str, tenant_id: str) -> bool:  # noqa: B027 - optional hook
         """Remove an individual message from a session."""
         ...
 

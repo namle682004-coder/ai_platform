@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIP Platform - Create an Account</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png">
+    <!-- Google Fonts Outfit & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --brand-500: #465fff;
+            --brand-600: #3641f5;
+            --brand-50: #ecf3ff;
+            --brand-950: #161950;
+            --gray-50: #f9fafb;
+            --gray-100: #f2f4f7;
+            --gray-200: #e4e7ec;
+            --gray-300: #d0d5dd;
+            --gray-400: #98a2b3;
+            --gray-500: #667085;
+            --gray-600: #475467;
+            --gray-700: #344054;
+            --gray-800: #1d2939;
+            --gray-900: #101828;
+            --font-family: 'Outfit', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #ffffff;
+            color: var(--gray-900);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .auth-wrapper {
+            display: flex;
+            width: 100vw;
+            min-height: 100vh;
+        }
+
+        /* Form Side (Left) */
+        .auth-form-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 28px;
+            max-width: 620px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .auth-form-side {
+                padding: 48px 64px;
+            }
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--gray-500);
+            text-decoration: none;
+            transition: color 0.15s ease;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: var(--gray-900);
+        }
+
+        .form-content-wrap {
+            max-width: 440px;
+            width: 100%;
+            margin: auto 0;
+            padding: 24px 0;
+        }
+
+        .auth-header {
+            margin-bottom: 24px;
+        }
+
+        .auth-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-desc {
+            font-size: 14px;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+
+        /* Social Buttons */
+        .social-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .btn-social {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 11px 16px;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--gray-700);
+            background: #ffffff;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+            text-decoration: none;
+            user-select: none;
+        }
+
+        .btn-social:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
+        }
+
+        .btn-social svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        /* Or Divider */
+        .or-divider {
+            position: relative;
+            text-align: center;
+            margin: 20px 0 24px 0;
+        }
+
+        .or-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gray-200);
+        }
+
+        .or-divider span {
+            position: relative;
+            background: #ffffff;
+            padding: 0 16px;
+            font-size: 13px;
+            color: var(--gray-400);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+        }
+
+        .form-label span.req {
+            color: #f04438;
+            margin-left: 2px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-control {
+            width: 100%;
+            height: 44px;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--gray-900);
+            background: #ffffff;
+            outline: none;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+        }
+
+        .form-control:focus {
+            border-color: var(--brand-500);
+            box-shadow: 0 0 0 4px rgba(70, 95, 255, 0.12);
+        }
+
+        .input-icon-btn {
+            position: absolute;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: var(--gray-400);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 14px;
+            transition: color 0.15s ease;
+        }
+
+        .input-icon-btn:hover {
+            color: var(--gray-700);
+        }
+
+        .terms-row {
+            margin-top: 6px;
+            margin-bottom: 22px;
+            font-size: 13px;
+        }
+
+        .terms-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            color: var(--gray-600);
+            cursor: pointer;
+            line-height: 1.45;
+        }
+
+        .terms-checkbox {
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+            accent-color: var(--brand-500);
+            cursor: pointer;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .terms-label a {
+            color: var(--brand-500);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .terms-label a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-submit {
+            width: 100%;
+            height: 46px;
+            background: var(--brand-500);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+        }
+
+        .btn-submit:hover {
+            background: var(--brand-600);
+        }
+
+        .auth-footer {
+            margin-top: 24px;
+            font-size: 14px;
+            color: var(--gray-600);
+        }
+
+        .auth-footer a {
+            color: var(--brand-500);
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        .auth-footer a:hover {
+            color: var(--brand-600);
+            text-decoration: underline;
+        }
+
+        /* Banner Side (Right) */
+        .auth-banner-side {
+            display: none;
+            flex: 1;
+            background: var(--brand-950);
+            position: relative;
+            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+        }
+
+        @media (min-width: 1024px) {
+            .auth-banner-side {
+                display: flex;
+            }
+        }
+
+        .banner-grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.6;
+        }
+
+        .banner-glow {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(70, 95, 255, 0.35) 0%, rgba(22, 25, 80, 0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .banner-content {
+            position: relative;
+            z-index: 2;
+            max-width: 440px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .banner-brand-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 26px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .banner-brand-logo i {
+            color: #7592ff;
+            font-size: 30px;
+        }
+
+        .banner-tagline {
+            font-size: 15px;
+            color: #c2d6ff;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .banner-features {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            text-align: left;
+        }
+
+        .banner-feature-card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            backdrop-filter: blur(8px);
+        }
+
+        .feature-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: rgba(70, 95, 255, 0.25);
+            color: #9cb9ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .feature-text-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .feature-text-sub {
+            font-size: 12px;
+            color: #9cb9ff;
+        }
+
+        /* Toast Container */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast-msg {
+            background: #ffffff;
+            color: var(--gray-800);
+            border: 1px solid var(--gray-200);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            box-shadow: 0 10px 15px -3px rgba(16, 24, 40, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-width: 300px;
+            animation: slideIn 0.2s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-msg.success { border-left: 4px solid #12b76a; }
+        .toast-msg.error { border-left: 4px solid #f04438; }
+        .toast-msg.info { border-left: 4px solid var(--brand-500); }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+
+    <div class="auth-wrapper">
+        <!-- FORM SIDE (LEFT) -->
+        <div class="auth-form-side">
+            <div>
+                <a href="/staff/dashboard" class="back-link">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Back to dashboard
+                </a>
+            </div>
+
+            <div class="form-content-wrap">
+                <div class="auth-header">
+                    <h1 class="auth-title">Sign Up</h1>
+                    <p class="auth-desc">Enter your email and password to sign up!</p>
+                </div>
+
+                <!-- GOOGLE & X SOCIAL BUTTONS -->
+                <div class="social-grid">
+                    <button type="button" class="btn-social" onclick="initiateGoogleSignIn()" title="Đăng ký với Google (Chọn tài khoản)">
+                        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z" fill="#4285F4"/>
+                            <path d="M10.1788 18.75C12.5895 18.75 14.6133 17.9722 16.0915 16.6305L13.274 14.4916C12.5201 15.0068 11.5081 15.3666 10.1788 15.3666C7.81773 15.3666 5.81379 13.8402 5.09944 11.7305L4.99473 11.7392L2.23868 13.8295L2.20264 13.9277C3.67087 16.786 6.68674 18.75 10.1788 18.75Z" fill="#34A853"/>
+                            <path d="M5.10014 11.7305C4.91165 11.186 4.80257 10.6027 4.80257 9.99992C4.80257 9.3971 4.91165 8.81379 5.09022 8.26935L5.08523 8.1534L2.29464 6.02954L2.20333 6.0721C1.5982 7.25823 1.25098 8.5902 1.25098 9.99992C1.25098 11.4096 1.5982 12.7415 2.20333 13.9277L5.10014 11.7305Z" fill="#FBBC05"/>
+                            <path d="M10.1789 4.63331C11.8554 4.63331 12.9864 5.34303 13.6312 5.93612L16.1511 3.525C14.6035 2.11528 12.5895 1.25 10.1789 1.25C6.68676 1.25 3.67088 3.21387 2.20264 6.07218L5.08953 8.26943C5.81381 6.15972 7.81776 4.63331 10.1789 4.63331Z" fill="#EB4335"/>
+                        </svg>
+                        Sign up with Google
+                    </button>
+                    <button type="button" class="btn-social" onclick="showToast('Đang kết nối X SSO...', 'info')">
+                        <svg viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z" fill="currentColor"/>
+                        </svg>
+                        Sign up with X
+                    </button>
+                </div>
+
+                <div class="or-divider">
+                    <span>Or</span>
+                </div>
+
+                <form onsubmit="handleSignupSubmit(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="signup-fullname">Full Name <span class="req">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="text" id="signup-fullname" class="form-control" placeholder="Nam Lê" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-email">Work Email <span class="req">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="email" id="signup-email" class="form-control" placeholder="name@company.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-password">Password <span class="req">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="password" id="signup-password" class="form-control" placeholder="••••••••" required>
+                            <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('signup-password', 'pwd-toggle-icon1')" title="Show/Hide password">
+                                <i class="fa-regular fa-eye" id="pwd-toggle-icon1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-confirm-password">Confirm Password <span class="req">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="password" id="signup-confirm-password" class="form-control" placeholder="••••••••" required>
+                            <button type="button" class="input-icon-btn" onclick="togglePasswordVisibility('signup-confirm-password', 'pwd-toggle-icon2')" title="Show/Hide password">
+                                <i class="fa-regular fa-eye" id="pwd-toggle-icon2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="terms-row">
+                        <label class="terms-label">
+                            <input type="checkbox" id="terms-checkbox" class="terms-checkbox" required>
+                            <span>By creating an account you agree to the <a href="/terms">Terms and Conditions</a>, and our <a href="/privacy">Privacy Policy</a></span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        Sign Up
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    Already have an account? <a href="/login">Sign In</a>
+                </div>
+            </div>
+
+            <div><!-- spacer --></div>
+        </div>
+
+        <!-- BANNER SIDE (RIGHT) -->
+        <div class="auth-banner-side">
+            <div class="banner-grid-overlay"></div>
+            <div class="banner-glow"></div>
+            <div class="banner-content">
+                <a href="/" class="banner-brand-logo">
+                    <i class="fa-solid fa-cube"></i> AIP Platform
+                </a>
+                <p class="banner-tagline">
+                    Nền tảng Quản trị & Điều phối Trí tuệ Nhân tạo Doanh nghiệp Chuẩn High-Speed Microservices
+                </p>
+
+                <div class="banner-features">
+                    <div class="banner-feature-card">
+                        <div class="feature-icon-box">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div>
+                            <div class="feature-text-title">RAG Chatbot & Knowledge Hub</div>
+                            <div class="feature-text-sub">Hybrid Dense/Sparse Retrieval & Cross-Encoder</div>
+                        </div>
+                    </div>
+
+                    <div class="banner-feature-card">
+                        <div class="feature-icon-box">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <div>
+                            <div class="feature-text-title">Specialized AI Microservices</div>
+                            <div class="feature-text-sub">LLM, STT, TTS, OCR, Vision & Moderation APIs</div>
+                        </div>
+                    </div>
+
+                    <div class="banner-feature-card">
+                        <div class="feature-icon-box">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <div class="feature-text-title">Enterprise Security & Billing</div>
+                            <div class="feature-text-sub">RBAC, Quota Deductions, Audit Logs & API Keys</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-msg ${type}`;
+            const icon = type === 'success' ? 'fa-circle-check' : (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info');
+            toast.innerHTML = `<div><i class="fa-solid ${icon}"></i> &nbsp; ${msg}</div><span style="cursor:pointer;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        async function handleSignupSubmit(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('signup-fullname').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPwd = document.getElementById('signup-confirm-password').value;
+            const role = 'staff';
+
+            if (password !== confirmPwd) {
+                showToast('Mật khẩu xác nhận không trùng khớp!', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/v1/auth/signup', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, password, full_name: fullName, role })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast('Tạo tài khoản thành công! Đang chuyển hướng sang Đăng nhập...', 'success');
+                    setTimeout(() => { window.location.href = '/login'; }, 1200);
+                } else {
+                    showToast('Đăng ký thất bại: ' + (data.detail || 'Có lỗi xảy ra'), 'error');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối server: ' + err.message, 'error');
+            }
+        }
+    </script>
+    <script src="/auth/google_auth.js"></script>
+</body>
+</html>

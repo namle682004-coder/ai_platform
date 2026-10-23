@@ -1730,6 +1730,74 @@
         ]
       }
     },
+    "/v1/user/apis": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Get User Apis State",
+        "description": "Get active API states for user from MongoDB Atlas api_subscriptions collection.",
+        "operationId": "get_user_apis_state_v1_user_apis_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Update User Apis State",
+        "description": "Update active API states for user in MongoDB Atlas api_subscriptions collection.",
+        "operationId": "update_user_apis_state_v1_user_apis_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApisStateUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/user/apis-state": {
       "get": {
         "tags": [
@@ -1880,7 +1948,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FeedbackRequest"
+                "$ref": "#/components/schemas/src__api__user_portal__FeedbackRequest"
               }
             }
           },
@@ -1990,6 +2058,38 @@
         ]
       }
     },
+    "/v1/user/catalog": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "List Database Apis Catalog",
+        "description": "Fetch all available API services catalog from MongoDB Atlas endpoints.",
+        "operationId": "list_database_apis_catalog_v1_user_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Database Apis Catalog V1 User Catalog Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/user/gpu-status": {
       "get": {
         "tags": [
@@ -1998,6 +2098,31 @@
         "summary": "Get User Gpu Status",
         "description": "Get GPU VRAM and node resource utilization status for staff portal.",
         "operationId": "get_user_gpu_status_v1_user_gpu_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/user/api-summary": {
+      "get": {
+        "tags": [
+          "User Portal & Console API"
+        ],
+        "summary": "Get API usage counts from MongoDB",
+        "description": "Aggregate request and error counts for API endpoints in the database catalog.",
+        "operationId": "get_user_api_usage_summary_v1_user_api_summary_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3332,6 +3457,331 @@
         ]
       }
     },
+    "/v1/knowledge/documents/upload": {
+      "post": {
+        "tags": [
+          "Knowledge & RAG"
+        ],
+        "summary": "Upload & Ingest Document into Knowledge Base",
+        "description": "Upload a document (PDF, DOCX, TXT, MD), persist to MinIO,\ncreate MongoDB record, and queue background ingestion task via RabbitMQ.",
+        "operationId": "upload_document_v1_knowledge_documents_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_v1_knowledge_documents_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/knowledge/documents": {
+      "get": {
+        "tags": [
+          "Knowledge & RAG"
+        ],
+        "summary": "List Knowledge Base Documents",
+        "description": "List documents for the current tenant with pagination.",
+        "operationId": "list_documents_v1_knowledge_documents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "department",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Department"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/knowledge/documents/{doc_id}": {
+      "get": {
+        "tags": [
+          "Knowledge & RAG"
+        ],
+        "summary": "Get Document Details & Ingestion Status",
+        "description": "Retrieve document status and chunk metrics.",
+        "operationId": "get_document_v1_knowledge_documents__doc_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Knowledge & RAG"
+        ],
+        "summary": "Delete Document & Prune Vectors from Qdrant",
+        "description": "Delete document from MongoDB and prune indexed vectors from Qdrant.",
+        "operationId": "delete_document_v1_knowledge_documents__doc_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/knowledge/feedback": {
+      "post": {
+        "tags": [
+          "Knowledge & RAG"
+        ],
+        "summary": "Record User Feedback for RAG Audit & Quality",
+        "description": "Audit feedback for RAG quality evaluation.",
+        "operationId": "record_feedback_v1_knowledge_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/src__api__knowledge__FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/rag/chat": {
+      "post": {
+        "tags": [
+          "Knowledge & RAG"
+        ],
+        "summary": "Enterprise RAG Grounded Chat with Citations & Guardrails",
+        "description": "Perform authenticated RAG question answering:\n1. Check Semantic Cache.\n2. Vectorize user query.\n3. Query Qdrant with tenant and ACL filters.\n4. Enforce anti-hallucination confidence threshold.\n5. Generate response with citations [1], [2].",
+        "operationId": "rag_chat_v1_rag_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RagChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RagChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/admin/v1/keys": {
       "get": {
         "tags": [
@@ -4104,6 +4554,7 @@
           "Status & Health Probes"
         ],
         "summary": "Kubernetes Liveness Probe",
+        "description": "Kubernetes Liveness Probe.\nVerifies that the ASGI event loop and HTTP server process are responsive.",
         "operationId": "liveness_probe_health_live_get",
         "responses": {
           "200": {
@@ -4128,6 +4579,7 @@
           "Status & Health Probes"
         ],
         "summary": "Kubernetes Readiness Probe",
+        "description": "Kubernetes Readiness Probe.\nProbes all essential upstream dependencies (MongoDB, Redis, RabbitMQ).\nReturns HTTP 200 if dependencies are healthy or running in allowed fallback mode,\nor HTTP 503 if critical storage/message broker infrastructure is down in production.",
         "operationId": "readiness_probe_health_ready_get",
         "responses": {
           "200": {
@@ -4848,6 +5300,54 @@
         ],
         "title": "Body_ocr_process_document_v1_ocr_process_post"
       },
+      "Body_upload_document_v1_knowledge_documents_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "allowed_roles": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Roles",
+            "default": "*"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_v1_knowledge_documents_upload_post"
+      },
       "Body_vision_facematch_v1_vision_facematch_post": {
         "properties": {
           "image_cccd": {
@@ -5240,6 +5740,124 @@
         ],
         "title": "CreatePromptTemplateRequest"
       },
+      "DocumentListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "DocumentListResponse"
+      },
+      "DocumentResponse": {
+        "properties": {
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "file_type": {
+            "type": "string",
+            "title": "File Type"
+          },
+          "file_size_bytes": {
+            "type": "integer",
+            "title": "File Size Bytes"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "total_chunks": {
+            "type": "integer",
+            "title": "Total Chunks"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "allowed_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Roles"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "s3_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "S3 Uri"
+          }
+        },
+        "type": "object",
+        "required": [
+          "doc_id",
+          "tenant_id",
+          "title",
+          "filename",
+          "file_type",
+          "file_size_bytes",
+          "status",
+          "total_chunks",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DocumentResponse"
+      },
       "EKYCVerificationSession": {
         "properties": {
           "session_id": {
@@ -5572,29 +6190,6 @@
           "metadata"
         ],
         "title": "FaceMatchResponse"
-      },
-      "FeedbackRequest": {
-        "properties": {
-          "category": {
-            "type": "string",
-            "title": "Category",
-            "default": "feature"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "description"
-        ],
-        "title": "FeedbackRequest"
       },
       "ForgotPasswordRequest": {
         "properties": {
@@ -6140,6 +6735,214 @@
           "project_name"
         ],
         "title": "ProjectCreateRequest"
+      },
+      "RagChatRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Query",
+            "description": "User question to answer against knowledge base"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id",
+            "description": "Optional conversation session ID"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History",
+            "description": "Previous conversation turns for multi-turn context (e.g. [{\"role\": \"user\", \"content\": \"...\"}])"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model alias for LLM reasoning",
+            "default": "chat-general-standard"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "Filter documents by department"
+          },
+          "doc_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc Ids",
+            "description": "Restrict search to specific document IDs"
+          },
+          "similarity_threshold": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Similarity Threshold",
+            "description": "Minimum cosine similarity score required; queries below this will be rejected to prevent hallucination",
+            "default": 0.65
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "description": "Number of context chunks to retrieve",
+            "default": 4
+          },
+          "temperature": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Temperature",
+            "description": "Low temperature for factual accuracy",
+            "default": 0.2
+          },
+          "max_tokens": {
+            "type": "integer",
+            "maximum": 4096.0,
+            "minimum": 64.0,
+            "title": "Max Tokens",
+            "default": 1024
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "description": "Whether to stream response tokens via Server-Sent Events (SSE)",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "RagChatRequest"
+      },
+      "RagChatResponse": {
+        "properties": {
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/RagCitation"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "grounded": {
+            "type": "boolean",
+            "title": "Grounded"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          },
+          "usage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Usage"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer",
+          "model",
+          "citations",
+          "grounded",
+          "latency_ms",
+          "usage"
+        ],
+        "title": "RagChatResponse"
+      },
+      "RagCitation": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "page_number": {
+            "type": "integer",
+            "title": "Page Number"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "index",
+          "doc_id",
+          "title",
+          "page_number",
+          "score",
+          "excerpt"
+        ],
+        "title": "RagCitation"
       },
       "RechargeBalanceRequest": {
         "properties": {
@@ -6865,6 +7668,73 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "src__api__knowledge__FeedbackRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "response_text": {
+            "type": "string",
+            "title": "Response Text"
+          },
+          "rating": {
+            "type": "integer",
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Rating",
+            "description": "1 for Thumbs Up, -1 for Thumbs Down"
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comments"
+          },
+          "cited_doc_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cited Doc Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "response_text",
+          "rating"
+        ],
+        "title": "FeedbackRequest"
+      },
+      "src__api__user_portal__FeedbackRequest": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": "feature"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description"
+        ],
+        "title": "FeedbackRequest"
       }
     },
     "securitySchemes": {

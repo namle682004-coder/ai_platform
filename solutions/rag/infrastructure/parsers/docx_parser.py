@@ -174,8 +174,8 @@ class DocxDocumentParser(BaseDocumentParser):
     def parse(self, file_bytes: bytes, filename: str) -> ParsedDocument:
         try:
             import docx
-        except ImportError:
-            raise DocumentParsingError("python-docx is required for DOCX parsing")
+        except ImportError as exc:
+            raise DocumentParsingError("python-docx is required for DOCX parsing") from exc
 
         try:
             doc = docx.Document(io.BytesIO(file_bytes))

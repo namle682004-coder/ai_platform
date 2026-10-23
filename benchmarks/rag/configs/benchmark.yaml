@@ -1,0 +1,31 @@
+benchmark:
+  name: "aip-enterprise-rag-benchmark"
+  version: "1.0.0"
+  dataset: "datasets/enterprise/internal_golden_v1.jsonl"
+  output_dir: "runs/"
+  seed: 42
+
+execution:
+  concurrency: 1
+  timeout_seconds: 45
+  retries: 2
+  tracks:
+    - "end_to_end"
+    - "fixed_context"
+
+retrieval:
+  top_k: [1, 3, 5]
+
+evaluation:
+  retrieval:
+    - "recall_at_1"
+    - "recall_at_3"
+    - "recall_at_5"
+    - "mrr_at_5"
+    - "precision_at_3"
+  generation:
+    - "answer_correctness"
+    - "completeness"
+    - "abstention_quality"
+  citations:
+    - "citation_precision"

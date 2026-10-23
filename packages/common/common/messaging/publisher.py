@@ -147,6 +147,9 @@ class TaskPublisher:
             "retry_count": 0,
             "previous_failure": None,
         }
+        if payload is not None:
+            msg_payload["payload"] = payload
+            msg_payload["data"] = payload
 
         body = json.dumps(msg_payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         message = Message(

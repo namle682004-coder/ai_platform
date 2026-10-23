@@ -16,16 +16,14 @@ import asyncio
 from collections import defaultdict, deque
 import ipaddress
 import logging
-import math
 import time
-from typing import Any, Deque, Dict, Optional, Tuple
+from typing import Deque, Dict, Optional, Tuple
 import uuid
 
 from fastapi import HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
-from ...config import rag_settings
 from ...domain.entities import normalize_tenant_id
 from ...infrastructure.adapters.redis_cache_adapter import get_redis_cache
 

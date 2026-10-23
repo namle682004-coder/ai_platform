@@ -492,7 +492,6 @@ class RagQueryRewriter:
 
         # 1A. Single-turn Bypass: No history or no valid previous user turns (< 0.01ms)
         if not history or not last_user_turn:
-            latency = (time.perf_counter() - start_time) * 1000
             return self._build_rewritten_result(text=clean_q, original_query=query, tier="TIER_1_HEURISTIC", reason="empty_history", start_time=start_time, is_reformulated=False, is_standalone_shield_activated=True)
 
         lower_q = clean_q.lower()
@@ -509,7 +508,6 @@ class RagQueryRewriter:
             has_quotes = ('"' in clean_q) or ("'" in clean_q)
             has_technical = bool(self.TECHNICAL_MARKER_REGEX.search(clean_q))
             if len(words) >= 4 or has_quotes or has_technical:
-                latency = (time.perf_counter() - start_time) * 1000
                 return self._build_rewritten_result(text=clean_q, original_query=query, tier="TIER_1_HEURISTIC", reason="standalone_query", start_time=start_time, is_reformulated=False, is_standalone_shield_activated=True)
 
         # 1C. Deterministic Ellipsis Stitching ('Thế còn [X]?', 'Còn về [X] thì sao?', 'Về phần [X]?')
@@ -521,7 +519,6 @@ class RagQueryRewriter:
         if ellipsis_match:
             target = ellipsis_match.group(1).strip()
             stitched = self._stitch_ellipsis(last_user_turn, target)
-            latency = (time.perf_counter() - start_time) * 1000
             return self._build_rewritten_result(text=stitched, original_query=query, tier="TIER_1_HEURISTIC", reason="heuristic_ellipsis", start_time=start_time, is_reformulated=True, is_standalone_shield_activated=False, speculative_query=stitched)
 
         # 1D. Deterministic Leading Pronoun Replacement ('Nó/Họ/Chính sách đó có hiệu lực từ khi nào?')
@@ -534,21 +531,18 @@ class RagQueryRewriter:
             rest = pronoun_match.group(2).strip()
             clean_last = self._clean_text(last_user_turn)
             rewritten_text = f"{clean_last} {rest}"
-            latency = (time.perf_counter() - start_time) * 1000
             return self._build_rewritten_result(text=rewritten_text, original_query=query, tier="TIER_1_HEURISTIC", reason="heuristic_pronoun_replacement", start_time=start_time, is_reformulated=True, is_standalone_shield_activated=False, speculative_query=rewritten_text)
 
         # 1E. Deterministic Explanation Follow-up ('Tại sao?', 'Vì sao?')
         if re.match(r'^(tại\s+sao|vì\s+sao|lý\s+do\s+gì)[\?\.\!\s]*$', clean_q, re.IGNORECASE):
             clean_last = self._clean_text(last_user_turn)
             rewritten_text = f"{clean_last} - {clean_q}"
-            latency = (time.perf_counter() - start_time) * 1000
             return self._build_rewritten_result(text=rewritten_text, original_query=query, tier="TIER_1_HEURISTIC", reason="heuristic_explanation", start_time=start_time, is_reformulated=True, is_standalone_shield_activated=False, speculative_query=rewritten_text)
 
         # 1F. Deterministic Condition Follow-up ('Có được không?', 'Được không?')
         if re.match(r'^(có\s+được\s+không|được\s+không)[\?\.\!\s]*$', clean_q, re.IGNORECASE):
             clean_last = self._clean_text(last_user_turn)
             rewritten_text = f"{clean_last} {clean_q}"
-            latency = (time.perf_counter() - start_time) * 1000
             return self._build_rewritten_result(text=rewritten_text, original_query=query, tier="TIER_1_HEURISTIC", reason="heuristic_condition", start_time=start_time, is_reformulated=True, is_standalone_shield_activated=False, speculative_query=rewritten_text)
 
         # If query contains complex pronouns, transitions, or is an ambiguous follow-up,
@@ -607,7 +601,6 @@ class RagQueryRewriter:
 
         # If LLM port is absent, fall back immediately to heuristic candidate
         if not llm_port:
-            latency = (time.perf_counter() - start_time) * 1000
             return self._build_rewritten_result(text=speculative_candidate, original_query=query, tier="TIER_1_HEURISTIC", reason="heuristic_stitching_fallback", start_time=start_time, is_reformulated=True, is_standalone_shield_activated=False, speculative_query=speculative_candidate)
 
         # Tier 2: Async Speculative LLM Fallback
@@ -625,7 +618,6 @@ class RagQueryRewriter:
             {"role": "user", "content": f"Viết lại câu hỏi sau thành câu độc lập: {query.strip()}"},
         ]
 
-        llm_start = time.perf_counter()
         try:
             coro = llm_port.generate(
                 messages=rewrite_messages,
@@ -665,7 +657,6 @@ class RagQueryRewriter:
             return self._build_rewritten_result(text=speculative_candidate, original_query=query, tier="TIER_2_ERROR_FALLBACK", reason="llm_error_fallback", start_time=start_time, is_reformulated=True, is_standalone_shield_activated=False, speculative_query=speculative_candidate)
 
         # Fallback if LLM output was invalid
-        latency = (time.perf_counter() - start_time) * 1000
         return self._build_rewritten_result(text=speculative_candidate, original_query=query, tier="TIER_2_SPECULATIVE_LLM", reason="llm_empty_fallback", start_time=start_time, is_reformulated=True, is_standalone_shield_activated=False, speculative_query=speculative_candidate)
 
     async def rewrite(

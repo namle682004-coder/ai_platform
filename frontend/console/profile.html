@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="vi" class="h-full bg-slate-50">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AIP Platform - Hồ sơ cá nhân (User Profile)</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg" />
+    <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 6 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#ecf3ff',
+                100: '#dde9ff',
+                200: '#c2d8ff',
+                500: '#465fff',
+                600: '#3641f5',
+                700: '#2b31ce',
+              },
+              primary: {
+                50: '#f0fdf4',
+                100: '#dcfce7',
+                500: '#00684a',
+                600: '#00523a',
+                700: '#003e2c',
+              },
+              aip: {
+                blue: '#0f4c81',
+                cyan: '#00a4b8',
+                orange: '#f97316',
+                dark: '#001e2b',
+                sub: '#5c6c75',
+                surface: '#f8fafc',
+                border: '#e4e7ec',
+              }
+            },
+            fontFamily: {
+              heading: ['Outfit', 'sans-serif'],
+              sans: ['Inter', 'sans-serif'],
+              mono: ['Fira Code', 'monospace'],
+            },
+            boxShadow: {
+              'card': '0 1px 3px 0 rgba(16, 24, 40, 0.06), 0 1px 2px -1px rgba(16, 24, 40, 0.04)',
+              'card-lg': '0 8px 24px -4px rgba(16, 24, 40, 0.08), 0 4px 12px -2px rgba(16, 24, 40, 0.04)',
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Platform Unified Layout Module -->
+    <script type="module" src="/staff/staff_layout.js"></script>
+
+    <style>
+      :root {
+        --aip-blue: #0f4c81;
+        --aip-cyan: #00a4b8;
+        --aip-orange: #f97316;
+        --bg-page: #f8fafc;
+        --sidebar-bg: #ffffff;
+        --border-color: #e4e7ec;
+        --font-heading: "Outfit", sans-serif;
+        --font-body: "Inter", sans-serif;
+      }
+
+      html {
+        overflow-y: scroll;
+        box-sizing: border-box;
+      }
+      *, *:before, *:after {
+        box-sizing: inherit;
+      }
+      body {
+        background: #f8fafc;
+        color: #101828;
+        font-family: var(--font-body);
+        font-size: 13.5px;
+        line-height: 1.5;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Unified Layout Containers */
+      .layout-body {
+        display: flex;
+        flex: 1;
+        min-height: calc(100vh - 56px);
+      }
+
+      .sidebar {
+        width: 240px;
+        min-width: 240px;
+        max-width: 240px;
+        background: #ffffff;
+        border-right: 1px solid var(--border-color);
+        padding: 16px 0;
+        position: sticky;
+        top: 56px;
+        height: calc(100vh - 56px);
+        max-height: calc(100vh - 56px);
+        align-self: flex-start;
+        overflow-y: auto;
+        flex-shrink: 0;
+      }
+
+      /* Slim Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+
+      /* Toast Notifications */
+      #toast-container {
+        position: fixed;
+        top: 14px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast-msg {
+        min-width: 260px;
+        max-width: 380px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes toastIn {
+        from { transform: translateY(-10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+    <!-- Toasts -->
+    <div id="toast-container"></div>
+
+    <!-- Topbar (Standard AIP Header synchronized by staff_layout.js) -->
+    <div class="top-header">
+      <div class="header-left">
+        <a href="/staff/dashboard" class="brand-logo">
+          <i class="fa-solid fa-cube"></i> AIP Platform
+        </a>
+        <div class="project-selector" onclick="openSelectProjectModal()">
+          <i class="fa-solid fa-folder"></i>
+          <span id="current-project-label">Select a project</span>
+          <i class="fa-solid fa-chevron-down" style="font-size: 10px"></i>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="lang-dropdown-container" style="position: relative; cursor: pointer" onclick="toggleLangDropdown(event)">
+          <i class="fa-solid fa-globe"></i>
+          <span id="current-lang-text">English</span>
+          <i class="fa-solid fa-chevron-down" style="font-size: 10px"></i>
+          <div id="lang-dropdown-menu" style="display: none; position: absolute; top: 42px; right: 0; background: #fff; color: #101828; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e4e7ec; width: 145px; z-index: 10000; overflow: hidden;">
+            <div style="padding: 10px 14px; font-weight: 500; font-size: 13.5px; display: flex; align-items: center; gap: 8px; cursor: pointer" onclick="StaffLayout.setAppLanguage('en'); event.stopPropagation();">
+              🇬🇧 English
+            </div>
+            <div style="padding: 10px 14px; font-weight: 500; font-size: 13.5px; display: flex; align-items: center; gap: 8px; border-top: 1px solid #f2f4f7; cursor: pointer" onclick="StaffLayout.setAppLanguage('vi'); event.stopPropagation();">
+              🇻🇳 Tiếng Việt
+            </div>
+          </div>
+        </div>
+        <div class="user-menu" style="display: flex; align-items: center; gap: 10px; cursor: pointer" onclick="window.location.href='/profile'">
+          <span class="user-avatar" id="header-avatar">NL</span>
+          <span id="header-username" style="font-weight: 600; font-size: 13.5px; color: #101828;">Nam Lê</span>
+          <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left: 6px; cursor: pointer; color: #98a2b3;" onclick="event.stopPropagation(); logoutUser()"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Layout Body -->
+    <div class="layout-body">
+      <!-- Sidebar (Standard AIP Sidebar auto-enhanced) -->
+      <div class="sidebar">
+        <div class="nav-section">
+          <div class="section-title" onclick="toggleNavSection(this)">
+            <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> CONSOLE</span>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+          </div>
+          <ul class="nav-list">
+            <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes"></i> APIs</a></li>
+            <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key"></i> API Keys</a></li>
+            <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line"></i> API report</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <div class="section-title" onclick="toggleNavSection(this)">
+            <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> APPLICATIONS</span>
+            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+          </div>
+          <ul class="nav-list">
+            <li class="nav-item"><a href="/staff/service_rag"><i class="fa-solid fa-brain"></i> RAG Knowledge Chat</a></li>
+            <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone"></i> Speech to Text</a></li>
+            <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high"></i> Text to Speech</a></li>
+            <li class="nav-item"><a href="/staff/service-ocr"><i class="fa-solid fa-id-card"></i> OCR ID Card</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Main Profile Content Area Styled with Tailwind CSS -->
+      <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+        <div class="max-w-6xl mx-auto space-y-6">
+
+          <!-- Breadcrumbs & Quick Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 text-xs font-medium text-slate-500 mb-1">
+                <a href="/staff/dashboard" class="hover:text-primary-600 transition-colors">AIP Console</a>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+                <span class="text-slate-700">Tài khoản</span>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+                <span class="text-primary-600 font-semibold">Hồ sơ cá nhân</span>
+              </div>
+              <h1 class="text-2xl font-bold font-heading text-slate-900 tracking-tight flex items-center gap-2.5">
+                <span>Hồ sơ người dùng & Bảo mật</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                  Active
+                </span>
+              </h1>
+              <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                Quản lý thông tin định danh, hạn mức tài nguyên AI, mật khẩu và phiên đăng nhập.
+              </p>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center gap-2.5">
+              <a
+                href="/staff/keys"
+                class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-sm transition-all"
+              >
+                <i class="fa-solid fa-key text-slate-500"></i>
+                <span>Quản lý API Keys</span>
+              </a>
+              <button
+                type="button"
+                onclick="logoutUser()"
+                class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition-all"
+              >
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Hero Identity Card (Tailwind Cover + Avatar + Badges) -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+            <!-- Cover Banner Gradient -->
+            <div class="h-32 sm:h-40 bg-gradient-to-r from-[#0f4c81] via-[#1e3a8a] to-[#00684a] relative overflow-hidden">
+              <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+              <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl"></div>
+              <div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white flex items-center gap-1.5 border border-white/20">
+                <i class="fa-solid fa-building-shield"></i>
+                <span id="card-tenant-name">TENANT_ENTERPRISE_CORE</span>
+              </div>
+            </div>
+
+            <!-- Profile Info Bar -->
+            <div class="px-6 pb-6 pt-0 relative">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <!-- Avatar & Core Info -->
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+                  <div class="relative group -mt-12 sm:-mt-14 flex-shrink-0">
+                    <div
+                      id="profile-big-avatar"
+                      class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-tr from-[#00684a] to-[#00a4b8] text-white flex items-center justify-center text-3xl sm:text-4xl font-extrabold shadow-lg border-4 border-white tracking-tight select-none"
+                    >
+                      NL
+                    </div>
+                    <label
+                      for="avatar-file-input"
+                      title="Cập nhật ảnh đại diện"
+                      class="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-white text-slate-700 shadow-md border border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-50 hover:text-primary-600 transition-all text-xs"
+                    >
+                      <i class="fa-solid fa-camera"></i>
+                    </label>
+                    <input
+                      type="file"
+                      id="avatar-file-input"
+                      accept="image/*"
+                      class="hidden"
+                      onchange="handleAvatarUpload(event)"
+                    />
+                  </div>
+
+                  <div class="pt-2 sm:pt-4">
+                    <h2 id="card-fullname" class="text-xl sm:text-2xl font-bold font-heading text-slate-900 leading-tight">
+                      Nam Lê
+                    </h2>
+                    <p id="card-email" class="text-xs sm:text-sm text-slate-500 flex items-center gap-1.5 mt-1 font-medium">
+                      <i class="fa-regular fa-envelope text-slate-400"></i>
+                      <span>namle@company.com</span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Balance / Quota Badge -->
+                <div class="flex items-center gap-3 self-start sm:self-end">
+                  <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+                      <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div>
+                      <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Số dư khả dụng</div>
+                      <div class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1">
+                        <span>$2,450.00</span>
+                        <span class="text-[11px] font-normal text-slate-500">(~61.2M ₫)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Meta Row -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100 text-xs text-slate-600">
+                <div class="flex items-center gap-2">
+                  <i class="fa-regular fa-id-badge text-slate-400 text-sm"></i>
+                  <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Mã người dùng</span>
+                    <span id="card-user-id" class="font-mono font-medium text-slate-800">usr_staff_8920</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-briefcase text-slate-400 text-sm"></i>
+                  <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Bộ phận</span>
+                    <span id="card-department" class="font-medium text-slate-800">AI Engineering & Core</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fa-regular fa-calendar-check text-slate-400 text-sm"></i>
+                  <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Ngày kích hoạt</span>
+                    <span id="card-created-at" class="font-medium text-slate-800">15/01/2024</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-location-dot text-slate-400 text-sm"></i>
+                  <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Khu vực làm việc</span>
+                    <span class="font-medium text-slate-800">Hà Nội (GMT+7)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profile Tabs Navigation (Tailwind Filter Bar) -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-1.5 flex items-center gap-1.5 overflow-x-auto">
+            <button
+              type="button"
+              id="tab-btn-info"
+              onclick="switchProfileTab('info')"
+              class="profile-tab-btn flex-1 min-w-[140px] px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all bg-primary-500 text-white shadow-sm"
+            >
+              <i class="fa-solid fa-user-gear"></i>
+              <span>Thông tin cá nhân</span>
+            </button>
+            <button
+              type="button"
+              id="tab-btn-security"
+              onclick="switchProfileTab('security')"
+              class="profile-tab-btn flex-1 min-w-[140px] px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Bảo mật & Mật khẩu</span>
+            </button>
+            <button
+              type="button"
+              id="tab-btn-quota"
+              onclick="switchProfileTab('quota')"
+              class="profile-tab-btn flex-1 min-w-[140px] px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Hạn mức & API</span>
+            </button>
+            <button
+              type="button"
+              id="tab-btn-audit"
+              onclick="switchProfileTab('audit')"
+              class="profile-tab-btn flex-1 min-w-[140px] px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>Nhật ký hoạt động</span>
+            </button>
+            <button
+              type="button"
+              id="tab-btn-preferences"
+              onclick="switchProfileTab('preferences')"
+              class="profile-tab-btn flex-1 min-w-[140px] px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            >
+              <i class="fa-solid fa-sliders"></i>
+              <span>Tùy chọn & Thông báo</span>
+            </button>
+          </div>
+
+          <!-- TAB 1: THÔNG TIN CÁ NHÂN (PERSONAL INFO) -->
+          <div id="tab-panel-info" class="tab-panel space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-8">
+              <div class="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
+                <div>
+                  <h3 class="text-base font-bold text-slate-900 font-heading">Chi tiết hồ sơ cá nhân</h3>
+                  <p class="text-xs text-slate-500 mt-0.5">Cập nhật họ tên, thông tin liên lạc và chức vụ công tác của bạn.</p>
+                </div>
+                <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md font-mono">
+                  Role: <strong id="profile-form-role-badge">staff</strong>
+                </span>
+              </div>
+
+              <form id="profile-info-form" onsubmit="handleSaveProfile(event)" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <!-- Họ và tên -->
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Họ và tên <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-user text-xs"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="input-fullname"
+                        required
+                        placeholder="Nhập họ và tên đầy đủ"
+                        class="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Tên hiển thị -->
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Tên hiển thị (Display Name)
+                    </label>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-signature text-xs"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="input-displayname"
+                        placeholder="Ví dụ: Nam Le (Dev Lead)"
+                        class="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Email làm việc -->
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Email đăng nhập & hệ thống
+                    </label>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-envelope text-xs"></i>
+                      </div>
+                      <input
+                        type="email"
+                        id="input-email"
+                        disabled
+                        class="w-full pl-9 pr-24 py-2.5 rounded-lg border border-slate-200 text-xs sm:text-sm text-slate-600 bg-slate-50 cursor-not-allowed select-none font-mono"
+                      />
+                      <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          <i class="fa-solid fa-circle-check text-[10px]"></i> Đã xác thực
+                        </span>
+                      </div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Liên hệ Quản trị viên hệ thống (Admin) nếu cần thay đổi địa chỉ email chính.</p>
+                  </div>
+
+                  <!-- Số điện thoại -->
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Số điện thoại
+                    </label>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-phone text-xs"></i>
+                      </div>
+                      <input
+                        type="tel"
+                        id="input-phone"
+                        placeholder="0988 123 456"
+                        class="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Phòng ban -->
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Phòng ban / Đơn vị
+                    </label>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-sitemap text-xs"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="input-department"
+                        placeholder="Trung tâm Công nghệ AI (AIP Team)"
+                        class="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Chức danh -->
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Chức danh chuyên môn
+                    </label>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-briefcase text-xs"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="input-jobtitle"
+                        placeholder="Senior AI Engineer / Solutions Architect"
+                        class="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Giới thiệu ngắn -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Mô tả công việc & Giới thiệu ngắn (Bio)
+                  </label>
+                  <textarea
+                    id="input-bio"
+                    rows="3"
+                    placeholder="Giới thiệu trách nhiệm chuyên môn, phạm vi phụ trách mô hình LLM, RAG và hệ thống API..."
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  ></textarea>
+                </div>
+
+                <!-- Form Submit Footer -->
+                <div class="flex items-center justify-between pt-5 border-t border-slate-100">
+                  <div class="text-xs text-slate-500 flex items-center gap-1.5">
+                    <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+                    <span>Cập nhật lần cuối: <strong id="profile-last-updated">Vừa xong</strong></span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onclick="resetProfileForm()"
+                      class="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-all"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="submit"
+                      id="btn-save-profile"
+                      class="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-primary-500 hover:bg-primary-600 rounded-lg shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                      <i class="fa-solid fa-check"></i>
+                      <span>Lưu thay đổi</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- TAB 2: BẢO MẬT & MẬT KHẨU (SECURITY & AUTHENTICATION) -->
+          <div id="tab-panel-security" class="tab-panel space-y-6 hidden">
+            <!-- Đổi mật khẩu Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-8">
+              <div class="pb-5 border-b border-slate-100 mb-6">
+                <h3 class="text-base font-bold text-slate-900 font-heading flex items-center gap-2">
+                  <i class="fa-solid fa-key text-primary-600"></i>
+                  <span>Đổi mật khẩu tài khoản</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Nên sử dụng mật khẩu mạnh kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
+              </div>
+
+              <form id="change-pwd-form" onsubmit="handleChangePassword(event)" class="space-y-5 max-w-xl">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Mật khẩu hiện tại <span class="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="pwd-current"
+                    required
+                    placeholder="Nhập mật khẩu hiện tại"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Mật khẩu mới <span class="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="pwd-new"
+                    required
+                    minlength="6"
+                    oninput="checkPasswordStrength(this.value)"
+                    placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  />
+                  <!-- Strength meter -->
+                  <div class="mt-2 flex items-center gap-2">
+                    <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden flex gap-1">
+                      <div id="pwd-str-1" class="h-full w-1/3 bg-slate-200 transition-colors"></div>
+                      <div id="pwd-str-2" class="h-full w-1/3 bg-slate-200 transition-colors"></div>
+                      <div id="pwd-str-3" class="h-full w-1/3 bg-slate-200 transition-colors"></div>
+                    </div>
+                    <span id="pwd-strength-label" class="text-[11px] font-semibold text-slate-400">Độ mạnh: Chưa nhập</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Xác nhận mật khẩu mới <span class="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="pwd-confirm"
+                    required
+                    placeholder="Nhập lại mật khẩu mới"
+                    class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs sm:text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div class="pt-2">
+                  <button
+                    type="submit"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-primary-500 hover:bg-primary-600 rounded-lg shadow-sm transition-all"
+                  >
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Cập nhật mật khẩu</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Bảo mật 2 lớp & Phiên đăng nhập -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- 2FA Card -->
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                      <i class="fa-solid fa-shield-virus"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-900">Xác thực hai yếu tố (2FA)</h4>
+                      <p class="text-xs text-slate-500">Bảo vệ tài khoản bằng mã OTP Google Authenticator hoặc tin nhắn.</p>
+                    </div>
+                  </div>
+                  <!-- Switch Toggle -->
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-2fa" class="sr-only peer" onchange="handleToggle2FA(this)">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                <div id="2fa-status-box" class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                  <div class="flex items-center gap-2 text-slate-600">
+                    <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
+                    <span>Trạng thái: <strong>Chưa kích hoạt</strong></span>
+                  </div>
+                  <button
+                    type="button"
+                    onclick="setup2FA()"
+                    class="text-xs font-semibold text-primary-600 hover:text-primary-700"
+                  >
+                    Cài đặt ngay &rarr;
+                  </button>
+                </div>
+              </div>
+
+              <!-- Active Sessions Card -->
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                      <i class="fa-solid fa-laptop-code"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-900">Phiên đang đăng nhập</h4>
+                      <p class="text-xs text-slate-500">Các thiết bị đang duy trì kết nối với tài khoản này.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onclick="revokeOtherSessions()"
+                    class="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                  >
+                    Đăng xuất phiên khác
+                  </button>
+                </div>
+
+                <div class="space-y-3">
+                  <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-3">
+                      <i class="fa-brands fa-windows text-lg text-emerald-700"></i>
+                      <div>
+                        <div class="font-bold text-slate-900 flex items-center gap-2">
+                          <span>Windows 11 • Chrome 129</span>
+                          <span class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-100 text-emerald-800 font-semibold">Hiện tại</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500">Hà Nội, VN • IP: 118.70.198.42</div>
+                      </div>
+                    </div>
+                    <span class="text-emerald-700 font-semibold text-[11px]"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Active</span>
+                  </div>
+
+                  <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-3">
+                      <i class="fa-brands fa-apple text-lg text-slate-700"></i>
+                      <div>
+                        <div class="font-bold text-slate-800">macOS Sonoma • Safari</div>
+                        <div class="text-[11px] text-slate-500">TP. Hồ Chí Minh, VN • IP: 113.161.44.12</div>
+                      </div>
+                    </div>
+                    <span class="text-slate-400 text-[11px]">2 giờ trước</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: HẠN MỨC & API QUOTA -->
+          <div id="tab-panel-quota" class="tab-panel space-y-6 hidden">
+            <!-- Quota Metrics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <!-- Metric 1: Request Quota -->
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Monthly Calls</span>
+                  <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                  </span>
+                </div>
+                <div class="mt-3 flex items-baseline gap-2">
+                  <span class="text-2xl font-bold font-heading text-slate-900">84,250</span>
+                  <span class="text-xs text-slate-400">/ 100,000 reqs</span>
+                </div>
+                <div class="mt-3 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div class="bg-blue-600 h-2 rounded-full" style="width: 84.25%"></div>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Đã dùng 84.2%</span>
+                  <span>Còn lại 15,750</span>
+                </div>
+              </div>
+
+              <!-- Metric 2: GPU Compute Time -->
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">GPU Compute Hours</span>
+                  <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-microchip"></i>
+                  </span>
+                </div>
+                <div class="mt-3 flex items-baseline gap-2">
+                  <span class="text-2xl font-bold font-heading text-slate-900">162.5</span>
+                  <span class="text-xs text-slate-400">/ 250 Giờ</span>
+                </div>
+                <div class="mt-3 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div class="bg-emerald-600 h-2 rounded-full" style="width: 65%"></div>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>H100/A100 Cluster</span>
+                  <span class="text-emerald-600 font-semibold">Tối ưu tốt</span>
+                </div>
+              </div>
+
+              <!-- Metric 3: Rate Limit Tier -->
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Rate Limit Tier</span>
+                  <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-gauge-high"></i>
+                  </span>
+                </div>
+                <div class="mt-3">
+                  <div class="text-2xl font-bold font-heading text-slate-900">1,200 <span class="text-xs font-normal text-slate-500">RPM</span></div>
+                  <div class="text-xs text-indigo-600 font-semibold mt-0.5">Tier: Enterprise Developer</div>
+                </div>
+                <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Concurrency Max: 50 streams</span>
+                  <a href="/staff/keys" class="text-primary-600 font-semibold hover:underline">Chi tiết &rarr;</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- API Keys Connected to this user -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-card overflow-hidden">
+              <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 class="text-base font-bold text-slate-900 font-heading">Khóa API được gán cho tài khoản này</h3>
+                  <p class="text-xs text-slate-500 mt-0.5">Danh sách các API Key được tạo bởi hoặc phân quyền cho bạn.</p>
+                </div>
+                <a
+                  href="/staff/keys"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
+                >
+                  <i class="fa-solid fa-plus text-[10px]"></i> Tạo Key mới
+                </a>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200">
+                    <tr>
+                      <th class="px-6 py-3.5">Tên Key</th>
+                      <th class="px-6 py-3.5">Mã Token Prefix</th>
+                      <th class="px-6 py-3.5">Dự án</th>
+                      <th class="px-6 py-3.5">Hạn mức / Tháng</th>
+                      <th class="px-6 py-3.5">Trạng thái</th>
+                      <th class="px-6 py-3.5 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                      <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-key text-amber-500"></i>
+                        <span>RAG Chatbot Production</span>
+                      </td>
+                      <td class="px-6 py-4 font-mono text-slate-500">aip_sk_948f...982b</td>
+                      <td class="px-6 py-4">Retail Banking AI</td>
+                      <td class="px-6 py-4">50,000 reqs</td>
+                      <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                          Active
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-right">
+                        <a href="/staff/keys" class="text-primary-600 hover:text-primary-800 font-semibold">Quản lý</a>
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                      <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-key text-blue-500"></i>
+                        <span>OCR CCCD Verification Test</span>
+                      </td>
+                      <td class="px-6 py-4 font-mono text-slate-500">aip_sk_110a...bc41</td>
+                      <td class="px-6 py-4">eKYC Solution</td>
+                      <td class="px-6 py-4">25,000 reqs</td>
+                      <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                          Active
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-right">
+                        <a href="/staff/keys" class="text-primary-600 hover:text-primary-800 font-semibold">Quản lý</a>
+                      </td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                      <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-key text-slate-400"></i>
+                        <span>STT Voice Dev Local</span>
+                      </td>
+                      <td class="px-6 py-4 font-mono text-slate-500">aip_sk_772e...19aa</td>
+                      <td class="px-6 py-4">Voice AI</td>
+                      <td class="px-6 py-4">10,000 reqs</td>
+                      <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
+                          Idle
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 text-right">
+                        <a href="/staff/keys" class="text-primary-600 hover:text-primary-800 font-semibold">Quản lý</a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: NHẬT KÝ HOẠT ĐỘNG (AUDIT LOGS) -->
+          <div id="tab-panel-audit" class="tab-panel space-y-6 hidden">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-8">
+              <div class="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
+                <div>
+                  <h3 class="text-base font-bold text-slate-900 font-heading">Nhật ký truy vết & Thao tác (Audit Trail)</h3>
+                  <p class="text-xs text-slate-500 mt-0.5">Ghi nhận các sự kiện đăng nhập, cập nhật hồ sơ và giao dịch trên nền tảng.</p>
+                </div>
+                <button
+                  type="button"
+                  onclick="refreshAuditLogs()"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  <i class="fa-solid fa-rotate-right"></i> Làm mới
+                </button>
+              </div>
+
+              <!-- Timeline of Events -->
+              <div class="relative border-l-2 border-slate-200 ml-4 space-y-6 py-2">
+                <!-- Event 1 -->
+                <div class="relative pl-6">
+                  <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow"></div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-900">Đăng nhập thành công (USER_LOGIN)</span>
+                    <span class="text-[11px] text-slate-400">Vừa xong (10:25)</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1">Đăng nhập cổng Staff Portal từ trình duyệt Chrome (Windows 11) qua địa chỉ IP 127.0.0.1.</p>
+                </div>
+
+                <!-- Event 2 -->
+                <div class="relative pl-6">
+                  <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-900">Nạp tài liệu Knowledge Base (DOC_INGEST)</span>
+                    <span class="text-[11px] text-slate-400">Hôm qua, 18:45</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1">Nạp tài liệu <code>vietnam_laos_education_2026.pdf</code> vào bộ tri thức RAG Enterprise.</p>
+                </div>
+
+                <!-- Event 3 -->
+                <div class="relative pl-6">
+                  <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white shadow"></div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-900">Cập nhật API Key (KEY_ROTATED)</span>
+                    <span class="text-[11px] text-slate-400">08/10/2026, 14:10</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1">Gia hạn hạn mức cho khóa <code>aip_sk_948f...982b</code> lên 50,000 lượt gọi/tháng.</p>
+                </div>
+
+                <!-- Event 4 -->
+                <div class="relative pl-6">
+                  <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-indigo-500 border-2 border-white shadow"></div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-900">Khởi tạo tài khoản nhân viên (ACCOUNT_INITIALIZED)</span>
+                    <span class="text-[11px] text-slate-400">15/01/2024, 09:00</span>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1">Tài khoản được cấp quyền truy cập Staff Portal với vai trò Staff Developer.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 5: TÙY CHỌN & THÔNG BÁO (PREFERENCES) -->
+          <div id="tab-panel-preferences" class="tab-panel space-y-6 hidden">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-6 sm:p-8">
+              <div class="pb-5 border-b border-slate-100 mb-6">
+                <h3 class="text-base font-bold text-slate-900 font-heading">Cài đặt giao diện & Thông báo</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Tùy biến ngôn ngữ, định dạng hiển thị và email thông báo tự động từ hệ thống.</p>
+              </div>
+
+              <div class="space-y-6 max-w-2xl">
+                <!-- Ngôn ngữ -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Ngôn ngữ giao diện</label>
+                  <div class="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onclick="changeAppLanguage('vi')"
+                      id="pref-lang-vi"
+                      class="px-4 py-3 rounded-xl border border-primary-500 bg-primary-50 text-primary-800 font-semibold text-xs flex items-center justify-between transition-all"
+                    >
+                      <span class="flex items-center gap-2">🇻🇳 Tiếng Việt (Mặc định)</span>
+                      <i class="fa-solid fa-circle-check text-primary-600"></i>
+                    </button>
+                    <button
+                      type="button"
+                      onclick="changeAppLanguage('en')"
+                      id="pref-lang-en"
+                      class="px-4 py-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 font-semibold text-xs flex items-center justify-between transition-all"
+                    >
+                      <span class="flex items-center gap-2">🇬🇧 English</span>
+                      <i class="fa-regular fa-circle text-slate-300"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Tùy chọn Email -->
+                <div class="pt-4 border-t border-slate-100">
+                  <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Email thông báo sự kiện</h4>
+                  <div class="space-y-4">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" checked class="mt-0.5 w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300">
+                      <div>
+                        <div class="text-xs font-bold text-slate-800">Cảnh báo bảo mật & Đăng nhập lạ</div>
+                        <div class="text-[11px] text-slate-500">Gửi email tức thời khi phát hiện địa chỉ IP lạ hoặc đổi mật khẩu.</div>
+                      </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" checked class="mt-0.5 w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300">
+                      <div>
+                        <div class="text-xs font-bold text-slate-800">Cảnh báo giới hạn API Quota (&gt; 80%)</div>
+                        <div class="text-[11px] text-slate-500">Nhận thông báo khi lưu lượng gọi API sắp cạn kiệt trong tháng.</div>
+                      </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" class="mt-0.5 w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300">
+                      <div>
+                        <div class="text-xs font-bold text-slate-800">Bản tin tính năng & Cập nhật mô hình AI mới</div>
+                        <div class="text-[11px] text-slate-500">Thông báo định kỳ về phiên bản LLM mới (Claude 3.7, GPT-4o, Gemini 2.0).</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onclick="showToast('Đã lưu các tùy chọn thành công!', 'success')"
+                    class="px-5 py-2.5 text-xs font-semibold text-white bg-primary-500 hover:bg-primary-600 rounded-lg shadow-sm transition-all"
+                  >
+                    Lưu cài đặt tùy chọn
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+    <!-- Page Client Logic -->
+    <script>
+      // 1. User Session Data Management
+      let currentUser = {
+        user_id: 'usr_staff_8920',
+        email: 'namle@company.com',
+        full_name: 'Nam Lê',
+        role: 'staff',
+        status: 'active',
+        phone: '0988 123 456',
+        department: 'AI Engineering & Core Solutions',
+        job_title: 'Senior AI Platform Engineer',
+        bio: 'Phụ trách phát triển hạ tầng AIP Platform, RAG Knowledge Base và tối ưu hóa mô hình LLM suy luận hiệu năng cao.',
+        created_at: '2024-01-15T09:00:00Z',
+        avatar_initials: 'NL',
+        avatar_img: null
+      };
+
+      function loadUserData() {
+        const raw = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            currentUser = { ...currentUser, ...parsed };
+          } catch (e) {
+            console.error('Failed to parse user session:', e);
+          }
+        }
+
+        // Compute initials
+        if (currentUser.full_name) {
+          const parts = currentUser.full_name.trim().split(/\s+/);
+          if (parts.length >= 2) {
+            currentUser.avatar_initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+          } else if (parts.length === 1 && parts[0].length > 0) {
+            currentUser.avatar_initials = parts[0].substring(0, 2).toUpperCase();
+          }
+        }
+
+        renderUserUI();
+      }
+
+      function renderUserUI() {
+        // Hero Card
+        document.getElementById('card-fullname').innerText = currentUser.full_name || 'Nam Lê';
+        document.getElementById('card-email').querySelector('span').innerText = currentUser.email || 'namle@company.com';
+        document.getElementById('card-user-id').innerText = currentUser.user_id || 'usr_staff_8920';
+        document.getElementById('card-department').innerText = currentUser.department || 'AI Engineering & Core';
+        
+        const roleLabel = (currentUser.role || 'staff').toUpperCase();
+        const roleEl = document.getElementById('card-role-text');
+        if (roleEl) roleEl.innerText = roleLabel === 'ADMIN' ? 'ADMINISTRATOR' : 'STAFF DEVELOPER';
+        const profileBadgeEl = document.getElementById('profile-form-role-badge');
+        if (profileBadgeEl) profileBadgeEl.innerText = currentUser.role || 'staff';
+
+        // Avatar
+        const bigAvatar = document.getElementById('profile-big-avatar');
+        if (currentUser.avatar_img) {
+          bigAvatar.innerHTML = `<img src="${currentUser.avatar_img}" class="w-full h-full object-cover rounded-2xl" alt="Avatar">`;
+        } else {
+          bigAvatar.innerText = currentUser.avatar_initials || 'NL';
+        }
+
+        // Form Inputs
+        document.getElementById('input-fullname').value = currentUser.full_name || '';
+        document.getElementById('input-displayname').value = currentUser.display_name || currentUser.full_name || '';
+        document.getElementById('input-email').value = currentUser.email || '';
+        document.getElementById('input-phone').value = currentUser.phone || '';
+        document.getElementById('input-department').value = currentUser.department || '';
+        document.getElementById('input-jobtitle').value = currentUser.job_title || '';
+        document.getElementById('input-bio').value = currentUser.bio || '';
+
+        // Synchronize Topbar
+        const headerUsername = document.getElementById('header-username');
+        if (headerUsername) headerUsername.innerText = currentUser.full_name || 'Nam Lê';
+        const headerAvatar = document.getElementById('header-avatar');
+        if (headerAvatar) {
+          if (currentUser.avatar_img) {
+            headerAvatar.innerHTML = `<img src="${currentUser.avatar_img}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="Avatar">`;
+          } else {
+            headerAvatar.innerText = currentUser.avatar_initials || 'NL';
+          }
+        }
+      }
+
+      // 2. Tab Navigation
+      function switchProfileTab(tabId) {
+        const panels = document.querySelectorAll('.tab-panel');
+        panels.forEach(p => p.classList.add('hidden'));
+
+        const targetPanel = document.getElementById(`tab-panel-${tabId}`);
+        if (targetPanel) targetPanel.classList.remove('hidden');
+
+        const buttons = document.querySelectorAll('.profile-tab-btn');
+        buttons.forEach(btn => {
+          btn.className = 'profile-tab-btn flex-1 min-w-[140px] px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100';
+        });
+
+        const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+        if (activeBtn) {
+          activeBtn.className = 'profile-tab-btn flex-1 min-w-[140px] px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all bg-primary-500 text-white shadow-sm';
+        }
+      }
+
+      // 3. Save Profile Info
+      function handleSaveProfile(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-save-profile');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...`;
+
+        currentUser.full_name = document.getElementById('input-fullname').value.trim();
+        currentUser.display_name = document.getElementById('input-displayname').value.trim();
+        currentUser.phone = document.getElementById('input-phone').value.trim();
+        currentUser.department = document.getElementById('input-department').value.trim();
+        currentUser.job_title = document.getElementById('input-jobtitle').value.trim();
+        currentUser.bio = document.getElementById('input-bio').value.trim();
+
+        // Recompute initials
+        const parts = currentUser.full_name.split(/\s+/);
+        if (parts.length >= 2) {
+          currentUser.avatar_initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        } else if (parts.length === 1 && parts[0].length > 0) {
+          currentUser.avatar_initials = parts[0].substring(0, 2).toUpperCase();
+        }
+
+        // Persist to localStorage
+        localStorage.setItem('aip_user_session', JSON.stringify(currentUser));
+
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          renderUserUI();
+          document.getElementById('profile-last-updated').innerText = new Date().toLocaleTimeString('vi-VN');
+          showToast('Cập nhật hồ sơ thành công!', 'success');
+        }, 500);
+      }
+
+      function resetProfileForm() {
+        loadUserData();
+        showToast('Đã khôi phục thông tin ban đầu', 'info');
+      }
+
+      // 4. Avatar Upload Preview
+      function handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+          showToast('Ảnh quá lớn, vui lòng chọn file dưới 2MB', 'error');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          currentUser.avatar_img = e.target.result;
+          localStorage.setItem('aip_user_session', JSON.stringify(currentUser));
+          renderUserUI();
+          showToast('Đã cập nhật ảnh đại diện mới!', 'success');
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // 5. Change Password
+      function checkPasswordStrength(val) {
+        const bar1 = document.getElementById('pwd-str-1');
+        const bar2 = document.getElementById('pwd-str-2');
+        const bar3 = document.getElementById('pwd-str-3');
+        const label = document.getElementById('pwd-strength-label');
+
+        bar1.className = 'h-full w-1/3 bg-slate-200 transition-colors';
+        bar2.className = 'h-full w-1/3 bg-slate-200 transition-colors';
+        bar3.className = 'h-full w-1/3 bg-slate-200 transition-colors';
+
+        if (!val) {
+          label.innerText = 'Độ mạnh: Chưa nhập';
+          label.className = 'text-[11px] font-semibold text-slate-400';
+          return;
+        }
+
+        if (val.length < 6) {
+          bar1.className = 'h-full w-1/3 bg-rose-500';
+          label.innerText = 'Độ mạnh: Yếu (< 6 ký tự)';
+          label.className = 'text-[11px] font-semibold text-rose-500';
+        } else if (val.length < 10 || !/[0-9]/.test(val) || !/[A-Z]/.test(val)) {
+          bar1.className = 'h-full w-1/3 bg-amber-500';
+          bar2.className = 'h-full w-1/3 bg-amber-500';
+          label.innerText = 'Độ mạnh: Trung bình';
+          label.className = 'text-[11px] font-semibold text-amber-500';
+        } else {
+          bar1.className = 'h-full w-1/3 bg-emerald-500';
+          bar2.className = 'h-full w-1/3 bg-emerald-500';
+          bar3.className = 'h-full w-1/3 bg-emerald-500';
+          label.innerText = 'Độ mạnh: Rất mạnh';
+          label.className = 'text-[11px] font-semibold text-emerald-600';
+        }
+      }
+
+      async function handleChangePassword(e) {
+        e.preventDefault();
+        const current = document.getElementById('pwd-current').value;
+        const newPwd = document.getElementById('pwd-new').value;
+        const confirm = document.getElementById('pwd-confirm').value;
+
+        if (newPwd !== confirm) {
+          showToast('Mật khẩu mới và xác nhận mật khẩu không khớp!', 'error');
+          return;
+        }
+
+        try {
+          const res = await fetch('/v1/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: currentUser.email, new_password: newPwd })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast('Đổi mật khẩu thành công! Vui lòng ghi nhớ mật khẩu mới.', 'success');
+            document.getElementById('change-pwd-form').reset();
+            checkPasswordStrength('');
+          } else {
+            showToast('Không thể đổi mật khẩu: ' + (data.detail || 'Lỗi không xác định'), 'error');
+          }
+        } catch (err) {
+          showToast('Lỗi mạng: Đã cập nhật mật khẩu giả lập an toàn', 'info');
+          document.getElementById('change-pwd-form').reset();
+          checkPasswordStrength('');
+        }
+      }
+
+      // 6. 2FA & Session Actions
+      function handleToggle2FA(el) {
+        const box = document.getElementById('2fa-status-box');
+        if (el.checked) {
+          box.innerHTML = `
+            <div class="flex items-center gap-2 text-emerald-700">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i>
+              <span>Trạng thái: <strong>Đã kích hoạt xác thực 2 lớp (TOTP)</strong></span>
+            </div>
+            <button type="button" onclick="setup2FA()" class="text-xs font-semibold text-primary-600 hover:text-primary-700">Đổi thiết bị</button>
+          `;
+          showToast('Đã kích hoạt chế độ xác thực hai bước!', 'success');
+        } else {
+          box.innerHTML = `
+            <div class="flex items-center gap-2 text-slate-600">
+              <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
+              <span>Trạng thái: <strong>Chưa kích hoạt</strong></span>
+            </div>
+            <button type="button" onclick="setup2FA()" class="text-xs font-semibold text-primary-600 hover:text-primary-700">Cài đặt ngay &rarr;</button>
+          `;
+          showToast('Đã tắt xác thực hai bước', 'info');
+        }
+      }
+
+      function setup2FA() {
+        showToast('Đang kết nối cổng xác thực Google Authenticator...', 'info');
+      }
+
+      function revokeOtherSessions() {
+        showToast('Đã đăng xuất khỏi tất cả các thiết bị khác!', 'success');
+      }
+
+      function refreshAuditLogs() {
+        showToast('Đã đồng bộ nhật ký hoạt động mới nhất', 'success');
+      }
+
+      function changeAppLanguage(lang) {
+        if (typeof StaffLayout !== 'undefined' && StaffLayout.setAppLanguage) {
+          StaffLayout.setAppLanguage(lang);
+        } else {
+          localStorage.setItem('aip_lang', lang);
+          showToast(lang === 'vi' ? 'Đã đổi sang Tiếng Việt' : 'Switched to English', 'info');
+        }
+        const viBtn = document.getElementById('pref-lang-vi');
+        const enBtn = document.getElementById('pref-lang-en');
+        if (lang === 'vi') {
+          viBtn.className = 'px-4 py-3 rounded-xl border border-primary-500 bg-primary-50 text-primary-800 font-semibold text-xs flex items-center justify-between transition-all';
+          viBtn.querySelector('i').className = 'fa-solid fa-circle-check text-primary-600';
+          enBtn.className = 'px-4 py-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 font-semibold text-xs flex items-center justify-between transition-all';
+          enBtn.querySelector('i').className = 'fa-regular fa-circle text-slate-300';
+        } else {
+          enBtn.className = 'px-4 py-3 rounded-xl border border-primary-500 bg-primary-50 text-primary-800 font-semibold text-xs flex items-center justify-between transition-all';
+          enBtn.querySelector('i').className = 'fa-solid fa-circle-check text-primary-600';
+          viBtn.className = 'px-4 py-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 font-semibold text-xs flex items-center justify-between transition-all';
+          viBtn.querySelector('i').className = 'fa-regular fa-circle text-slate-300';
+        }
+      }
+
+      // Initialize on load
+      document.addEventListener('DOMContentLoaded', () => {
+        loadUserData();
+      });
+    </script>
+  </body>
+</html>

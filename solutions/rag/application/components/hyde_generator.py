@@ -13,9 +13,8 @@ import asyncio
 from dataclasses import dataclass
 import logging
 import math
-import re
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 logger = logging.getLogger("aip-rag.hyde-generator")
 
@@ -197,7 +196,7 @@ class HyDEGenerator:
         # Weighted vector sum
         blended = [
             alpha * q + (1.0 - alpha) * h
-            for q, h in zip(query_vector, hyde_vector)
+            for q, h in zip(query_vector, hyde_vector, strict=False)
         ]
 
         # L2 Normalization

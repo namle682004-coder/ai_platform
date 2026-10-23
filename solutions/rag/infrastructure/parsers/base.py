@@ -5,7 +5,7 @@ Base document parser interface for infrastructure layer.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from ...domain.entities import ParsedDocument, ParsedPage
+from ...domain.entities import ParsedDocument
 from ...domain.ports import DocumentParserPort
 
 

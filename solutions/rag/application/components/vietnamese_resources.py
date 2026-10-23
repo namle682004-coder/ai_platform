@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import re
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 import unicodedata
 
 
@@ -1532,6 +1532,6 @@ VIETNAMESE_LEVEL_TONE_WORDS: Set[str] = {
     "nam", "bac", "tay", "minh", "quan", "an", "chan", "vai", "chu", "duong",
     "trang", "den", "vang", "xanh", "nau", "ca", "da", "di", "ra", "vao", "theo",
     "sau", "qua", "mau", "mang", "giao", "cong", "ty", "che", "do", "hop",
-    "phong", "bien", "van", "ban", "viec", "chinh", "luong", "thuong", "nhan",
+    "phong", "bien", "van", "viec", "chinh", "luong", "thuong", "nhan",
     "thai", "san", "thao", "tac", "khu", "vuc",
 }

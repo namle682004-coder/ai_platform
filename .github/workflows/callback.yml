@@ -4,14 +4,14 @@ on:
   push:
     branches: [main, master, dev]
     paths:
-      - 'apps/callback-worker/**'
+      - 'platform/workers/callback/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/callback.yml'
       - '.github/actions/**'
   pull_request:
     paths:
-      - 'apps/callback-worker/**'
+      - 'platform/workers/callback/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/callback.yml'
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PYTHONPATH: ".:packages/common:packages/contracts:apps/callback-worker:apps/control-plane"
+      PYTHONPATH: ".:packages/common:packages/contracts:platform/workers/callback:platform/gateway"
     steps:
       - uses: actions/checkout@v4
 
@@ -39,16 +39,18 @@ jobs:
         run: |
           uv pip install -e packages/common \
                          -e packages/contracts \
-                         -e apps/callback-worker \
+                         -e platform/workers/callback \
                          pytest httpx ruff
 
       - name: Lint with Ruff
         shell: bash
-        run: uv run ruff check apps/callback-worker/
+        run: uv run ruff check platform/workers/callback/
 
       - name: Callback Worker Tests
         shell: bash
-        run: uv run pytest tests/test_webhook.py tests/test_jobs_maintenance.py --tb=short
+        run: |
+          uv run pytest tests/test_webhook.py tests/test_jobs_maintenance.py --collect-only -q > /dev/null
+          uv run pytest tests/test_webhook.py tests/test_jobs_maintenance.py --tb=short
 
   build-image:
     name: Docker Image (Callback Worker)
@@ -65,7 +67,7 @@ jobs:
         uses: ./.github/actions/docker-build
         with:
           service-name: callback-worker
-          dockerfile: apps/callback-worker/Dockerfile
+          dockerfile: platform/workers/callback/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"

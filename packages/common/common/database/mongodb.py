@@ -56,5 +56,13 @@ class MongoDBManager:
                 logger.warning(f"Lazy MongoDB connection error: {e}")
         return self.db
 
+    async def close(self) -> None:
+        """Gracefully close active MongoDB client connection."""
+        if self.client:
+            self.client.close()
+            self.client = None
+            self.db = None
+            logger.info("MongoDB client connection closed cleanly")
+
 
 mongo_manager = MongoDBManager()

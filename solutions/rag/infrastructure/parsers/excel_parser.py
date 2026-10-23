@@ -21,8 +21,8 @@ class ExcelDocumentParser(BaseDocumentParser):
     def parse(self, file_bytes: bytes, filename: str) -> ParsedDocument:
         try:
             import openpyxl
-        except ImportError:
-            raise DocumentParsingError("Thư viện 'openpyxl' chưa được cài đặt để đọc bảng tính Excel (.xlsx).")
+        except ImportError as exc:
+            raise DocumentParsingError("Thư viện 'openpyxl' chưa được cài đặt để đọc bảng tính Excel (.xlsx).") from exc
 
         try:
             wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)

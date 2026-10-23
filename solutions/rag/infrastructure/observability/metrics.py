@@ -8,13 +8,11 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from prometheus_client import (
-    CONTENT_TYPE_LATEST,
     Counter,
     Gauge,
     Histogram,
-    generate_latest,
 )
 
 from ...domain.entities import DEFAULT_TENANT_ID, normalize_tenant_id

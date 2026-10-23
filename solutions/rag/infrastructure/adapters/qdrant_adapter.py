@@ -58,7 +58,7 @@ def _sparse_terms(text: str) -> List[str]:
     # Single-letter words ("y" in "y tế") only carry meaning inside a compound.
     unigrams = [w for w in tokens if len(w) >= 2]
     bigrams = [
-        f"{a} {b}" for a, b in zip(tokens, tokens[1:]) if a != b and not (a.isdigit() and b.isdigit())
+        f"{a} {b}" for a, b in zip(tokens, tokens[1:], strict=False) if a != b and not (a.isdigit() and b.isdigit())
     ]
     return _DECIMAL_RE.findall(lowered) + unigrams + bigrams
 
@@ -456,7 +456,7 @@ class QdrantVectorStoreAdapter(VectorStorePort):
             idf[term] = max(0.1, val)
 
         raw_scores: List[float] = []
-        for idx, (doc, doc_len) in enumerate(zip(tokenized_docs, doc_lengths)):
+        for idx, (doc, doc_len) in enumerate(zip(tokenized_docs, doc_lengths, strict=False)):
             raw_text = raw_doc_texts[idx]
             score = 0.0
             term_counts: Dict[str, int] = {}
@@ -651,7 +651,7 @@ class QdrantVectorStoreAdapter(VectorStorePort):
                 bm25_scores = self._compute_bm25_scores(keywords, points)
 
                 scored_candidates = []
-                for p_obj, bm25_s in zip(points, bm25_scores):
+                for p_obj, bm25_s in zip(points, bm25_scores, strict=False):
                     p = p_obj.get("payload", {})
                     scored_candidates.append({
                         "id": p_obj.get("id"),

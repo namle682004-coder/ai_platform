@@ -198,7 +198,7 @@ class PdfDocumentParser(BaseDocumentParser):
 
                     # BRD-RAG-02: Detect preceding step label from text blocks above image
                     step_label = None
-                    for ty0, tx0, ttype, tcontent in page_items:
+                    for ty0, _tx0, ttype, tcontent in page_items:
                         if ttype == "text" and ty0 < img_y0:
                             lower_t = tcontent.strip().lower()
                             for prefix in ("bước", "step", "thao tác"):
@@ -233,7 +233,7 @@ class PdfDocumentParser(BaseDocumentParser):
 
                 # 5. Assemble merged page content, ensuring images directly follow preceding step
                 assembled_blocks: List[str] = []
-                for _, _, item_type, content in page_items:
+                for _, _, _item_type, content in page_items:
                     assembled_blocks.append(content)
 
                 page_text = "\n\n".join(assembled_blocks).strip()

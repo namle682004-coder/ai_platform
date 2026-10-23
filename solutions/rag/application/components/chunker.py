@@ -130,9 +130,9 @@ class DocumentChunker:
         stripped = text.strip()
         if "<table" in stripped.lower() and "</table>" in stripped.lower():
             return True
-        lines = [l.strip() for l in stripped.split("\n") if l.strip()]
+        lines = [line.strip() for line in stripped.split("\n") if line.strip()]
         if len(lines) >= 2:
-            pipe_lines = sum(1 for l in lines if l.startswith("|") and l.endswith("|"))
+            pipe_lines = sum(1 for line in lines if line.startswith("|") and line.endswith("|"))
             if pipe_lines >= 2 and pipe_lines >= len(lines) * 0.7:
                 return True
         return False
@@ -245,7 +245,7 @@ class DocumentChunker:
                 logger.warning("DOM-based table splitting failed (%s); falling back", exc)
                 return [(table_text, None)]
 
-        lines = [l.rstrip() for l in table_text.strip().split("\n") if l.strip()]
+        lines = [line.rstrip() for line in table_text.strip().split("\n") if line.strip()]
         if len(lines) <= 2:
             return [(table_text, None)]
 
@@ -304,7 +304,7 @@ class DocumentChunker:
                         return list(dict.fromkeys(c.get_text(strip=True) for c in cells if c.get_text(strip=True)))
             except Exception:
                 pass
-        lines = [l.strip() for l in stripped.split("\n") if l.strip()]
+        lines = [line.strip() for line in stripped.split("\n") if line.strip()]
         if lines and lines[0].startswith("|") and lines[0].endswith("|"):
             return [c.strip() for c in lines[0].strip("|").split("|") if c.strip()]
         return []
@@ -738,7 +738,7 @@ class DocumentChunker:
 
             for raw_para in paragraphs:
                 para = raw_para
-                lines = [l.strip() for l in para.split("\n") if l.strip()]
+                lines = [line.strip() for line in para.split("\n") if line.strip()]
 
                 # Step A: Extract any leading structural headings from paragraph block
                 while lines:

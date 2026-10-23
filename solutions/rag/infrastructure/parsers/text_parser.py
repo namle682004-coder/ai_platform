@@ -5,7 +5,6 @@ Plaintext / Markdown / JSON / CSV Document Parser.
 from __future__ import annotations
 
 import logging
-from typing import List
 
 from ...domain.entities import ParsedDocument, ParsedPage
 from ...domain.exceptions import DocumentParsingError

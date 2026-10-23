@@ -24,13 +24,33 @@ DEFAULT_KEYS = [
 DEFAULT_ALIASES = [
     {
         "alias_name": "chat-general-standard",
-        "model_name": "Qwen2.5-1.5B-Instruct",
-        "physical_model": "Qwen/Qwen2.5-1.5B-Instruct",
-        "runtime": "vLLM",
-        "target_url": "http://vllm-engine:8001/v1",
-        "min_vram_gb": 2,
+        "model_name": "Qwen2.5-7B-Instruct",
+        "physical_model": "Qwen/Qwen2.5-7B-Instruct",
+        "runtime": "llama.cpp",
+        "target_url": "http://172.16.20.2:8011/v1",
+        "min_vram_gb": 5,
         "status": "enabled",
-        "description": "Standard OpenAI-compatible Chat Completions via Qwen2.5-1.5B-Instruct",
+        "description": "Standard OpenAI-compatible Chat Completions via Qwen2.5-7B-Instruct on TITAN Xp GPU",
+    },
+    {
+        "alias_name": "chat-qwen2.5-7b",
+        "model_name": "Qwen2.5-7B-Instruct",
+        "physical_model": "Qwen/Qwen2.5-7B-Instruct",
+        "runtime": "llama.cpp",
+        "target_url": "http://172.16.20.2:8011/v1",
+        "min_vram_gb": 5,
+        "status": "enabled",
+        "description": "Qwen2.5-7B-Instruct GPU-accelerated on TITAN Xp (llama-server)",
+    },
+    {
+        "alias_name": "rerank-standard",
+        "model_name": "bge-reranker-v2-m3",
+        "physical_model": "BAAI/bge-reranker-v2-m3",
+        "runtime": "FlagEmbedding",
+        "target_url": "http://172.16.20.2:8012/v1",
+        "min_vram_gb": 1,
+        "status": "enabled",
+        "description": "Cross-Encoder relevance re-ranking for two-stage retrieval via BGE-Reranker-v2-m3",
     },
     {
         "alias_name": "stt-vn-standard",
@@ -84,13 +104,13 @@ DEFAULT_ALIASES = [
     },
     {
         "alias_name": "embed-standard",
-        "model_name": "Qwen2.5-1.5B-Instruct (mean-pooled embeddings)",
-        "physical_model": "Qwen/Qwen2.5-1.5B-Instruct",
-        "runtime": "transformers-embeddings",
-        "target_url": "http://vllm-engine:8001/v1",
-        "min_vram_gb": 0,
+        "model_name": "bge-m3",
+        "physical_model": "BAAI/bge-m3",
+        "runtime": "FlagEmbedding",
+        "target_url": "http://172.16.20.2:8012/v1",
+        "min_vram_gb": 1,
         "status": "enabled",
-        "description": "Mean-pooled normalized embeddings from the configured Transformers model",
+        "description": "1024-dim multilingual dense and sparse embeddings via BGE-M3",
     },
 ]
 
@@ -259,8 +279,9 @@ class MongoAliasRepository(IAliasRepository):
     """MongoDB Atlas implementation for Model Aliases Registry."""
 
     def __init__(self):
+        # Seed records are tagged so callers can tell them apart from records stored in MongoDB.
         self._aliases_cache: Dict[str, Dict[str, Any]] = {
-            a["alias_name"]: dict(a) for a in DEFAULT_ALIASES
+            a["alias_name"]: {**a, "source": "seed"} for a in DEFAULT_ALIASES
         }
 
     async def list_aliases(self) -> Dict[str, Any]:
@@ -272,6 +293,7 @@ class MongoAliasRepository(IAliasRepository):
                 if aliases:
                     for a in aliases:
                         a.pop("_id", None)
+                        a["source"] = "mongodb"
                         self._aliases_cache[a["alias_name"]] = a
                     return self._aliases_cache
             except Exception:

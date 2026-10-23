@@ -10,7 +10,7 @@ import logging
 import os
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from ...domain.entities import (
     DEFAULT_TENANT_ID,

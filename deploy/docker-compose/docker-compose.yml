@@ -3,7 +3,7 @@ services:
     image: mongo:6.0
     container_name: aip-mongodb
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
@@ -11,16 +11,16 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: aip-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_dev_secret} --maxmemory 256mb --maxmemory-policy allkeys-lru
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_dev_secret}
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 10
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -36,7 +36,7 @@ services:
       - "15692:15692"  # Prometheus metrics port
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-aip}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-aip_dev_secret}
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-aip}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
@@ -56,10 +56,23 @@ services:
       - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - minio_data:/data
     restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.0
+    container_name: aip-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+
 
   prometheus:
     profiles: ["monitoring", "all"]
@@ -114,25 +127,29 @@ services:
   control-plane:
     build:
       context: ../..
-      dockerfile: apps/control-plane/Dockerfile
+      dockerfile: platform/gateway/Dockerfile
     container_name: aip-control-plane
     ports:
       - "8000:8000"
+    working_dir: /app/platform/gateway
     environment:
       - ENVIRONMENT=development
+      - PYTHONPATH=/app:/app/platform/gateway:/app/packages/common:/app/packages/contracts
       - HOST=0.0.0.0
       - PORT=8000
       - DEBUG=true
       - AIP_API_KEY=${AIP_API_KEY:-}
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
       - ALLOW_IN_PROCESS_FALLBACK=${ALLOW_IN_PROCESS_FALLBACK:-false}
-      - MASTER_PEPPER=${MASTER_PEPPER:?MASTER_PEPPER must be set}
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
-      - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
-      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
+      - MASTER_PEPPER=${MASTER_PEPPER:-test-master-pepper-for-testing-purposes-min-32-chars}
+      - JWT_SECRET=${JWT_SECRET:-test-jwt-secret-for-testing-purposes-min-32-chars}
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
+      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_ENDPOINT=http://minio:9000
+      - QDRANT_URL=http://qdrant:6333
+      - EMBEDDING_GRPC_TARGET=host.docker.internal:50058
       - VLLM_SERVER_URL=http://host.docker.internal:8001/v1
       - TRANSLATION_SERVER_URL=http://host.docker.internal:8003
       - STT_SERVER_URL=http://host.docker.internal:8002
@@ -140,10 +157,11 @@ services:
       - MODERATION_SERVER_URL=http://host.docker.internal:8006
       - TTS_SERVER_URL=http://host.docker.internal:8007
     volumes:
-      - ../../apps/control-plane/src:/app/apps/control-plane/src
-      - ../../apps/frontend:/app/apps/frontend:ro
-      - ../../packages/common/common:/app/packages/common/common
-      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+      - ../../platform/gateway:/app/platform/gateway
+      - ../../solutions/rag:/app/solutions/rag
+      - ../../frontend:/app/frontend:ro
+      - ../../packages/common:/app/packages/common
+      - ../../packages/contracts:/app/packages/contracts
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -156,7 +174,7 @@ services:
 
   frontend:
     build:
-      context: ../../apps/frontend
+      context: ../../frontend
       dockerfile: Dockerfile
     container_name: aip-frontend
     ports:
@@ -164,7 +182,7 @@ services:
     environment:
       - VITE_BACKEND_URL=http://control-plane:8000
     volumes:
-      - ../../apps/frontend:/app
+      - ../../frontend:/app
       - /app/node_modules
     depends_on:
       - control-plane
@@ -173,19 +191,23 @@ services:
   dispatcher-worker:
     build:
       context: ../..
-      dockerfile: apps/dispatcher-worker/Dockerfile
+      dockerfile: platform/workers/dispatcher/Dockerfile
     container_name: aip-dispatcher-worker
     environment:
       - ENVIRONMENT=development
-      - MASTER_PEPPER=${MASTER_PEPPER:?MASTER_PEPPER must be set}
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
-      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
-      - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
+      - PYTHONPATH=/app:/app/platform/workers/dispatcher:/app/platform/workers/dispatcher/src:/app/packages/common:/app/packages/contracts
+      - MASTER_PEPPER=${MASTER_PEPPER:-test-master-pepper-for-testing-purposes-min-32-chars}
+      - JWT_SECRET=${JWT_SECRET:-test-jwt-secret-for-testing-purposes-min-32-chars}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
+      - VLLM_GRPC_TARGET=host.docker.internal:50051
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ../../apps/dispatcher-worker/src:/app/apps/dispatcher-worker/src
-      - ../../packages/common/common:/app/packages/common/common
-      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+      - ../../platform/workers/dispatcher/src:/app/platform/workers/dispatcher/src
+      - ../../packages/common:/app/packages/common
+      - ../../packages/contracts:/app/packages/contracts
     depends_on:
       - rabbitmq
     command: ["python", "-m", "src.main"]
@@ -194,35 +216,62 @@ services:
   callback-worker:
     build:
       context: ../..
-      dockerfile: apps/callback-worker/Dockerfile
+      dockerfile: platform/workers/callback/Dockerfile
     container_name: aip-callback-worker
     environment:
       - ENVIRONMENT=development
-      - MASTER_PEPPER=${MASTER_PEPPER:?MASTER_PEPPER must be set}
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
-      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
-      - MONGO_URI=${MONGO_URI:?MONGO_URI must be set}
+      - PYTHONPATH=/app/platform/workers/callback:/app/packages/common:/app/packages/contracts
+      - MASTER_PEPPER=${MASTER_PEPPER:-test-master-pepper-for-testing-purposes-min-32-chars}
+      - JWT_SECRET=${JWT_SECRET:-test-jwt-secret-for-testing-purposes-min-32-chars}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
     volumes:
-      - ../../apps/callback-worker/worker:/app/apps/callback-worker/worker
-      - ../../packages/common/common:/app/packages/common/common
-      - ../../packages/contracts/contracts:/app/packages/contracts/contracts
+      - ../../platform/workers/callback/worker:/app/platform/workers/callback/worker
+      - ../../packages/common:/app/packages/common
+      - ../../packages/contracts:/app/packages/contracts
     depends_on:
       - rabbitmq
+    restart: unless-stopped
+
+  rag-worker:
+    build:
+      context: ../..
+      dockerfile: solutions/rag/Dockerfile
+    container_name: aip-rag-worker
+    environment:
+      - ENVIRONMENT=development
+      - PYTHONPATH=/app:/app/solutions/rag:/app/packages/common:/app/packages/contracts
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
+      - QDRANT_URL=http://qdrant:6333
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../solutions/rag:/app/solutions/rag
+      - ../../packages/common:/app/packages/common
+      - ../../packages/contracts:/app/packages/contracts
+    command: ["python", "solutions/rag/worker.py"]
+    depends_on:
+      - rabbitmq
+      - qdrant
     restart: unless-stopped
 
   image-worker:
     profiles: ["ai-specialized", "gpu-workers", "all"]
     build:
       context: ../..
-      dockerfile: apps/image-worker/Dockerfile
+      dockerfile: platform/workers/media/image-worker/Dockerfile
     container_name: aip-image-worker
     environment:
       - ENVIRONMENT=development
-      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}@rabbitmq:5672/aip
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
       - AIP_IMAGE_QUEUE=q.aip.tasks.image
     volumes:
-      - ../../apps/image-worker:/app/apps/image-worker
+      - ../../platform/workers/media/image-worker:/app/platform/workers/media/image-worker
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     depends_on:
@@ -234,7 +283,7 @@ services:
     profiles: ["ai-llm", "all"]
     build:
       context: ../..
-      dockerfile: apps/data-plane/vllm-engine/Dockerfile
+      dockerfile: platform/runtimes/vllm-engine/Dockerfile
     container_name: aip-vllm-engine
     expose:
       - "8001"
@@ -247,7 +296,7 @@ services:
       - TEST_MODE=${VLLM_TEST_MODE:-false}
     volumes:
       - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-      - ../../apps/data-plane/vllm-engine:/app/apps/data-plane/vllm-engine
+      - ../../platform/runtimes/vllm-engine:/app/platform/runtimes/vllm-engine
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
@@ -264,7 +313,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: apps/data-plane/translation-server/Dockerfile
+      dockerfile: platform/runtimes/translation-server/Dockerfile
     container_name: aip-translation-server
     expose:
       - "8003"
@@ -274,7 +323,7 @@ services:
       - HF_HOME=/root/.cache/huggingface
     volumes:
       - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-      - ../../apps/data-plane/translation-server:/app/apps/data-plane/translation-server
+      - ../../platform/runtimes/translation-server:/app/platform/runtimes/translation-server
       - ../../packages/common/common:/app/packages/common/common
       - ../../packages/contracts/contracts:/app/packages/contracts/contracts
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]
@@ -284,7 +333,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: apps/data-plane/stt-server/Dockerfile
+      dockerfile: platform/runtimes/stt-server/Dockerfile
     container_name: aip-stt-server
     expose:
       - "8002"
@@ -294,7 +343,7 @@ services:
       - HF_HOME=/root/.cache/huggingface
     volumes:
       - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-      - ../../apps/data-plane/stt-server:/app/apps/data-plane/stt-server
+      - ../../platform/runtimes/stt-server:/app/platform/runtimes/stt-server
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
     restart: unless-stopped
@@ -303,7 +352,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: apps/data-plane/ocr-server/Dockerfile
+      dockerfile: platform/runtimes/ocr-server/Dockerfile
     container_name: aip-ocr-server
     expose:
       - "8004"
@@ -311,7 +360,7 @@ services:
       - PORT=8004
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
     volumes:
-      - ../../apps/data-plane/ocr-server:/app/apps/data-plane/ocr-server
+      - ../../platform/runtimes/ocr-server:/app/platform/runtimes/ocr-server
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8004", "--reload"]
     restart: unless-stopped
@@ -320,7 +369,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: apps/data-plane/moderation-server/Dockerfile
+      dockerfile: platform/runtimes/moderation-server/Dockerfile
     container_name: aip-moderation-server
     expose:
       - "8006"
@@ -328,7 +377,7 @@ services:
       - PORT=8006
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
     volumes:
-      - ../../apps/data-plane/moderation-server:/app/apps/data-plane/moderation-server
+      - ../../platform/runtimes/moderation-server:/app/platform/runtimes/moderation-server
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8006", "--reload"]
     restart: unless-stopped
@@ -337,7 +386,7 @@ services:
     profiles: ["ai-specialized", "all"]
     build:
       context: ../..
-      dockerfile: apps/data-plane/tts-adapter/Dockerfile
+      dockerfile: platform/runtimes/tts-adapter/Dockerfile
     container_name: aip-tts-adapter
     expose:
       - "8007"
@@ -345,7 +394,7 @@ services:
       - PORT=8007
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
     volumes:
-      - ../../apps/data-plane/tts-adapter:/app/apps/data-plane/tts-adapter
+      - ../../platform/runtimes/tts-adapter:/app/platform/runtimes/tts-adapter
       - ../../packages/common/common:/app/packages/common/common
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8007", "--reload"]
     restart: unless-stopped
@@ -355,6 +404,7 @@ volumes:
   redis_data:
   rabbitmq_data:
   minio_data:
+  qdrant_data:
   prometheus_data:
   alertmanager_data:
   grafana_data:

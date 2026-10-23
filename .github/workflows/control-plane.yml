@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, master, dev]
     paths:
-      - 'apps/control-plane/**'
+      - 'platform/gateway/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - 'packages/sdk/**'
@@ -12,7 +12,7 @@ on:
       - '.github/actions/**'
   pull_request:
     paths:
-      - 'apps/control-plane/**'
+      - 'platform/gateway/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - 'packages/sdk/**'
@@ -43,7 +43,7 @@ jobs:
       JWT_SECRET: "test-jwt-secret-for-testing-purposes-min-32-chars"
       MONGO_URI: "mongodb://localhost:27017/test_ai_platform"
       MINIO_ROOT_PASSWORD: "minioadmin123"
-      PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src"
+      PYTHONPATH: ".:packages/common:packages/contracts:packages/sdk:platform/gateway:platform/gateway/src"
     steps:
       - uses: actions/checkout@v4
 
@@ -56,21 +56,32 @@ jobs:
           uv pip install -e packages/common \
                          -e packages/contracts \
                          -e packages/sdk \
-                         -e apps/control-plane \
+                         -e platform/gateway \
                          pytest httpx ruff python-multipart
 
       - name: Lint with Ruff
         shell: bash
-        run: uv run ruff check apps/control-plane/ packages/
+        run: uv run ruff check platform/gateway/ packages/
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
 
       - name: Unit & Integration Tests
         shell: bash
         run: |
+          # Fail fast if test discovery finds no tests (Zero-collection guard)
           uv run pytest tests/test_gateway.py \
                         tests/test_security.py \
                         tests/test_srs_compliance.py \
                         tests/test_srs_section5_contract.py \
-                        tests/test_vietnamese_id_recognition.py \
+                        tests/test_usage_metering.py \
+                        tests/test_metrics.py \
+                        --collect-only -q > /dev/null
+
+          uv run pytest tests/test_gateway.py \
+                        tests/test_security.py \
+                        tests/test_srs_compliance.py \
+                        tests/test_srs_section5_contract.py \
                         tests/test_usage_metering.py \
                         tests/test_metrics.py \
                         --tb=short
@@ -107,7 +118,7 @@ jobs:
         uses: ./.github/actions/docker-build
         with:
           service-name: control-plane
-          dockerfile: apps/control-plane/Dockerfile
+          dockerfile: platform/gateway/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"

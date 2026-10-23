@@ -5,7 +5,7 @@ Document Parser Factory resolving format-specific parsers.
 from __future__ import annotations
 
 import os
-from typing import Dict, Optional, Type
+from typing import Dict, Type
 
 from ...domain.entities import ParsedDocument
 from ...domain.ports import DocumentParserPort

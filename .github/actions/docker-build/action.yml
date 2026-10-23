@@ -6,7 +6,7 @@ inputs:
     description: "Name of the service (e.g. callback-worker, control-plane)"
     required: true
   dockerfile:
-    description: "Path to Dockerfile (e.g. apps/callback-worker/Dockerfile)"
+    description: "Path to Dockerfile (e.g. platform/workers/callback/Dockerfile)"
     required: true
   registry:
     description: "Container registry"
@@ -29,6 +29,13 @@ runs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
+    - name: Sanitize and Lowercase Image Prefix
+      id: sanitize
+      shell: bash
+      run: |
+        CLEAN_PREFIX=$(echo "${{ inputs.image-prefix }}" | tr '[:upper:]' '[:lower:]' | tr -d ' ')
+        echo "clean_prefix=${CLEAN_PREFIX}" >> "$GITHUB_OUTPUT"
+
     - name: Log in to Registry
       if: inputs.push == 'true'
       uses: docker/login-action@v3
@@ -46,7 +53,7 @@ runs:
         provenance: true
         sbom: true
         tags: |
-          ${{ inputs.registry }}/${{ inputs.image-prefix }}/${{ inputs.service-name }}:${{ github.sha }}
-          ${{ inputs.registry }}/${{ inputs.image-prefix }}/${{ inputs.service-name }}:latest
+          ${{ inputs.registry }}/${{ steps.sanitize.outputs.clean_prefix }}/${{ inputs.service-name }}:${{ github.sha }}
+          ${{ inputs.registry }}/${{ steps.sanitize.outputs.clean_prefix }}/${{ inputs.service-name }}:latest
         cache-from: type=gha,scope=${{ inputs.service-name }}
         cache-to:   type=gha,mode=max,scope=${{ inputs.service-name }}

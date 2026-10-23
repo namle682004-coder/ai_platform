@@ -135,7 +135,7 @@ async def upload_document(
         effective_date = normalize_iso_date(effective_date)
         expiry_date = normalize_iso_date(expiry_date)
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
     file_bytes = await file.read()
     filename = file.filename or "uploaded_document"
@@ -153,7 +153,7 @@ async def upload_document(
             expiry_date=expiry_date,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     # Dispatch ingestion task to RabbitMQ worker
     await _dispatch_to_rabbitmq(doc_record)

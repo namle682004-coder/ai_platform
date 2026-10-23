@@ -244,7 +244,7 @@ class MongoSessionRepositoryAdapter(SessionRepositoryPort):
     ) -> bool:
         """Full upsert of session and messages (backward compatibility)."""
         now = time.time()
-        for idx, m in enumerate(messages):
+        for _idx, m in enumerate(messages):
             if not m.get("message_id"):
                 m["message_id"] = f"msg_{uuid.uuid4().hex[:12]}"
             if not m.get("timestamp"):

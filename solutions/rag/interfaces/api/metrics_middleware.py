@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Optional
 import uuid
 
 from fastapi import Request, Response

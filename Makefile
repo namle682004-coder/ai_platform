@@ -23,14 +23,14 @@ setup:
 	$(UV) pip install -e packages/common \
 	                  -e packages/contracts \
 	                  -e packages/sdk \
-	                  -e apps/control-plane \
-	                  -e apps/dispatcher-worker \
-	                  -e apps/callback-worker \
-	                  -e apps/image-worker \
-	                  -e apps/data-plane/vllm-engine \
-	                  -e apps/data-plane/translation-server \
-	                  -e apps/data-plane/stt-server \
-	                  -e apps/data-plane/moderation-server \
+	                  -e platform/gateway \
+	                  -e platform/workers/dispatcher \
+	                  -e platform/workers/callback \
+	                  -e platform/workers/media/image-worker \
+	                  -e platform/runtimes/vllm-engine \
+	                  -e platform/runtimes/translation-server \
+	                  -e platform/runtimes/stt-server \
+	                  -e platform/runtimes/moderation-server \
 	                  pytest httpx ruff python-multipart
 
 # ─── Infrastructure (Dev) ─────────────────────────────────────────
@@ -130,7 +130,7 @@ docker-logs-stt:
 # ─── Tầng 1: Control Plane (Native Dev) ───────────────────────────
 dev-gateway:
 	@echo "▶ Starting Control-Plane API on http://localhost:8000 ..."
-	cd apps/control-plane && \
+	cd platform/gateway && \
 	PYTHONPATH=../../packages/common:../../packages/contracts:../../packages/sdk:src:. \
 	../../$(UVICORN) src.main:app --reload --host 0.0.0.0 --port 8000
 
@@ -154,55 +154,55 @@ prepare-translation-model:
 
 dev-vllm:
 	@echo "▶ Starting vLLM Serving Engine on http://localhost:8001 ..."
-	cd apps/data-plane/vllm-engine && \
+	cd platform/runtimes/vllm-engine && \
 	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
 	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8001
 
 dev-translation:
 	@echo "▶ Starting Translation Microservice (Helsinki-NLP) on http://localhost:8003 ..."
-	cd apps/data-plane/translation-server && \
+	cd platform/runtimes/translation-server && \
 	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
 	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8003
 
 dev-stt:
 	@echo "▶ Starting Speech-to-Text Microservice (PhoWhisper) on http://localhost:8002 ..."
-	cd apps/data-plane/stt-server && \
+	cd platform/runtimes/stt-server && \
 	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
 	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8002
 
 dev-ocr:
 	@echo "▶ Starting OCR Microservice (PaddleOCR) on http://localhost:8004 ..."
-	cd apps/data-plane/ocr-server && \
+	cd platform/runtimes/ocr-server && \
 	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
 	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8004
 
 dev-moderation:
 	@echo "▶ Starting Moderation Microservice on http://localhost:8006 ..."
-	cd apps/data-plane/moderation-server && \
+	cd platform/runtimes/moderation-server && \
 	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
 	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8006
 
 dev-tts:
 	@echo "▶ Starting TTS Adapter Microservice on http://localhost:8007 ..."
-	cd apps/data-plane/tts-adapter && \
+	cd platform/runtimes/tts-adapter && \
 	PYTHONPATH=../../../packages/common:../../../packages/contracts:. \
 	../../../$(UVICORN) app:app --reload --host 0.0.0.0 --port 8007
 
 # ─── Tầng 3: Workers (Orchestration & GPU-Workloads) ──────────────
 dev-dispatcher:
 	@echo "▶ Starting AIP Dedicated Dispatcher Worker (Domain Tasks & Stale Reconciler)..."
-	PYTHONPATH=.:packages/common:packages/contracts:apps/control-plane:apps/control-plane/src:apps/dispatcher-worker:apps/dispatcher-worker/src \
-	$(PYTHON) apps/dispatcher-worker/src/main.py
+	PYTHONPATH=.:packages/common:packages/contracts:platform/gateway:platform/gateway/src:platform/workers/dispatcher:platform/workers/dispatcher/src \
+	$(PYTHON) platform/workers/dispatcher/src/main.py
 
 dev-callback:
 	@echo "▶ Starting AIP Dedicated Callback Worker (HMAC Webhooks)..."
-	PYTHONPATH=.:packages/common:packages/contracts:apps/control-plane:apps/control-plane/src:apps/callback-worker \
-	$(PYTHON) apps/callback-worker/worker/main.py
+	PYTHONPATH=.:packages/common:packages/contracts:platform/gateway:platform/gateway/src:platform/workers/callback \
+	$(PYTHON) platform/workers/callback/worker/main.py
 
 worker-image:
 	@echo "▶ Starting Image Generation Worker (FLUX.1/SDXL) — queue: q.aip.tasks.image ..."
-	PYTHONPATH=.:packages/common:packages/contracts:apps/control-plane:apps/control-plane/src:apps/image-worker \
-	$(PYTHON) apps/image-worker/worker.py
+	PYTHONPATH=.:packages/common:packages/contracts:platform/gateway:platform/gateway/src:platform/workers/media/image-worker \
+	$(PYTHON) platform/workers/media/image-worker/worker.py
 
 # ─── Tầng 6: Frontend / UI ────────────────────────────────────────
 frontend-dev:
@@ -210,33 +210,33 @@ frontend-dev:
 	@echo "   Staff Console  → http://localhost:5173/staff/dashboard"
 	@echo "   Auth Page      → http://localhost:5173/auth/login.html"
 	@echo "   Status Page    → http://localhost:5173/status.html"
-	cd apps/frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run dev
+	cd frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run dev
 
 ui: frontend-dev
 dev-ui: frontend-dev
 
 frontend-build:
 	@echo "▶ Building Frontend for Production (dist/)..."
-	cd apps/frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run build
+	cd frontend && export PATH="/home/namle/.local/bin:$$PATH" && npm run build
 
 # ─── Tests & Lint ─────────────────────────────────────────────────
 test:
 	@echo "▶ Running full Pytest test suite..."
-	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src:apps/dispatcher-worker:apps/callback-worker:apps/image-worker:apps/data-plane/translation-server:apps/data-plane/vllm-engine \
+	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:platform/gateway:platform/gateway/src:platform/workers/dispatcher:platform/workers/callback:platform/workers/media/image-worker:platform/runtimes/translation-server:platform/runtimes/vllm-engine \
 	$(PYTEST) -v
 
 lint:
 	@echo "▶ Running Ruff linter on all code..."
-	$(RUFF) check apps/ packages/ tests/
+	$(RUFF) check platform/ solutions/ packages/ tests/
 
 fmt:
 	@echo "▶ Auto-fixing Ruff lint issues..."
-	$(RUFF) check --fix apps/ packages/ tests/
+	$(RUFF) check --fix platform/ solutions/ packages/ tests/
 
 # ─── Utilities ────────────────────────────────────────────────────
 export:
 	@echo "▶ Exporting OpenAPI JSON, Postman Collection, and Redoc HTML..."
-	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:apps/control-plane:apps/control-plane/src \
+	PYTHONPATH=.:packages/common:packages/contracts:packages/sdk:platform/gateway:platform/gateway/src \
 	$(PYTHON) scripts/export_api_assets.py
 
 

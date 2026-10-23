@@ -39,4 +39,8 @@ __all__ = [
     "PdfDocumentParser",
     "DocxDocumentParser",
     "TextDocumentParser",
+    "PrometheusObservabilityAdapter",
+    "get_observability",
+    "measure_stage",
+    "rag_observability",
 ]
