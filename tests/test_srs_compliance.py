@@ -47,7 +47,7 @@ def test_srs_model_catalog_completeness():
     chat_model = next(
         model for model in models if model["id"] == "chat-general-standard"
     )
-    assert chat_model["runtime"].startswith("vLLM ")
+    assert chat_model["runtime"].startswith("llama.cpp ")
 
 
 def test_srs_model_detail_metadata():
@@ -56,10 +56,10 @@ def test_srs_model_detail_metadata():
     assert response.status_code == 200
     m = response.json()
     assert m["id"] == "chat-general-standard"
-    assert m["physical_model"] == "Qwen/Qwen2.5-1.5B-Instruct"
-    assert m["runtime"] == "vLLM"
+    assert m["physical_model"] == "Qwen/Qwen2.5-7B-Instruct"
+    assert m["runtime"] == "llama.cpp"
     assert m["namespace"] == "aip-text"
-    assert m["min_vram_gb"] == 2
+    assert m["min_vram_gb"] == 5
     assert m["stream_capable"] is True
 
 
