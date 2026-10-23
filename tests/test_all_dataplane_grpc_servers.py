@@ -12,14 +12,14 @@ import asyncio
 import os
 import sys
 
-BASE_DIR = "/home/namle/AI-Projects/llm-apps/ai_platform"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(BASE_DIR, "packages/common"))
 sys.path.insert(0, os.path.join(BASE_DIR, "packages/contracts"))
-sys.path.insert(0, os.path.join(BASE_DIR, "apps/data-plane/vllm-engine"))
-sys.path.insert(0, os.path.join(BASE_DIR, "apps/data-plane/stt-server"))
-sys.path.insert(0, os.path.join(BASE_DIR, "apps/data-plane/translation-server"))
-sys.path.insert(0, os.path.join(BASE_DIR, "apps/data-plane/ocr-server"))
-sys.path.insert(0, os.path.join(BASE_DIR, "apps/data-plane/tts-adapter"))
+sys.path.insert(0, os.path.join(BASE_DIR, "platform/runtimes/vllm-engine"))
+sys.path.insert(0, os.path.join(BASE_DIR, "platform/runtimes/stt-server"))
+sys.path.insert(0, os.path.join(BASE_DIR, "platform/runtimes/translation-server"))
+sys.path.insert(0, os.path.join(BASE_DIR, "platform/runtimes/ocr-server"))
+sys.path.insert(0, os.path.join(BASE_DIR, "platform/runtimes/tts-adapter"))
 
 import grpc
 from contracts.generated import inference_pb2, inference_pb2_grpc
@@ -41,11 +41,11 @@ async def main():
         sys.path.remove(directory)
         return mod
 
-    vllm_mod = load_module("vllm_grpc", os.path.join(BASE_DIR, "apps/data-plane/vllm-engine/grpc_server.py"))
-    stt_mod = load_module("stt_grpc", os.path.join(BASE_DIR, "apps/data-plane/stt-server/grpc_server.py"))
-    trans_mod = load_module("trans_grpc", os.path.join(BASE_DIR, "apps/data-plane/translation-server/grpc_server.py"))
-    ocr_mod = load_module("ocr_grpc", os.path.join(BASE_DIR, "apps/data-plane/ocr-server/grpc_server.py"))
-    tts_mod = load_module("tts_grpc", os.path.join(BASE_DIR, "apps/data-plane/tts-adapter/grpc_server.py"))
+    vllm_mod = load_module("vllm_grpc", os.path.join(BASE_DIR, "platform/runtimes/vllm-engine/grpc_server.py"))
+    stt_mod = load_module("stt_grpc", os.path.join(BASE_DIR, "platform/runtimes/stt-server/grpc_server.py"))
+    trans_mod = load_module("trans_grpc", os.path.join(BASE_DIR, "platform/runtimes/translation-server/grpc_server.py"))
+    ocr_mod = load_module("ocr_grpc", os.path.join(BASE_DIR, "platform/runtimes/ocr-server/grpc_server.py"))
+    tts_mod = load_module("tts_grpc", os.path.join(BASE_DIR, "platform/runtimes/tts-adapter/grpc_server.py"))
 
     ports = {
         "vllm": 50061,

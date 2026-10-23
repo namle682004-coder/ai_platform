@@ -7,7 +7,7 @@ def test_image_worker_process_job():
          patch("common.storage.minio_storage.generate_presigned_download_url", return_value="http://minio/presigned_test.png"):
         import sys
         import asyncio
-        sys.path.insert(0, "apps/image-worker")
+        sys.path.insert(0, "platform/workers/media/image-worker")
         import worker
         
         result = asyncio.run(worker.process_image_job({

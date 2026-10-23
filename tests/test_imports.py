@@ -5,7 +5,7 @@ Import verification test for all Data-Plane app.py entrypoints.
 import sys
 import os
 
-BASE_DIR = "/home/namle/AI-Projects/llm-apps/ai_platform"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(BASE_DIR, "packages/common") not in sys.path:
     sys.path.insert(0, os.path.join(BASE_DIR, "packages/common"))
 if os.path.join(BASE_DIR, "packages/contracts") not in sys.path:
@@ -14,7 +14,7 @@ if os.path.join(BASE_DIR, "packages/contracts") not in sys.path:
 def test_all_data_plane_imports():
     services = ["vllm-engine", "translation-server", "stt-server", "tts-adapter", "ocr-server"]
     for srv in services:
-        path = os.path.join(BASE_DIR, "apps/data-plane", srv)
+        path = os.path.join(BASE_DIR, "platform/runtimes", srv)
         sys.path.insert(0, path)
         try:
             mod = __import__("app")

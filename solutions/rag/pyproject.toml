@@ -19,3 +19,8 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# Code is imported as `solutions.rag` from the repo root via PYTHONPATH;
+# this project only declares dependencies, so there is nothing to ship.
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+

@@ -107,7 +107,7 @@ async def test_srs_2_3_video_worker_execution():
     """Verify Video Worker pipeline execution and artifact generation."""
     import importlib.util
     from pathlib import Path
-    worker_path = Path(__file__).resolve().parent.parent / "apps" / "video-worker" / "worker.py"
+    worker_path = Path(__file__).resolve().parent.parent / "platform" / "workers" / "media" / "video-worker" / "worker.py"
     spec = importlib.util.spec_from_file_location("video_worker", worker_path)
     video_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(video_mod)
@@ -133,7 +133,7 @@ async def test_srs_2_3_lipsync_worker_execution():
     """Verify LipSync Worker pipeline execution and artifact generation."""
     import importlib.util
     from pathlib import Path
-    worker_path = Path(__file__).resolve().parent.parent / "apps" / "lipsync-worker" / "worker.py"
+    worker_path = Path(__file__).resolve().parent.parent / "platform" / "workers" / "media" / "lipsync-worker" / "worker.py"
     spec = importlib.util.spec_from_file_location("lipsync_worker", worker_path)
     lipsync_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(lipsync_mod)

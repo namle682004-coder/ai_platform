@@ -14,8 +14,8 @@ from src.publisher.topology import (
 )
 from src.configs.settings import gateway_settings
 
-# Dynamically load StaleJobReconciler from apps/dispatcher-worker/src/reconciler/stale_reconciler.py
-_reconciler_path = Path(__file__).resolve().parent.parent / "apps" / "dispatcher-worker" / "src" / "reconciler" / "stale_reconciler.py"
+# Dynamically load StaleJobReconciler from platform/workers/dispatcher/src/reconciler/stale_reconciler.py
+_reconciler_path = Path(__file__).resolve().parent.parent / "platform" / "workers" / "dispatcher" / "src" / "reconciler" / "stale_reconciler.py"
 _spec = importlib.util.spec_from_file_location("stale_reconciler", _reconciler_path)
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)

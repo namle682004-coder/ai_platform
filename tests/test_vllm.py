@@ -10,7 +10,7 @@ import sys
 os.environ["TEST_MODE"] = "true"
 from fastapi.testclient import TestClient
 
-_server_dir = os.path.join(os.path.dirname(__file__), "..", "apps", "data-plane", "vllm-engine")
+_server_dir = os.path.join(os.path.dirname(__file__), "..", "platform", "runtimes", "vllm-engine")
 sys.path.insert(0, _server_dir)
 
 _spec = importlib.util.spec_from_file_location("vllm_app_module", os.path.join(_server_dir, "app.py"))
@@ -134,11 +134,13 @@ def test_gateway_proxy_returns_503_when_vllm_offline():
     # Mock invalid target URL to trigger network error
     from src.items.alias_router import alias_router
 
-    with patch.object(alias_router, "resolve_alias", new_callable=AsyncMock) as mock_resolve:
+    dead_target = "http://127.0.0.1:59999/v1"  # Non-existent port
+    with patch.object(alias_router, "resolve_alias", new_callable=AsyncMock) as mock_resolve, \
+         patch.object(alias_router, "resolve_target_url", new_callable=AsyncMock, return_value=dead_target):
         mock_resolve.return_value = {
             "alias": "chat-general-standard",
             "runtime": "vLLM",
-            "target_url": "http://127.0.0.1:59999/v1",  # Non-existent port
+            "target_url": dead_target,
         }
         res = gw_client.post("/v1/chat/completions", json=payload, headers=headers)
         assert res.status_code == 503
