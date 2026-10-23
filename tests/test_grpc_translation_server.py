@@ -6,16 +6,16 @@ import asyncio
 import os
 import sys
 
-BASE_DIR = "/home/namle/AI-Projects/llm-apps/ai_platform"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(BASE_DIR, "packages/common"))
 sys.path.insert(0, os.path.join(BASE_DIR, "packages/contracts"))
-sys.path.insert(0, os.path.join(BASE_DIR, "apps/data-plane/translation-server"))
+sys.path.insert(0, os.path.join(BASE_DIR, "platform/runtimes/translation-server"))
 
 import grpc
 from contracts.generated import translation_pb2, translation_pb2_grpc, common_pb2
 import importlib.util
 
-_spec = importlib.util.spec_from_file_location("trans_grpc_server_test_mod", os.path.join(BASE_DIR, "apps/data-plane/translation-server/grpc_server.py"))
+_spec = importlib.util.spec_from_file_location("trans_grpc_server_test_mod", os.path.join(BASE_DIR, "platform/runtimes/translation-server/grpc_server.py"))
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)
 create_grpc_server = _mod.create_grpc_server

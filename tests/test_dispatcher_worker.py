@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 import pytest
 
-_src = str(Path(__file__).resolve().parent.parent / "apps" / "dispatcher-worker" / "src")
+_src = str(Path(__file__).resolve().parent.parent / "platform" / "workers" / "dispatcher" / "src")
 if _src not in sys.path:
     sys.path.insert(0, _src)
 

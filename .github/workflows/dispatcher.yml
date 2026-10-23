@@ -4,14 +4,14 @@ on:
   push:
     branches: [main, master, dev]
     paths:
-      - 'apps/dispatcher-worker/**'
+      - 'platform/workers/dispatcher/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/dispatcher.yml'
       - '.github/actions/**'
   pull_request:
     paths:
-      - 'apps/dispatcher-worker/**'
+      - 'platform/workers/dispatcher/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/dispatcher.yml'
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PYTHONPATH: ".:packages/common:packages/contracts:apps/dispatcher-worker:apps/dispatcher-worker/src:apps/control-plane"
+      PYTHONPATH: ".:packages/common:packages/contracts:platform/workers/dispatcher:platform/workers/dispatcher/src:platform/gateway"
     steps:
       - uses: actions/checkout@v4
 
@@ -39,16 +39,18 @@ jobs:
         run: |
           uv pip install -e packages/common \
                          -e packages/contracts \
-                         -e apps/dispatcher-worker \
+                         -e platform/workers/dispatcher \
                          pytest httpx ruff
 
       - name: Lint with Ruff
         shell: bash
-        run: uv run ruff check apps/dispatcher-worker/
+        run: uv run ruff check platform/workers/dispatcher/
 
       - name: Dispatcher Worker Tests
         shell: bash
-        run: uv run pytest tests/test_dispatcher_worker.py tests/test_dcp_modules.py tests/test_dcp_enhancements.py --tb=short
+        run: |
+          uv run pytest tests/test_dispatcher_worker.py tests/test_dcp_modules.py tests/test_dcp_enhancements.py --collect-only -q > /dev/null
+          uv run pytest tests/test_dispatcher_worker.py tests/test_dcp_modules.py tests/test_dcp_enhancements.py --tb=short
 
   build-image:
     name: Docker Image (Dispatcher Worker)
@@ -65,7 +67,7 @@ jobs:
         uses: ./.github/actions/docker-build
         with:
           service-name: dispatcher-worker
-          dockerfile: apps/dispatcher-worker/Dockerfile
+          dockerfile: platform/workers/dispatcher/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"

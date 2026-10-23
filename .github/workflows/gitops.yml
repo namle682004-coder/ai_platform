@@ -55,7 +55,8 @@ jobs:
 
           helm upgrade --install aip-control deploy/helm/aip-control \
             -n aip-control --create-namespace --atomic --wait --timeout 5m \
-            --set image.tag=${{ github.sha }}
+            --set image.tag=${{ github.sha }} \
+            --set ragWorker.image.tag=${{ github.sha }}
 
           helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
             -n aip-multimodal --create-namespace --atomic --wait --timeout 10m \
@@ -107,6 +108,7 @@ jobs:
           helm upgrade --install aip-control deploy/helm/aip-control \
             -n aip-control --atomic --wait --timeout 5m \
             --set image.tag=${{ github.sha }} \
+            --set ragWorker.image.tag=${{ github.sha }} \
             --set replicaCount=5
 
           helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \

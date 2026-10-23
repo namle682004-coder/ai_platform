@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise RAG Studio - AIP Platform</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <style>
+        /* An hoan toan thanh cuon scrollbar nhung van cuon chuot binh thuong */
+        * {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        *::-webkit-scrollbar,
+        .chat-messages::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* ChatGPT Open Canvas Style (Dark Mode) */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 185px);
+            background: #111827;
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: none;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            min-height: 0;
+            padding: 24px 20px 20px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            background: #111827;
+            scroll-behavior: smooth;
+        }
+
+        .chat-stream-inner {
+            width: 100%;
+            max-width: 780px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .msg-bubble {
+            font-size: 15px;
+            line-height: 1.65;
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: #242f44;
+            color: #ececec;
+            border: none;
+            border-radius: 22px;
+            padding: 10px 18px;
+            max-width: 75%;
+            word-break: break-word;
+            box-shadow: none;
+            margin-left: auto;
+        }
+
+        .msg-assistant {
+            align-self: flex-start;
+            background: transparent;
+            color: #ececec;
+            border: none;
+            box-shadow: none;
+            padding: 2px 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .msg-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .msg-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 10px;
+            padding-top: 4px;
+        }
+        .btn-action-icon {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.15s ease;
+        }
+        .btn-action-icon:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .quick-chips {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+            align-items: flex-start;
+        }
+        .chip {
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            color: #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+            line-height: 1.4;
+            display: inline-block;
+        }
+        .chip:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        .citations-container {
+            margin-top: 12px;
+            padding-top: 6px;
+            border-top: none;
+        }
+        .citation-title {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .citation-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            font-size: 12.5px;
+            transition: all 0.2s;
+        }
+        .citation-card:hover {
+            background: rgba(15, 23, 42, 0.95);
+        }
+        .citation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .citation-doc {
+            font-weight: 600;
+            color: #60a5fa;
+        }
+        .citation-score {
+            font-size: 11px;
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+        .citation-excerpt {
+            color: #cbd5e1;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* ChatGPT Bottom input bar */
+        .chat-input-wrapper {
+            padding: 10px 20px 24px 20px;
+            background: #111827;
+            border-top: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .chat-input-box {
+            width: 100%;
+            max-width: 780px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            outline: none !important;
+            border-radius: 26px;
+            padding: 12px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            transition: all 0.2s ease;
+        }
+        .chat-input-box:focus-within {
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            outline: none !important;
+            background: #243048;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.35);
+        }
+        .chat-textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #f8fafc;
+            font-family: inherit;
+            font-size: 14.5px;
+            line-height: 1.5;
+            resize: none;
+            min-height: 28px;
+            max-height: 140px;
+            outline: none;
+        }
+        .chat-textarea::placeholder {
+            color: #64748b;
+        }
+        .chat-input-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 2px;
+        }
+
+        .btn-model-picker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none !important;
+            color: #cbd5e1;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-model-picker:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        .model-dropdown-menu {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            background: #1e293b;
+            border: none !important;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            padding: 6px;
+            min-width: 220px;
+            z-index: 100;
+        }
+        .model-opt {
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12.5px;
+            color: #cbd5e1;
+            transition: background 0.15s;
+        }
+        .model-opt:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+        .model-opt.active {
+            background: rgba(2, 132, 199, 0.18);
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        .btn-think-tool {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none !important;
+            color: #94a3b8;
+            padding: 5px 11px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-think-tool:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .btn-icon-subtle {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.15s;
+        }
+        .btn-icon-subtle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .btn-send-round {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #007fff;
+            border: none;
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-send-round:hover {
+            background: #0066cc;
+            transform: scale(1.05);
+        }
+
+        .chat-disclaimer {
+            text-align: center;
+            font-size: 11.5px;
+            color: #64748b;
+            margin-top: 6px;
+        }
+
+        
+        /* Citation Reference List (Admin Dark Mode Format theo anh) */
+        .citations-block {
+            margin-top: 16px;
+            padding-top: 6px;
+        }
+        .citations-header-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+        .citations-ordered-list {
+            margin: 0;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .citation-ref-item {
+            font-size: 14.5px;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+        .citation-ref-link {
+            color: #e2e8f0;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.15s ease;
+        }
+        .citation-ref-link:hover {
+            color: #38bdf8;
+        }
+        .cite-source-name {
+            font-weight: 500;
+        }
+        .cite-title-dotted {
+            text-decoration: underline dotted #64748b;
+            text-underline-offset: 3px;
+        }
+        .citation-ref-link:hover .cite-title-dotted {
+            text-decoration: underline solid #38bdf8;
+        }
+        .cite-external-arrow {
+            font-size: 13px;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-left: 2px;
+        }
+
+        /* Highlight Chunk Text */
+        mark.chunk-highlight {
+            background: #eab308 !important;
+            color: #000000 !important;
+            padding: 1px 4px !important;
+            border-radius: 3px !important;
+            font-weight: 700 !important;
+        }
+
+        /* Dropzone */
+        .dropzone-box {
+            border: 2px dashed rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dropzone-box:hover, .dropzone-box.dragover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="brand">
+            <div class="brand-logo"><i class="fa-solid fa-brain"></i></div>
+            <div class="brand-text">
+                <h2>AIP Platform</h2>
+                <span>Enterprise SaaS Grade</span>
+            </div>
+        </div>
+
+        <div class="menu-category">Main Console</div>
+        <ul class="nav-menu">
+            <li class="nav-item"><button onclick="location.href='/admin/dashboard'"><i class="fa-solid fa-chart-line"></i> Analytics Overview</button></li>
+            <li class="nav-item active"><button onclick="location.href='/admin/rag'"><i class="fa-solid fa-comments"></i> Enterprise RAG Chat</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/playground'"><i class="fa-solid fa-flask"></i> AI Model Playground</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/keys'"><i class="fa-solid fa-key"></i> API Keys & Approvals</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/users'"><i class="fa-solid fa-users-gear"></i> User & RBAC Control</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/aliases'"><i class="fa-solid fa-cubes"></i> Model Aliases Registry</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/endpoints'"><i class="fa-solid fa-network-wired"></i> Export Endpoints</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/jobs'"><i class="fa-solid fa-bolt"></i> Async Job Queue</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/audit'"><i class="fa-solid fa-list-check"></i> Security Audit Logs</button></li>
+        </ul>
+
+        <div class="menu-category">Developer Tools</div>
+        <ul class="nav-menu">
+            <li class="nav-item"><button onclick="location.href='/admin/staff'"><i class="fa-solid fa-code"></i> Staff Developer Portal</button></li>
+            <li class="nav-item"><button onclick="location.href='/admin/docs'"><i class="fa-solid fa-book"></i> Interactive Swagger</button></li>
+            <li class="nav-item"><button onclick="window.open('/status', '_blank')"><i class="fa-solid fa-globe"></i> Public Status Page</button></li>
+        </ul>
+
+        <div class="user-profile-card">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700;"><i class="fa-solid fa-user-shield"></i></div>
+                <div>
+                    <div id="user-display-email" style="font-size: 12.5px; font-weight: 700; color: #0f172a;">admin@company.com</div>
+                    <div id="user-display-role" style="font-size: 11px; color: var(--emerald); font-weight: 600;">Administrator</div>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="openModal('modal-auth')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        </div>
+    </div>
+
+    <div class="main-workspace">
+        <div class="top-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-sub);"></i>
+                <input type="text" placeholder="Tìm kiếm câu hỏi hoặc kho tài liệu...">
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-sm btn-primary" onclick="openIngestModal()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Quản lý & Nạp Tài Liệu
+                </button>
+                <div class="pill-status">
+                    <div class="status-dot"></div>
+                    Qdrant HNSW: aip_knowledge_base
+                </div>
+            </div>
+        </div>
+
+        <div class="content-body" style="padding-bottom: 10px;">
+            <div class="page-header" style="margin-bottom: 14px;">
+                <div>
+                    <h1 style="font-size: 22px;">Enterprise RAG Studio</h1>
+                    <p style="font-size: 13px;">Trợ lý AI Trực ban & Tra cứu tri thức chuẩn Hybrid Retrieval & Reranker</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-sm btn-secondary" onclick="clearChat()">
+                        <i class="fa-solid fa-trash-can"></i> Xóa hội thoại
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="openIngestModal()">
+                        <i class="fa-solid fa-folder-open"></i> Kho tài liệu (<span id="kb-doc-count">--</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main RAG Chat Interface -->
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="msg-bubble msg-assistant">
+                        <div class="msg-header">
+                            <i class="fa-solid fa-robot" style="color: #60a5fa;"></i> Trợ lý Trực ban AIP
+                        </div>
+                        <div>
+                            Xin chào! Tôi là trợ lý AI nghiệp vụ trực ban của hệ thống. Tôi hỗ trợ tra cứu chính xác các văn bản chỉ đạo, hiệp định ngoại giao, biên bản họp và tài liệu quy trình nội bộ. Mọi câu trả lời đều được kiểm chứng chéo và đối chiếu nguồn gốc (Citations).
+                        </div>
+                        <div style="margin-top: 12px;">
+                            <span style="font-size: 12px; color: #94a3b8; font-weight: 500;">Câu hỏi mẫu để kiểm thử nhanh:</span>
+                            <div class="quick-chips">
+                                <div class="chip" onclick="askSample(this)">Sau cuộc hội đàm, hai Thủ tướng đã chứng kiến những hoạt động và lễ bàn giao, khởi động các dự án nào?</div>
+                                <div class="chip" onclick="askSample(this)">Việt Nam đã xây tặng Lào những ngôi trường nào và trị giá bao nhiêu?</div>
+                                <div class="chip" onclick="askSample(this)">Trong biên bản họp ngày 25/09, định hướng thu thập nguồn tin ưu tiên các nền tảng nào theo thứ tự?</div>
+                                <div class="chip" onclick="askSample(this)">Ai là người phụ trách bàn giao công việc còn mở và đánh giá cuối thử việc ở tuần thứ 8?</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-box">
+                        <textarea id="chat-input" class="chat-textarea" placeholder="Nhập câu hỏi cần tra cứu tài liệu (Nhấn Enter để gửi)..." onkeydown="handleChatKeyDown(event)"></textarea>
+                        
+                        <div class="chat-input-bottom">
+                            <!-- Compact model selector on the left -->
+                            <div class="model-picker-container">
+                                <button type="button" class="btn-model-picker" onclick="toggleModelDropdown(event)">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span id="selected-model-label">Qwen 2.5 1.5B Fast</span>
+                                    <i class="fa-solid fa-chevron-up"></i>
+                                </button>
+                                <div id="model-dropdown-menu" class="model-dropdown-menu" style="display: none;">
+                                    <div class="model-opt active" onclick="selectModel('chat-general-standard', 'Qwen 2.5 1.5B Fast')">
+                                        Qwen 2.5 1.5B Fast
+                                    </div>
+                                    <div class="model-opt" onclick="selectModel('chat-general-high-quality', 'Qwen 2.5 14B High Quality')">
+                                        Qwen 2.5 14B High Quality
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Circular blue send button on the right -->
+                            <button id="btn-send" class="btn-send-round" onclick="sendChat()" title="Gửi tin nhắn">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Modal: Chi tiết Đoạn Trích Dẫn & Bôi Vàng Text Trùng Lặp -->
+    <div class="modal" id="modal-citation-viewer" onclick="closeAdminCitationModal(event)" style="display:none; align-items:center; justify-content:center;">
+        <div class="modal-content" style="max-width: 760px; width: 95vw; background: #1e293b; border: 1px solid rgba(255,255,255,0.12);" onclick="event.stopPropagation()">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-book-bookmark" style="color: #38bdf8; font-size: 18px;"></i>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #f8fafc; margin: 0;">Chi Tiết Đoạn Trích Dẫn & Đối Chiếu Nguồn</h3>
+                </div>
+                <button class="modal-close" onclick="closeAdminCitationModalDirect()">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 20px 24px;">
+                <!-- Header info -->
+                <div style="background: rgba(15, 23, 42, 0.6); border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px;">Tài liệu tham chiếu</div>
+                        <div id="admin-modal-cite-title" style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 2px;">--</div>
+                        <div id="admin-modal-cite-docid" style="font-size: 11.5px; color: #64748b; font-family: monospace;">--</div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; color: #94a3b8;">Độ trùng khớp</div>
+                            <span id="admin-modal-cite-score" style="font-size: 13px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 2px 8px; border-radius: 6px;">--%</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; color: #94a3b8;">Trang</div>
+                            <span id="admin-modal-cite-page" style="font-size: 13px; font-weight: 600; color: #cbd5e1;">Trang 1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Highlight hint -->
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #fef08a; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.25); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px;">
+                    <i class="fa-solid fa-highlighter" style="color: #eab308;"></i>
+                    <span>Các từ khóa và cụm nội dung trùng khớp với câu trả lời đã được <strong>bôi vàng</strong> để bạn đối chiếu.</span>
+                </div>
+
+                <!-- Chunk Excerpt with Highlighted Text -->
+                <div style="font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Nội dung đoạn trích (Chunk Excerpt):
+                </div>
+                <div id="admin-modal-cite-excerpt" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.7; color: #f1f5f9; max-height: 280px; overflow-y: auto; white-space: pre-wrap;">
+                    --
+                </div>
+
+                <!-- Footer buttons -->
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+                    <button class="btn btn-secondary" onclick="copyAdminCitationExcerpt()" id="admin-btn-copy-chunk">
+                        <i class="fa-regular fa-copy"></i> Sao chép đoạn trích
+                    </button>
+                    <button class="btn btn-primary" onclick="closeAdminCitationModalDirect()">
+                        Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP MODAL INGEST & KNOWLEDGE MANAGEMENT -->
+    <div class="modal" id="modal-ingest">
+        <div class="modal-content" style="max-width: 780px;">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-database" style="color: #3b82f6; font-size: 20px;"></i>
+                    <h3 style="margin:0;">Quản trị Kho tri thức & Ingestion Hub</h3>
+                </div>
+                <button class="modal-close" onclick="closeModal('modal-ingest')">&times;</button>
+            </div>
+            
+            <div style="display:flex; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 18px;">
+                <button id="tab-btn-upload" class="btn btn-sm btn-outline" style="border-radius:0; border:none; border-bottom:2px solid #3b82f6; color:#fff;" onclick="switchIngestTab('upload')">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Nạp tài liệu mới
+                </button>
+                <button id="tab-btn-list" class="btn btn-sm btn-outline" style="border-radius:0; border:none; color:#94a3b8;" onclick="switchIngestTab('list')">
+                    <i class="fa-solid fa-list-check"></i> Danh sách tài liệu hiện có (<span id="modal-doc-count">0</span>)
+                </button>
+            </div>
+
+            <!-- Tab 1: Upload & Ingest -->
+            <div id="tab-ingest-upload">
+                <form id="form-upload-doc" onsubmit="handleDocUpload(event)">
+                    <div class="dropzone-box" id="dropzone" onclick="document.getElementById('file-upload').click()">
+                        <i class="fa-solid fa-file-arrow-up" style="font-size: 38px; color: #3b82f6; margin-bottom: 10px;"></i>
+                        <h4 style="margin: 0 0 6px 0;">Kéo & Thả tài liệu vào đây hoặc Click để chọn file</h4>
+                        <p style="font-size: 12px; color: #94a3b8; margin: 0;">Hỗ trợ định dạng: .pdf, .docx, .txt, .md, .csv (Tối đa 50MB)</p>
+                        <input type="file" id="file-upload" style="display: none;" onchange="handleFileSelected(event)">
+                        <div id="selected-file-name" style="margin-top: 10px; font-weight: 700; color: #60a5fa; display: none;"></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px;">
+                        <div class="form-group">
+                            <label>Tiêu đề tài liệu (Tùy chọn)</label>
+                            <input type="text" id="doc-title" class="form-control" placeholder="Tự động lấy tên file nếu bỏ trống">
+                        </div>
+                        <div class="form-group">
+                            <label>Phòng ban / Lĩnh vực</label>
+                            <select id="doc-department" class="form-control">
+                                <option value="GENERAL">Chung (Toàn đơn vị)</option>
+                                <option value="OPERATIONS">Trực ban tác chiến / Operations</option>
+                                <option value="TECH">Kỹ thuật & Công nghệ</option>
+                                <option value="HR">Nhân sự & Đào tạo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="upload-progress" style="display:none; margin-top: 14px;">
+                        <div style="display:flex; justify-content:space-between; font-size: 12px; margin-bottom: 4px;">
+                            <span id="upload-status-text">Đang tải lên và sinh vector...</span>
+                            <span id="upload-percent">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                            <div id="progress-bar" style="width: 0%; height: 100%; background: #3b82f6; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-ingest')">Đóng</button>
+                        <button type="submit" id="btn-submit-upload" class="btn btn-primary" disabled>
+                            <i class="fa-solid fa-bolt"></i> Nạp & Vectorize Tài Liệu
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tab 2: Document Repository List -->
+            <div id="tab-ingest-list" style="display:none;">
+                <div style="max-height: 420px; overflow-y: auto;">
+                    <table class="data-table" style="width:100%; font-size:12.5px;">
+                        <thead>
+                            <tr>
+                                <th>Tên Tài Liệu</th>
+                                <th>Loại</th>
+                                <th>Số Chunks</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="docs-tbody">
+                            <tr><td colspan="5" style="text-align:center; padding:20px;">Đang tải danh sách...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const DEFAULT_TOKEN = "Bearer aip_live_valid_test_key_12345";
+        let activeConversationId = "conv_" + Math.random().toString(36).substring(2, 10);
+        let chatHistory = [];
+        let selectedFile = null;
+        let currentModel = "chat-general-standard";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadDocumentCount();
+            setupDropzone();
+            document.addEventListener('click', (e) => {
+                const picker = document.querySelector('.model-picker-container');
+                if (picker && !picker.contains(e.target)) {
+                    document.getElementById('model-dropdown-menu').style.display = 'none';
+                }
+            });
+        });
+
+        function toggleModelDropdown(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('model-dropdown-menu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function selectModel(modelId, label) {
+            currentModel = modelId;
+            document.getElementById('selected-model-label').innerText = label;
+            document.querySelectorAll('.model-opt').forEach(el => {
+                el.classList.toggle('active', el.innerText.includes(label));
+            });
+            document.getElementById('model-dropdown-menu').style.display = 'none';
+        }
+
+        function setupDropzone() {
+            const dropzone = document.getElementById("dropzone");
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                }, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                }, false);
+            });
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    processSelectedFile(files[0]);
+                }
+            }, false);
+        }
+
+        function handleFileSelected(event) {
+            if (event.target.files && event.target.files.length > 0) {
+                processSelectedFile(event.target.files[0]);
+            }
+        }
+
+        function processSelectedFile(file) {
+            selectedFile = file;
+            const label = document.getElementById("selected-file-name");
+            label.innerText = `Đã chọn: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            label.style.display = "block";
+            document.getElementById("btn-submit-upload").disabled = false;
+        }
+
+        function openIngestModal() {
+            document.getElementById("modal-ingest").style.display = "flex";
+            switchIngestTab('upload');
+            loadDocumentList();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = "none";
+        }
+
+        function switchIngestTab(tab) {
+            const uploadTab = document.getElementById("tab-ingest-upload");
+            const listTab = document.getElementById("tab-ingest-list");
+            const btnUpload = document.getElementById("tab-btn-upload");
+            const btnList = document.getElementById("tab-btn-list");
+
+            if (tab === 'upload') {
+                uploadTab.style.display = "block";
+                listTab.style.display = "none";
+                btnUpload.style.borderBottom = "2px solid #3b82f6";
+                btnUpload.style.color = "#fff";
+                btnList.style.borderBottom = "none";
+                btnList.style.color = "#94a3b8";
+            } else {
+                uploadTab.style.display = "none";
+                listTab.style.display = "block";
+                btnList.style.borderBottom = "2px solid #3b82f6";
+                btnList.style.color = "#fff";
+                btnUpload.style.borderBottom = "none";
+                btnUpload.style.color = "#94a3b8";
+                loadDocumentList();
+            }
+        }
+
+        async function loadDocumentCount() {
+            try {
+                const res = await fetch(`${API_BASE}/v1/knowledge/documents?page=1&page_size=1`, {
+                    headers: { "Authorization": DEFAULT_TOKEN }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("kb-doc-count").innerText = data.total || 0;
+                    document.getElementById("modal-doc-count").innerText = data.total || 0;
+                }
+            } catch (e) {
+                console.warn("Could not load doc count", e);
+            }
+        }
+
+        async function loadDocumentList() {
+            const tbody = document.getElementById("docs-tbody");
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải kho dữ liệu...</td></tr>`;
+            try {
+                const res = await fetch(`${API_BASE}/v1/knowledge/documents?page=1&page_size=50`, {
+                    headers: { "Authorization": DEFAULT_TOKEN }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("kb-doc-count").innerText = data.total || 0;
+                    document.getElementById("modal-doc-count").innerText = data.total || 0;
+                    if (!data.items || data.items.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Chưa có tài liệu nào trong Knowledge Base</td></tr>`;
+                        return;
+                    }
+                    tbody.innerHTML = data.items.map(doc => `
+                        <tr>
+                            <td>
+                                <div style="font-weight:600; color:#f8fafc;">${escapeHtml(doc.title || doc.filename)}</div>
+                                <div style="font-size:11px; color:#64748b;">${escapeHtml(doc.doc_id)}</div>
+                            </td>
+                            <td><span style="font-size:11px; background:#1e293b; padding:2px 6px; border-radius:4px;">${escapeHtml(doc.file_type || '')}</span></td>
+                            <td><strong>${doc.total_chunks || 0}</strong> chunks</td>
+                            <td>
+                                <span style="font-size:11px; color:#38bdf8;">
+                                    ${doc.status}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteDoc('${doc.doc_id}')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join("");
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444;">Lỗi kết nối tới máy chủ</td></tr>`;
+            }
+        }
+
+        async function handleDocUpload(e) {
+            e.preventDefault();
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+            const titleVal = document.getElementById("doc-title").value.trim();
+            if (titleVal) formData.append("title", titleVal);
+            formData.append("department", document.getElementById("doc-department").value);
+            formData.append("allowed_roles", "*");
+
+            const progress = document.getElementById("upload-progress");
+            const progressBar = document.getElementById("progress-bar");
+            const statusText = document.getElementById("upload-status-text");
+            const btnSubmit = document.getElementById("btn-submit-upload");
+
+            progress.style.display = "block";
+            progressBar.style.width = "40%";
+            statusText.innerText = "Đang tải lên và sinh vector BGE-M3...";
+            btnSubmit.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/v1/knowledge/documents/upload?wait_for_completion=true`, {
+                    method: "POST",
+                    headers: { "Authorization": DEFAULT_TOKEN },
+                    body: formData
+                });
+                progressBar.style.width = "100%";
+                if (res.ok) {
+                    const data = await res.json();
+                    statusText.innerText = `Nạp thành công! Đã tách ${data.total_chunks || 0} chunks.`;
+                    setTimeout(() => {
+                        progress.style.display = "none";
+                        selectedFile = null;
+                        document.getElementById("selected-file-name").style.display = "none";
+                        document.getElementById("doc-title").value = "";
+                        btnSubmit.disabled = true;
+                        switchIngestTab('list');
+                    }, 1200);
+                } else {
+                    const err = await res.json();
+                    statusText.innerText = `Lỗi: ${err.detail || 'Không thể nạp tệp'}`;
+                    btnSubmit.disabled = false;
+                }
+            } catch (err) {
+                statusText.innerText = "Lỗi kết nối máy chủ";
+                btnSubmit.disabled = false;
+            }
+        }
+
+        async function deleteDoc(docId) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa tài liệu ${docId} và loại bỏ toàn bộ vector khỏi Qdrant?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/v1/knowledge/documents/${docId}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": DEFAULT_TOKEN }
+                });
+                if (res.ok) {
+                    loadDocumentList();
+                } else {
+                    alert("Không thể xóa tài liệu");
+                }
+            } catch (e) {
+                alert("Lỗi kết nối khi xóa");
+            }
+        }
+
+        function handleChatKeyDown(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendChat();
+            }
+        }
+
+        function askSample(el) {
+            document.getElementById("chat-input").value = el.innerText.trim();
+            sendChat();
+        }
+
+        function clearChat() {
+            activeConversationId = "admin_conv_" + Math.random().toString(36).substring(2, 10);
+            chatHistory = [];
+            const container = document.getElementById("admin-stream-container") || document.getElementById("chat-messages");
+            container.innerHTML = `
+                <div class="msg-bubble msg-assistant">
+                    <div class="msg-header">
+                        <i class="fa-solid fa-robot" style="color: #60a5fa;"></i> Trợ lý Trực ban AIP
+                    </div>
+                    <div style="line-height: 1.65; color: #ececec; font-size: 15px;">
+                        Xin chào! Tôi là trợ lý AI nghiệp vụ trực ban của hệ thống. Tôi hỗ trợ tra cứu chính xác các văn bản chỉ đạo, hiệp định ngoại giao, biên bản họp và tài liệu quy trình nội bộ. Mọi câu trả lời đều được kiểm chứng chéo và đối chiếu nguồn gốc (Citations).
+                    </div>
+                    <div style="margin-top: 14px;">
+                        <div style="font-size: 12.5px; color: #94a3b8; font-weight: 600; margin-bottom: 6px;">Câu hỏi thường dùng:</div>
+                        <div class="quick-chips">
+                            <div class="chip" onclick="askSample(this)">Sau cuộc hội đàm, hai Thủ tướng đã chứng kiến những hoạt động và lễ bàn giao, khởi động các dự án nào?</div>
+                            <div class="chip" onclick="askSample(this)">Việt Nam đã xây tặng Lào những ngôi trường nào và trị giá bao nhiêu?</div>
+                            <div class="chip" onclick="askSample(this)">Trong biên bản họp ngày 25/09, định hướng thu thập nguồn tin ưu tiên các nền tảng nào theo thứ tự?</div>
+                            <div class="chip" onclick="askSample(this)">Ai là người phụ trách bàn giao công việc còn mở và đánh giá cuối thử việc ở tuần thứ 8?</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        // Global storage for citation previews in Admin
+        let currentAdminCitationsMap = {};
+
+                function isCitationAttributedAdmin(citation, answer) {
+            if (!answer || !citation) return true;
+            const idxTag = "[" + citation.index + "]";
+            if (answer.includes(idxTag)) return true;
+
+            const stopWords = new Set([
+                "là", "và", "các", "của", "trong", "có", "được", "đã", "những", "cho",
+                "về", "này", "đó", "với", "khi", "để", "một", "thì", "sẽ", "ở", "tại",
+                "ra", "lại", "theo", "nào", "ai", "gì", "từ", "làm", "thể", "cần",
+                "sau", "hai", "cùng", "như", "nhiều", "toàn", "mỗi", "trên"
+            ]);
+
+            const cleanAns = (answer || "").toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'<>]/g, " ");
+            const ansWords = cleanAns.split(/\s+/).filter(Boolean);
+            const ansBigrams = new Set();
+            for (let i = 0; i < ansWords.length - 1; i++) {
+                const w1 = ansWords[i], w2 = ansWords[i + 1];
+                if ((!stopWords.has(w1) || !stopWords.has(w2)) && w1.length > 1 && w2.length > 1) {
+                    ansBigrams.add(w1 + " " + w2);
+                }
+            }
+
+            const cleanText = (citation.excerpt || citation.text || "").toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'<>]/g, " ");
+            const textWords = cleanText.split(/\s+/).filter(Boolean);
+            let overlap = 0;
+            for (let i = 0; i < textWords.length - 1; i++) {
+                const w1 = textWords[i], w2 = textWords[i + 1];
+                if ((!stopWords.has(w1) || !stopWords.has(w2)) && w1.length > 1 && w2.length > 1) {
+                    if (ansBigrams.has(w1 + " " + w2)) overlap++;
+                }
+            }
+            return overlap >= 2;
+        }
+
+function formatAdminCitations(citations, query, answer) {
+            if (!citations || citations.length === 0) return "";
+
+            // Khử trùng lặp citations theo nguồn tài liệu (doc_id và title)
+            // Nếu cùng 1 nguồn tài liệu thì chỉ hiển thị duy nhất 1 citation.
+            // Nếu từ nhiều nguồn khác nhau mới in ra đa dạng citations.
+            const seenDocs = new Set();
+            const seenTitles = new Set();
+            const uniqueCitations = [];
+            for (const c of citations) {
+                const docId = (c.doc_id || "").trim();
+                const title = (c.title || "").trim();
+                const key = docId || title;
+                if (!key) continue;
+                if (seenDocs.has(key) || (title && seenTitles.has(title))) {
+                    continue;
+                }
+                seenDocs.add(key);
+                if (title) seenTitles.add(title);
+                uniqueCitations.push(c);
+            }
+            if (uniqueCitations.length === 0) return "";
+
+            // Kiểm chứng mức độ đóng góp thực tế vào câu trả lời (Grounded Attribution)
+            let finalCits = uniqueCitations;
+            if (answer && answer.trim().length > 20) {
+                const attributed = uniqueCitations.filter(c => isCitationAttributedAdmin(c, answer));
+                if (attributed.length > 0) {
+                    finalCits = attributed;
+                }
+            }
+
+            const storeKey = "cites_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+            currentAdminCitationsMap[storeKey] = {
+                citations: finalCits,
+                query: query,
+                answer: answer
+            };
+
+            const items = finalCits.map((c, idx) => {
+                let sourceName = "Tài liệu hệ thống";
+                let titleName = c.title || c.doc_id || "Đoạn trích";
+
+                if (titleName.includes("–")) {
+                    const p = titleName.split("–");
+                    sourceName = p[0].trim();
+                    titleName = p.slice(1).join("–").trim();
+                } else if (titleName.includes("-") && !titleName.startsWith("doc_")) {
+                    const p = titleName.split("-");
+                    sourceName = p[0].trim();
+                    titleName = p.slice(1).join("-").trim();
+                } else {
+                    const dId = c.doc_id || "";
+                    if (dId.includes("bien_ban") || dId.includes("hop")) {
+                        sourceName = "Văn phòng Chỉ đạo";
+                    } else if (c.doc_id.includes("ngoai_giao") || c.doc_id.includes("lao")) {
+                        sourceName = "Bộ Ngoại giao";
+                    } else if (c.doc_id.includes("quy_trinh") || c.doc_id.includes("nhan_su")) {
+                        sourceName = "Khối Nhân sự & Đào tạo";
+                    } else if (c.doc_id.includes("tac_chien") || c.doc_id.includes("nguon_tin")) {
+                        sourceName = "Trung tâm Tác chiến";
+                    } else {
+                        sourceName = "Kho Tri thức AIP";
+                    }
+                }
+
+                return `
+                    <li class="citation-ref-item">
+                        <a href="javascript:void(0)" class="citation-ref-link" onclick="openAdminCitationPreview('${storeKey}', ${idx})" title="Nhấn để xem chi tiết đoạn trích và đối chiếu bôi vàng text">
+                            <span class="cite-source-name">${escapeHtml(sourceName)}</span> – 
+                            <span class="cite-title-dotted">${escapeHtml(titleName)}</span> 
+                            <span class="cite-external-arrow">↗</span>
+                        </a>
+                    </li>
+                `;
+            }).join("");
+
+            return `
+                <div class="citations-block">
+                    <div class="citations-header-title">Nguồn tham khảo:</div>
+                    <ol class="citations-ordered-list">
+                        ${items}
+                    </ol>
+                </div>
+            `;
+        }
+
+        function highlightOverlappingTextAdmin(excerpt, answer, query) {
+            if (!excerpt) return "";
+            const stopWords = new Set([
+                "là", "và", "các", "của", "trong", "có", "được", "đã", "những", "cho", 
+                "về", "này", "đó", "với", "khi", "để", "một", "thì", "sẽ", "ở", "tại", 
+                "ra", "lại", "theo", "nào", "ai", "gì", "từ", "làm", "thể", "cần",
+                "the", "and", "is", "in", "of", "to", "for", "with", "a", "an", "on", "at"
+            ]);
+
+            const termSet = new Set();
+            const cleanText = (answer + " " + (query || "")).replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'<>]/g, " ");
+            const words = cleanText.split(/\s+/).filter(Boolean);
+
+            for (let i = 0; i < words.length - 1; i++) {
+                const w1 = words[i].toLowerCase();
+                const w2 = words[i+1].toLowerCase();
+                if (!stopWords.has(w1) && !stopWords.has(w2) && w1.length > 2 && w2.length > 2) {
+                    const phrase = words[i] + " " + words[i+1];
+                    if (excerpt.toLowerCase().includes(phrase.toLowerCase())) {
+                        termSet.add(phrase);
+                    }
+                }
+            }
+
+            words.forEach(w => {
+                if (w.length >= 2 && !stopWords.has(w.toLowerCase())) {
+                    if (excerpt.toLowerCase().includes(w.toLowerCase())) {
+                        termSet.add(w);
+                    }
+                }
+            });
+
+            if (termSet.size === 0) return escapeHtml(excerpt);
+
+            const sortedTerms = Array.from(termSet).sort((a, b) => b.length - a.length);
+            const escapedTerms = sortedTerms.map(t => t.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+            const regex = new RegExp(`(${escapedTerms.join("|")})`, "gi");
+
+            const safe = escapeHtml(excerpt);
+            return safe.replace(regex, `<mark class="chunk-highlight">$1</mark>`);
+        }
+
+        let activeAdminCitationExcerptRaw = "";
+
+        function openAdminCitationPreview(storeKey, idx) {
+            const data = currentAdminCitationsMap[storeKey];
+            if (!data || !data.citations || !data.citations[idx]) return;
+
+            const c = data.citations[idx];
+            activeAdminCitationExcerptRaw = c.excerpt || "";
+
+            document.getElementById("admin-modal-cite-title").innerText = c.title || c.doc_id;
+            document.getElementById("admin-modal-cite-docid").innerText = "ID: " + c.doc_id;
+            document.getElementById("admin-modal-cite-score").innerText = (c.score * 100).toFixed(1) + "%";
+            document.getElementById("admin-modal-cite-page").innerText = "Trang " + (c.page_number || 1);
+
+            const highlighted = highlightOverlappingTextAdmin(c.excerpt, data.answer, data.query);
+            document.getElementById("admin-modal-cite-excerpt").innerHTML = highlighted;
+
+            const m = document.getElementById("modal-citation-viewer");
+            m.style.display = "flex";
+        }
+
+        function closeAdminCitationModal(e) {
+            if (e.target.id === "modal-citation-viewer") {
+                document.getElementById("modal-citation-viewer").style.display = "none";
+            }
+        }
+
+        function closeAdminCitationModalDirect() {
+            document.getElementById("modal-citation-viewer").style.display = "none";
+        }
+
+        function copyAdminCitationExcerpt() {
+            if (activeAdminCitationExcerptRaw) {
+                navigator.clipboard.writeText(activeAdminCitationExcerptRaw);
+                const btn = document.getElementById("admin-btn-copy-chunk");
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Đã sao chép`;
+                setTimeout(() => {
+                    btn.innerHTML = `<i class="fa-regular fa-copy"></i> Sao chép đoạn trích`;
+                }, 1500);
+            }
+        }
+
+        async function sendChat() {
+            const input = document.getElementById("chat-input");
+            const query = input.value.trim();
+            if (!query) return;
+
+            input.value = "";
+            const container = document.getElementById("admin-stream-container") || document.getElementById("chat-messages");
+            const scrollArea = document.getElementById("chat-messages");
+
+            container.innerHTML += `
+                <div class="msg-bubble msg-user">
+                    ${escapeHtml(query)}
+                </div>
+            `;
+            scrollArea.scrollTop = scrollArea.scrollHeight;
+
+            const botMsgId = "bot-msg-" + Date.now();
+            container.innerHTML += `
+                <div class="msg-bubble msg-assistant" id="${botMsgId}">
+                    <div class="msg-header">
+                        <i class="fa-solid fa-robot" style="color: #60a5fa;"></i> Trợ lý AI
+                    </div>
+                    <div class="bot-content" style="color: #8e8e8e; font-size: 14px;"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i>Đang suy luận...</div>
+                </div>
+            `;
+            scrollArea.scrollTop = scrollArea.scrollHeight;
+
+            try {
+                const res = await fetch(`${API_BASE}/v1/rag/chat`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": DEFAULT_TOKEN
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        conversation_id: activeConversationId,
+                        history: chatHistory,
+                        model: currentModel,
+                        similarity_threshold: 0.65,
+                        top_k: 4,
+                        temperature: 0.2,
+                        max_tokens: 1024,
+                        stream: false
+                    })
+                });
+
+                const botElement = document.getElementById(botMsgId);
+                if (res.ok) {
+                    const data = await res.json();
+                    chatHistory.push({ role: "user", content: query });
+                    chatHistory.push({ role: "assistant", content: data.answer });
+
+                    let citationsHtml = formatAdminCitations(data.citations, query, data.answer);
+
+                    botElement.innerHTML = `
+                        <div class="bot-content" style="white-space: pre-wrap; font-size:15px; line-height:1.7; color:#ececec;">${escapeHtml(data.answer)}</div>
+                        ${citationsHtml}
+                        <div class="msg-actions">
+                            <button class="btn-action-icon" title="Sao chép" onclick="copyAdminAnswer(this)" data-answer="${escapeHtml(data.answer)}"><i class="fa-regular fa-copy"></i></button>
+                            <button class="btn-action-icon" title="Hữu ích"><i class="fa-regular fa-thumbs-up"></i></button>
+                            <button class="btn-action-icon" title="Chưa tốt"><i class="fa-regular fa-thumbs-down"></i></button>
+                            <button class="btn-action-icon" title="Chia sẻ"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
+                            <button class="btn-action-icon" title="Thử lại" onclick="retryAdminQuery('${escapeHtml(query)}')"><i class="fa-solid fa-rotate-right"></i></button>
+                            <button class="btn-action-icon" title="Thêm"><i class="fa-solid fa-ellipsis"></i></button>
+                        </div>
+                    `;
+                } else {
+                    const err = await res.json();
+                    botElement.innerHTML = `
+                        <div class="msg-header" style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi hệ thống</div>
+                        <div style="color:#ef4444;">${escapeHtml(err.detail || 'Không thể nhận phản hồi')}</div>
+                    `;
+                }
+            } catch (err) {
+                const botElement = document.getElementById(botMsgId);
+                botElement.innerHTML = `
+                    <div class="msg-header" style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi kết nối</div>
+                    <div style="color:#ef4444;">Không thể kết nối đến máy chủ AIP Control-Plane.</div>
+                `;
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

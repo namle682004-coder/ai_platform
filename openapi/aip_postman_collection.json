@@ -1205,6 +1205,64 @@
           }
         ],
         "url": {
+          "raw": "{{base_url}}/v1/user/apis",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "apis"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update User Apis State",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/apis",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "apis"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get User Apis State",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
           "raw": "{{base_url}}/v1/user/apis-state",
           "host": [
             "{{base_url}}"
@@ -1392,6 +1450,35 @@
       }
     },
     {
+      "name": "List Database Apis Catalog",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/catalog",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "catalog"
+          ]
+        }
+      }
+    },
+    {
       "name": "Get User Gpu Status",
       "request": {
         "method": "GET",
@@ -1416,6 +1503,35 @@
             "v1",
             "user",
             "gpu-status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get API usage counts from MongoDB",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/user/api-summary",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "user",
+            "api-summary"
           ]
         }
       }
@@ -2167,6 +2283,183 @@
             "v1",
             "usage",
             "tpm"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Upload & Ingest Document into Knowledge Base",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/knowledge/documents/upload",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "knowledge",
+            "documents",
+            "upload"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Knowledge Base Documents",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/knowledge/documents",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "knowledge",
+            "documents"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Document Details & Ingestion Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/knowledge/documents/{doc_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "knowledge",
+            "documents",
+            "{doc_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Document & Prune Vectors from Qdrant",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/knowledge/documents/{doc_id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "knowledge",
+            "documents",
+            "{doc_id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Record User Feedback for RAG Audit & Quality",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/knowledge/feedback",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "knowledge",
+            "feedback"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Enterprise RAG Grounded Chat with Citations & Guardrails",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/v1/rag/chat",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "rag",
+            "chat"
           ]
         }
       }

@@ -39,6 +39,7 @@ CORE_TASK_DOMAINS: Final[tuple[str, ...]] = (
     "image",
     "video",
     "lipsync",
+    "rag",
     "batch",
     "general",
 )
@@ -53,6 +54,8 @@ DOMAIN_ALIASES: Final[dict[str, str]] = {
     "video_gen": "video",
     "speech": "stt",
     "audio": "stt",
+    "rag_ingest": "rag",
+    "knowledge": "rag",
     "low": "batch",
 }
 
@@ -83,6 +86,8 @@ SRS_JOB_TYPES: Final[tuple[str, ...]] = (
     "idp_batch",
     "embedding_batch",
     "translation_batch",
+    "rag_ingestion",
+    "knowledge_indexing",
 )
 
 
@@ -151,6 +156,8 @@ def resolve_task_domain(
             return "lipsync"
         if "embed" in clean_alias or "bge" in clean_alias:
             return "embedding"
+        if "rag" in clean_alias or "knowledge" in clean_alias or "doc" in clean_alias:
+            return "rag"
         if "chat" in clean_alias or "qwen" in clean_alias or "llm" in clean_alias:
             return "chat"
 

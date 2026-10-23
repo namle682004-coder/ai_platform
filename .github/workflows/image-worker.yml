@@ -4,14 +4,14 @@ on:
   push:
     branches: [main, master, dev]
     paths:
-      - 'apps/image-worker/**'
+      - 'platform/workers/media/image-worker/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/image-worker.yml'
       - '.github/actions/**'
   pull_request:
     paths:
-      - 'apps/image-worker/**'
+      - 'platform/workers/media/image-worker/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/image-worker.yml'
@@ -37,16 +37,18 @@ jobs:
         run: |
           uv pip install -e packages/common \
                          -e packages/contracts \
-                         -e apps/image-worker \
+                         -e platform/workers/media/image-worker \
                          ruff pytest
 
       - name: Lint with Ruff
         shell: bash
-        run: uv run ruff check apps/image-worker/
+        run: uv run ruff check platform/workers/media/image-worker/
 
       - name: Run Worker Unit Tests
         shell: bash
-        run: uv run pytest tests/test_image_worker.py
+        run: |
+          uv run pytest tests/test_image_worker.py --collect-only -q > /dev/null
+          uv run pytest tests/test_image_worker.py --tb=short
 
   build-image:
     name: Docker Image (Image Worker)
@@ -63,7 +65,7 @@ jobs:
         uses: ./.github/actions/docker-build
         with:
           service-name: image-worker
-          dockerfile: apps/image-worker/Dockerfile
+          dockerfile: platform/workers/media/image-worker/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"

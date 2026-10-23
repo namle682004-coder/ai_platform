@@ -24,7 +24,9 @@ jobs:
         with:
           filters: |
             code:
-              - 'apps/**'
+              - 'platform/**'
+              - 'solutions/**'
+              - 'frontend/**'
               - 'packages/**'
               - 'tests/**'
               - 'scripts/**'
@@ -40,4 +42,4 @@ jobs:
         shell: bash
         run: |
           uv pip install ruff
-          uv run ruff check apps/ packages/ tests/ scripts/
+          uv run ruff check platform/ solutions/ packages/ tests/ scripts/

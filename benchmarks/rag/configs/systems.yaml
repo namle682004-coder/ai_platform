@@ -1,0 +1,16 @@
+systems:
+  local_aip_rag_v1:
+    type: "local_rag"
+    base_url: "http://localhost:8000"
+    api_key: "aip_live_valid_test_key_12345"
+    model_name: "qwen2.5-1.5b-instruct"
+    reranker_model: "ms-marco-MiniLM-L-12-v2"
+    timeout: 30.0
+
+  fixed_context_v1:
+    type: "fixed_context"
+    vllm_url: "http://localhost:8001/v1"
+    model: "chat-general-standard"
+    api_key: "aip_live_valid_test_key_12345"
+    temperature: 0.0
+    timeout: 30.0

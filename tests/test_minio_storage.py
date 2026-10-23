@@ -111,7 +111,7 @@ async def test_video_worker_saves_artifact_to_real_minio():
     """Verify Video Worker writes MP4 artifact to MinIO and returns presigned URL."""
     import importlib.util
     from pathlib import Path
-    worker_path = Path(__file__).resolve().parent.parent / "apps" / "video-worker" / "worker.py"
+    worker_path = Path(__file__).resolve().parent.parent / "platform" / "workers" / "media" / "video-worker" / "worker.py"
     spec = importlib.util.spec_from_file_location("video_worker", worker_path)
     video_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(video_mod)

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIP Platform</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+    <script>
+        // Automatic routing based on session
+        const session = localStorage.getItem('aip_user_session');
+        if (session) {
+            try {
+                const user = JSON.parse(session);
+                if (user.role === 'admin') {
+                    window.location.replace('/admin/dashboard.html');
+                } else {
+                    window.location.replace('/staff/dashboard.html');
+                }
+            } catch (e) {
+                window.location.replace('/auth/login.html');
+            }
+        } else {
+            window.location.replace('/auth/login.html');
+        }
+    </script>
+</head>
+<body style="background:#0b0f19; color:#fff; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
+    <p>Redirecting to AIP Platform...</p>
+</body>
+</html>

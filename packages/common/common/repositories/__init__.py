@@ -11,6 +11,7 @@ from common.repositories.rate_limit_repository import MongoRateLimitRepository, 
 from common.repositories.model_catalog_repository import MongoModelCatalogRepository, model_catalog_repository
 from common.repositories.session_repository import MongoSessionRepository, session_repository
 from common.repositories.usage_repository import MongoUsageRepository, usage_repository
+from common.repositories.document_repository import MongoDocumentRepository, document_repository
 
 __all__ = [
     "MongoKeyRepository",
@@ -27,6 +28,7 @@ __all__ = [
     "MongoModelCatalogRepository",
     "MongoSessionRepository",
     "MongoUsageRepository",
+    "MongoDocumentRepository",
     "key_repository",
     "alias_repository",
     "endpoint_repository",
@@ -41,4 +43,5 @@ __all__ = [
     "model_catalog_repository",
     "session_repository",
     "usage_repository",
+    "document_repository",
 ]

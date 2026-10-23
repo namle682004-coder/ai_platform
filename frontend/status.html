@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIP System Status & SLA Monitor</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --emerald: #10b981;
+            --emerald-light: #ecfdf5;
+            --primary: #2563eb;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container { width: 100%; max-width: 800px; }
+
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #2563eb); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; }
+        .logo h1 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; }
+
+        .overall-status {
+            background: var(--emerald-light); border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px; padding: 24px; display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 32px; color: #065f46;
+        }
+        .status-title { font-family: var(--font-heading); font-size: 20px; font-weight: 700; }
+
+        .section-title { font-family: var(--font-heading); font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+        .cluster-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px 22px; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .cluster-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+        .cluster-status { font-size: 13px; font-weight: 700; color: var(--emerald); display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); }
+
+        .sla-badge { padding: 4px 12px; border-radius: 20px; background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
+                <div>
+                    <h1>AI Inference Platform Status</h1>
+                    <p style="font-size: 13px; color: var(--text-sub);">Real-time System Uptime & Cluster Health</p>
+                </div>
+            </div>
+            <div class="sla-badge"><i class="fa-solid fa-shield-check"></i> 99.99% SLA Guarantee</div>
+        </div>
+
+        <div class="overall-status">
+            <div>
+                <div class="status-title"><i class="fa-solid fa-circle-check"></i> All Systems Operational</div>
+                <div style="font-size: 13.5px; margin-top: 4px;">All AI Inference Microservices & Gateway Cluster are performing normally.</div>
+            </div>
+            <div style="font-size: 12px; font-weight: 600;">Updated Just Now</div>
+        </div>
+
+        <div class="section-title">
+            <span>AI Inference Engine Clusters</span>
+            <span style="font-size: 12.5px; color: var(--text-sub);">Latency Average: 124ms</span>
+        </div>
+
+        <div class="cluster-card">
+            <div class="cluster-name"><i class="fa-solid fa-comments" style="color: var(--primary);"></i> LLM Chat Completions Engine (vLLM / Qwen3)</div>
+            <div class="cluster-status"><div class="dot"></div> Operational</div>
+        </div>
+
+        <div class="cluster-card">
+            <div class="cluster-name"><i class="fa-solid fa-vector-square" style="color: var(--primary);"></i> Vector Embeddings Engine (BGE-M3 / Triton)</div>
+            <div class="cluster-status"><div class="dot"></div> Operational</div>
+        </div>
+
+        <div class="cluster-card">
+            <div class="cluster-name"><i class="fa-solid fa-microphone" style="color: var(--primary);"></i> Speech-to-Text STT (PhoWhisper)</div>
+            <div class="cluster-status"><div class="dot"></div> Operational</div>
+        </div>
+
+        <div class="cluster-card">
+            <div class="cluster-name"><i class="fa-solid fa-volume-high" style="color: var(--primary);"></i> Text-to-Speech TTS (viXTTS)</div>
+            <div class="cluster-status"><div class="dot"></div> Operational</div>
+        </div>
+
+        <div class="cluster-card">
+            <div class="cluster-name"><i class="fa-solid fa-film" style="color: var(--primary);"></i> Video Generation Worker Cluster (Wan2.2)</div>
+            <div class="cluster-status"><div class="dot"></div> Operational</div>
+        </div>
+
+        <div class="cluster-card">
+            <div class="cluster-name"><i class="fa-solid fa-database" style="color: var(--primary);"></i> MongoDB Atlas Control Plane & Audit Store</div>
+            <div class="cluster-status"><div class="dot"></div> Operational</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 32px; font-size: 12.5px; color: var(--text-sub);">
+            &copy; 2026 AI Inference Platform (AIP) &bull; Enterprise SaaS SLA SLA-99.99% Certified
+        </div>
+    </div>
+
+</body>
+</html>

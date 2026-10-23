@@ -4,14 +4,14 @@ on:
   push:
     branches: [main, master, dev]
     paths:
-      - 'apps/data-plane/**'
+      - 'platform/runtimes/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/data-plane.yml'
       - '.github/actions/**'
   pull_request:
     paths:
-      - 'apps/data-plane/**'
+      - 'platform/runtimes/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/data-plane.yml'
@@ -44,27 +44,27 @@ jobs:
         with:
           filters: |
             vllm:
-              - 'apps/data-plane/vllm-engine/**'
+              - 'platform/runtimes/vllm-engine/**'
               - 'packages/common/**'
               - 'packages/contracts/**'
             translation:
-              - 'apps/data-plane/translation-server/**'
+              - 'platform/runtimes/translation-server/**'
               - 'packages/common/**'
               - 'packages/contracts/**'
             stt:
-              - 'apps/data-plane/stt-server/**'
+              - 'platform/runtimes/stt-server/**'
               - 'packages/common/**'
               - 'packages/contracts/**'
             ocr:
-              - 'apps/data-plane/ocr-server/**'
+              - 'platform/runtimes/ocr-server/**'
               - 'packages/common/**'
               - 'packages/contracts/**'
             moderation:
-              - 'apps/data-plane/moderation-server/**'
+              - 'platform/runtimes/moderation-server/**'
               - 'packages/common/**'
               - 'packages/contracts/**'
             tts:
-              - 'apps/data-plane/tts-adapter/**'
+              - 'platform/runtimes/tts-adapter/**'
               - 'packages/common/**'
               - 'packages/contracts/**'
 
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      PYTHONPATH: ".:packages/common:packages/contracts:apps/data-plane/vllm-engine:apps/data-plane/translation-server:apps/data-plane/stt-server:apps/data-plane/ocr-server:apps/data-plane/moderation-server:apps/data-plane/tts-adapter:apps/control-plane"
+      PYTHONPATH: ".:packages/common:packages/contracts:platform/runtimes/vllm-engine:platform/runtimes/translation-server:platform/runtimes/stt-server:platform/runtimes/ocr-server:platform/runtimes/moderation-server:platform/runtimes/tts-adapter:platform/gateway"
     steps:
       - uses: actions/checkout@v4
 
@@ -86,47 +86,59 @@ jobs:
         run: |
           uv pip install -e packages/common \
                          -e packages/contracts \
-                         -e apps/data-plane/vllm-engine \
-                         -e apps/data-plane/translation-server \
-                         -e apps/data-plane/stt-server \
-                         -e apps/data-plane/ocr-server \
-                         -e apps/data-plane/moderation-server \
-                         -e apps/data-plane/tts-adapter \
+                         -e platform/runtimes/vllm-engine \
+                         -e platform/runtimes/translation-server \
+                         -e platform/runtimes/stt-server \
+                         -e platform/runtimes/ocr-server \
+                         -e platform/runtimes/moderation-server \
+                         -e platform/runtimes/tts-adapter \
                          pytest httpx ruff python-multipart
 
       - name: Lint Data Plane with Ruff
         shell: bash
-        run: uv run ruff check apps/data-plane/
+        run: uv run ruff check platform/runtimes/
 
       - name: Test Translation (if changed)
         if: needs.filter-runtimes.outputs.translation == 'true' || inputs.force_build_all == true
         shell: bash
-        run: uv run pytest tests/test_translation.py --tb=short
+        run: |
+          uv run pytest tests/test_translation.py --collect-only -q > /dev/null
+          uv run pytest tests/test_translation.py --tb=short
 
       - name: Test vLLM (if changed)
         if: needs.filter-runtimes.outputs.vllm == 'true' || inputs.force_build_all == true
         shell: bash
-        run: uv run pytest tests/test_vllm.py --tb=short
+        run: |
+          uv run pytest tests/test_vllm.py --collect-only -q > /dev/null
+          uv run pytest tests/test_vllm.py --tb=short
 
       - name: Test STT (if changed)
         if: needs.filter-runtimes.outputs.stt == 'true' || inputs.force_build_all == true
         shell: bash
-        run: uv run pytest tests/test_stt.py --tb=short
+        run: |
+          uv run pytest tests/test_stt.py --collect-only -q > /dev/null
+          uv run pytest tests/test_stt.py --tb=short
 
       - name: Test OCR (if changed)
         if: needs.filter-runtimes.outputs.ocr == 'true' || inputs.force_build_all == true
         shell: bash
-        run: uv run pytest tests/test_ocr.py tests/test_vietnamese_id_recognition.py --tb=short
+        run: |
+          uv run pytest tests/test_ocr.py tests/test_vietnamese_id_recognition.py --collect-only -q > /dev/null
+          uv run pytest tests/test_ocr.py tests/test_vietnamese_id_recognition.py --tb=short
 
       - name: Test Moderation (if changed)
         if: needs.filter-runtimes.outputs.moderation == 'true' || inputs.force_build_all == true
         shell: bash
-        run: uv run pytest tests/test_moderation.py --tb=short
+        run: |
+          uv run pytest tests/test_moderation.py --collect-only -q > /dev/null
+          uv run pytest tests/test_moderation.py --tb=short
 
       - name: Test TTS (if changed)
         if: needs.filter-runtimes.outputs.tts == 'true' || inputs.force_build_all == true
         shell: bash
-        run: uv run pytest tests/test_tts.py --tb=short
+        run: |
+          uv run pytest tests/test_tts.py --collect-only -q > /dev/null
+          uv run pytest tests/test_tts.py --tb=short
 
   build-translation:
     name: "Image: translation-server"
@@ -141,7 +153,7 @@ jobs:
       - uses: ./.github/actions/docker-build
         with:
           service-name: translation-server
-          dockerfile: apps/data-plane/translation-server/Dockerfile
+          dockerfile: platform/runtimes/translation-server/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"
@@ -159,7 +171,7 @@ jobs:
       - uses: ./.github/actions/docker-build
         with:
           service-name: vllm-engine
-          dockerfile: apps/data-plane/vllm-engine/Dockerfile
+          dockerfile: platform/runtimes/vllm-engine/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"
@@ -177,7 +189,7 @@ jobs:
       - uses: ./.github/actions/docker-build
         with:
           service-name: stt-server
-          dockerfile: apps/data-plane/stt-server/Dockerfile
+          dockerfile: platform/runtimes/stt-server/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"
@@ -195,7 +207,7 @@ jobs:
       - uses: ./.github/actions/docker-build
         with:
           service-name: ocr-server
-          dockerfile: apps/data-plane/ocr-server/Dockerfile
+          dockerfile: platform/runtimes/ocr-server/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"
@@ -213,7 +225,7 @@ jobs:
       - uses: ./.github/actions/docker-build
         with:
           service-name: moderation-server
-          dockerfile: apps/data-plane/moderation-server/Dockerfile
+          dockerfile: platform/runtimes/moderation-server/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"
@@ -231,7 +243,7 @@ jobs:
       - uses: ./.github/actions/docker-build
         with:
           service-name: tts-adapter
-          dockerfile: apps/data-plane/tts-adapter/Dockerfile
+          dockerfile: platform/runtimes/tts-adapter/Dockerfile
           image-prefix: ${{ github.repository }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push: "true"

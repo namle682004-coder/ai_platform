@@ -36,6 +36,39 @@ class AuthService:
         res.pop("_id", None)
         return res
 
+    async def get_or_create_oauth_user(self, email: str, full_name: str = "", avatar_url: str = "", provider: str = "google") -> Dict[str, Any]:
+        user = await self.user_repo.get_user_by_email(email)
+        if user:
+            user_copy = dict(user)
+            user_copy.pop("hashed_password", None)
+            user_copy.pop("_id", None)
+            if avatar_url and not user_copy.get("avatar_img"):
+                user_copy["avatar_img"] = avatar_url
+                try:
+                    await self.user_repo.update_user(user["user_id"], {"avatar_img": avatar_url})
+                except Exception:
+                    pass
+            return user_copy
+
+        user_id = f"user_{uuid.uuid4().hex[:10]}"
+        now = datetime.now(timezone.utc).isoformat()
+        record = {
+            "user_id": user_id,
+            "email": email,
+            "hashed_password": "",
+            "role": "staff",
+            "status": "active",
+            "full_name": full_name or email.split("@")[0].title(),
+            "avatar_img": avatar_url or None,
+            "provider": provider,
+            "created_at": now,
+        }
+        created = await self.user_repo.create_user(record)
+        res = dict(created)
+        res.pop("hashed_password", None)
+        res.pop("_id", None)
+        return res
+
     async def authenticate_user(self, email: str, password: str) -> Optional[Dict[str, Any]]:
         hashed = self._hash_password(password)
         user = await self.user_repo.get_user_by_email(email)

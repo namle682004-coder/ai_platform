@@ -3,12 +3,12 @@ services:
     name: aip-control-plane
     runtime: python
     buildCommand: uv sync
-    startCommand: uv run uvicorn src.main:app --app-dir apps/control-plane --host 0.0.0.0 --port $PORT
+    startCommand: uv run uvicorn src.main:app --app-dir platform/gateway --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.14
       - key: PYTHONPATH
-        value: apps/control-plane:packages/common:packages/contracts:packages/sdk
+        value: platform/gateway:packages/common:packages/contracts:packages/sdk
       - key: ALLOW_IN_PROCESS_FALLBACK
         value: "true"
       - key: AIP_API_KEY

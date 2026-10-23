@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIP Platform - Contact Us & Feedback</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" src="/staff/staff_layout.js"></script>
+    
+    <style>
+        :root {
+            --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-code: 'Fira Code', monospace;
+            --bg-page: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --text-dark: #001e2b;
+            --text-sub: #5c6c75;
+            --border-color: #e8edeb;
+            --card-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
+            --primary: #00684a;
+            --primary-hover: #025039;
+        }
+
+        html {
+            overflow-y: scroll;
+            box-sizing: border-box;
+        }
+        *, *:before, *:after { box-sizing: inherit; margin: 0; padding: 0; }
+        body { 
+            background: var(--bg-page); 
+            color: var(--text-dark); 
+            font-family: var(--font-body); 
+            font-size: 13px;
+            line-height: 1.45;
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            -webkit-font-smoothing: antialiased; 
+        }
+
+        .top-header { 
+            background: #0f4c81; 
+            height: 50px; 
+            min-height: 50px;
+            max-height: 50px;
+            padding: 0 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            color: #fff; 
+            font-size: 13px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .brand-logo { font-family: var(--font-heading); font-size: 17px; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em; }
+        .project-selector { background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 7px; color: #fff; transition: background 0.15s, border-color 0.15s; }
+        .project-selector:hover { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.35); }
+
+        .header-right { display: flex; align-items: center; gap: 18px; }
+        .user-menu { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; }
+
+        .layout-body { display: flex; flex: 1; min-height: calc(100vh - 50px); }
+
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+            max-width: 220px;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            padding: 16px 0;
+            position: sticky;
+            top: 50px;
+            height: calc(100vh - 50px);
+            max-height: calc(100vh - 50px);
+            align-self: flex-start;
+            overflow-y: auto;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        .nav-section { margin-bottom: 14px; }
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #5c6c75;
+            padding: 8px 18px;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+        .section-title span { display: flex; align-items: center; gap: 8px; }
+        .section-title .toggle-icon { font-size: 10px; transition: transform 0.2s; color: #64748b; }
+        .nav-list { list-style: none; margin: 0; padding: 0; }
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #334155;
+            text-decoration: none;
+            transition: background 0.12s ease, color 0.12s ease;
+            border-left: 4px solid transparent;
+        }
+        .nav-item a i {
+            color: #64748b;
+            font-size: 13px;
+            width: 16px;
+            text-align: center;
+        }
+        .nav-item.active a,
+        .nav-item a:hover {
+            background: #f0f4f8;
+            color: #001e2b;
+            border-left-color: #0f4c81;
+            font-weight: 700;
+        }
+        .nav-item.active a i,
+        .nav-item a:hover i {
+            color: #001e2b;
+        }
+
+        /* Standalone direct links: PAYMENT HISTORY & CONTACT US */
+        .nav-direct-link a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 18px;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #5c6c75;
+            text-decoration: none;
+            transition: background 0.12s ease, color 0.12s ease;
+            border-left: 4px solid transparent;
+        }
+        .nav-direct-link a i {
+            color: #5c6c75;
+            font-size: 13px;
+            width: 16px;
+            text-align: center;
+        }
+        .nav-direct-link.active a,
+        .nav-direct-link a:hover {
+            background: #f0f4f8;
+            color: #001e2b;
+            border-left-color: #0f4c81;
+            font-weight: 700;
+        }
+        .nav-direct-link.active a i,
+        .nav-direct-link a:hover i {
+            color: #001e2b;
+        }
+
+        .main-content { flex: 1; padding: 20px 28px; background: var(--bg-page); min-width: 0; }
+
+        /* Console Breadcrumb */
+        .console-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-sub); margin-bottom: 10px; }
+        .console-breadcrumb a { color: var(--text-sub); text-decoration: none; }
+        .console-breadcrumb a:hover { color: var(--text-dark); }
+        .console-breadcrumb span.sep { color: #cbd5e1; }
+        .console-breadcrumb span.active { color: var(--text-dark); font-weight: 600; }
+
+        /* Atlas Page Header */
+        .atlas-page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 20px; }
+        .atlas-title { font-family: var(--font-heading); font-size: 28px; font-weight: 700; color: #001e2b; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 6px; }
+        .atlas-desc { font-size: 13.5px; color: #5c6c75; line-height: 1.5; }
+        .atlas-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+        .btn-atlas-primary { background: #00684a; color: #ffffff; border: 1px solid #00684a; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; transition: all 0.15s ease; }
+        .btn-atlas-primary:hover { background: #025039; border-color: #025039; }
+        .btn-atlas-secondary { background: #ffffff; color: #001e2b; border: 1px solid #e8edeb; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; text-decoration: none; transition: all 0.15s ease; }
+        .btn-atlas-secondary:hover { background: #f4f6f5; border-color: #c1d1cb; color: #00684a; }
+
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+        .card-box { background: #ffffff; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); padding: 28px; }
+        .card-header-title { font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: #001e2b; margin-bottom: 20px; }
+
+        .info-list { display: flex; flex-direction: column; gap: 18px; font-size: 13px; color: #334155; }
+        .info-item { display: flex; align-items: flex-start; gap: 14px; line-height: 1.5; }
+        .info-item i { font-size: 15px; color: #00684a; margin-top: 3px; width: 18px; }
+        .info-label { width: 70px; font-weight: 600; color: #5c6c75; font-size: 12.5px; }
+        .info-value { flex: 1; }
+
+        .btn-map { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 12px; font-size: 11.5px; font-weight: 700; color: #00684a; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; transition: all 0.15s ease; }
+        .btn-map:hover { background: #e4f7eb; border-color: #00684a; }
+
+        /* MATERIAL FORM STYLING MATCHING USER SCREENSHOT */
+        .material-group { margin-bottom: 22px; position: relative; }
+        .material-input-line { width: 100%; border: none; border-bottom: 1.5px solid #cbd5e1; padding: 8px 0; font-size: 13.5px; outline: none; transition: border-color 0.2s; font-family: var(--font-body); color: #001e2b; }
+        .material-input-line:focus { border-bottom-color: #00684a; }
+
+        .btn-blue-submit { background: #00684a; color: #ffffff; border: 1px solid #00684a; padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s ease; }
+        .btn-blue-submit:hover { background: #025039; border-color: #025039; }
+
+        .char-counter { font-size: 11.5px; color: #94a3b8; text-align: right; margin-top: 4px; }
+
+        /* MODAL OVERLAY */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .modal-overlay.active { display: flex; }
+        .confirm-box { background: #ffffff; width: 440px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); overflow: hidden; font-family: var(--font-body); }
+        .confirm-header { background: #f8fafc; padding: 14px 20px; font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: #001e2b; border-bottom: 1px solid var(--border-color); }
+        .confirm-body { padding: 20px; font-size: 13px; color: #374151; }
+        .confirm-footer { padding: 12px 20px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; border-top: 1px solid #f4f6f5; background: #fafafa; }
+        .btn-confirm-cancel { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 600; font-size: 12.5px; padding: 7px 14px; cursor: pointer; border-radius: 6px; transition: all 0.15s ease; }
+        .btn-confirm-cancel:hover { background: #e2e8f0; color: #0f172a; }
+        .btn-confirm-ok { background: #00684a; color: #ffffff; border: 1px solid #00684a; font-weight: 600; font-size: 12.5px; padding: 7px 16px; cursor: pointer; border-radius: 6px; transition: all 0.15s ease; }
+        .btn-confirm-ok:hover { background: #025039; border-color: #025039; }
+
+        .form-control-input { width: 100%; padding: 8px 12px 8px 0; border: none; border-bottom: 1.5px solid #cbd5e1; border-radius: 0; font-size: 13.5px; margin-top: 6px; outline: none; background: transparent; color: #1e293b; }
+        .form-control-input:focus { border-bottom-color: #00684a; }
+
+        /* Toast Container */
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-cube"></i> AIP Platform</a>
+            <div class="project-selector" onclick="openSelectProjectModal()"><i class="fa-solid fa-folder"></i> <span id="current-project-label">Select a project</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></div>
+        </div>
+        <div class="header-right">
+            <!-- BILINGUAL LANGUAGE SELECTOR DROPDOWN -->
+            <div style="position:relative; cursor:pointer;" onclick="toggleLangDropdown(event)">
+                <i class="fa-solid fa-globe"></i> <span id="current-lang-text">English</span> <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                <div id="lang-dropdown-menu" style="display:none; position:absolute; top:35px; right:0; background:#fff; color:#0f172a; border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,0.15); border:1px solid #cbd5e1; width:140px; z-index:10000; overflow:hidden;">
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;" onclick="setAppLanguage('en'); event.stopPropagation();">
+                        🇬🇧 English
+                    </div>
+                    <div style="padding:10px 14px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px; border-top:1px solid #f1f5f9;" onclick="setAppLanguage('vi'); event.stopPropagation();">
+                        🇻🇳 Tiếng Việt
+                    </div>
+                </div>
+            </div>
+            <div class="user-menu">
+                <span id="header-username">Nam Lê</span> <i class="fa-solid fa-circle-user" style="font-size: 17px;"></i>
+                <i class="fa-solid fa-right-from-bracket" title="Logout" style="margin-left:6px; cursor:pointer;" onclick="logoutUser()"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="layout-body">
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="section-title" onclick="toggleNavSection(this)">
+                    <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> CONSOLE</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes"></i> APIs</a></li>
+                    <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key"></i> API Keys</a></li>
+                    <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line"></i> API report</a></li>
+                </ul>
+            </div>
+            <div class="nav-section">
+                <div class="section-title" onclick="toggleNavSection(this)">
+                    <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> APPLICATIONS</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <ul class="nav-list">
+                    <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone"></i> Speech to Text</a></li>
+                    <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high"></i> Text to Speech</a></li>
+                    <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments"></i> LLM Chatbot</a></li>
+                    <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image"></i> Image Gen API</a></li>
+                    <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield"></i> Moderation API</a></li>
+                </ul>
+            </div>
+            <div class="nav-direct-link">
+                <a href="/staff/payment">
+                    <i class="fa-solid fa-credit-card"></i> PAYMENT HISTORY
+                </a>
+            </div>
+            <div class="nav-direct-link active">
+                <a href="/staff/contact">
+                    <i class="fa-solid fa-headset"></i> CONTACT US
+                </a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Breadcrumb Navigation -->
+            <div class="console-breadcrumb">
+                <a href="/staff/dashboard"><i class="fa-solid fa-house" style="font-size: 11px;"></i> Console</a>
+                <span class="sep">/</span>
+                <span id="breadcrumb-project-name">Default Enterprise Project</span>
+                <span class="sep">/</span>
+                <span class="active">Contact Support</span>
+            </div>
+
+            <!-- Atlas Page Header -->
+            <div class="atlas-page-header">
+                <div>
+                    <h1 class="atlas-title">Contact &amp; Developer Support</h1>
+                    <p class="atlas-desc">Submit technical feedback, request quota upgrades, or reach out to platform engineers</p>
+                </div>
+                <div class="atlas-header-actions">
+                    <a href="mailto:support@aiplatform.vn" class="btn-atlas-secondary"><i class="fa-solid fa-envelope"></i> Email Support</a>
+                </div>
+            </div>
+            <!-- ROW 1: CONTACT US & DROP US A LINE (Exact Replica of Screenshot 1) -->
+            <div class="contact-grid">
+                <!-- CARD 1: CONTACT US -->
+                <div class="card-box">
+                    <div class="card-header-title">Contact us</div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <i class="fa-solid fa-phone"></i>
+                            <div class="info-label">Hotline</div>
+                            <div class="info-value"><strong>1900 638 399</strong></div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div class="info-label">Email</div>
+                            <div class="info-value"><a href="mailto:support@aiplatform.vn" style="color:#007bff; text-decoration:none;">support@aiplatform.vn</a></div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <div class="info-label">Address</div>
+                            <div class="info-value">
+                                Hanoi: No 10, Pham Van Bach street, Dich Vong ward, Cau Giay district<br>
+                                Ho Chi Minh City: 3rd floor, PJICO building, 186 Dien Bien Phu street, district 3<br>
+                                <button class="btn-map" onclick="showToast('Opening Google Maps location...', 'info')"><i class="fa-solid fa-map-location-dot"></i> MAP</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: DROP US A LINE -->
+                <div class="card-box">
+                    <div class="card-header-title">Drop us a line</div>
+                    <form onsubmit="submitDropUsLine(event)">
+                        <div class="material-group">
+                            <input type="text" class="material-input-line" placeholder="Name" required>
+                        </div>
+                        <div class="material-group">
+                            <input type="text" class="material-input-line" placeholder="Phone number" required>
+                        </div>
+                        <div class="material-group">
+                            <input type="email" class="material-input-line" placeholder="Email" required>
+                        </div>
+                        <div class="material-group">
+                            <textarea class="material-input-line" placeholder="Message" rows="2" style="resize: vertical;" required></textarea>
+                        </div>
+                        <div style="text-align: right;">
+                            <button type="submit" class="btn-blue-submit">SEND MESSAGE</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ROW 2: FEEDBACK (Exact Replica of Screenshot 2) -->
+            <div class="card-box" style="margin-bottom: 28px;">
+                <div class="card-header-title">Feedback</div>
+                <form onsubmit="submitFeedback(event)">
+                    <div style="margin-bottom: 24px;">
+                        <div style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight: 500;">Category</div>
+                        <div style="display: flex; gap: 24px; font-size: 14px; color: #334155;">
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="fb_category" value="feature" checked> Request feature
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="fb_category" value="error"> Report error
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="material-group">
+                        <input type="text" class="material-input-line" placeholder="Title" required>
+                    </div>
+
+                    <div class="material-group" style="margin-bottom: 8px;">
+                        <textarea id="fb-description-input" class="material-input-line" placeholder="Description" rows="3" onkeyup="updateCharCounter(this)" maxlength="1000" style="resize: vertical;" required></textarea>
+                        <div class="char-counter" id="char-counter-text">0 / 1000</div>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                        <button type="submit" class="btn-blue-submit" style="padding: 8px 28px;">SEND</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Modals managed by staff_layout.js -->
+
+    <script>
+        function updateCharCounter(el) {
+            const count = el.value.length;
+            document.getElementById('char-counter-text').innerText = `${count} / 1000`;
+        }
+
+        async function submitDropUsLine(e) {
+            e.preventDefault();
+            const inputs = e.target.querySelectorAll('input, textarea');
+            const data = {
+                name: inputs[0].value,
+                phone: inputs[1].value,
+                email: inputs[2].value,
+                message: inputs[3].value
+            };
+            try {
+                await fetch('/v1/user/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } catch (err) {}
+            showToast('Cảm ơn bạn đã gửi lời nhắn! Đội ngũ hỗ trợ sẽ liên hệ lại trong ít phút.', 'success');
+            e.target.reset();
+        }
+
+        async function submitFeedback(e) {
+            e.preventDefault();
+            const cat = e.target.querySelector('input[name="fb_category"]:checked').value;
+            const title = e.target.querySelector('input[placeholder="Title"]').value;
+            const desc = document.getElementById('fb-description-input').value;
+            try {
+                await fetch('/v1/user/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: cat, title: title, description: desc })
+                });
+            } catch (err) {}
+            showToast('Phản hồi của bạn đã được gửi thành công! Cảm ơn đóng góp của bạn.', 'success');
+            e.target.reset();
+            document.getElementById('char-counter-text').innerText = '0 / 1000';
+        }
+
+        // Project helpers - Delegated to StaffLayout (MongoDB Atlas backed)
+        async function getProjects() {
+            if (window.StaffLayout && window.StaffLayout.getProjects) {
+                return await window.StaffLayout.getProjects();
+            }
+            try {
+                const res = await fetch('/v1/user/projects');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) return data;
+                }
+            } catch (err) {}
+            return [];
+        }
+
+        function setProjects(projList) {
+            localStorage.setItem('aip_projects', JSON.stringify(projList));
+        }
+
+        function getActiveProjectName() {
+            if (window.StaffLayout && window.StaffLayout.getActiveProjectName) {
+                return window.StaffLayout.getActiveProjectName();
+            }
+            return localStorage.getItem('aip_active_project') || 'Default Project';
+        }
+
+        function setActiveProjectName(name) {
+            if (window.StaffLayout && window.StaffLayout.setActiveProjectName) {
+                window.StaffLayout.setActiveProjectName(name);
+                return;
+            }
+            localStorage.setItem('aip_active_project', name);
+            const el = document.getElementById('current-project-label');
+            if (el) el.innerText = name;
+        }
+
+        function openSelectProjectModal() {
+            if (window.StaffLayout && window.StaffLayout.openSelectProjectModal) {
+                window.StaffLayout.openSelectProjectModal();
+            }
+        }
+
+        function closeSelectProjectModal() {
+            if (window.StaffLayout && window.StaffLayout.closeSelectProjectModal) {
+                window.StaffLayout.closeSelectProjectModal();
+            }
+        }
+
+        function openCreatePrepaidProjectModal() {
+            if (window.StaffLayout && window.StaffLayout.openCreatePrepaidProjectModal) {
+                window.StaffLayout.openCreatePrepaidProjectModal();
+            }
+        }
+
+        function closeCreatePrepaidProjectModal() {
+            if (window.StaffLayout && window.StaffLayout.closeCreatePrepaidProjectModal) {
+                window.StaffLayout.closeCreatePrepaidProjectModal();
+            }
+        }
+
+        async function submitCreatePrepaidProject() {
+            if (window.StaffLayout && window.StaffLayout.submitCreatePrepaidProject) {
+                await window.StaffLayout.submitCreatePrepaidProject();
+            }
+        }
+
+        function toggleNavSection(headerEl) {
+            const navList = headerEl.nextElementSibling;
+            const icon = headerEl.querySelector('.toggle-icon');
+            if (navList) {
+                if (navList.style.display === 'none') {
+                    navList.style.display = 'block';
+                    if (icon) icon.style.transform = 'rotate(0deg)';
+                } else {
+                    navList.style.display = 'none';
+                    if (icon) icon.style.transform = 'rotate(-90deg)';
+                }
+            }
+        }
+
+        let currentLang = localStorage.getItem('aip_lang') || 'en';
+
+        function toggleLangDropdown(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('lang-dropdown-menu');
+            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+        }
+
+        function setAppLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('aip_lang', lang);
+            document.getElementById('current-lang-text').innerText = lang === 'vi' ? 'Tiếng Việt' : 'English';
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (menu) menu.style.display = 'none';
+            showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
+        }
+
+        function showToast(msg, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.style.cssText = 'min-width:280px; padding:12px 18px; border-radius:8px; color:#fff; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:10px; box-shadow:0 10px 25px rgba(0,0,0,0.2); opacity:0.96;';
+            toast.style.background = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : (type === 'warning' ? '#f59e0b' : '#00a4b8'));
+            toast.innerHTML = `<span>${msg}</span><span style="cursor:pointer; margin-left:auto;" onclick="this.parentElement.remove()">&times;</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3500);
+        }
+
+        function checkMandatoryAuth() {
+            const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+            if (userSession) {
+                const user = JSON.parse(userSession);
+                document.getElementById('header-username').innerText = user.full_name || 'Nam Lê';
+            } else {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('aip_user_session');
+            sessionStorage.removeItem('aip_user_session');
+            window.location.href = '/login';
+        }
+
+        const initializeContactPage = () => {
+            checkMandatoryAuth();
+            document.getElementById('current-project-label').innerText = getActiveProjectName();
+        };
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initializeContactPage, { once: true });
+        } else {
+            initializeContactPage();
+        }
+    </script>
+</body>
+</html>
