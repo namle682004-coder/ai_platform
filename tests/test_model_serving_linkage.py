@@ -8,6 +8,7 @@ normalisation, and the gateway alias / identity fixes.
 
 import asyncio
 import json
+import math
 
 import httpx
 import pytest
@@ -132,6 +133,41 @@ def test_remote_reranker_maps_scores_and_applies_threshold():
         ranked = await reranker.arerank("quy chế nghỉ phép", candidates, top_n=3, min_threshold=0.75)
         assert [c["payload"]["doc_id"] for c in ranked] == ["d1", "d0"]
         assert ranked[0]["score"] == 0.93 and ranked[0]["cross_encoder_rank"] == 1
+
+    asyncio.run(_run())
+
+
+def test_remote_reranker_llamacpp_logits_normalized():
+    # llama.cpp returns raw logits (e.g. 2.0 and -5.0) which must be sigmoid-normalized
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"results": [
+            {"index": 0, "relevance_score": 2.5},   # sigmoid(2.5) ~ 0.9241
+            {"index": 1, "relevance_score": -3.0},  # sigmoid(-3.0) ~ 0.0474
+        ], "model": "rerank-standard"})
+
+    candidates = [
+        {"id": 0, "score": 0.5, "payload": {"title": "Quy chế", "text": "đoạn 0", "doc_id": "d0"}},
+        {"id": 1, "score": 0.5, "payload": {"title": "Quy chế", "text": "đoạn 1", "doc_id": "d1"}},
+    ]
+
+    async def _run():
+        # Resolver returns endpoint with runtime="llama.cpp"
+        resolver = _resolver({
+            "rerank-standard": {
+                "alias_name": "rerank-standard",
+                "target_url": "http://gpu:8013/v1",
+                "physical_model": "BAAI/bge-reranker-v2-m3",
+                "runtime": "llama.cpp",
+                "status": "enabled",
+            }
+        })
+        reranker = HttpCrossEncoderReranker(resolver=resolver)
+        reranker._client = _mock_client(handler)
+        ranked = await reranker.arerank("câu hỏi", candidates, top_n=2, min_threshold=0.75)
+        # Only d0 should pass the 0.75 threshold
+        assert len(ranked) == 1
+        assert ranked[0]["payload"]["doc_id"] == "d0"
+        assert ranked[0]["score"] == round(1.0 / (1.0 + math.exp(-2.5)), 4)
 
     asyncio.run(_run())
 

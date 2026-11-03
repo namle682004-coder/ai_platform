@@ -1,8 +1,10 @@
 """
 Remote Cross-Encoder Reranker adapter (BAAI/bge-reranker-v2-m3 via the `rerank-standard` alias).
 
-Scores [query, passage] pairs on the embedding-server `/v1/rerank` endpoint (sigmoid scores in
-[0, 1]) and applies the shared score-threshold / information-cliff filtering policy.
+Scores [query, passage] pairs on the `/v1/rerank` endpoint and applies the shared
+score-threshold / information-cliff filtering policy. The embedding-server returns sigmoid scores
+in [0, 1]; llama.cpp (`llama-server --reranking`) returns raw logits, which are converted here so
+the confidence gate sees the same scale whichever runtime the alias points at.
 
 Failures raise RerankerError instead of silently re-using retrieval scores: the confidence
 gate is calibrated on cross-encoder scores, and fused retrieval scores are on another scale.
@@ -11,6 +13,7 @@ gate is calibrated on cross-encoder scores, and fused retrieval scores are on an
 from __future__ import annotations
 
 import logging
+import math
 import time
 from typing import Any, Dict, List, Optional
 
@@ -33,6 +36,28 @@ logger = logging.getLogger("aip-rag.adapter.reranker")
 
 # Keep request bodies bounded; bge-reranker-v2-m3 truncates at reranker_max_length tokens anyway.
 _MAX_PASSAGE_CHARS = 4000
+
+# Alias `runtime` values whose /rerank returns raw logits instead of probabilities.
+_LOGIT_RUNTIMES = frozenset({"llama.cpp", "llamacpp", "llama-server"})
+
+
+def _sigmoid(x: float) -> float:
+    if x >= 0:
+        return 1.0 / (1.0 + math.exp(-x))
+    z = math.exp(x)
+    return z / (1.0 + z)
+
+
+def _normalize_scores(results: List[Dict[str, Any]], runtime: str) -> List[Dict[str, Any]]:
+    if runtime.strip().lower() not in _LOGIT_RUNTIMES:
+        return results
+    return [
+        {
+            **item,
+            "relevance_score": _sigmoid(float(item.get("relevance_score", item.get("score", 0.0)))),
+        }
+        for item in results
+    ]
 
 
 class HttpCrossEncoderReranker(RerankerPort):
@@ -72,11 +97,14 @@ class HttpCrossEncoderReranker(RerankerPort):
         min_threshold: float,
     ) -> List[CandidateType]:
         scored: List[CandidateType] = []
-        for rank, item in enumerate(sorted(results, key=lambda r: r["relevance_score"], reverse=True), start=1):
+        for rank, item in enumerate(
+            sorted(results, key=lambda r: float(r.get("relevance_score", r.get("score", 0.0))), reverse=True),
+            start=1,
+        ):
             idx = int(item["index"])
             if not 0 <= idx < len(candidates):
                 raise RerankerError(f"Reranker returned out-of-range index {idx}")
-            score = round(float(item["relevance_score"]), 4)
+            score = round(float(item.get("relevance_score", item.get("score", 0.0))), 4)
             scored.append(NeuralCrossEncoderReranker._clone_with_score(candidates[idx], score, rank=rank))
         return NeuralCrossEncoderReranker.filter_candidates(scored, top_n=top_n, min_threshold=min_threshold)
 
@@ -109,6 +137,7 @@ class HttpCrossEncoderReranker(RerankerPort):
         results = data.get("results")
         if not isinstance(results, list) or len(results) != len(candidates):
             raise RerankerError("Reranker response is missing scores for some candidates")
+        results = _normalize_scores(results, getattr(endpoint, "runtime", ""))
         filtered = self._apply_scores(candidates, results, top_n, min_threshold)
         logger.info(
             "bge-reranker scored %d -> %d chunks in %.1fms (top=%.4f)",

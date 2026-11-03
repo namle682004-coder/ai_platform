@@ -9,7 +9,8 @@ After=network-online.target
 User=lenam
 WorkingDirectory=/home/lenam/aip/embedding-server
 EnvironmentFile=-/home/lenam/aip/embedding-server/.env
-ExecStart=/home/lenam/aip/embedding-server/.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8012 --workers 1
+# `python -m uvicorn` also works when uvicorn comes from a reused env (e.g. a .pth onto ~/vllm-env)
+ExecStart=/home/lenam/aip/embedding-server/.venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port 8012 --workers 1
 Restart=on-failure
 RestartSec=5
 

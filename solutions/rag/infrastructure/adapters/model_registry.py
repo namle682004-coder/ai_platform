@@ -32,6 +32,7 @@ class ModelEndpoint:
     base_url: str
     physical_model: str
     source: str  # "override" | "mongodb" | "catalog"
+    runtime: str = ""  # serving engine from the alias record, e.g. "llama.cpp", "FlagEmbedding"
 
 
 class ModelEndpointNotFoundError(LookupError):
@@ -117,6 +118,7 @@ class ModelEndpointResolver:
             base_url=target_url,
             physical_model=record.get("physical_model") or record.get("model_name") or alias,
             source=source,
+            runtime=str(record.get("runtime") or ""),
         )
 
     def invalidate(self) -> None:
