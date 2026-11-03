@@ -46,6 +46,8 @@ services:
       dockerfile: solutions/rag/Dockerfile
     image: aip/rag:${AIP_VERSION:-latest}
     container_name: aip-rag-api
+    ports:
+      - "8010:8010"
     command: ["python", "-m", "solutions.rag.main", "--mode", "api", "--host", "0.0.0.0", "--port", "8010"]
     environment:
       # Identity headers are trusted only together with AIP_RUNTIME_TOKEN (sent by the gateway).
