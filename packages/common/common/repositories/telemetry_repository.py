@@ -149,3 +149,4 @@ class MongoTelemetryRepository(ITelemetryRepository):
 
 
 telemetry_repository = MongoTelemetryRepository()
+

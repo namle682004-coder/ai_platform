@@ -144,8 +144,8 @@ services:
       - MASTER_PEPPER=${MASTER_PEPPER:-test-master-pepper-for-testing-purposes-min-32-chars}
       - JWT_SECRET=${JWT_SECRET:-test-jwt-secret-for-testing-purposes-min-32-chars}
       - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
-      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0}
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_ENDPOINT=http://minio:9000
       - QDRANT_URL=http://qdrant:6333
@@ -201,7 +201,7 @@ services:
       - MASTER_PEPPER=${MASTER_PEPPER:-test-master-pepper-for-testing-purposes-min-32-chars}
       - JWT_SECRET=${JWT_SECRET:-test-jwt-secret-for-testing-purposes-min-32-chars}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip
       - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
       - VLLM_GRPC_TARGET=host.docker.internal:50051
     extra_hosts:
@@ -226,7 +226,7 @@ services:
       - MASTER_PEPPER=${MASTER_PEPPER:-test-master-pepper-for-testing-purposes-min-32-chars}
       - JWT_SECRET=${JWT_SECRET:-test-jwt-secret-for-testing-purposes-min-32-chars}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip
       - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
     volumes:
       - ../../platform/workers/callback/worker:/app/platform/workers/callback/worker
@@ -254,9 +254,9 @@ services:
       - RAG_TRUST_IDENTITY_HEADERS=${RAG_TRUST_IDENTITY_HEADERS:-true}
       # Dev only: let non-admin sandbox keys write the shared knowledge base, as the UI does.
       - RAG_ENFORCE_SHARED_KB_WRITE_ACL=${RAG_ENFORCE_SHARED_KB_WRITE_ACL:-false}
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip
       - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
-      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0
       - QDRANT_URL=http://qdrant:6333
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
@@ -295,9 +295,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONPATH=/app:/app/solutions/rag:/app/packages/common:/app/packages/contracts
       - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip
       - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
-      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0
       - QDRANT_URL=http://qdrant:6333
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
@@ -322,7 +322,7 @@ services:
     container_name: aip-image-worker
     environment:
       - ENVIRONMENT=development
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - RABBITMQ_URL=amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip
       - AIP_IMAGE_QUEUE=q.aip.tasks.image
     volumes:
       - ../../platform/workers/media/image-worker:/app/platform/workers/media/image-worker

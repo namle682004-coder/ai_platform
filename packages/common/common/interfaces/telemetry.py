@@ -50,3 +50,4 @@ class ITelemetryRepository(ABC):
     ) -> TelemetrySeriesDTO:
         """Aggregate traffic, errors, and latency within window with continuous zero-filling."""
         pass
+
