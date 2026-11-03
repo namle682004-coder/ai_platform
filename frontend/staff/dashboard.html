@@ -497,6 +497,275 @@
         }
       }
 
+      /* Developer Quick-Start Strip */
+      .dev-quickstart-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-radius: 12px;
+        padding: 14px 20px;
+        margin-bottom: 20px;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+      }
+      .dev-key-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .dev-key-badge {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-family: var(--font-code);
+        font-size: 12.5px;
+        letter-spacing: 0.04em;
+        color: #38bdf8;
+      }
+      .btn-copy-key {
+        background: #38bdf8;
+        color: #0f172a;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s ease;
+      }
+      .btn-copy-key:hover {
+        background: #7dd3fc;
+      }
+      .playground-shortcuts {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .btn-playground {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #e2e8f0;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+      }
+      .btn-playground:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* AI Infrastructure Cluster Health Bar */
+      .cluster-status-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px 18px;
+        margin-bottom: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        box-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
+      }
+      .cluster-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #1e293b;
+        letter-spacing: 0.02em;
+      }
+      .cluster-pills {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .cluster-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #334155;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .status-dot.green {
+        background: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+      }
+      .status-dot.yellow {
+        background: #f59e0b;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+      }
+      .status-dot.red {
+        background: #ef4444;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+      }
+
+      /* KPI Metric Cards */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      @media (max-width: 1024px) {
+        .kpi-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 640px) {
+        .kpi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .kpi-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 18px;
+        box-shadow: 0 1px 3px rgba(0, 30, 43, 0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 30, 43, 0.06);
+      }
+      .kpi-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .kpi-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #64748b;
+      }
+      .kpi-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      .kpi-val {
+        font-size: 24px;
+        font-weight: 800;
+        color: #0f172a;
+        font-family: var(--font-heading);
+        line-height: 1.2;
+        margin-bottom: 6px;
+      }
+      .kpi-badge {
+        font-size: 11.5px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      /* Auto-refresh control */
+      .auto-refresh-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 12px;
+        color: #475569;
+        font-weight: 600;
+      }
+      .auto-refresh-select {
+        border: none;
+        background: transparent;
+        font-size: 12px;
+        font-weight: 700;
+        color: #0f4c81;
+        cursor: pointer;
+        outline: none;
+      }
+      .live-pulse {
+        width: 7px;
+        height: 7px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+        animation: pulse 1.8s infinite;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+        70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
+
+      /* Recent Requests Table */
+      .recent-table-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
+        overflow: hidden;
+        margin-top: 14px;
+        margin-bottom: 30px;
+      }
+      .badge-method {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        font-family: var(--font-code);
+      }
+      .badge-method.post { background: #e0f2fe; color: #0369a1; }
+      .badge-method.get { background: #dcfce7; color: #15803d; }
+      .badge-status {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .badge-status.s2xx { background: #ecfdf5; color: #047857; }
+      .badge-status.s4xx { background: #fff7ed; color: #c2410c; }
+      .badge-status.s5xx { background: #fef2f2; color: #b91c1c; }
+
       .chart-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -1158,6 +1427,55 @@
           <span class="active">Dashboard</span>
         </div>
 
+        <!-- DEVELOPER QUICKSTART STRIP -->
+        <div class="dev-quickstart-card">
+          <div class="dev-key-section">
+            <span style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">
+              <i class="fa-solid fa-key" style="color: #38bdf8; margin-right: 4px;"></i> API Key:
+            </span>
+            <span id="dev-active-key" class="dev-key-badge">aip_live_valid_test_key_12345</span>
+            <button class="btn-copy-key" onclick="copyActiveKey()">
+              <i class="fa-regular fa-copy"></i> Copy Key
+            </button>
+            <a href="/staff/keys" style="color: #94a3b8; font-size: 11.5px; text-decoration: underline; margin-left: 4px;">Manage Keys</a>
+          </div>
+          <div class="playground-shortcuts">
+            <span style="font-size: 11.5px; font-weight: 600; color: #94a3b8; margin-right: 4px;">Quick Playgrounds:</span>
+            <a href="/staff/service-llm" class="btn-playground"><i class="fa-solid fa-comments"></i> LLM Chat</a>
+            <a href="/staff/service-stt" class="btn-playground"><i class="fa-solid fa-microphone"></i> STT Voice</a>
+            <a href="/staff/service-ocr-id" class="btn-playground"><i class="fa-solid fa-id-card"></i> CCCD OCR</a>
+            <a href="/project/global/apis/rag-chat-enterprise-kb" class="btn-playground"><i class="fa-solid fa-brain"></i> RAG AI</a>
+          </div>
+        </div>
+
+        <!-- AI INFRASTRUCTURE & CLUSTER HEALTH BAR -->
+        <div class="cluster-status-card">
+          <div class="cluster-title">
+            <i class="fa-solid fa-server" style="color: #0f4c81;"></i>
+            <span>AI Cluster & Telemetry Status:</span>
+            <div id="cluster-overall-badge" class="cluster-pill">
+              <span class="status-dot green"></span> ALL OPERATIONAL
+            </div>
+          </div>
+          <div class="cluster-pills">
+            <div id="pill-llm" class="cluster-pill">
+              <span class="status-dot green"></span> Qwen LLM GPU (TITAN Xp)
+            </div>
+            <div id="pill-mongo" class="cluster-pill">
+              <span class="status-dot green"></span> MongoDB Atlas
+            </div>
+            <div id="pill-redis" class="cluster-pill">
+              <span class="status-dot green"></span> Redis Rate-Limiter
+            </div>
+            <div id="pill-rabbitmq" class="cluster-pill">
+              <span class="status-dot green"></span> RabbitMQ Queue
+            </div>
+            <div id="pill-minio" class="cluster-pill">
+              <span class="status-dot green"></span> MinIO S3
+            </div>
+          </div>
+        </div>
+
         <!-- MongoDB Atlas Page Header -->
         <div class="atlas-page-header">
           <div>
@@ -1168,6 +1486,16 @@
             </p>
           </div>
           <div class="atlas-header-actions">
+            <div class="auto-refresh-box">
+              <span id="auto-refresh-pulse" class="live-pulse" style="display: none;"></span>
+              <i class="fa-solid fa-arrows-rotate" style="font-size: 11px; color: #64748b;"></i>
+              <select id="auto-refresh-select" class="auto-refresh-select">
+                <option value="0">Auto: OFF</option>
+                <option value="15">Auto: 15s</option>
+                <option value="30">Auto: 30s</option>
+                <option value="60">Auto: 60s</option>
+              </select>
+            </div>
             <div class="time-filter-box">
               <button
                 id="dashboard-time-range"
@@ -1216,6 +1544,61 @@
             <a href="/staff/apis" class="btn-atlas-primary"
               ><i class="fa-solid fa-cubes"></i> Explore APIs</a
             >
+          </div>
+        </div>
+
+        <!-- 4 EXECUTIVE KPI CARDS -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">TOTAL REQUESTS</span>
+              <div class="kpi-icon" style="background: #eff6ff; color: #2563eb;">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpi-total-traffic">0</div>
+            <div class="kpi-badge" style="color: #0284c7;">
+              <i class="fa-solid fa-arrow-trend-up"></i> <span id="kpi-traffic-subtitle">Selected window traffic</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">SUCCESS SLA</span>
+              <div class="kpi-icon" style="background: #ecfdf5; color: #059669;">
+                <i class="fa-solid fa-shield-heart"></i>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpi-success-rate">100.0%</div>
+            <div class="kpi-badge" style="color: #059669;">
+              <i class="fa-solid fa-circle-check"></i> <span id="kpi-error-badge">0 errors recorded</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">AVERAGE LATENCY</span>
+              <div class="kpi-icon" style="background: #f5f3ff; color: #7c3aed;">
+                <i class="fa-solid fa-bolt-lightning"></i>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpi-avg-latency">0 ms</div>
+            <div class="kpi-badge" style="color: #7c3aed;">
+              <i class="fa-solid fa-gauge-high"></i> <span id="kpi-latency-badge">Optimal performance</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">AVAILABLE BALANCE</span>
+              <div class="kpi-icon" style="background: #fffbeb; color: #d97706;">
+                <i class="fa-solid fa-wallet"></i>
+              </div>
+            </div>
+            <div class="kpi-val" id="kpi-credits">0 credits</div>
+            <div class="kpi-badge" style="color: #d97706; cursor: pointer;" onclick="openPricingModalFor('Tài khoản')">
+              <i class="fa-solid fa-circle-plus"></i> <span>+ Nạp thêm gói</span>
+            </div>
           </div>
         </div>
 
@@ -1339,6 +1722,40 @@
               <i class="fa-solid fa-chevron-right"></i>
             </span>
           </div>
+        </div>
+
+        <!-- LIVE RECENT API INVOCATIONS TABLE -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 32px; margin-bottom: 14px;">
+          <div>
+            <div class="page-title" style="font-size: 18px; margin-bottom: 2px;">
+              <i class="fa-solid fa-list-check" style="color: #0f4c81; margin-right: 6px;"></i> Recent API Invocations
+            </div>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0;">Real-time execution trace stream from MongoDB backend</p>
+          </div>
+          <button class="btn-atlas-secondary" onclick="renderRecentRequests()" style="cursor: pointer; padding: 6px 12px; font-size: 12px;">
+            <i class="fa-solid fa-rotate-right"></i> Refresh Logs
+          </button>
+        </div>
+        <div class="recent-table-card">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 140px;">Timestamp</th>
+                <th>API Endpoint</th>
+                <th style="width: 90px;">Method</th>
+                <th style="width: 100px;">Status</th>
+                <th style="width: 110px;">Latency</th>
+                <th style="width: 130px;">Request ID</th>
+              </tr>
+            </thead>
+            <tbody id="recent-requests-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 24px;">
+                  <i class="fa-solid fa-spinner fa-spin" style="margin-right: 8px;"></i> Loading recent execution traces...
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2686,6 +3103,7 @@
           const res = await fetch(url);
           if (res.ok) {
             const data = await res.json();
+            updateKpiCards(data);
             if (data.labels && data.labels.length) {
               if (dashboardCharts.traffic) {
                 dashboardCharts.traffic.data.labels = data.labels;
@@ -2908,6 +3326,161 @@
         );
       }
 
+      function updateKpiCards(data) {
+        if (!data) return;
+        const total = data.total_traffic || 0;
+        const errs = data.total_errors || 0;
+        const successRate = total > 0 ? (((total - errs) / total) * 100).toFixed(1) : 100.0;
+
+        const totalEl = document.getElementById("kpi-total-traffic");
+        if (totalEl) totalEl.innerText = total.toLocaleString();
+
+        const successEl = document.getElementById("kpi-success-rate");
+        if (successEl) successEl.innerText = `${successRate}%`;
+
+        const errBadgeEl = document.getElementById("kpi-error-badge");
+        if (errBadgeEl) {
+          errBadgeEl.innerText = errs === 0 ? "0 errors recorded" : `${errs} errors recorded`;
+          if (errBadgeEl.parentElement) {
+            errBadgeEl.parentElement.style.color = errs === 0 ? "#059669" : "#dc2626";
+          }
+        }
+
+        const latEl = document.getElementById("kpi-avg-latency");
+        if (latEl) latEl.innerText = `${data.avg_latency || 0} ms`;
+
+        const credEl = document.getElementById("kpi-credits");
+        if (credEl) {
+          const paidBal = getPaidBalance();
+          credEl.innerText = paidBal > 0 ? `${paidBal.toLocaleString()} credits` : "0 credits";
+        }
+      }
+
+      function copyActiveKey() {
+        const key = "aip_live_valid_test_key_12345";
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(key).then(() => {
+            showToast("Đã copy API Key: " + key, "success");
+          });
+        } else {
+          showToast("API Key: " + key, "info");
+        }
+      }
+
+      async function fetchClusterHealth() {
+        try {
+          const res = await fetch("/v1/status");
+          if (!res.ok) return;
+          const data = await res.json();
+          const infra = data.infrastructure || {};
+          const svcs = data.services || {};
+
+          const isOverallOk = data.platform_status === "healthy" || data.platform_status === "ok";
+          const overallBadge = document.getElementById("cluster-overall-badge");
+          if (overallBadge) {
+            overallBadge.innerHTML = `<span class="status-dot ${isOverallOk ? 'green' : 'yellow'}"></span> ${isOverallOk ? 'ALL OPERATIONAL' : 'DEGRADED'}`;
+          }
+
+          function setPill(id, isHealthy, text) {
+            const el = document.getElementById(id);
+            if (el) {
+              const dotClass = isHealthy ? "green" : "yellow";
+              el.innerHTML = `<span class="status-dot ${dotClass}"></span> ${text}`;
+            }
+          }
+
+          setPill("pill-llm", svcs.vllm_engine?.status === "healthy", "Qwen LLM GPU (" + (svcs.vllm_engine?.status === "healthy" ? "Online" : "Standby") + ")");
+          setPill("pill-mongo", infra.mongodb?.status === "healthy", "MongoDB Atlas (" + (infra.mongodb?.latency_ms ? infra.mongodb.latency_ms + "ms" : "OK") + ")");
+          setPill("pill-redis", infra.redis?.status === "healthy", "Redis Lua (" + (infra.redis?.latency_ms ? infra.redis.latency_ms + "ms" : "OK") + ")");
+          setPill("pill-rabbitmq", infra.rabbitmq?.status === "healthy", "RabbitMQ Tasks (" + (infra.rabbitmq?.latency_ms ? infra.rabbitmq.latency_ms + "ms" : "OK") + ")");
+          setPill("pill-minio", infra.minio?.status === "healthy", "MinIO S3 (" + (infra.minio?.latency_ms ? infra.minio.latency_ms + "ms" : "OK") + ")");
+        } catch (e) {
+          console.warn("Failed to fetch cluster status:", e);
+        }
+      }
+
+      async function renderRecentRequests() {
+        const tbody = document.getElementById("recent-requests-tbody");
+        if (!tbody) return;
+        try {
+          const res = await fetch("/v1/user/api-report?page=1&page_size=8", {
+            headers: getRequestHeaders(),
+          });
+          if (!res.ok) return;
+          const result = await res.json();
+          const logs = result.data || [];
+          if (!logs.length) {
+            tbody.innerHTML =
+              '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 24px;">Chưa có log gọi API nào gần đây.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = "";
+          logs.forEach((log) => {
+            const d = new Date(log.timestamp);
+            const timeStr = isNaN(d)
+              ? log.timestamp || "—"
+              : d.toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                }) +
+                " " +
+                d.toLocaleDateString("vi-VN", {
+                  day: "2-digit",
+                  month: "2-digit",
+                });
+            const is2xx = log.status_code >= 200 && log.status_code < 300;
+            const is4xx = log.status_code >= 400 && log.status_code < 500;
+            const statusCls = is2xx ? "s2xx" : is4xx ? "s4xx" : "s5xx";
+            const method = (log.method || "POST").toUpperCase();
+            const methodCls = method.toLowerCase();
+            const latency =
+              log.latency_ms != null
+                ? `${Number(log.latency_ms).toFixed(1)} ms`
+                : "—";
+            const reqId = log.request_id ? log.request_id.substring(0, 14) : "—";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td style="color:#64748b; font-size:12px;">${timeStr}</td>
+              <td><strong style="color:#0f172a; font-family:var(--font-code); font-size:12px;">${log.path || "/v1/chat/completions"}</strong></td>
+              <td><span class="badge-method ${methodCls}">${method}</span></td>
+              <td><span class="badge-status ${statusCls}">${log.status_code || 200}</span></td>
+              <td style="font-weight:600; color:#334155;">${latency}</td>
+              <td><span style="font-family:var(--font-code); color:#64748b; font-size:11.5px;">${reqId}</span></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.warn("Failed to load recent requests:", e);
+        }
+      }
+
+      let autoRefreshTimer = null;
+      function setupAutoRefresh() {
+        const select = document.getElementById("auto-refresh-select");
+        if (!select) return;
+        select.addEventListener("change", (e) => {
+          const sec = parseInt(e.target.value, 10);
+          if (autoRefreshTimer) {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+          }
+          const pulse = document.getElementById("auto-refresh-pulse");
+          if (sec > 0) {
+            if (pulse) pulse.style.display = "inline-block";
+            autoRefreshTimer = setInterval(async () => {
+              await refreshDashboardCharts();
+              await renderRecentRequests();
+              await fetchClusterHealth();
+            }, sec * 1000);
+            showToast(`Đã bật Auto-refresh mỗi ${sec}s`, "info");
+          } else {
+            if (pulse) pulse.style.display = "none";
+            showToast("Đã tắt Auto-refresh", "info");
+          }
+        });
+      }
+
       const initializeDashboardPage = async () => {
         checkMandatoryAuth();
         const toggleEl = document.getElementById("toggle-only-running");
@@ -2919,6 +3492,9 @@
         initCharts();
         setupDashboardTimePicker();
         await refreshDashboardCharts();
+        await fetchClusterHealth();
+        await renderRecentRequests();
+        setupAutoRefresh();
       };
       if (document.readyState === "loading") {
         window.addEventListener("DOMContentLoaded", initializeDashboardPage, {
