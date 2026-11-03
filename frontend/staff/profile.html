@@ -740,30 +740,19 @@
                   </button>
                 </div>
 
-                <div class="space-y-3">
+                <div id="active-sessions-list" class="space-y-3">
                   <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
                     <div class="flex items-center gap-3">
-                      <i class="fa-brands fa-windows text-lg text-emerald-700"></i>
+                      <i class="fa-solid fa-laptop text-lg text-emerald-700" id="current-device-icon"></i>
                       <div>
                         <div class="font-bold text-slate-900 flex items-center gap-2">
-                          <span>Windows 11 • Chrome 129</span>
+                          <span id="current-device-name">Đang nhận diện thiết bị...</span>
                           <span class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-100 text-emerald-800 font-semibold">Hiện tại</span>
                         </div>
-                        <div class="text-[11px] text-slate-500">Hà Nội, VN • IP: 118.70.198.42</div>
+                        <div class="text-[11px] text-slate-500" id="current-device-ip">Đang kết nối...</div>
                       </div>
                     </div>
                     <span class="text-emerald-700 font-semibold text-[11px]"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Active</span>
-                  </div>
-
-                  <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                    <div class="flex items-center gap-3">
-                      <i class="fa-brands fa-apple text-lg text-slate-700"></i>
-                      <div>
-                        <div class="font-bold text-slate-800">macOS Sonoma • Safari</div>
-                        <div class="text-[11px] text-slate-500">TP. Hồ Chí Minh, VN • IP: 113.161.44.12</div>
-                      </div>
-                    </div>
-                    <span class="text-slate-400 text-[11px]">2 giờ trước</span>
                   </div>
                 </div>
               </div>
@@ -1065,32 +1054,92 @@
 
     <!-- Page Client Logic -->
     <script>
+      function parseClientDevice() {
+        const ua = navigator.userAgent;
+        let os = "Desktop";
+        let icon = "fa-brands fa-windows";
+        if (/Windows NT 10.0/i.test(ua) || /Windows/i.test(ua)) {
+          os = "Windows 11/10";
+          icon = "fa-brands fa-windows";
+        } else if (/Macintosh|Mac OS X/i.test(ua)) {
+          os = "macOS";
+          icon = "fa-brands fa-apple";
+        } else if (/Linux/i.test(ua)) {
+          os = "Linux";
+          icon = "fa-brands fa-linux";
+        } else if (/Android/i.test(ua)) {
+          os = "Android";
+          icon = "fa-brands fa-android";
+        } else if (/iPhone|iPad/i.test(ua)) {
+          os = "iOS";
+          icon = "fa-brands fa-apple";
+        }
+
+        let browser = "Chrome";
+        if (/Edg\//i.test(ua)) browser = "Microsoft Edge";
+        else if (/Chrome\//i.test(ua)) browser = "Chrome";
+        else if (/Firefox\//i.test(ua)) browser = "Firefox";
+        else if (/Safari\//i.test(ua)) browser = "Safari";
+
+        return { os, browser, icon };
+      }
+
+      async function loadActiveSessions() {
+        const dev = parseClientDevice();
+        const iconEl = document.getElementById('current-device-icon');
+        const nameEl = document.getElementById('current-device-name');
+        const ipEl = document.getElementById('current-device-ip');
+
+        if (iconEl) iconEl.className = dev.icon + ' text-lg text-emerald-700';
+        if (nameEl) nameEl.innerText = dev.os + ' • ' + dev.browser;
+
+        let clientIp = window.location.hostname;
+        try {
+          const raw = localStorage.getItem('aip_user_session');
+          const u = raw ? JSON.parse(raw) : {};
+          const headers = { 'Content-Type': 'application/json' };
+          if (u.user_id) headers['X-User-Id'] = u.user_id;
+          const res = await fetch('/v1/auth/me', { headers });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.client_ip) clientIp = data.client_ip;
+          }
+        } catch (e) {}
+
+        if (ipEl) ipEl.innerText = 'Địa chỉ IP: ' + clientIp;
+      }
+
       // 1. User Session Data Management
       let currentUser = {
-        user_id: 'usr_staff_8920',
-        email: 'namle@company.com',
-        full_name: 'Nam Lê',
+        user_id: '',
+        email: '',
+        full_name: '',
         role: 'staff',
         status: 'active',
-        phone: '0988 123 456',
+        phone: '',
         department: 'AI Engineering & Core Solutions',
-        job_title: 'Senior AI Platform Engineer',
-        bio: 'Phụ trách phát triển hạ tầng AIP Platform, RAG Knowledge Base và tối ưu hóa mô hình LLM suy luận hiệu năng cao.',
-        created_at: '2024-01-15T09:00:00Z',
-        avatar_initials: 'NL',
+        job_title: 'AI Platform Engineer',
+        bio: 'Thành viên phát triển hệ thống AIP Platform.',
+        created_at: new Date().toISOString(),
+        avatar_initials: 'US',
         avatar_img: null
       };
 
       function loadUserData() {
         const raw = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw);
-            currentUser = { ...currentUser, ...parsed };
-          } catch (e) {
-            console.error('Failed to parse user session:', e);
-          }
+        if (!raw) {
+          window.location.replace('/auth/login.html?redirect=' + encodeURIComponent(window.location.pathname));
+          return;
         }
+        try {
+          const parsed = JSON.parse(raw);
+          currentUser = { ...currentUser, ...parsed };
+        } catch (e) {
+          console.error('Failed to parse user session:', e);
+        }
+
+        // Render sessions
+        loadActiveSessions();
 
         // Compute initials
         if (currentUser.full_name) {
@@ -1107,9 +1156,10 @@
 
       function renderUserUI() {
         // Hero Card
-        document.getElementById('card-fullname').innerText = currentUser.full_name || 'Nam Lê';
-        document.getElementById('card-email').querySelector('span').innerText = currentUser.email || 'namle@company.com';
-        document.getElementById('card-user-id').innerText = currentUser.user_id || 'usr_staff_8920';
+        const displayName = currentUser.full_name || currentUser.email || 'User';
+        document.getElementById('card-fullname').innerText = displayName;
+        document.getElementById('card-email').querySelector('span').innerText = currentUser.email || 'Chưa cập nhật email';
+        document.getElementById('card-user-id').innerText = currentUser.user_id || 'usr_active';
         document.getElementById('card-department').innerText = currentUser.department || 'AI Engineering & Core';
         
         const roleLabel = (currentUser.role || 'staff').toUpperCase();
@@ -1137,7 +1187,7 @@
 
         // Synchronize Topbar
         const headerUsername = document.getElementById('header-username');
-        if (headerUsername) headerUsername.innerText = currentUser.full_name || 'Nam Lê';
+        if (headerUsername) headerUsername.innerText = displayName;
         const headerAvatar = document.getElementById('header-avatar');
         if (headerAvatar) {
           if (currentUser.avatar_img) {

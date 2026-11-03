@@ -91,6 +91,35 @@ async def forgot_password(request: ForgotPasswordRequest, http_req: Request):
     return {"message": "Password updated successfully. Please log in with your new password."}
 
 
+@router.get("/me", summary="Get Current Session & Client Info")
+async def get_session_info(request: Request):
+    client_ip = (
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        or (request.client.host if request.client else "127.0.0.1")
+    )
+    user_agent = request.headers.get("user-agent", "Unknown")
+
+    user_id = request.headers.get("x-user-id") or request.headers.get("X-User-Id")
+    auth = request.headers.get("authorization") or request.headers.get("Authorization", "")
+    if not user_id and auth.startswith("Bearer aip_session_"):
+        user_id = auth.replace("Bearer aip_session_", "").strip()
+
+    user = None
+    if user_id:
+        user = await auth_service.user_repo.get_user_by_id(user_id)
+        if user:
+            user = dict(user)
+            user.pop("hashed_password", None)
+            user.pop("_id", None)
+
+    return {
+        "client_ip": client_ip,
+        "user_agent": user_agent,
+        "user_id": user_id or "user_staff_01",
+        "user": user,
+    }
+
+
 import httpx
 
 from src.configs.settings import gateway_settings

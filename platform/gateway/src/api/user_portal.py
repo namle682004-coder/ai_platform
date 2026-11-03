@@ -60,17 +60,28 @@ class RechargeBalanceRequest(BaseModel):
 DEFAULT_PROJECT_ID = "f40b6a70-ea64-4d01-90dc-53a2d7a81395"
 
 
+def get_current_user_id(request: Request) -> str:
+    user_id = request.headers.get("x-user-id") or request.headers.get("X-User-Id")
+    if user_id:
+        return user_id
+    auth = request.headers.get("authorization") or request.headers.get("Authorization", "")
+    if auth.startswith("Bearer aip_session_"):
+        return auth.replace("Bearer aip_session_", "").strip()
+    return "user_staff_01"
+
+
 # --- 1. PROJECTS REST ENDPOINTS ---
 @router.get("/projects", response_model=List[dict])
-async def list_user_projects():
+async def list_user_projects(request: Request):
     """Fetch user projects from MongoDB Atlas."""
-    projects = await project_repository.list_user_projects(user_id="user_staff_01")
+    user_id = get_current_user_id(request)
+    projects = await project_repository.list_user_projects(user_id=user_id)
     if not projects:
         default_proj = {
-            "project_id": DEFAULT_PROJECT_ID,
+            "project_id": str(uuid.uuid4()) if user_id != "user_staff_01" else DEFAULT_PROJECT_ID,
             "project_name": "Default Project",
             "type": "prepaid",
-            "user_id": "user_staff_01",
+            "user_id": user_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         await project_repository.create_project(default_proj)
@@ -79,14 +90,15 @@ async def list_user_projects():
 
 
 @router.post("/projects", status_code=status.HTTP_201_CREATED)
-async def create_user_project(req: ProjectCreateRequest):
+async def create_user_project(req: ProjectCreateRequest, request: Request):
     """Create a new project in MongoDB Atlas."""
+    user_id = get_current_user_id(request)
     proj_id = str(uuid.uuid4())
     proj_doc = {
         "project_id": proj_id,
         "project_name": req.project_name,
         "type": req.billing_type,
-        "user_id": "user_staff_01",
+        "user_id": user_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     saved = await project_repository.create_project(proj_doc)

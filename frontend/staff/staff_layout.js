@@ -795,10 +795,25 @@ import '/staff/applications_nav.js';
         document.head.appendChild(style);
     }
 
+    function getAuthHeaders() {
+        const raw = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+        const headers = { 'Content-Type': 'application/json' };
+        if (raw) {
+            try {
+                const u = JSON.parse(raw);
+                if (u.user_id) {
+                    headers['X-User-Id'] = u.user_id;
+                    headers['Authorization'] = 'Bearer aip_session_' + u.user_id;
+                }
+            } catch (e) {}
+        }
+        return headers;
+    }
+
     // 3. Project Storage State - Connected to MongoDB Atlas
     async function getProjects() {
         try {
-            const res = await fetch('/v1/user/projects');
+            const res = await fetch('/v1/user/projects', { headers: getAuthHeaders() });
             if (res.ok) {
                 const data = await res.json();
                 if (Array.isArray(data)) {
@@ -1201,7 +1216,7 @@ import '/staff/applications_nav.js';
         try {
             const res = await fetch('/v1/user/projects', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     project_name: name,
                     billing_type: type
@@ -1801,34 +1816,44 @@ import '/staff/applications_nav.js';
         showToast(lang === 'vi' ? 'Đã chuyển ngôn ngữ sang Tiếng Việt' : 'Switched language to English', 'info');
     }
 
-    // 8. Authentication
+    // 8. Authentication & Multi-Tenant Access Control
     function checkMandatoryAuth() {
+        const path = window.location.pathname.toLowerCase();
+        if (path.includes('/login') || path.includes('/signup') || path.includes('/auth/')) return;
+
         const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+        if (!userSession) {
+            const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.replace('/auth/login.html?redirect=' + redirectUrl);
+            return;
+        }
+
         const headerUsername = document.getElementById('header-username');
         const headerAvatar = document.getElementById('header-avatar') || document.querySelector('.user-menu .user-avatar');
-        if (userSession) {
-            try {
-                const user = JSON.parse(userSession);
-                if (headerUsername) headerUsername.innerText = user.full_name || 'Nam Lê';
-                if (headerAvatar) {
-                    if (user.avatar_img) {
-                        headerAvatar.innerHTML = `<img src="${user.avatar_img}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="Avatar">`;
-                    } else if (user.full_name) {
-                        const parts = user.full_name.trim().split(/\s+/);
-                        const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
-                        headerAvatar.innerText = initials;
-                    }
+        try {
+            const user = JSON.parse(userSession);
+            const displayName = user.full_name || user.email || 'User';
+            if (headerUsername) headerUsername.innerText = displayName;
+            if (headerAvatar) {
+                if (user.avatar_img) {
+                    headerAvatar.innerHTML = `<img src="${user.avatar_img}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="Avatar">`;
+                } else {
+                    const parts = displayName.trim().split(/\s+/);
+                    const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
+                    headerAvatar.innerText = initials;
                 }
-            } catch (e) {}
-        } else {
-            if (headerUsername) headerUsername.innerText = 'Nam Lê';
-        }
+            }
+        } catch (e) {}
     }
 
     function logoutUser() {
         localStorage.removeItem('aip_user_session');
         sessionStorage.removeItem('aip_user_session');
-        window.location.href = '/login';
+        localStorage.removeItem('aip_projects');
+        localStorage.removeItem('aip_active_project');
+        localStorage.removeItem('aip_active_tenant_id');
+        localStorage.removeItem('aip_active_project_id');
+        window.location.href = '/auth/login.html';
     }
 
     // 9. Standard Topbar & Sidebar Markup (Unified Image 3 & Image 4 MatDash)
