@@ -497,79 +497,6 @@
         }
       }
 
-      /* Developer Quick-Start Strip */
-      .dev-quickstart-card {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        border-radius: 12px;
-        padding: 14px 20px;
-        margin-bottom: 20px;
-        color: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 14px;
-        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-      }
-      .dev-key-section {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .dev-key-badge {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-family: var(--font-code);
-        font-size: 12.5px;
-        letter-spacing: 0.04em;
-        color: #38bdf8;
-      }
-      .btn-copy-key {
-        background: #38bdf8;
-        color: #0f172a;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: background 0.15s ease;
-      }
-      .btn-copy-key:hover {
-        background: #7dd3fc;
-      }
-      .playground-shortcuts {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .btn-playground {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: #e2e8f0;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.15s ease;
-      }
-      .btn-playground:hover {
-        background: rgba(255, 255, 255, 0.2);
-        color: #ffffff;
-        border-color: rgba(255, 255, 255, 0.3);
-      }
-
       /* AI Infrastructure Cluster Health Bar */
       .cluster-status-card {
         background: #ffffff;
@@ -704,23 +631,28 @@
       .auto-refresh-box {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
+        gap: 8px;
+        padding: 7px 14px;
         background: #ffffff;
         border: 1px solid var(--border-color);
         border-radius: 6px;
-        font-size: 12px;
+        font-size: 12.5px;
         color: #475569;
         font-weight: 600;
+        white-space: nowrap;
+        min-width: 135px;
+        box-sizing: border-box;
       }
       .auto-refresh-select {
         border: none;
         background: transparent;
-        font-size: 12px;
+        font-size: 12.5px;
         font-weight: 700;
         color: #0f4c81;
         cursor: pointer;
         outline: none;
+        white-space: nowrap;
+        padding-right: 4px;
       }
       .live-pulse {
         width: 7px;
@@ -744,7 +676,7 @@
         border: 1px solid var(--border-color);
         box-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
         overflow: hidden;
-        margin-top: 14px;
+        margin-top: 28px;
         margin-bottom: 30px;
       }
       .badge-method {
@@ -1425,27 +1357,6 @@
           <span id="breadcrumb-project-name">Default Enterprise Project</span>
           <span class="sep">/</span>
           <span class="active">Dashboard</span>
-        </div>
-
-        <!-- DEVELOPER QUICKSTART STRIP -->
-        <div class="dev-quickstart-card">
-          <div class="dev-key-section">
-            <span style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;">
-              <i class="fa-solid fa-key" style="color: #38bdf8; margin-right: 4px;"></i> API Key:
-            </span>
-            <span id="dev-active-key" class="dev-key-badge">aip_live_valid_test_key_12345</span>
-            <button class="btn-copy-key" onclick="copyActiveKey()">
-              <i class="fa-regular fa-copy"></i> Copy Key
-            </button>
-            <a href="/staff/keys" style="color: #94a3b8; font-size: 11.5px; text-decoration: underline; margin-left: 4px;">Manage Keys</a>
-          </div>
-          <div class="playground-shortcuts">
-            <span style="font-size: 11.5px; font-weight: 600; color: #94a3b8; margin-right: 4px;">Quick Playgrounds:</span>
-            <a href="/staff/service-llm" class="btn-playground"><i class="fa-solid fa-comments"></i> LLM Chat</a>
-            <a href="/staff/service-stt" class="btn-playground"><i class="fa-solid fa-microphone"></i> STT Voice</a>
-            <a href="/staff/service-ocr-id" class="btn-playground"><i class="fa-solid fa-id-card"></i> CCCD OCR</a>
-            <a href="/project/global/apis/rag-chat-enterprise-kb" class="btn-playground"><i class="fa-solid fa-brain"></i> RAG AI</a>
-          </div>
         </div>
 
         <!-- AI INFRASTRUCTURE & CLUSTER HEALTH BAR -->
