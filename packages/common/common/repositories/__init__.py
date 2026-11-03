@@ -12,6 +12,7 @@ from common.repositories.model_catalog_repository import MongoModelCatalogReposi
 from common.repositories.session_repository import MongoSessionRepository, session_repository
 from common.repositories.usage_repository import MongoUsageRepository, usage_repository
 from common.repositories.document_repository import MongoDocumentRepository, document_repository
+from common.repositories.telemetry_repository import MongoTelemetryRepository, telemetry_repository
 
 __all__ = [
     "MongoKeyRepository",
@@ -29,6 +30,7 @@ __all__ = [
     "MongoSessionRepository",
     "MongoUsageRepository",
     "MongoDocumentRepository",
+    "MongoTelemetryRepository",
     "key_repository",
     "alias_repository",
     "endpoint_repository",
@@ -44,4 +46,5 @@ __all__ = [
     "session_repository",
     "usage_repository",
     "document_repository",
+    "telemetry_repository",
 ]

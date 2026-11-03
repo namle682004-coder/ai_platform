@@ -1,6 +1,6 @@
 import uuid
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from fastapi import APIRouter, status, Request, Query
 from pydantic import BaseModel, Field
@@ -436,7 +436,7 @@ async def get_user_api_usage_summary(request: Request):
     }
 
 
-# --- 7B. REAL-TIME TELEMETRY TIME-SERIES FOR CONSOLE DASHBOARD ---
+# --- 7B. REAL-TIME TELEMETRY TIME-SERIES FOR CONSOLE DASHBOARD (CLEAN ARCHITECTURE) ---
 
 @router.get("/analytics/timeseries", summary="Get telemetry time-series for Traffic, Errors, and Latency")
 @router.get("/analytics-timeseries", summary="Alias for telemetry time-series")
@@ -451,244 +451,29 @@ async def get_analytics_timeseries(
     """
     Returns real-time telemetry time-series points aggregated from MongoDB api_logs.
     Powers the Traffic, Errors, and Median Latency charts on the Console Dashboard.
+    Delegates to TelemetryService Use Case (Clean Architecture).
     """
-    from common.database.mongodb import mongo_manager
+    from dataclasses import asdict
+    from src.services.telemetry_service import telemetry_service
 
-    # Normalize parameters if invoked directly outside FastAPI request pipeline
+    # Normalize parameters if invoked directly outside FastAPI dependency injection
     r_val = range if isinstance(range, str) else "last 1 day"
     iv_val = interval if isinstance(interval, str) else None
     mode_val = mode if isinstance(mode, str) else "quick"
     from_val = from_date if isinstance(from_date, str) else None
     to_val = to_date if isinstance(to_date, str) else None
 
-    db = mongo_manager.get_database()
-    now_utc = datetime.now(timezone.utc)
-    vn_tz = timezone(timedelta(hours=7))
-    now_vn = now_utc.astimezone(vn_tz)
+    user_id = get_current_user_id(request)
 
-    if mode_val == "absolute" and from_val and to_val:
-        try:
-            start_dt = datetime.strptime(from_val.strip()[:10], "%Y-%m-%d").replace(tzinfo=vn_tz).astimezone(timezone.utc)
-        except Exception:
-            start_dt = now_utc - timedelta(days=1)
-        try:
-            end_dt = datetime.strptime(to_val.strip()[:10], "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=vn_tz).astimezone(timezone.utc)
-        except Exception:
-            end_dt = now_utc
-    else:
-        r = (r_val or "last 1 day").lower().strip()
-        if r == "today":
-            start_dt = now_vn.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
-            end_dt = now_utc
-        elif r == "this week":
-            start_dt = (now_vn - timedelta(days=now_vn.weekday())).replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
-            end_dt = now_utc
-        elif r == "this month":
-            start_dt = now_vn.replace(day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
-            end_dt = now_utc
-        elif r == "this year":
-            start_dt = now_vn.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
-            end_dt = now_utc
-        elif r == "last 5 minutes":
-            start_dt = now_utc - timedelta(minutes=5)
-            end_dt = now_utc
-        elif r == "last 15 minutes":
-            start_dt = now_utc - timedelta(minutes=15)
-            end_dt = now_utc
-        elif r == "last 30 minutes":
-            start_dt = now_utc - timedelta(minutes=30)
-            end_dt = now_utc
-        elif r == "last 45 minutes":
-            start_dt = now_utc - timedelta(minutes=45)
-            end_dt = now_utc
-        elif r == "last 1 hour":
-            start_dt = now_utc - timedelta(hours=1)
-            end_dt = now_utc
-        elif r == "last 2 hours":
-            start_dt = now_utc - timedelta(hours=2)
-            end_dt = now_utc
-        elif r == "last 6 hours":
-            start_dt = now_utc - timedelta(hours=6)
-            end_dt = now_utc
-        elif r == "last 12 hours":
-            start_dt = now_utc - timedelta(hours=12)
-            end_dt = now_utc
-        elif r in ("last 1 day", "last 24 hours"):
-            start_dt = now_utc - timedelta(hours=24)
-            end_dt = now_utc
-        elif r == "last 3 days":
-            start_dt = now_utc - timedelta(days=3)
-            end_dt = now_utc
-        elif r == "last 7 days":
-            start_dt = now_utc - timedelta(days=7)
-            end_dt = now_utc
-        elif r == "last 14 days":
-            start_dt = now_utc - timedelta(days=14)
-            end_dt = now_utc
-        elif r in ("last 1 month", "last 30 days"):
-            start_dt = now_utc - timedelta(days=30)
-            end_dt = now_utc
-        elif r == "last 3 months":
-            start_dt = now_utc - timedelta(days=90)
-            end_dt = now_utc
-        elif r == "last 6 months":
-            start_dt = now_utc - timedelta(days=180)
-            end_dt = now_utc
-        elif r in ("last 12 months", "last 1 year"):
-            start_dt = now_utc - timedelta(days=365)
-            end_dt = now_utc
-        else:
-            start_dt = now_utc - timedelta(hours=24)
-            end_dt = now_utc
-
-    duration_sec = max(1.0, (end_dt - start_dt).total_seconds())
-
-    iv = (iv_val or "").lower().strip()
-    if "min" in iv:
-        unit = "minute"
-        step_sec = 60
-        fmt = "%H:%M"
-    elif "hour" in iv:
-        unit = "hour"
-        step_sec = 3600
-        fmt = "%H:00"
-    elif "day" in iv:
-        unit = "day"
-        step_sec = 86400
-        fmt = "%d/%m"
-    elif "week" in iv:
-        unit = "week"
-        step_sec = 86400 * 7
-        fmt = "%d/%m"
-    elif "month" in iv:
-        unit = "month"
-        step_sec = 86400 * 30
-        fmt = "%m/%Y"
-    elif "year" in iv:
-        unit = "year"
-        step_sec = 86400 * 365
-        fmt = "%Y"
-    else:
-        if duration_sec <= 3600:
-            unit = "minute"
-            step_sec = 60
-            fmt = "%H:%M"
-        elif duration_sec <= 86400 * 2:
-            unit = "hour"
-            step_sec = 3600
-            fmt = "%H:00"
-        elif duration_sec <= 86400 * 45:
-            unit = "day"
-            step_sec = 86400
-            fmt = "%d/%m"
-        elif duration_sec <= 86400 * 180:
-            unit = "week"
-            step_sec = 86400 * 7
-            fmt = "%d/%m"
-        else:
-            unit = "month"
-            step_sec = 86400 * 30
-            fmt = "%m/%Y"
-
-    data_map = {}
-    if db is not None:
-        try:
-            start_iso = start_dt.isoformat()
-            end_iso = end_dt.isoformat()
-
-            pipeline = [
-                {"$match": {
-                    "timestamp": {"$gte": start_iso, "$lte": end_iso}
-                }},
-                {"$project": {
-                    "bucket": {
-                        "$dateTrunc": {
-                            "date": {"$toDate": "$timestamp"},
-                            "unit": unit
-                        }
-                    },
-                    "status_code": {"$ifNull": ["$status_code", 200]},
-                    "latency_ms": {"$ifNull": ["$latency_ms", 0.0]}
-                }},
-                {"$group": {
-                    "_id": "$bucket",
-                    "traffic": {"$sum": 1},
-                    "errors": {
-                        "$sum": {
-                            "$cond": [{"$gte": ["$status_code", 400]}, 1, 0]
-                        }
-                    },
-                    "avg_latency": {"$avg": "$latency_ms"}
-                }},
-                {"$sort": {"_id": 1}}
-            ]
-            buckets_data = await db.api_logs.aggregate(pipeline).to_list(None)
-            for b in buckets_data:
-                b_dt = b["_id"]
-                if b_dt.tzinfo is None:
-                    b_dt = b_dt.replace(tzinfo=timezone.utc)
-                data_map[b_dt] = b
-        except Exception:
-            pass
-
-    labels = []
-    traffic = []
-    errors = []
-    latency = []
-
-    curr = start_dt
-    if unit == "minute":
-        curr = curr.replace(second=0, microsecond=0)
-    elif unit == "hour":
-        curr = curr.replace(minute=0, second=0, microsecond=0)
-    elif unit == "day":
-        curr = curr.replace(hour=0, minute=0, second=0, microsecond=0)
-    elif unit == "month":
-        curr = curr.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
-    loop_count = 0
-    while curr <= end_dt and loop_count < 100:
-        matched = None
-        for b_time, b_val in data_map.items():
-            if abs((b_time - curr).total_seconds()) < step_sec / 2:
-                matched = b_val
-                break
-
-        vn_curr = curr.astimezone(vn_tz)
-        labels.append(vn_curr.strftime(fmt))
-
-        if matched:
-            traffic.append(matched["traffic"])
-            errors.append(matched["errors"])
-            latency.append(round(matched["avg_latency"] or 0, 1))
-        else:
-            traffic.append(0)
-            errors.append(0)
-            latency.append(0)
-
-        loop_count += 1
-        if unit == "month":
-            nm = curr.month + 1
-            ny = curr.year
-            if nm > 12:
-                nm = 1
-                ny += 1
-            curr = curr.replace(year=ny, month=nm)
-        else:
-            curr += timedelta(seconds=step_sec)
-
-    return {
-        "range": r_val,
-        "interval": iv_val or unit,
-        "mode": mode_val,
-        "labels": labels,
-        "traffic": traffic,
-        "errors": errors,
-        "latency": latency,
-        "total_traffic": sum(traffic),
-        "total_errors": sum(errors),
-        "avg_latency": round(sum(latency) / max(1, sum(1 for lat_val in latency if lat_val > 0)), 1)
-    }
+    dto = await telemetry_service.get_dashboard_telemetry(
+        range_val=r_val,
+        interval_val=iv_val,
+        mode=mode_val,
+        from_date=from_val,
+        to_date=to_val,
+        user_id=user_id if user_id != "default_user" else None,
+    )
+    return asdict(dto)
 
 
 # --- 8. API USAGE REPORT LOGS FOR STAFF REPORT PAGE ---

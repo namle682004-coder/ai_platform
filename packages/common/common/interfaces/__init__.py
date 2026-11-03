@@ -11,6 +11,7 @@ from common.interfaces.rate_limits import IRateLimitRepository
 from common.interfaces.models import IModelCatalogRepository
 from common.interfaces.sessions import ISessionRepository
 from common.interfaces.usage import IUsageRepository
+from common.interfaces.telemetry import ITelemetryRepository, TimeWindow, TelemetrySeriesDTO
 
 __all__ = [
     "IKeyRepository",
@@ -27,4 +28,7 @@ __all__ = [
     "IModelCatalogRepository",
     "ISessionRepository",
     "IUsageRepository",
+    "ITelemetryRepository",
+    "TimeWindow",
+    "TelemetrySeriesDTO",
 ]
