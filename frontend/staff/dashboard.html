@@ -495,6 +495,71 @@
         letter-spacing: -0.01em;
       }
 
+      /* Toggle Switch for Running APIs */
+      .switch-toggle {
+        position: relative;
+        display: inline-block;
+        width: 38px;
+        height: 20px;
+        margin: 0;
+        vertical-align: middle;
+      }
+      .switch-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+      .switch-toggle .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 20px;
+      }
+      .switch-toggle .slider:before {
+        position: absolute;
+        content: "";
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+        background-color: #ffffff;
+        transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      }
+      .switch-toggle input:checked + .slider {
+        background-color: #10b981;
+      }
+      .switch-toggle input:checked + .slider:before {
+        transform: translateX(18px);
+      }
+      .switch-toggle input:focus-visible + .slider {
+        outline: 2px solid #10b981;
+        outline-offset: 2px;
+      }
+      .api-filter-toggle-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: transparent;
+        border: none;
+        padding: 0;
+      }
+      .api-filter-toggle-wrap label.toggle-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        user-select: none;
+        margin: 0;
+      }
+
       .table-card {
         background: #ffffff;
         border-radius: 14px;
@@ -1083,11 +1148,29 @@
         </div>
 
         <div
-          id="summary-section-title"
-          class="page-title"
-          style="font-size: 20px; margin-bottom: 16px"
+          id="summary-section-header"
+          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;"
         >
-          APIs Summary
+          <div
+            id="summary-section-title"
+            class="page-title"
+            style="font-size: 20px; margin-bottom: 0;"
+          >
+            APIs Summary
+          </div>
+          <div class="api-filter-toggle-wrap">
+            <label class="switch-toggle" for="toggle-only-running">
+              <input
+                type="checkbox"
+                id="toggle-only-running"
+                onchange="onToggleOnlyRunningChange(this)"
+              />
+              <span class="slider"></span>
+            </label>
+            <label for="toggle-only-running" class="toggle-label">
+              Only show api running
+            </label>
+          </div>
         </div>
         <div class="table-card">
           <table>
@@ -1575,6 +1658,28 @@
         return saved;
       }
 
+      let latestDashboardData = {
+        catalog: [],
+        apis: {},
+        backendBal: null,
+        usageSummary: null,
+      };
+
+      function onToggleOnlyRunningChange(checkbox) {
+        localStorage.setItem(
+          "aip_only_running_apis",
+          checkbox.checked ? "true" : "false",
+        );
+        if (latestDashboardData.catalog && latestDashboardData.catalog.length) {
+          renderDashboardRows(
+            latestDashboardData.catalog,
+            latestDashboardData.apis,
+            latestDashboardData.backendBal,
+            latestDashboardData.usageSummary,
+          );
+        }
+      }
+
       function renderDashboardRows(catalog, apis, paidBal, usageSummary) {
         const hasAnyActiveApi = Object.keys(apis).some((k) =>
           isApiActive(apis, k),
@@ -1583,6 +1688,7 @@
         const chartGrid = document.querySelector(".chart-grid");
         const tableCard = document.querySelector(".table-card");
         const summaryTitle = document.getElementById("summary-section-title");
+        const summaryHeader = document.getElementById("summary-section-header");
 
         if (!hasAnyActiveApi) {
           if (banner) banner.style.display = "block";
@@ -1592,7 +1698,8 @@
           if (chartGrid) chartGrid.style.display = "grid";
         }
         if (tableCard) tableCard.style.display = "block";
-        if (summaryTitle) summaryTitle.style.display = "block";
+        if (summaryHeader) summaryHeader.style.display = "flex";
+        else if (summaryTitle) summaryTitle.style.display = "block";
 
         const tbody = document.getElementById("apis-summary-tbody");
         if (!tbody) return;
@@ -1604,7 +1711,29 @@
           return;
         }
 
-        catalog.forEach((item) => {
+        const toggleEl = document.getElementById("toggle-only-running");
+        const onlyRunning = toggleEl
+          ? toggleEl.checked
+          : localStorage.getItem("aip_only_running_apis") === "true";
+        if (toggleEl && toggleEl.checked !== onlyRunning) {
+          toggleEl.checked = onlyRunning;
+        }
+
+        const filteredCatalog = onlyRunning
+          ? catalog.filter((item) => {
+              const apiName = item.name || item.endpoint_id || item.path || "Unnamed API";
+              return isApiActive(apis, apiName);
+            })
+          : catalog;
+
+        if (!filteredCatalog.length) {
+          tbody.innerHTML = onlyRunning
+            ? '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:28px;"><i class="fa-solid fa-circle-info" style="margin-right:8px;color:#94a3b8;"></i>No running APIs at the moment.</td></tr>'
+            : '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:24px;">No APIs found in the database.</td></tr>';
+          return;
+        }
+
+        filteredCatalog.forEach((item) => {
           const apiName = item.name || item.endpoint_id || item.path || "Unnamed API";
           const apiPath = item.path || item.endpoint_id;
           const usage = usageSummary?.[apiPath];
@@ -1722,6 +1851,12 @@
             console.error("Failed to load API usage counts:", usageResult.reason);
             showToast("Unable to load API request counts from the database.", "error");
           }
+          latestDashboardData = {
+            catalog,
+            apis,
+            backendBal,
+            usageSummary,
+          };
           renderDashboardRows(catalog, apis, backendBal, usageSummary);
         } catch (error) {
           console.error("Failed to load dashboard API data:", error);
@@ -2453,6 +2588,11 @@
 
       const initializeDashboardPage = async () => {
         checkMandatoryAuth();
+        const toggleEl = document.getElementById("toggle-only-running");
+        if (toggleEl) {
+          toggleEl.checked =
+            localStorage.getItem("aip_only_running_apis") === "true";
+        }
         await renderApisSummaryTable();
         initCharts();
         setupDashboardTimePicker();
