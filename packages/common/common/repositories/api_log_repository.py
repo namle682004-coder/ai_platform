@@ -50,6 +50,8 @@ def is_ai_api_path(path: str) -> bool:
             "/v1/vision",
             "/v1/nlp",
             "/v1/translation",
+            "/v1/rag",
+            "/v1/knowledge",
         )
     )
 

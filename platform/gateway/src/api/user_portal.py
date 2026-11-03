@@ -162,13 +162,14 @@ async def delete_user_api_key(key_id: str):
 
 # --- 3. PAYMENTS & TRANSACTIONS REST ENDPOINTS ---
 @router.get("/payments", response_model=List[dict])
-async def list_user_payments():
+async def list_user_payments(request: Request):
     """Fetch payment history transactions directly from MongoDB Atlas payments collection."""
     from common.database.mongodb import mongo_manager
     db = mongo_manager.get_database()
+    user_id = get_current_user_id(request)
     if db is not None:
         try:
-            cursor = db.payments.find({"user_id": "user_staff_01"}, {"_id": 0}).sort("_id", -1)
+            cursor = db.payments.find({"user_id": user_id}, {"_id": 0}).sort("_id", -1)
             docs = await cursor.to_list(100)
             if docs:
                 return docs
@@ -198,33 +199,37 @@ async def record_user_payment(req: PaymentCreateRequest):
 # --- 4. API ACTIVATION STATES REST ENDPOINTS ---
 @router.get("/apis-state")
 @router.get("/apis")
-async def get_user_apis_state():
+async def get_user_apis_state(request: Request):
     """Get active API states for user from MongoDB Atlas api_subscriptions collection."""
-    enabled = await api_subscription_repository.get_user_subscriptions("user_staff_01")
+    user_id = get_current_user_id(request)
+    enabled = await api_subscription_repository.get_user_subscriptions(user_id)
     return {"enabled_apis": enabled}
 
 
 @router.post("/apis-state")
 @router.post("/apis")
-async def update_user_apis_state(req: ApisStateUpdateRequest):
+async def update_user_apis_state(req: ApisStateUpdateRequest, request: Request):
     """Update active API states for user in MongoDB Atlas api_subscriptions collection."""
-    updated = await api_subscription_repository.update_user_subscriptions("user_staff_01", req.enabled_apis)
+    user_id = get_current_user_id(request)
+    updated = await api_subscription_repository.update_user_subscriptions(user_id, req.enabled_apis)
     return {"message": "API states updated successfully", "enabled_apis": updated}
 
 
 # --- 5. SUBSCRIPTION BALANCE & RECHARGE REST ENDPOINTS ---
 @router.get("/balance")
-async def get_user_balance():
+async def get_user_balance(request: Request):
     """Get paid balance from MongoDB Atlas api_subscriptions collection."""
-    bal = await api_subscription_repository.get_user_paid_balance("user_staff_01")
+    user_id = get_current_user_id(request)
+    bal = await api_subscription_repository.get_user_paid_balance(user_id)
     return {"paid_balance": bal}
 
 
 @router.post("/recharge")
-async def recharge_user_balance(req: RechargeBalanceRequest):
+async def recharge_user_balance(req: RechargeBalanceRequest, request: Request):
     """Recharge credits and record payment in MongoDB Atlas."""
+    user_id = get_current_user_id(request)
     new_bal = await api_subscription_repository.recharge_user_balance(
-        user_id="user_staff_01",
+        user_id=user_id,
         add_credits=req.credits,
         amount=req.amount,
         package=req.package,

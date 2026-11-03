@@ -1496,8 +1496,23 @@
         localStorage.setItem("aip_paid_balance", val.toString());
       }
 
+      function getRequestHeaders() {
+        if (window.getAuthHeaders && typeof window.getAuthHeaders === 'function') {
+          return window.getAuthHeaders();
+        }
+        const raw = localStorage.getItem('aip_user_session');
+        const h = { 'Content-Type': 'application/json' };
+        if (raw) {
+          try {
+            const u = JSON.parse(raw);
+            if (u.user_id) h['X-User-Id'] = u.user_id;
+          } catch (e) {}
+        }
+        return h;
+      }
+
       async function fetchEnabledAPIsFromBackend() {
-        const response = await fetch("/v1/user/apis-state");
+        const response = await fetch("/v1/user/apis-state", { headers: getRequestHeaders() });
         if (!response.ok) {
           throw new Error(`Unable to load API states (${response.status})`);
         }
@@ -1506,7 +1521,7 @@
       }
 
       async function fetchApiCatalogFromBackend() {
-        const response = await fetch("/v1/user/apis-catalog");
+        const response = await fetch("/v1/user/apis-catalog", { headers: getRequestHeaders() });
         if (!response.ok) {
           throw new Error(`Unable to load API catalog (${response.status})`);
         }
@@ -1518,7 +1533,7 @@
       }
 
       async function fetchPaidBalanceFromBackend() {
-        const response = await fetch("/v1/user/balance");
+        const response = await fetch("/v1/user/balance", { headers: getRequestHeaders() });
         if (!response.ok) {
           throw new Error(`Unable to load API balance (${response.status})`);
         }
@@ -1527,7 +1542,7 @@
       }
 
       async function fetchApiUsageSummaryFromBackend() {
-        const response = await fetch("/v1/user/api-summary");
+        const response = await fetch("/v1/user/api-summary", { headers: getRequestHeaders() });
         if (!response.ok) {
           throw new Error(`Unable to load API usage counts (${response.status})`);
         }
@@ -1596,9 +1611,11 @@
           const isEnabled = isApiActive(apis, apiName);
           const paidUnit =
             item.unit === "character" ? 1 : item.unit === "block" ? 150 : 10;
-          const freeVal = item.free_quota
-            ? item.free_quota.split(" ")[0]
-            : "—";
+          const reqCount = Number(usage?.requests) || 0;
+          const errCount = Number(usage?.errors) || 0;
+          const freeQuotaLimit = item.free_quota ? (parseInt(item.free_quota.replace(/,/g, '')) || 1000) : 1000;
+          const freeRemain = Math.max(0, freeQuotaLimit - reqCount);
+          const freeVal = freeRemain.toLocaleString();
           const statusBadge = isEnabled
             ? `<span style="background: #10b981; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', true)">ACTIVE</span>`
             : `<span style="background: #94a3b8; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', false)">DISABLED</span>`;
@@ -1645,15 +1662,18 @@
             svcUrl = "/staff/service-ocr-id";
           }
 
+          if (nameLow.includes("rag") || nameLow.includes("tri thức")) {
+            svcUrl = "/project/global/apis/rag-chat-enterprise-kb";
+          }
           const tr = document.createElement("tr");
           tr.innerHTML = `
                     <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${apiName}</strong></td>
                     <td>${statusBadge}</td>
-                    <td>${usage?.requests ?? "—"}</td>
-                    <td>${usage?.errors ?? "—"}</td>
-                    <td>${isEnabled ? freeVal : "0 (OFF)"}</td>
-                    <td>${paidStr}</td>
-                    <td>${item.unit || "—"}</td>
+                    <td><span style="font-weight:600; color:#0f172a;">${reqCount}</span></td>
+                    <td><span style="color:${errCount > 0 ? '#dc2626' : '#64748b'}; font-weight:${errCount > 0 ? '700' : '400'};">${errCount}</span></td>
+                    <td><span style="color:#059669; font-weight:600;">${isEnabled ? freeVal : "0 (OFF)"}</span></td>
+                    <td><span style="color:#2563eb; font-weight:600;">${paidStr}</span></td>
+                    <td>${item.unit || "request"}</td>
                     <td><button class="btn-buy-link" onclick="openPricingModalFor('${apiName}')">buy more</button></td>
                 `;
           tbody.appendChild(tr);

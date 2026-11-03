@@ -36,14 +36,36 @@ class MongoApiSubscriptionRepository:
         return await self.update_user_subscriptions(user_id, {api_name: enabled})
 
     async def get_user_paid_balance(self, user_id: str) -> int:
-        """Fetch paid balance credits for user from MongoDB Atlas."""
+        """Fetch paid balance credits for user from MongoDB Atlas with default starter grant."""
         db = mongo_manager.get_database()
         if db is None:
             raise RuntimeError("MongoDB is unavailable; paid balance cannot be loaded")
         sub = await db.api_subscriptions.find_one(
             {"user_id": user_id}, {"_id": 0, "paid_balance": 1}
         )
-        return int(sub.get("paid_balance", 0)) if sub else 0
+        if sub is None or "paid_balance" not in sub:
+            starter_balance = 50000
+            await db.api_subscriptions.update_one(
+                {"user_id": user_id},
+                {"$set": {"paid_balance": starter_balance}},
+                upsert=True
+            )
+            return starter_balance
+        return int(sub.get("paid_balance", 0))
+
+    async def deduct_user_balance(self, user_id: str, credits: int = 1) -> int:
+        """Deduct credits / tokens from user's paid balance."""
+        db = mongo_manager.get_database()
+        if db is None:
+            return 0
+        current_bal = await self.get_user_paid_balance(user_id)
+        new_bal = max(0, current_bal - int(credits))
+        await db.api_subscriptions.update_one(
+            {"user_id": user_id},
+            {"$set": {"paid_balance": new_bal}},
+            upsert=True
+        )
+        return new_bal
 
     async def recharge_user_balance(
         self,

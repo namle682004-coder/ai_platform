@@ -2080,6 +2080,7 @@ import '/staff/applications_nav.js';
         toggleLangDropdown,
         setAppLanguage,
         checkMandatoryAuth,
+        getAuthHeaders,
         logoutUser,
         setSidebarCollapsed,
         init() {
@@ -2145,6 +2146,7 @@ import '/staff/applications_nav.js';
     window.toggleLangDropdown = toggleLangDropdown;
     window.setAppLanguage = setAppLanguage;
     window.checkMandatoryAuth = checkMandatoryAuth;
+    window.getAuthHeaders = getAuthHeaders;
     window.logoutUser = logoutUser;
     window.setSidebarCollapsed = setSidebarCollapsed;
 

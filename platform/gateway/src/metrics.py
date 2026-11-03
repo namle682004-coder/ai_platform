@@ -56,7 +56,7 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
     """
     Middleware recording Prometheus Metrics for all requests and API call logs
     for AI inference requests.
-    Logs are persisted to MongoDB for the Staff API Report page.
+    Logs are persisted to MongoDB for the Staff API Report page and token balance is decremented.
     """
 
     async def dispatch(self, request: Request, call_next):
@@ -92,6 +92,15 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
             should_log = _should_log_api_call(path)
             if should_log:
                 client_ip = request.client.host if request.client else "unknown"
+                user_id = getattr(request.state, "user_id", None) or request.headers.get("x-user-id") or request.headers.get("X-User-Id")
+                if not user_id:
+                    auth = request.headers.get("authorization") or request.headers.get("Authorization", "")
+                    if auth.startswith("Bearer aip_session_"):
+                        user_id = auth.replace("Bearer aip_session_", "").strip()
+                    else:
+                        user_id = "user_staff_01"
+                tenant_id = getattr(request.state, "tenant_id", None) or request.headers.get("x-tenant-id") or request.headers.get("X-Tenant-Id") or "global"
+
                 log_record = {
                     "request_id": request_id,
                     "method": request.method,
@@ -99,22 +108,35 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
                     "status_code": response.status_code,
                     "latency_ms": latency_ms,
                     "client_ip": client_ip,
+                    "user_id": user_id,
+                    "tenant_id": tenant_id,
                     "user_agent": request.headers.get("user-agent", ""),
                     "api_key_prefix": (request.headers.get("authorization", "")[:20] + "...") if request.headers.get("authorization") else None,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 # Fire-and-forget: don't block the response
-                asyncio.create_task(_safe_log(log_record))
+                asyncio.create_task(_safe_log(log_record, user_id, response.status_code))
 
             return response
         finally:
             AIP_HTTP_INFLIGHT_REQUESTS.dec()
 
 
-async def _safe_log(log_record: dict):
-    """Log API request to MongoDB without blocking or crashing on failure."""
+async def _safe_log(log_record: dict, user_id: str, status_code: int):
+    """Log API request to MongoDB and decrement token/credit balance without blocking."""
     try:
         from common.repositories.api_log_repository import api_log_repository
         await api_log_repository.log_request(log_record)
+
+        if status_code < 400:
+            from common.repositories.api_subscription_repository import api_subscription_repository
+            path = log_record.get("path", "")
+            if "/chat" in path or "/completions" in path or "/rag" in path:
+                deduct_units = 15
+            elif "/audio" in path:
+                deduct_units = 10
+            else:
+                deduct_units = 1
+            await api_subscription_repository.deduct_user_balance(user_id, deduct_units)
     except Exception:
         pass  # Never crash the request pipeline for logging failures

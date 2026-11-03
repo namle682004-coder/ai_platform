@@ -851,58 +851,8 @@
                       <th class="px-6 py-3.5 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 text-slate-700">
-                    <tr class="hover:bg-slate-50/70 transition-colors">
-                      <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-key text-amber-500"></i>
-                        <span>RAG Chatbot Production</span>
-                      </td>
-                      <td class="px-6 py-4 font-mono text-slate-500">aip_sk_948f...982b</td>
-                      <td class="px-6 py-4">Retail Banking AI</td>
-                      <td class="px-6 py-4">50,000 reqs</td>
-                      <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
-                          Active
-                        </span>
-                      </td>
-                      <td class="px-6 py-4 text-right">
-                        <a href="/staff/keys" class="text-primary-600 hover:text-primary-800 font-semibold">Quản lý</a>
-                      </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/70 transition-colors">
-                      <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-key text-blue-500"></i>
-                        <span>OCR CCCD Verification Test</span>
-                      </td>
-                      <td class="px-6 py-4 font-mono text-slate-500">aip_sk_110a...bc41</td>
-                      <td class="px-6 py-4">eKYC Solution</td>
-                      <td class="px-6 py-4">25,000 reqs</td>
-                      <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
-                          Active
-                        </span>
-                      </td>
-                      <td class="px-6 py-4 text-right">
-                        <a href="/staff/keys" class="text-primary-600 hover:text-primary-800 font-semibold">Quản lý</a>
-                      </td>
-                    </tr>
-                    <tr class="hover:bg-slate-50/70 transition-colors">
-                      <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-key text-slate-400"></i>
-                        <span>STT Voice Dev Local</span>
-                      </td>
-                      <td class="px-6 py-4 font-mono text-slate-500">aip_sk_772e...19aa</td>
-                      <td class="px-6 py-4">Voice AI</td>
-                      <td class="px-6 py-4">10,000 reqs</td>
-                      <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                          Idle
-                        </span>
-                      </td>
-                      <td class="px-6 py-4 text-right">
-                        <a href="/staff/keys" class="text-primary-600 hover:text-primary-800 font-semibold">Quản lý</a>
-                      </td>
-                    </tr>
+                  <tbody id="profile-api-keys-tbody" class="divide-y divide-slate-100 text-slate-700">
+                    <tr><td colspan="6" class="px-6 py-6 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải danh sách API Keys...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -927,7 +877,7 @@
               </div>
 
               <!-- Timeline of Events -->
-              <div class="relative border-l-2 border-slate-200 ml-4 space-y-6 py-2">
+              <div id="profile-audit-trail-list" class="relative border-l-2 border-slate-200 ml-4 space-y-6 py-2">
                 <!-- Event 1 -->
                 <div class="relative pl-6">
                   <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow"></div>
@@ -1140,6 +1090,8 @@
 
         // Render sessions
         loadActiveSessions();
+      loadProfileApiKeys();
+      refreshAuditLogs();
 
         // Compute initials
         if (currentUser.full_name) {
