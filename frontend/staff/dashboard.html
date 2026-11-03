@@ -4,11 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AIP Platform - Dashboard</title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="/assets/img/favicon.svg"
-    />
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg" />
     <link
       rel="alternate icon"
       type="image/png"
@@ -44,7 +40,9 @@
         overflow-y: scroll;
         box-sizing: border-box;
       }
-      *, *:before, *:after {
+      *,
+      *:before,
+      *:after {
         box-sizing: inherit;
         margin: 0;
         padding: 0;
@@ -72,7 +70,9 @@
         justify-content: space-between;
         color: #fff;
         font-size: 13px;
-        position: sticky; top: 0; z-index: 1000;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
         border-bottom: 1px solid rgba(255, 255, 255, 0.14);
       }
       .header-left {
@@ -103,7 +103,9 @@
         align-items: center;
         gap: 7px;
         color: #ffffff;
-        transition: background 0.15s, border-color 0.15s;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
       }
       .project-selector:hover {
         background: rgba(255, 255, 255, 0.2);
@@ -161,8 +163,16 @@
         cursor: pointer;
         user-select: none;
       }
-      .section-title span { display: flex; align-items: center; gap: 8px; }
-      .section-title .toggle-icon { font-size: 10px; transition: transform 0.2s; color: #64748b; }
+      .section-title span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .section-title .toggle-icon {
+        font-size: 10px;
+        transition: transform 0.2s;
+        color: #64748b;
+      }
       .nav-list {
         list-style: none;
         margin: 0;
@@ -177,7 +187,9 @@
         font-weight: 500;
         color: #334155;
         text-decoration: none;
-        transition: background 0.12s ease, color 0.12s ease;
+        transition:
+          background 0.12s ease,
+          color 0.12s ease;
         border-left: 4px solid transparent;
       }
       .nav-item a i {
@@ -210,7 +222,9 @@
         letter-spacing: 0.04em;
         color: #5c6c75;
         text-decoration: none;
-        transition: background 0.12s ease, color 0.12s ease;
+        transition:
+          background 0.12s ease,
+          color 0.12s ease;
         border-left: 4px solid transparent;
       }
       .nav-direct-link a i {
@@ -247,10 +261,20 @@
         color: var(--text-sub);
         margin-bottom: 10px;
       }
-      .console-breadcrumb a { color: var(--text-sub); text-decoration: none; }
-      .console-breadcrumb a:hover { color: var(--text-dark); }
-      .console-breadcrumb span.sep { color: #cbd5e1; }
-      .console-breadcrumb span.active { color: var(--text-dark); font-weight: 600; }
+      .console-breadcrumb a {
+        color: var(--text-sub);
+        text-decoration: none;
+      }
+      .console-breadcrumb a:hover {
+        color: var(--text-dark);
+      }
+      .console-breadcrumb span.sep {
+        color: #cbd5e1;
+      }
+      .console-breadcrumb span.active {
+        color: var(--text-dark);
+        font-weight: 600;
+      }
 
       /* Atlas Page Header */
       .atlas-page-header {
@@ -566,6 +590,52 @@
         border: 1px solid var(--border-color);
         box-shadow: 0 1px 2px rgba(0, 30, 43, 0.02);
         overflow: hidden;
+      }
+      .table-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 16px;
+        padding: 12px 20px;
+        font-size: 13px;
+        color: #5c6c75;
+        background: #ffffff;
+        border-top: 1px solid var(--border-color);
+        user-select: none;
+      }
+      .table-footer select {
+        padding: 4px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #334155;
+        outline: none;
+        background: #ffffff;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+      }
+      .table-footer select:focus {
+        border-color: #0f4c81;
+      }
+      .table-footer-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #475569;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .table-footer-btn:hover:not(.disabled) {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .table-footer-btn.disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        pointer-events: none;
       }
       table {
         width: 100%;
@@ -996,27 +1066,71 @@
       <div class="sidebar">
         <div class="nav-section">
           <div class="section-title" onclick="toggleNavSection(this)">
-            <span><i class="fa-solid fa-terminal" style="margin-right: 8px; width: 14px;"></i> CONSOLE</span>
+            <span
+              ><i
+                class="fa-solid fa-terminal"
+                style="margin-right: 8px; width: 14px"
+              ></i>
+              CONSOLE</span
+            >
             <i class="fa-solid fa-chevron-down toggle-icon"></i>
           </div>
           <ul class="nav-list">
-            <li class="nav-item active"><a href="/staff/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
-            <li class="nav-item"><a href="/staff/apis"><i class="fa-solid fa-cubes"></i> APIs</a></li>
-            <li class="nav-item"><a href="/staff/keys"><i class="fa-solid fa-key"></i> API Keys</a></li>
-            <li class="nav-item"><a href="/staff/report"><i class="fa-solid fa-chart-line"></i> API report</a></li>
+            <li class="nav-item active">
+              <a href="/staff/dashboard"
+                ><i class="fa-solid fa-chart-pie"></i> Dashboard</a
+              >
+            </li>
+            <li class="nav-item">
+              <a href="/staff/apis"><i class="fa-solid fa-cubes"></i> APIs</a>
+            </li>
+            <li class="nav-item">
+              <a href="/staff/keys"><i class="fa-solid fa-key"></i> API Keys</a>
+            </li>
+            <li class="nav-item">
+              <a href="/staff/report"
+                ><i class="fa-solid fa-chart-line"></i> API report</a
+              >
+            </li>
           </ul>
         </div>
         <div class="nav-section">
           <div class="section-title" onclick="toggleNavSection(this)">
-            <span><i class="fa-solid fa-layer-group" style="margin-right: 8px; width: 14px;"></i> APPLICATIONS</span>
+            <span
+              ><i
+                class="fa-solid fa-layer-group"
+                style="margin-right: 8px; width: 14px"
+              ></i>
+              APPLICATIONS</span
+            >
             <i class="fa-solid fa-chevron-down toggle-icon"></i>
           </div>
           <ul class="nav-list">
-            <li class="nav-item"><a href="/staff/service-stt"><i class="fa-solid fa-microphone"></i> Speech to Text</a></li>
-            <li class="nav-item"><a href="/staff/service-tts"><i class="fa-solid fa-volume-high"></i> Text to Speech</a></li>
-            <li class="nav-item"><a href="/staff/service-llm"><i class="fa-solid fa-comments"></i> LLM Chatbot</a></li>
-            <li class="nav-item"><a href="/staff/service-image"><i class="fa-solid fa-image"></i> Image Gen API</a></li>
-            <li class="nav-item"><a href="/staff/service-moderation"><i class="fa-solid fa-shield"></i> Moderation API</a></li>
+            <li class="nav-item">
+              <a href="/staff/service-stt"
+                ><i class="fa-solid fa-microphone"></i> Speech to Text</a
+              >
+            </li>
+            <li class="nav-item">
+              <a href="/staff/service-tts"
+                ><i class="fa-solid fa-volume-high"></i> Text to Speech</a
+              >
+            </li>
+            <li class="nav-item">
+              <a href="/staff/service-llm"
+                ><i class="fa-solid fa-comments"></i> LLM Chatbot</a
+              >
+            </li>
+            <li class="nav-item">
+              <a href="/staff/service-image"
+                ><i class="fa-solid fa-image"></i> Image Gen API</a
+              >
+            </li>
+            <li class="nav-item">
+              <a href="/staff/service-moderation"
+                ><i class="fa-solid fa-shield"></i> Moderation API</a
+              >
+            </li>
           </ul>
         </div>
         <div class="nav-direct-link">
@@ -1034,7 +1148,10 @@
       <div class="main-content">
         <!-- Breadcrumb Navigation -->
         <div class="console-breadcrumb">
-          <a href="/staff/dashboard"><i class="fa-solid fa-house" style="font-size: 11px;"></i> Console</a>
+          <a href="/staff/dashboard"
+            ><i class="fa-solid fa-house" style="font-size: 11px"></i>
+            Console</a
+          >
           <span class="sep">/</span>
           <span id="breadcrumb-project-name">Default Enterprise Project</span>
           <span class="sep">/</span>
@@ -1045,16 +1162,23 @@
         <div class="atlas-page-header">
           <div>
             <h1 class="atlas-title">Analytics Overview</h1>
-            <p class="atlas-desc">Real-time AI inference telemetry, requests throughput and usage monitoring</p>
+            <p class="atlas-desc">
+              Real-time AI inference telemetry, requests throughput and usage
+              monitoring
+            </p>
           </div>
           <div class="atlas-header-actions">
             <div class="time-filter-box">
               <button
                 id="dashboard-time-range"
                 class="btn-atlas-secondary"
-                style="cursor: pointer;"
+                style="cursor: pointer"
               >
-                <i class="fa-regular fa-calendar"></i> LAST 1 DAY <i class="fa-solid fa-chevron-down" style="font-size: 9px; margin-left: 2px;"></i>
+                <i class="fa-regular fa-calendar"></i> LAST 1 DAY
+                <i
+                  class="fa-solid fa-chevron-down"
+                  style="font-size: 9px; margin-left: 2px"
+                ></i>
               </button>
               <div id="dashboard-time-picker" class="time-picker-panel">
                 <div class="time-picker-tabs">
@@ -1089,7 +1213,9 @@
                 </div>
               </div>
             </div>
-            <a href="/staff/apis" class="btn-atlas-primary"><i class="fa-solid fa-cubes"></i> Explore APIs</a>
+            <a href="/staff/apis" class="btn-atlas-primary"
+              ><i class="fa-solid fa-cubes"></i> Explore APIs</a
+            >
           </div>
         </div>
 
@@ -1149,12 +1275,19 @@
 
         <div
           id="summary-section-header"
-          style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;"
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+          "
         >
           <div
             id="summary-section-title"
             class="page-title"
-            style="font-size: 20px; margin-bottom: 0;"
+            style="font-size: 20px; margin-bottom: 0"
           >
             APIs Summary
           </div>
@@ -1190,6 +1323,22 @@
               <!-- Dynamic API rows -->
             </tbody>
           </table>
+          <div class="table-footer">
+            <span>rows per page</span>
+            <select id="api-page-size" onchange="onApiPageSizeChange(this.value)">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+            <span id="api-pagination-info">1-1 of 1</span>
+            <span class="table-footer-btn" id="api-prev-btn" onclick="onApiPrevPage()" title="Previous page">
+              <i class="fa-solid fa-chevron-left"></i>
+            </span>
+            <span class="table-footer-btn" id="api-next-btn" onclick="onApiNextPage()" title="Next page">
+              <i class="fa-solid fa-chevron-right"></i>
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -1404,7 +1553,9 @@
                 <div class="vnpay-info-row">
                   <span class="vnpay-info-label">Chủ tài khoản</span>
                   <span class="vnpay-info-value">
-                    <span id="val-acc-name">CONG TY CONG NGHE AIP PLATFORM</span>
+                    <span id="val-acc-name"
+                      >CONG TY CONG NGHE AIP PLATFORM</span
+                    >
                     <button
                       class="btn-copy-icon"
                       onclick="
@@ -1580,22 +1731,27 @@
       }
 
       function getRequestHeaders() {
-        if (window.getAuthHeaders && typeof window.getAuthHeaders === 'function') {
+        if (
+          window.getAuthHeaders &&
+          typeof window.getAuthHeaders === "function"
+        ) {
           return window.getAuthHeaders();
         }
-        const raw = localStorage.getItem('aip_user_session');
-        const h = { 'Content-Type': 'application/json' };
+        const raw = localStorage.getItem("aip_user_session");
+        const h = { "Content-Type": "application/json" };
         if (raw) {
           try {
             const u = JSON.parse(raw);
-            if (u.user_id) h['X-User-Id'] = u.user_id;
+            if (u.user_id) h["X-User-Id"] = u.user_id;
           } catch (e) {}
         }
         return h;
       }
 
       async function fetchEnabledAPIsFromBackend() {
-        const response = await fetch("/v1/user/apis-state", { headers: getRequestHeaders() });
+        const response = await fetch("/v1/user/apis-state", {
+          headers: getRequestHeaders(),
+        });
         if (!response.ok) {
           throw new Error(`Unable to load API states (${response.status})`);
         }
@@ -1604,7 +1760,9 @@
       }
 
       async function fetchApiCatalogFromBackend() {
-        const response = await fetch("/v1/user/apis-catalog", { headers: getRequestHeaders() });
+        const response = await fetch("/v1/user/apis-catalog", {
+          headers: getRequestHeaders(),
+        });
         if (!response.ok) {
           throw new Error(`Unable to load API catalog (${response.status})`);
         }
@@ -1616,7 +1774,9 @@
       }
 
       async function fetchPaidBalanceFromBackend() {
-        const response = await fetch("/v1/user/balance", { headers: getRequestHeaders() });
+        const response = await fetch("/v1/user/balance", {
+          headers: getRequestHeaders(),
+        });
         if (!response.ok) {
           throw new Error(`Unable to load API balance (${response.status})`);
         }
@@ -1625,9 +1785,13 @@
       }
 
       async function fetchApiUsageSummaryFromBackend() {
-        const response = await fetch("/v1/user/api-summary", { headers: getRequestHeaders() });
+        const response = await fetch("/v1/user/api-summary", {
+          headers: getRequestHeaders(),
+        });
         if (!response.ok) {
-          throw new Error(`Unable to load API usage counts (${response.status})`);
+          throw new Error(
+            `Unable to load API usage counts (${response.status})`,
+          );
         }
         const data = await response.json();
         if (!Array.isArray(data.data)) {
@@ -1665,7 +1829,67 @@
         usageSummary: null,
       };
 
+      let apiPagination = {
+        currentPage: 1,
+        pageSize: 10,
+      };
+
+      function onApiPageSizeChange(newSize) {
+        apiPagination.pageSize = parseInt(newSize, 10) || 10;
+        apiPagination.currentPage = 1;
+        if (latestDashboardData.catalog && latestDashboardData.catalog.length) {
+          renderDashboardRows(
+            latestDashboardData.catalog,
+            latestDashboardData.apis,
+            latestDashboardData.backendBal,
+            latestDashboardData.usageSummary,
+          );
+        }
+      }
+
+      function onApiPrevPage() {
+        if (apiPagination.currentPage > 1) {
+          apiPagination.currentPage--;
+          if (latestDashboardData.catalog && latestDashboardData.catalog.length) {
+            renderDashboardRows(
+              latestDashboardData.catalog,
+              latestDashboardData.apis,
+              latestDashboardData.backendBal,
+              latestDashboardData.usageSummary,
+            );
+          }
+        }
+      }
+
+      function onApiNextPage() {
+        const onlyRunning =
+          localStorage.getItem("aip_only_running_apis") === "true";
+        const catalog = latestDashboardData.catalog || [];
+        const apis = latestDashboardData.apis || {};
+        const count = onlyRunning
+          ? catalog.filter((item) =>
+              isApiActive(
+                apis,
+                item.name || item.endpoint_id || item.path || "Unnamed API",
+              ),
+            ).length
+          : catalog.length;
+        const totalPages = Math.ceil(count / apiPagination.pageSize) || 1;
+        if (apiPagination.currentPage < totalPages) {
+          apiPagination.currentPage++;
+          if (latestDashboardData.catalog && latestDashboardData.catalog.length) {
+            renderDashboardRows(
+              latestDashboardData.catalog,
+              latestDashboardData.apis,
+              latestDashboardData.backendBal,
+              latestDashboardData.usageSummary,
+            );
+          }
+        }
+      }
+
       function onToggleOnlyRunningChange(checkbox) {
+        apiPagination.currentPage = 1;
         localStorage.setItem(
           "aip_only_running_apis",
           checkbox.checked ? "true" : "false",
@@ -1721,10 +1945,46 @@
 
         const filteredCatalog = onlyRunning
           ? catalog.filter((item) => {
-              const apiName = item.name || item.endpoint_id || item.path || "Unnamed API";
+              const apiName =
+                item.name || item.endpoint_id || item.path || "Unnamed API";
               return isApiActive(apis, apiName);
             })
           : catalog;
+
+        const totalItems = filteredCatalog.length;
+        const totalPages = Math.ceil(totalItems / apiPagination.pageSize) || 1;
+        if (apiPagination.currentPage > totalPages) {
+          apiPagination.currentPage = totalPages;
+        }
+        if (apiPagination.currentPage < 1) {
+          apiPagination.currentPage = 1;
+        }
+
+        const startIndex = (apiPagination.currentPage - 1) * apiPagination.pageSize;
+        const endIndex = Math.min(startIndex + apiPagination.pageSize, totalItems);
+        const pageItems = filteredCatalog.slice(startIndex, endIndex);
+
+        // Update pagination UI controls
+        const paginationInfoEl = document.getElementById("api-pagination-info");
+        if (paginationInfoEl) {
+          if (totalItems === 0) {
+            paginationInfoEl.innerText = "0-0 of 0";
+          } else {
+            paginationInfoEl.innerText = `${startIndex + 1}-${endIndex} of ${totalItems}`;
+          }
+        }
+        const prevBtn = document.getElementById("api-prev-btn");
+        if (prevBtn) {
+          prevBtn.classList.toggle("disabled", apiPagination.currentPage <= 1);
+        }
+        const nextBtn = document.getElementById("api-next-btn");
+        if (nextBtn) {
+          nextBtn.classList.toggle("disabled", apiPagination.currentPage >= totalPages);
+        }
+        const pageSizeSelect = document.getElementById("api-page-size");
+        if (pageSizeSelect && pageSizeSelect.value !== String(apiPagination.pageSize)) {
+          pageSizeSelect.value = String(apiPagination.pageSize);
+        }
 
         if (!filteredCatalog.length) {
           tbody.innerHTML = onlyRunning
@@ -1733,8 +1993,9 @@
           return;
         }
 
-        filteredCatalog.forEach((item) => {
-          const apiName = item.name || item.endpoint_id || item.path || "Unnamed API";
+        pageItems.forEach((item) => {
+          const apiName =
+            item.name || item.endpoint_id || item.path || "Unnamed API";
           const apiPath = item.path || item.endpoint_id;
           const usage = usageSummary?.[apiPath];
           const isEnabled = isApiActive(apis, apiName);
@@ -1742,7 +2003,9 @@
             item.unit === "character" ? 1 : item.unit === "block" ? 150 : 10;
           const reqCount = Number(usage?.requests) || 0;
           const errCount = Number(usage?.errors) || 0;
-          const freeQuotaLimit = item.free_quota ? (parseInt(item.free_quota.replace(/,/g, '')) || 1000) : 1000;
+          const freeQuotaLimit = item.free_quota
+            ? parseInt(item.free_quota.replace(/,/g, "")) || 1000
+            : 1000;
           const freeRemain = Math.max(0, freeQuotaLimit - reqCount);
           const freeVal = freeRemain.toLocaleString();
           const statusBadge = isEnabled
@@ -1753,37 +2016,75 @@
             ? paidBal == null
               ? "—"
               : paidUnit === 1
-              ? paidBal.toLocaleString()
-              : paidBal > 0
-                ? Math.floor(paidBal / paidUnit).toLocaleString()
-                : "0"
+                ? paidBal.toLocaleString()
+                : paidBal > 0
+                  ? Math.floor(paidBal / paidUnit).toLocaleString()
+                  : "0"
             : "0 (OFF)";
 
           let svcUrl = "/staff/service-ocr-id";
           const nameLow = (item.name || "").toLowerCase();
-          if (nameLow.includes("cccd") || nameLow.includes("id card") || nameLow.includes("id recognition") || nameLow.includes("identity") || nameLow.includes("căn cước")) {
+          if (
+            nameLow.includes("cccd") ||
+            nameLow.includes("id card") ||
+            nameLow.includes("id recognition") ||
+            nameLow.includes("identity") ||
+            nameLow.includes("căn cước")
+          ) {
             svcUrl = "/staff/service-ocr-id";
-          } else if (nameLow.includes("driver") || nameLow.includes("bằng lái") || nameLow.includes("gplx")) {
+          } else if (
+            nameLow.includes("driver") ||
+            nameLow.includes("bằng lái") ||
+            nameLow.includes("gplx")
+          ) {
             svcUrl = "/staff/service-ocr-dl";
-          } else if (nameLow.includes("passport") || nameLow.includes("hộ chiếu")) {
+          } else if (
+            nameLow.includes("passport") ||
+            nameLow.includes("hộ chiếu")
+          ) {
             svcUrl = "/staff/service-ocr-passport";
-          } else if (nameLow.includes("speech to text") || nameLow.includes("stt") || nameLow.includes("nhận dạng giọng nói") || nameLow.includes("transcription")) {
+          } else if (
+            nameLow.includes("speech to text") ||
+            nameLow.includes("stt") ||
+            nameLow.includes("nhận dạng giọng nói") ||
+            nameLow.includes("transcription")
+          ) {
             svcUrl = "/staff/service-stt";
-          } else if (nameLow.includes("text to speech") || nameLow.includes("tts") || nameLow.includes("tổng hợp giọng nói")) {
+          } else if (
+            nameLow.includes("text to speech") ||
+            nameLow.includes("tts") ||
+            nameLow.includes("tổng hợp giọng nói")
+          ) {
             svcUrl = "/staff/service-tts";
-          } else if (nameLow.includes("llm") || nameLow.includes("chatbot") || nameLow.includes("chat completions")) {
+          } else if (
+            nameLow.includes("llm") ||
+            nameLow.includes("chatbot") ||
+            nameLow.includes("chat completions")
+          ) {
             svcUrl = "/staff/service-llm";
-          } else if (nameLow.includes("image") || nameLow.includes("hình ảnh")) {
+          } else if (
+            nameLow.includes("image") ||
+            nameLow.includes("hình ảnh")
+          ) {
             svcUrl = "/staff/service-image";
-          } else if (nameLow.includes("moderation") || nameLow.includes("kiểm duyệt")) {
+          } else if (
+            nameLow.includes("moderation") ||
+            nameLow.includes("kiểm duyệt")
+          ) {
             svcUrl = "/staff/service-moderation";
-          } else if (nameLow.includes("facematch") || nameLow.includes("khuôn mặt")) {
+          } else if (
+            nameLow.includes("facematch") ||
+            nameLow.includes("khuôn mặt")
+          ) {
             svcUrl = "/staff/service-vision-facematch";
           } else if (nameLow.includes("liveness")) {
             svcUrl = "/staff/service-vision-liveness";
           } else if (nameLow.includes("embedding")) {
             svcUrl = "/staff/service-nlp-embeddings";
-          } else if (nameLow.includes("summariz") || nameLow.includes("tóm tắt")) {
+          } else if (
+            nameLow.includes("summariz") ||
+            nameLow.includes("tóm tắt")
+          ) {
             svcUrl = "/staff/service-nlp-summarization";
           } else if (nameLow.includes("translat") || nameLow.includes("dịch")) {
             svcUrl = "/staff/service-nlp-translation";
@@ -1799,7 +2100,7 @@
                     <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${apiName}</strong></td>
                     <td>${statusBadge}</td>
                     <td><span style="font-weight:600; color:#0f172a;">${reqCount}</span></td>
-                    <td><span style="color:${errCount > 0 ? '#dc2626' : '#64748b'}; font-weight:${errCount > 0 ? '700' : '400'};">${errCount}</span></td>
+                    <td><span style="color:${errCount > 0 ? "#dc2626" : "#64748b"}; font-weight:${errCount > 0 ? "700" : "400"};">${errCount}</span></td>
                     <td><span style="color:#059669; font-weight:600;">${isEnabled ? freeVal : "0 (OFF)"}</span></td>
                     <td><span style="color:#2563eb; font-weight:600;">${paidStr}</span></td>
                     <td>${item.unit || "request"}</td>
@@ -1824,11 +2125,12 @@
 
         try {
           const catalog = await fetchApiCatalogFromBackend();
-          const [apiStateResult, balanceResult, usageResult] = await Promise.allSettled([
-            fetchEnabledAPIsFromBackend(),
-            fetchPaidBalanceFromBackend(),
-            fetchApiUsageSummaryFromBackend(),
-          ]);
+          const [apiStateResult, balanceResult, usageResult] =
+            await Promise.allSettled([
+              fetchEnabledAPIsFromBackend(),
+              fetchPaidBalanceFromBackend(),
+              fetchApiUsageSummaryFromBackend(),
+            ]);
           const apis =
             apiStateResult.status === "fulfilled" ? apiStateResult.value : {};
           const backendBal =
@@ -1848,8 +2150,14 @@
             showToast("Unable to load API balance from the database.", "error");
           }
           if (usageResult.status === "rejected") {
-            console.error("Failed to load API usage counts:", usageResult.reason);
-            showToast("Unable to load API request counts from the database.", "error");
+            console.error(
+              "Failed to load API usage counts:",
+              usageResult.reason,
+            );
+            showToast(
+              "Unable to load API request counts from the database.",
+              "error",
+            );
           }
           latestDashboardData = {
             catalog,
@@ -2115,9 +2423,9 @@
                 y: {
                   beginAtZero: true,
                   min: 0,
-                  ticks: { precision: 0 }
-                }
-              }
+                  ticks: { precision: 0 },
+                },
+              },
             },
           },
         );
@@ -2147,9 +2455,9 @@
                 y: {
                   beginAtZero: true,
                   min: 0,
-                  ticks: { precision: 0 }
-                }
-              }
+                  ticks: { precision: 0 },
+                },
+              },
             },
           },
         );
@@ -2176,10 +2484,12 @@
                   beginAtZero: true,
                   min: 0,
                   ticks: {
-                    callback: function(val) { return val + " ms"; }
-                  }
-                }
-              }
+                    callback: function (val) {
+                      return val + " ms";
+                    },
+                  },
+                },
+              },
             },
           },
         );
@@ -2350,9 +2660,18 @@
       }
 
       async function refreshDashboardCharts() {
-        const mode = dashboardActiveMode || localStorage.getItem("aip_dashboard_mode") || "quick";
-        const range = dashboardTimeSelection || localStorage.getItem("aip_dashboard_time") || "last 1 day";
-        const interval = dashboardIntervalSelection || localStorage.getItem("aip_dashboard_interval") || "1 hour";
+        const mode =
+          dashboardActiveMode ||
+          localStorage.getItem("aip_dashboard_mode") ||
+          "quick";
+        const range =
+          dashboardTimeSelection ||
+          localStorage.getItem("aip_dashboard_time") ||
+          "last 1 day";
+        const interval =
+          dashboardIntervalSelection ||
+          localStorage.getItem("aip_dashboard_interval") ||
+          "1 hour";
         const fromInput = document.getElementById("absolute-from");
         const toInput = document.getElementById("absolute-to");
         const fromVal = fromInput ? fromInput.value : "";
@@ -2387,7 +2706,10 @@
             }
           }
         } catch (e) {
-          console.warn("Telemetry timeseries fetch failed, falling back to empty:", e);
+          console.warn(
+            "Telemetry timeseries fetch failed, falling back to empty:",
+            e,
+          );
         }
 
         const config = getDashboardTimeConfig();
@@ -2599,7 +2921,9 @@
         await refreshDashboardCharts();
       };
       if (document.readyState === "loading") {
-        window.addEventListener("DOMContentLoaded", initializeDashboardPage, { once: true });
+        window.addEventListener("DOMContentLoaded", initializeDashboardPage, {
+          once: true,
+        });
       } else {
         initializeDashboardPage();
       }
