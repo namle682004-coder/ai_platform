@@ -2336,10 +2336,6 @@
             : 1000;
           const freeRemain = Math.max(0, freeQuotaLimit - reqCount);
           const freeVal = freeRemain.toLocaleString();
-          const statusBadge = isEnabled
-            ? `<span style="background: #10b981; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', true)">ACTIVE</span>`
-            : `<span style="background: #94a3b8; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', false)">DISABLED</span>`;
-
           const paidStr = isEnabled
             ? paidBal == null
               ? "—"
@@ -2352,6 +2348,22 @@
 
           let svcUrl = "/staff/service-ocr-id";
           const nameLow = (item.name || "").toLowerCase();
+          const isLive = (
+            nameLow.includes("rag") ||
+            nameLow.includes("tri thức") ||
+            nameLow.includes("llm") ||
+            nameLow.includes("chatbot") ||
+            nameLow.includes("chat completions") ||
+            nameLow.includes("speech to text") ||
+            nameLow.includes("stt") ||
+            nameLow.includes("transcription") ||
+            nameLow.includes("cccd") ||
+            nameLow.includes("id card") ||
+            nameLow.includes("id recognition") ||
+            nameLow.includes("identity") ||
+            nameLow.includes("căn cước")
+          );
+
           if (
             nameLow.includes("cccd") ||
             nameLow.includes("id card") ||
@@ -2361,17 +2373,6 @@
           ) {
             svcUrl = "/staff/service-ocr-id";
           } else if (
-            nameLow.includes("driver") ||
-            nameLow.includes("bằng lái") ||
-            nameLow.includes("gplx")
-          ) {
-            svcUrl = "/staff/service-ocr-dl";
-          } else if (
-            nameLow.includes("passport") ||
-            nameLow.includes("hộ chiếu")
-          ) {
-            svcUrl = "/staff/service-ocr-passport";
-          } else if (
             nameLow.includes("speech to text") ||
             nameLow.includes("stt") ||
             nameLow.includes("nhận dạng giọng nói") ||
@@ -2379,60 +2380,53 @@
           ) {
             svcUrl = "/staff/service-stt";
           } else if (
-            nameLow.includes("text to speech") ||
-            nameLow.includes("tts") ||
-            nameLow.includes("tổng hợp giọng nói")
-          ) {
-            svcUrl = "/staff/service-tts";
-          } else if (
             nameLow.includes("llm") ||
             nameLow.includes("chatbot") ||
             nameLow.includes("chat completions")
           ) {
             svcUrl = "/staff/service-llm";
-          } else if (
-            nameLow.includes("image") ||
-            nameLow.includes("hình ảnh")
-          ) {
-            svcUrl = "/staff/service-image";
-          } else if (
-            nameLow.includes("moderation") ||
-            nameLow.includes("kiểm duyệt")
-          ) {
-            svcUrl = "/staff/service-moderation";
-          } else if (
-            nameLow.includes("facematch") ||
-            nameLow.includes("khuôn mặt")
-          ) {
-            svcUrl = "/staff/service-vision-facematch";
-          } else if (nameLow.includes("liveness")) {
-            svcUrl = "/staff/service-vision-liveness";
-          } else if (nameLow.includes("embedding")) {
-            svcUrl = "/staff/service-nlp-embeddings";
-          } else if (
-            nameLow.includes("summariz") ||
-            nameLow.includes("tóm tắt")
-          ) {
-            svcUrl = "/staff/service-nlp-summarization";
-          } else if (nameLow.includes("translat") || nameLow.includes("dịch")) {
-            svcUrl = "/staff/service-nlp-translation";
+          } else if (nameLow.includes("rag") || nameLow.includes("tri thức")) {
+            svcUrl = "/rag";
           } else {
-            svcUrl = "/staff/service-ocr-id";
+            let devServiceId = 'general';
+            if (nameLow.includes("driver") || nameLow.includes("bằng lái") || nameLow.includes("gplx")) devServiceId = 'd285b3c4-6821-4932-a583-b19472c10345';
+            else if (nameLow.includes("passport") || nameLow.includes("hộ chiếu")) devServiceId = 'e396c4d5-7932-4a43-b694-c20583d21456';
+            else if (nameLow.includes("text to speech") || nameLow.includes("tts") || nameLow.includes("tổng hợp giọng nói")) devServiceId = '8b51ef94-912a-4367-bf16-36701a09cb12';
+            else if (nameLow.includes("image") || nameLow.includes("hình ảnh")) devServiceId = 'f4a7d5e6-8043-4b54-c705-d31694e32567';
+            else if (nameLow.includes("moderation") || nameLow.includes("kiểm duyệt")) devServiceId = 'a5b8e6f7-9154-4c65-d816-e42705f43678';
+            else if (nameLow.includes("facematch") || nameLow.includes("khuôn mặt")) devServiceId = 'b6c9f7a8-0265-4d76-e927-f53816a54789';
+            else if (nameLow.includes("liveness")) devServiceId = 'c7da08b9-1376-4e87-fa38-064927b65890';
+            else if (nameLow.includes("embedding")) devServiceId = 'd8eb19ca-2487-4f98-0b49-175038c76901';
+            else if (nameLow.includes("summariz") || nameLow.includes("tóm tắt")) devServiceId = 'fa0d3bec-46a9-41ba-2d6b-39725ae98123';
+            else if (nameLow.includes("translat") || nameLow.includes("dịch")) devServiceId = 'e9fc2adb-3598-40a9-1c5a-286149d87012';
+
+            svcUrl = `/under-development?service=${devServiceId}&name=${encodeURIComponent(apiName)}`;
           }
 
-          if (nameLow.includes("rag") || nameLow.includes("tri thức")) {
-            svcUrl = "/project/global/apis/rag-chat-enterprise-kb";
-          }
+          const statusBadge = !isLive
+            ? `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" title="Đang trong lộ trình hoàn thiện" onclick="location.href='${svcUrl}'">IN DEV</span>`
+            : (isEnabled
+                ? `<span style="background: #10b981; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', true)">ACTIVE</span>`
+                : `<span style="background: #94a3b8; color: #fff; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 11px; cursor: pointer;" onclick="toggleDashboardApiStatus('${apiName}', false)">DISABLED</span>`);
+
+          const nameColHtml = !isLive
+            ? `<td><strong style="color: #475467; cursor:pointer;" onclick="location.href='${svcUrl}'">${apiName}</strong> <span style="font-size:9.5px; background:#fef3c7; color:#b45309; padding:1px 5px; border-radius:4px; font-weight:700; border:1px solid #fde68a; margin-left:4px;">DEV</span></td>`
+            : `<td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${apiName}</strong></td>`;
+
+          const actionBtnHtml = !isLive
+            ? `<td><button class="btn-buy-link" style="opacity:0.7;" onclick="location.href='${svcUrl}'" title="Đang trong lộ trình hoàn thiện">coming soon</button></td>`
+            : `<td><button class="btn-buy-link" onclick="openPricingModalFor('${apiName}')">buy more</button></td>`;
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
-                    <td><strong style="color: #007bff; cursor:pointer;" onclick="location.href='${svcUrl}'">${apiName}</strong></td>
+                    ${nameColHtml}
                     <td>${statusBadge}</td>
                     <td><span style="font-weight:600; color:#0f172a;">${reqCount}</span></td>
                     <td><span style="color:${errCount > 0 ? "#dc2626" : "#64748b"}; font-weight:${errCount > 0 ? "700" : "400"};">${errCount}</span></td>
                     <td><span style="color:#059669; font-weight:600;">${isEnabled ? freeVal : "0 (OFF)"}</span></td>
                     <td><span style="color:#2563eb; font-weight:600;">${paidStr}</span></td>
                     <td>${item.unit || "request"}</td>
-                    <td><button class="btn-buy-link" onclick="openPricingModalFor('${apiName}')">buy more</button></td>
+                    ${actionBtnHtml}
                 `;
           tbody.appendChild(tr);
         });

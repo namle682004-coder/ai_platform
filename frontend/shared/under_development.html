@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIP Platform - Tính Năng Đang Trong Lộ Trình Phát Triển</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/assets/img/favicon.png">
+    
+    <!-- Professional Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script type="module" src="/staff/staff_layout.js"></script>
+
+    <style>
+        :root {
+            --brand-50: #ecf3ff;
+            --brand-100: #dde9ff;
+            --brand-500: #465fff;
+            --brand-600: #3641f5;
+            --amber-50: #fffbeb;
+            --amber-100: #fef3c7;
+            --amber-600: #d97706;
+            --amber-700: #b45309;
+            --emerald-50: #ecfdf5;
+            --emerald-600: #059669;
+            --gray-50: #f9fafb;
+            --gray-100: #f2f4f7;
+            --gray-200: #e4e7ec;
+            --gray-300: #d0d5dd;
+            --gray-500: #667085;
+            --gray-600: #475467;
+            --gray-700: #344054;
+            --gray-900: #101828;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Outfit', sans-serif;
+            --font-code: 'Fira Code', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #f9fafb;
+            color: var(--gray-900);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            min-height: calc(100vh - 56px);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 32px 40px 64px 40px;
+            max-width: 1240px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-bottom: 24px;
+        }
+        .breadcrumb a {
+            color: var(--gray-500);
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .breadcrumb a:hover {
+            color: var(--brand-500);
+        }
+        .breadcrumb .separator {
+            font-size: 10px;
+            color: var(--gray-400);
+        }
+        .breadcrumb .current {
+            color: var(--gray-900);
+            font-weight: 600;
+        }
+
+        /* Hero Notice Card */
+        .notice-card {
+            background: #ffffff;
+            border: 1px solid var(--gray-200);
+            border-radius: 16px;
+            padding: 36px 40px;
+            box-shadow: 0 4px 16px rgba(16, 24, 40, 0.04);
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .notice-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f59e0b, #465fff, #10b981);
+        }
+
+        .notice-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+        .notice-icon-box {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #d97706;
+            font-size: 32px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
+        }
+        .notice-title-area {
+            flex: 1;
+        }
+        .status-badge-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .badge-dev {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fef3c7;
+            color: #b45309;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 100px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border: 1px solid #fde68a;
+        }
+        .badge-dev i {
+            font-size: 11px;
+        }
+        .badge-focus {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecf3ff;
+            color: #465fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 100px;
+            border: 1px solid #dde9ff;
+        }
+        .notice-title {
+            font-family: var(--font-heading);
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .notice-desc {
+            font-size: 15px;
+            color: var(--gray-600);
+            line-height: 1.6;
+        }
+
+        /* Technical Report Box */
+        .report-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #465fff;
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+        }
+        .report-box-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .report-box-text {
+            font-size: 14px;
+            color: var(--gray-700);
+            line-height: 1.65;
+            margin-bottom: 12px;
+        }
+        .report-box-text:last-child {
+            margin-bottom: 0;
+        }
+        .report-box-text strong {
+            color: var(--gray-900);
+        }
+
+        /* Spec / Status 3-Col Grid */
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .spec-item {
+            background: #ffffff;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 18px 20px;
+            transition: all 0.2s ease;
+        }
+        .spec-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+        .spec-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gray-500);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .spec-val {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+        .spec-sub {
+            font-size: 12.5px;
+            color: var(--gray-500);
+        }
+
+        /* Action Buttons */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding-top: 10px;
+        }
+        .btn-action-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--brand-500);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(70, 95, 255, 0.2);
+        }
+        .btn-action-primary:hover {
+            background: var(--brand-600);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .btn-action-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .btn-action-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+            color: var(--gray-900);
+        }
+
+        /* Live Services Available Section */
+        .live-section {
+            margin-top: 40px;
+        }
+        .live-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .live-section-title {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .live-section-badge {
+            background: #ecfdf5;
+            color: #059669;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 100px;
+            border: 1px solid #a7f3d0;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+        .service-card {
+            background: #ffffff;
+            border: 1px solid var(--gray-200);
+            border-radius: 14px;
+            padding: 22px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .service-card:hover {
+            border-color: var(--brand-500);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(70, 95, 255, 0.08);
+        }
+        .service-card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+        .service-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .service-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .service-card-desc {
+            font-size: 13.5px;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+        .service-card-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--brand-500);
+            margin-top: 14px;
+            transition: gap 0.15s ease;
+        }
+        .service-card:hover .service-card-btn {
+            gap: 10px;
+            color: var(--brand-600);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .specs-grid { grid-template-columns: 1fr; }
+            .services-grid { grid-template-columns: 1fr; }
+            .main-content { padding: 24px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Header managed by staff_layout.js -->
+    <div class="top-header">
+        <div class="header-left">
+            <a href="/staff/dashboard" class="brand-logo"><i class="fa-solid fa-cube"></i> AIP Platform</a>
+            <div class="project-selector"></div>
+        </div>
+        <div class="header-right"></div>
+    </div>
+
+    <!-- Main Layout Container -->
+    <div class="main-layout">
+        <!-- Sidebar managed by staff_layout.js -->
+        <div class="sidebar"></div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Breadcrumbs -->
+            <div class="breadcrumb">
+                <a href="/staff/dashboard"><i class="fa-solid fa-house" style="margin-right: 4px;"></i> Console</a>
+                <span class="separator">/</span>
+                <a href="/staff/apis">APIs</a>
+                <span class="separator">/</span>
+                <span class="current" id="breadcrumb-service-name">Tính năng đang phát triển</span>
+            </div>
+
+            <!-- Hero Notice Card -->
+            <div class="notice-card">
+                <div class="notice-header">
+                    <div class="notice-icon-box" id="dev-icon-container">
+                        <i class="fa-solid fa-person-digging" id="dev-icon"></i>
+                    </div>
+                    <div class="notice-title-area">
+                        <div class="status-badge-row">
+                            <span class="badge-dev">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Đang Trong Lộ Trình Hoàn Thiện
+                            </span>
+                            <span class="badge-focus">
+                                <i class="fa-solid fa-bullseye"></i> Ưu Tiên RAG & AI Lõi
+                            </span>
+                        </div>
+                        <h1 class="notice-title" id="dev-service-title">Dịch Vụ AI Đang Tạm Khóa Để Kiểm Chuẩn</h1>
+                        <p class="notice-desc" id="dev-service-desc">
+                            Trang này đã hoàn thiện thiết kế kiến trúc và hiện đang trong giai đoạn huấn luyện backend & kiểm chuẩn mô hình tại môi trường Sandbox nội bộ.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Technical Report Box -->
+                <div class="report-box">
+                    <div class="report-box-title">
+                        <i class="fa-solid fa-shield-halved" style="color: #465fff;"></i>
+                        Báo Cáo Kỹ Thuật & Điều Phối Tài Nguyên Hạ Tầng
+                    </div>
+                    <p class="report-box-text">
+                        Nhằm đảm bảo tiêu chuẩn an toàn dữ liệu, độ chính xác tuyệt đối và SLA hệ thống đạt <strong>99.9% Uptime</strong>, đội ngũ kỹ thuật AIP đang tập trung 100% tài nguyên tính toán (GPU Cluster & Pipeline) vào <strong>Cụm AI RAG Doanh Nghiệp (Retrieval-Augmented Generation)</strong> và các <strong>Mô Hình AI Nền Tảng</strong> (LLM Qwen 2.5, Whisper Speech-to-Text, EasyOCR CCCD).
+                    </p>
+                    <p class="report-box-text">
+                        Dịch vụ <strong id="dev-service-name-inline">tính năng này</strong> tạm thời giới hạn quyền truy cập public để tránh tình trạng phát sinh lỗi gián đoạn hoặc quá tải tài nguyên hạ tầng.
+                    </p>
+                </div>
+
+                <!-- 3-Column Roadmap Status Specs -->
+                <div class="specs-grid">
+                    <div class="spec-item">
+                        <div class="spec-label"><i class="fa-solid fa-spinner fa-spin"></i> Trạng Thái Hiện Tại</div>
+                        <div class="spec-val" style="color: #d97706;">🟡 Sandbox Benchmarking</div>
+                        <div class="spec-sub">Đang tối ưu hóa pipeline & độ trễ inference</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label"><i class="fa-solid fa-calendar-check"></i> Kế Hoạch Mở Thử Nghiệm</div>
+                        <div class="spec-val" style="color: #465fff;">🚀 Sprint Kế Tiếp</div>
+                        <div class="spec-sub">Mở whitelist sau khi hoàn tất kiểm chuẩn RAG</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label"><i class="fa-solid fa-bolt"></i> Trọng Tâm Ưu Tiên</div>
+                        <div class="spec-val" style="color: #059669;">🟢 RAG & Core AI Engines</div>
+                        <div class="spec-sub">100% tài nguyên GPU phân bổ cho AI Lõi</div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-bar">
+                    <a href="/staff/dashboard" class="btn-action-primary">
+                        <i class="fa-solid fa-arrow-left"></i> Quay Lại Dashboard
+                    </a>
+                    <a href="/rag" class="btn-action-secondary" style="border-color: #465fff; color: #465fff;">
+                        <i class="fa-solid fa-brain"></i> Trải Nghiệm RAG Chatbot Ngay
+                    </a>
+                    <a href="/staff/apis" class="btn-action-secondary">
+                        <i class="fa-solid fa-cubes"></i> Xem Toàn Bộ APIs
+                    </a>
+                </div>
+            </div>
+
+            <!-- Live Services Section -->
+            <div class="live-section">
+                <div class="live-section-header">
+                    <h2 class="live-section-title">
+                        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+                        Các Dịch Vụ AI Đang Hoạt Động 100% (Sẵn Sàng Sử Dụng):
+                    </h2>
+                    <span class="live-section-badge">4 Core Services Active</span>
+                </div>
+
+                <div class="services-grid">
+                    <!-- Service 1: RAG -->
+                    <a href="/rag" class="service-card" style="border-left: 4px solid #465fff;">
+                        <div class="service-card-top">
+                            <div class="service-card-icon" style="background: #ecf3ff; color: #465fff;">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="service-card-title">
+                                    <span>RAG Enterprise Knowledge Base</span>
+                                    <span style="font-size: 11px; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 6px; font-weight: 700;">LIVE</span>
+                                </div>
+                                <div class="service-card-desc">
+                                    Chatbot hỏi đáp dữ liệu tài liệu doanh nghiệp, truy xuất vector ngữ nghĩa chính xác với trích dẫn tài liệu nguồn rõ ràng.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-card-btn">
+                            Khám phá RAG Chatbot <i class="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </a>
+
+                    <!-- Service 2: LLM Chatbot -->
+                    <a href="/staff/service-llm" class="service-card" style="border-left: 4px solid #0284c7;">
+                        <div class="service-card-top">
+                            <div class="service-card-icon" style="background: #e0f2fe; color: #0284c7;">
+                                <i class="fa-solid fa-comments"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="service-card-title">
+                                    <span>LLM Chatbot Reasoning</span>
+                                    <span style="font-size: 11px; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 6px; font-weight: 700;">LIVE</span>
+                                </div>
+                                <div class="service-card-desc">
+                                    Mô hình ngôn ngữ lớn Qwen 2.5 suy luận thông minh, hỗ trợ coding, tóm tắt và phân tích logic tốc độ cao.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-card-btn">
+                            Mở LLM Playground <i class="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </a>
+
+                    <!-- Service 3: STT -->
+                    <a href="/staff/service-stt" class="service-card" style="border-left: 4px solid #0d9488;">
+                        <div class="service-card-top">
+                            <div class="service-card-icon" style="background: #ccfbf1; color: #0d9488;">
+                                <i class="fa-solid fa-microphone"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="service-card-title">
+                                    <span>Speech to Text (Faster-Whisper)</span>
+                                    <span style="font-size: 11px; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 6px; font-weight: 700;">LIVE</span>
+                                </div>
+                                <div class="service-card-desc">
+                                    Nhận dạng giọng nói tiếng Việt thời gian thực với độ chính xác cao, bóc tách audio hội thoại và bài giảng chuẩn xác.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-card-btn">
+                            Thử nghiệm Speech to Text <i class="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </a>
+
+                    <!-- Service 4: CCCD OCR -->
+                    <a href="/staff/service-ocr-id" class="service-card" style="border-left: 4px solid #059669;">
+                        <div class="service-card-top">
+                            <div class="service-card-icon" style="background: #ecfdf5; color: #059669;">
+                                <i class="fa-solid fa-id-card"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="service-card-title">
+                                    <span>CCCD / ID Card OCR</span>
+                                    <span style="font-size: 11px; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 6px; font-weight: 700;">LIVE</span>
+                                </div>
+                                <div class="service-card-desc">
+                                    Bóc tách thông tin thẻ Căn cước công dân gắn chip tự động, nhận diện trường số, họ tên, ngày sinh phục vụ eKYC.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-card-btn">
+                            Trích xuất CCCD OCR <i class="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script to dynamically customize page title and name from URL query params -->
+    <script>
+        (function() {
+            const SERVICES_METADATA = {
+                'a5b8e6f7-9154-4c65-d816-e42705f43678': {
+                    name: 'Content Moderation API (Kiểm duyệt nội dung)',
+                    shortName: 'Content Moderation API',
+                    icon: 'fa-shield',
+                    desc: 'Dịch vụ phân tích văn bản, hình ảnh nhằm phát hiện nội dung độc hại, vi phạm chính sách hoặc nhạy cảm.'
+                },
+                'd8eb19ca-2487-4f98-0b49-175038c76901': {
+                    name: 'Text Embeddings (Vector hóa văn bản)',
+                    shortName: 'Text Embeddings',
+                    icon: 'fa-diagram-project',
+                    desc: 'Dịch vụ biến đổi văn bản thành vector embeddings độ chính xác cao cho các hệ thống tìm kiếm ngữ nghĩa.'
+                },
+                'fa0d3bec-46a9-41ba-2d6b-39725ae98123': {
+                    name: 'Text Summarization (Tóm tắt văn bản)',
+                    shortName: 'Text Summarization',
+                    icon: 'fa-align-left',
+                    desc: 'Dịch vụ tự động cô đọng các bài báo, tài liệu dài thành đoạn tóm tắt súc tích, giữ trọn ý chính.'
+                },
+                'e9fc2adb-3598-40a9-1c5a-286149d87012': {
+                    name: 'Neural Translation (Dịch thuật đa ngữ)',
+                    shortName: 'Neural Translation',
+                    icon: 'fa-language',
+                    desc: 'Dịch vụ dịch máy chất lượng cao song ngữ và đa ngữ với ngữ cảnh chuyên ngành tự nhiên.'
+                },
+                '8b51ef94-912a-4367-bf16-36701a09cb12': {
+                    name: 'Text to Speech (TTS - Tổng hợp giọng nói)',
+                    shortName: 'Text to Speech (TTS)',
+                    icon: 'fa-volume-high',
+                    desc: 'Dịch vụ chuyển văn bản thành giọng đọc tự nhiên đa vùng miền (Bắc, Trung, Nam) với ngữ điệu sinh động.'
+                },
+                'f4a7d5e6-8043-4b54-c705-d31694e32567': {
+                    name: 'Image Generation API (Khuếch tán tạo ảnh)',
+                    shortName: 'Image Generation API',
+                    icon: 'fa-image',
+                    desc: 'Dịch vụ tạo ảnh nghệ thuật theo mô tả văn bản bằng mô hình khuếch tán Diffusion tiên tiến.'
+                },
+                'd285b3c4-6821-4932-a583-b19472c10345': {
+                    name: "Driver's License OCR (Nhận dạng Giấy phép lái xe)",
+                    shortName: "Driver's License OCR",
+                    icon: 'fa-address-card',
+                    desc: 'Dịch vụ tự động nhận diện và trích xuất thông tin Giấy phép lái xe (GPLX) các hạng phục vụ xác thực hồ sơ.'
+                },
+                'e396c4d5-7932-4a43-b694-c20583d21456': {
+                    name: 'Passport Recognition OCR (Nhận dạng Hộ chiếu)',
+                    shortName: 'Passport Recognition',
+                    icon: 'fa-passport',
+                    desc: 'Dịch vụ đọc mã MRZ và bóc tách thông tin Hộ chiếu quốc tế đạt chuẩn ICAO.'
+                },
+                'b6c9f7a8-0265-4d76-e927-f53816a54789': {
+                    name: 'FaceMatch (So khớp khuôn mặt eKYC)',
+                    shortName: 'FaceMatch eKYC',
+                    icon: 'fa-face-smile',
+                    desc: 'Dịch vụ so khớp khuôn mặt chân dung với ảnh thẻ căn cước phục vụ định danh khách hàng điện tử.'
+                },
+                'c7da08b9-1376-4e87-fa38-064927b65890': {
+                    name: 'Liveness Detection (Kiểm tra thực thể sống)',
+                    shortName: 'Liveness Detection',
+                    icon: 'fa-eye',
+                    desc: 'Dịch vụ kiểm tra người thật chống gian lận ảnh tĩnh, video deepfake hoặc mặt nạ 3D.'
+                }
+            };
+
+            const params = new URLSearchParams(window.location.search);
+            const serviceKey = (params.get('service') || '').toLowerCase();
+            const serviceNameParam = params.get('name') || '';
+
+            let matchedMeta = null;
+            if (SERVICES_METADATA[serviceKey]) {
+                matchedMeta = SERVICES_METADATA[serviceKey];
+            } else {
+                for (const [key, meta] of Object.entries(SERVICES_METADATA)) {
+                    if (serviceKey.includes(key) || (serviceNameParam && meta.name.toLowerCase().includes(serviceNameParam.toLowerCase()))) {
+                        matchedMeta = meta;
+                        break;
+                    }
+                }
+            }
+
+            if (!matchedMeta && serviceNameParam) {
+                matchedMeta = {
+                    name: serviceNameParam,
+                    shortName: serviceNameParam,
+                    icon: 'fa-screwdriver-wrench',
+                    desc: 'Tính năng này hiện đang được hoàn thiện backend theo lộ trình kỹ thuật của hệ thống AIP.'
+                };
+            }
+
+            if (matchedMeta) {
+                document.title = `AIP Platform - ${matchedMeta.shortName} (Đang phát triển)`;
+                const titleEl = document.getElementById('dev-service-title');
+                if (titleEl) titleEl.innerText = `${matchedMeta.name} Đang Tạm Khóa Để Kiểm Chuẩn`;
+                const inlineEl = document.getElementById('dev-service-name-inline');
+                if (inlineEl) inlineEl.innerText = matchedMeta.name;
+                const descEl = document.getElementById('dev-service-desc');
+                if (descEl) descEl.innerText = matchedMeta.desc;
+                const bcEl = document.getElementById('breadcrumb-service-name');
+                if (bcEl) bcEl.innerText = matchedMeta.shortName;
+                const iconEl = document.getElementById('dev-icon');
+                if (iconEl && matchedMeta.icon) {
+                    iconEl.className = `fa-solid ${matchedMeta.icon}`;
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

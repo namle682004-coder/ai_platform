@@ -326,6 +326,21 @@ import '/staff/applications_nav.js';
             border-radius: 8px !important;
             font-size: 13.5px !important;
         }
+        .nav-tag-dev {
+            margin-left: auto !important;
+            font-size: 9px !important;
+            font-weight: 700 !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            background: #fef3c7 !important;
+            color: #b45309 !important;
+            letter-spacing: 0.04em !important;
+            line-height: 1 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            border: 1px solid #fde68a !important;
+            flex-shrink: 0 !important;
+        }
         .nav-item a {
             display: flex !important;
             align-items: center !important;
@@ -1504,6 +1519,16 @@ import '/staff/applications_nav.js';
                 const iconElement = document.createElement('i');
                 iconElement.className = `fa-solid ${icon}`;
                 link.append(iconElement, document.createTextNode(label));
+
+                const isLive = window.isApiLive ? window.isApiLive(href) : (href === 'rag-chat-enterprise-kb' || href.includes('efb24a03') || href.includes('3a72d1f9') || href.includes('c194a2b3'));
+                if (!isLive) {
+                    const tag = document.createElement('span');
+                    tag.className = 'nav-tag-dev';
+                    tag.textContent = 'DEV';
+                    tag.title = 'Tính năng đang trong lộ trình phát triển';
+                    link.appendChild(tag);
+                }
+
                 item.appendChild(link);
                 childList.appendChild(item);
             });

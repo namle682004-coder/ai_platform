@@ -36,7 +36,24 @@
         },
     ];
 
+    window.AIP_LIVE_APIS = new Set([
+        'rag-chat-enterprise-kb',
+        'efb24a03-059d-440c-bd35-0b5b3a776983', // LLM Chatbot
+        '3a72d1f9-46c8-472e-8395-cb091a136701', // Speech to Text (Faster-Whisper)
+        'c194a2b3-5710-4821-9472-a08361b09234', // ID Recognition (CCCD OCR)
+    ]);
+
+    window.isApiLive = function (apiId) {
+        if (!apiId) return false;
+        const lower = String(apiId).toLowerCase().trim();
+        if (lower.includes('rag') || lower === 'rag-chat-enterprise-kb') return true;
+        return window.AIP_LIVE_APIS.has(lower);
+    };
+
     window.aipProjectApiHref = function (apiId) {
+        if (!window.isApiLive(apiId)) {
+            return `/under-development?service=${encodeURIComponent(apiId)}`;
+        }
         const projectInPath = window.location.pathname.match(/^\/project\/([^/]+)/i);
         let projectId = projectInPath ? projectInPath[1] : localStorage.getItem('aip_active_project_id');
         if (!projectId) {
