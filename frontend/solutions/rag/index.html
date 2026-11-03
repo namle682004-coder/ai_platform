@@ -2331,6 +2331,17 @@
             }
         }
 
+        function getStaffCurrentUserId() {
+            try {
+                const raw = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
+                if (raw) {
+                    const u = JSON.parse(raw);
+                    if (u.user_id) return u.user_id;
+                }
+            } catch (e) {}
+            return localStorage.getItem('aip_user_id') || 'user_staff_01';
+        }
+
         async function loadStaffRecentSessions() {
             const list = document.getElementById("chatgpt-recents-list");
             if (!list) return;
@@ -2341,7 +2352,7 @@
                         "Authorization": DEFAULT_TOKEN,
                         "X-Tenant-Id": tenantId,
                         "X-Tenant-ID": tenantId,
-                        "X-User-Id": "default_user"
+                        "X-User-Id": getStaffCurrentUserId()
                     }
                 });
                 if (res.ok) {
@@ -2462,7 +2473,7 @@
                         "Authorization": DEFAULT_TOKEN,
                         "X-Tenant-Id": tenantId,
                         "X-Tenant-ID": tenantId,
-                        "X-User-Id": "default_user"
+                        "X-User-Id": getStaffCurrentUserId()
                     },
                     body: JSON.stringify({ title: newTitle })
                 });
@@ -2559,7 +2570,7 @@
                         "Authorization": DEFAULT_TOKEN,
                         "X-Tenant-Id": tenantId,
                         "X-Tenant-ID": tenantId,
-                        "X-User-Id": "default_user"
+                        "X-User-Id": getStaffCurrentUserId()
                     }
                 });
                 if (res.ok) {
@@ -2646,7 +2657,7 @@
                         "Authorization": DEFAULT_TOKEN,
                         "X-Tenant-Id": tenantId,
                         "X-Tenant-ID": tenantId,
-                        "X-User-Id": "default_user"
+                        "X-User-Id": getStaffCurrentUserId()
                     }
                 });
                 if (sessionId === staffConversationId) {
@@ -4886,7 +4897,7 @@ function formatStaffCitations(citations, query, answer) {
                         "Authorization": DEFAULT_TOKEN,
                         "X-Tenant-Id": tenantId,
                         "X-Tenant-ID": tenantId,
-                        "X-User-Id": "default_user"
+                        "X-User-Id": getStaffCurrentUserId()
                     },
                     body: JSON.stringify({
                         query: effectiveQuery,

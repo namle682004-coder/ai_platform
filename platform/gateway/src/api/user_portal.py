@@ -315,26 +315,39 @@ async def get_user_gpu_status():
     }
 
 
-@router.get("/api-summary", summary="Get API usage counts from MongoDB")
-async def get_user_api_usage_summary():
-    """Aggregate request and error counts for API endpoints in the database catalog."""
+@router.get("/api-summary", summary="Get API usage counts and token breakdown from MongoDB")
+async def get_user_api_usage_summary(request: Request):
+    """Aggregate request, error, and token counts for API endpoints in the database catalog."""
     from common.database.mongodb import mongo_manager
+    from common.repositories.api_subscription_repository import api_subscription_repository
 
     db = mongo_manager.get_database()
     if db is None:
         raise RuntimeError("MongoDB is unavailable; API usage summary cannot be loaded")
 
     endpoints = await endpoint_repository.list_endpoints()
-    paths = {
-        endpoint.get("path") or endpoint.get("endpoint_id")
-        for endpoint in endpoints.values()
-        if endpoint.get("path") or endpoint.get("endpoint_id")
-    }
+    endpoint_map = {}
+    for ep in endpoints.values():
+        p = ep.get("path") or ep.get("endpoint_id")
+        if p:
+            endpoint_map[p] = ep
+
+    paths = list(endpoint_map.keys())
     if not paths:
-        return {"data": []}
+        return {
+            "data": [],
+            "total_requests": 0,
+            "total_errors": 0,
+            "total_tokens_used": 0,
+            "paid_balance": 50000,
+            "monthly_limit": 100000,
+            "tier": "Enterprise Developer",
+            "rpm_limit": 1200,
+            "concurrency_limit": 50,
+        }
 
     pipeline = [
-        {"$match": {"path": {"$in": list(paths)}}},
+        {"$match": {"path": {"$in": paths}}},
         {
             "$group": {
                 "_id": "$path",
@@ -353,15 +366,73 @@ async def get_user_api_usage_summary():
     ]
     cursor = db.api_logs.aggregate(pipeline)
     counts = await cursor.to_list(length=None)
+    counts_map = {item["_id"]: item for item in counts}
+
+    def get_token_rate(path: str) -> int:
+        if "/chat" in path or "/completions" in path or "/rag" in path:
+            return 15
+        elif "/audio" in path or "/speech" in path or "/transcriptions" in path:
+            return 10
+        elif "/images" in path:
+            return 20
+        elif "/vision" in path or "/ocr" in path:
+            return 5
+        elif "/embeddings" in path or "/nlp" in path:
+            return 2
+        return 1
+
+    user_id = get_current_user_id(request)
+    paid_balance = await api_subscription_repository.get_user_paid_balance(user_id)
+
+    total_requests = 0
+    total_errors = 0
+    total_tokens_used = 0
+    data = []
+
+    for path, ep in endpoint_map.items():
+        cnt = counts_map.get(path, {"requests": 0, "errors": 0})
+        reqs = cnt.get("requests", 0)
+        errs = cnt.get("errors", 0)
+        rate = get_token_rate(path)
+        tokens = reqs * rate
+
+        fq_raw = ep.get("free_quota", "50000")
+        try:
+            fq_num = int("".join(c for c in str(fq_raw).split()[0] if c.isdigit()))
+        except Exception:
+            fq_num = 50000
+
+        free_remain = max(0, fq_num - reqs)
+
+        total_requests += reqs
+        total_errors += errs
+        total_tokens_used += tokens
+
+        data.append({
+            "path": path,
+            "name": ep.get("name") or path,
+            "category": ep.get("category") or "AI Service",
+            "token_rate": rate,
+            "requests": reqs,
+            "errors": errs,
+            "tokens_used": tokens,
+            "free_quota": fq_num,
+            "free_remain": free_remain,
+            "status": "Active" if free_remain > 0 else "Exceeded",
+        })
+
+    data.sort(key=lambda x: x["requests"], reverse=True)
+
     return {
-        "data": [
-            {
-                "path": item["_id"],
-                "requests": item["requests"],
-                "errors": item["errors"],
-            }
-            for item in counts
-        ]
+        "data": data,
+        "total_requests": total_requests,
+        "total_errors": total_errors,
+        "total_tokens_used": total_tokens_used,
+        "paid_balance": paid_balance,
+        "monthly_limit": 100000,
+        "tier": "Enterprise Developer",
+        "rpm_limit": 1200,
+        "concurrency_limit": 50,
     }
 
 
