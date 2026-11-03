@@ -26,6 +26,7 @@ FRONTEND_DIR: Path = next(
 STAFF_DIR: Path = FRONTEND_DIR / "staff"
 ADMIN_DIR: Path = FRONTEND_DIR / "admin"
 AUTH_DIR: Path = FRONTEND_DIR / "auth"
+SOLUTIONS_DIR: Path = FRONTEND_DIR / "solutions"
 API_ROUTE_CONFIG = json.loads(
     (STAFF_DIR / "api_detail_routes.json").read_text(encoding="utf-8")
 )
@@ -191,3 +192,28 @@ async def serve_status(request: Request):
     if status_html.exists():
         return FileResponse(status_html)
     raise HTTPException(status_code=404, detail="Status page not found")
+
+
+# --- 5. SOLUTIONS ROUTES ---
+
+@router.get("/rag", include_in_schema=False)
+@router.get("/chat", include_in_schema=False)
+async def serve_rag_alias():
+    rag_index = SOLUTIONS_DIR / "rag" / "index.html"
+    if rag_index.is_file():
+        return FileResponse(rag_index)
+    raise HTTPException(status_code=404, detail="RAG solution page not found")
+
+
+@router.get("/solutions/{path:path}", include_in_schema=False)
+async def serve_solutions(path: str):
+    clean = path.strip("/")
+    target = SOLUTIONS_DIR / clean
+    if target.is_dir() and (target / "index.html").is_file():
+        return FileResponse(target / "index.html")
+    if target.is_file():
+        return FileResponse(target)
+    if (SOLUTIONS_DIR / f"{clean}.html").is_file():
+        return FileResponse(SOLUTIONS_DIR / f"{clean}.html")
+    raise HTTPException(status_code=404, detail=f"Solution page '{path}' not found")
+
