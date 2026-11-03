@@ -1741,7 +1741,7 @@
                         <i class="fa-regular fa-pen-to-square"></i>
                         <span>New chat</span>
                     </div>
-                    <div class="chatgpt-menu-item" onclick="openStaffIngestModal('global', 'Kho tri thức dùng chung (Toàn hệ thống)')" title="Mở Kho Tài liệu & Nạp tri thức">
+                    <div class="chatgpt-menu-item" onclick="openStaffIngestModal()" title="Mở Kho Tài liệu & Nạp tri thức">
                         <i class="fa-solid fa-book-bookmark"></i>
                         <span>Library</span>
                     </div>
@@ -2880,27 +2880,34 @@
         // 2. PROJECTS HUB & WORKSPACE SWITCHER (SYNCED WITH TOPBAR & MONGODB)
         // ==========================================
         async function fetchRealUserProjects() {
+            let list = null;
             if (window.StaffLayout && typeof window.StaffLayout.getProjects === 'function') {
                 try {
-                    const list = await window.StaffLayout.getProjects();
-                    if (Array.isArray(list) && list.length > 0) return list;
+                    list = await window.StaffLayout.getProjects();
                 } catch (e) {}
             }
-            try {
-                const res = await fetch('/v1/user/projects');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        localStorage.setItem('aip_projects', JSON.stringify(data));
-                        return data;
+            if (!list || !list.length) {
+                try {
+                    const res = await fetch('/v1/user/projects');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            list = data;
+                            localStorage.setItem('aip_projects', JSON.stringify(data));
+                        }
                     }
-                }
-            } catch (e) {}
-            try {
-                const local = localStorage.getItem('aip_projects');
-                if (local) return JSON.parse(local);
-            } catch (e) {}
-            return [];
+                } catch (e) {}
+            }
+            if (!list || !list.length) {
+                try {
+                    const local = localStorage.getItem('aip_projects');
+                    if (local) list = JSON.parse(local);
+                } catch (e) {}
+            }
+            const resList = list || [];
+            // Sắp xếp giảm dần theo thời gian tạo: dự án mới nhất luôn lên đầu danh sách!
+            resList.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            return resList;
         }
 
         function getStaffActiveProject() {
@@ -2923,7 +2930,7 @@
         async function openStaffProjectsModal() {
             const modal = document.getElementById('modal-staff-projects');
             if (modal) modal.classList.add('active');
-            cachedWorkspaceProjects = [];
+            cachedWorkspaceProjects = await fetchRealUserProjects();
             staffWorkspaceCurrentPage = 1;
             await renderStaffProjectsList();
         }
@@ -3341,14 +3348,22 @@
         }
 
         // Listen for project change from Topbar modal
-        window.addEventListener('aip-project-changed', (e) => {
+        window.addEventListener('aip-project-changed', async (e) => {
+            cachedWorkspaceProjects = await fetchRealUserProjects();
             if (e.detail && e.detail.project_name) {
                 const newName = e.detail.project_name;
+                const newId = e.detail.project_id || e.detail.id;
                 const modalCurrentName = document.getElementById('staff-active-project-name-modal');
                 if (modalCurrentName) modalCurrentName.innerText = newName;
                 const staffProjEl = document.getElementById('staff-active-project');
                 if (staffProjEl) staffProjEl.innerText = newName;
-                renderStaffProjectsList();
+                if (newId) {
+                    currentStaffIngestScope = newId;
+                    currentStaffIngestScopeName = newName;
+                }
+                await populateStaffIngestScopeOptions();
+                updateStaffIngestScopeUI();
+                await renderStaffProjectsList();
             }
         });
 
@@ -3767,7 +3782,19 @@
             selectStaffScope(val);
         }
 
-        async function openStaffIngestModal(targetScope = 'global', targetName = '') {
+        async function openStaffIngestModal(targetScope = '', targetName = '') {
+            cachedWorkspaceProjects = await fetchRealUserProjects();
+            if (!targetScope) {
+                const activeTenant = getStaffActiveTenantId();
+                const activeName = getStaffActiveProject();
+                if (activeTenant && activeTenant !== 'global' && activeTenant !== 'proj_default' && activeName && !activeName.toLowerCase().includes('dùng chung')) {
+                    targetScope = activeTenant;
+                    targetName = activeName;
+                } else {
+                    targetScope = 'global';
+                    targetName = 'Kho tri thức dùng chung (Toàn hệ thống)';
+                }
+            }
             currentStaffIngestScope = targetScope || 'global';
             if (currentStaffIngestScope === 'global') {
                 currentStaffIngestScopeName = 'Kho tri thức dùng chung (Toàn hệ thống)';

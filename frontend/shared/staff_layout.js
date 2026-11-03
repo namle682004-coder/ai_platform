@@ -1006,9 +1006,10 @@ import '/staff/applications_nav.js';
             if (projLabel) projLabel.innerText = 'Dự án Dùng Chung';
         }
 
-        // 2. Lọc danh sách Dự án Riêng theo Workspace
+        // 2. Lọc danh sách Dự án Riêng theo Workspace (Sắp xếp mới nhất lên đầu)
         const q = (currentProjectsFilter || '').trim().toLowerCase();
-        const allPrivate = (cachedProjectsList || []).filter(p => p.project_id !== 'global' && p.type !== 'global');
+        let allPrivate = (cachedProjectsList || []).filter(p => p.project_id !== 'global' && p.type !== 'global');
+        allPrivate.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
         const filteredPrivate = allPrivate.filter(p => {
             if (!q) return true;
@@ -1217,8 +1218,8 @@ import '/staff/applications_nav.js';
             const saved = data.project || { project_name: name, type: type, created_at: new Date().toISOString() };
 
             // Re-fetch clean data from MongoDB
-            await getProjects();
-            setActiveProjectName(saved.project_name || name);
+            cachedProjectsList = await getProjects();
+            setActiveProjectName(saved.project_name || name, saved.project_id || saved.id);
             closeCreatePrepaidProjectModal();
             showToast(`Dự án "${name}" đã được lưu thành công vào MongoDB!`, 'success');
             window.dispatchEvent(new CustomEvent('aip-project-changed', { detail: saved }));
@@ -1911,7 +1912,7 @@ import '/staff/applications_nav.js';
 
     function isStaffPageUrl(url) {
         return url.origin === window.location.origin &&
-            (/^\/staff(?:\/|$)/i.test(url.pathname) || /^\/project\//i.test(url.pathname));
+            (/^\/staff(?:\/|$)/i.test(url.pathname) || /^\/project\//i.test(url.pathname) || /^\/profile(?:\/|\.html|$)/i.test(url.pathname));
     }
 
     async function runPageScripts(parsedPage, pageUrl) {

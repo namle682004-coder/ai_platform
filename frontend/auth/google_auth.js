@@ -67,6 +67,17 @@ function initGoogleClient() {
 
 // 3. User clicks "Sign in with Google"
 function initiateGoogleSignIn() {
+  const currentHost = window.location.hostname;
+  const isLocalhost = (currentHost === "localhost" || currentHost === "127.0.0.1");
+
+  // Google OAuth 2.0 strictly forbids private IP addresses (e.g. 172.16.20.2) in redirect_uri.
+  // When running on internal server IP, fall back smoothly to the Google Account Chooser modal!
+  if (!isLocalhost && (/^\d+\.\d+\.\d+\.\d+$/.test(currentHost) || currentHost.includes(":"))) {
+    showToast("Đang mở bảng chọn tài khoản Google nội bộ...", "info");
+    openAccountChooserModal();
+    return;
+  }
+
   showToast('Đang kết nối Google để chọn tài khoản...', 'info');
 
   const currentOrigin = window.location.origin;

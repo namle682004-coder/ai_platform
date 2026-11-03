@@ -194,6 +194,19 @@ async def serve_status(request: Request):
     raise HTTPException(status_code=404, detail="Status page not found")
 
 
+@router.get("/profile", include_in_schema=False)
+@router.get("/profile.html", include_in_schema=False)
+@router.get("/user/profile", include_in_schema=False)
+async def serve_profile():
+    profile_html = STAFF_DIR / "profile.html"
+    if profile_html.is_file():
+        return FileResponse(profile_html)
+    console_profile = FRONTEND_DIR / "console" / "profile.html"
+    if console_profile.is_file():
+        return FileResponse(console_profile)
+    raise HTTPException(status_code=404, detail="Profile page not found")
+
+
 # --- 5. SOLUTIONS ROUTES ---
 
 @router.get("/rag", include_in_schema=False)
