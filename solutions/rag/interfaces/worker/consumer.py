@@ -17,6 +17,7 @@ from ...application.use_cases.ingestion_use_case import DocumentIngestionUseCase
 from ...config import rag_settings
 from ...infrastructure.adapters.embedding_adapter import HttpEmbeddingAdapter
 from ...infrastructure.adapters.qdrant_adapter import QdrantVectorStoreAdapter
+from ...infrastructure.adapters.rabbitmq_adapter import RAG_QUEUE_ARGUMENTS
 from ...infrastructure.adapters.redis_cache_adapter import redis_cache
 from ...infrastructure.adapters.storage_adapter import MinioStorageAdapter
 from ...infrastructure.parsers.factory import parser_factory
@@ -87,14 +88,10 @@ class RagWorkerConsumer:
         try:
             queue = await channel.declare_queue(rag_settings.rag_queue, passive=True)
         except Exception:
-            q_args = {
-                "x-queue-type": "quorum",
-                "x-dead-letter-exchange": "aip.dlx",
-                "x-dead-letter-routing-key": "aip.dlx.rag.failed",
-                "x-delivery-limit": 4,
-                "x-max-length": 100_000,
-            }
-            queue = await channel.declare_queue(rag_settings.rag_queue, durable=True, arguments=q_args)
+            # A failed passive declare closes the channel, so re-open one before declaring.
+            channel = await connection.channel()
+            await channel.set_qos(prefetch_count=rag_settings.prefetch_count)
+            queue = await channel.declare_queue(rag_settings.rag_queue, durable=True, arguments=RAG_QUEUE_ARGUMENTS)
         logger.info("Worker listening for ingestion jobs on '%s'...", rag_settings.rag_queue)
 
         async with queue.iterator() as queue_iter:

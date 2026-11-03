@@ -11,9 +11,22 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from motor.motor_asyncio import AsyncIOMotorClient
+from ...domain.entities import DEFAULT_TENANT_ID, FALLBACK_TENANT_ALIASES, normalize_tenant_id
 from ...domain.ports import DocumentRepositoryPort
 
 logger = logging.getLogger("aip-rag.repo.mongo_document")
+
+
+def _tenant_filter(tenant_id: str) -> Any:
+    """
+    Mongo match for a tenant. Records written by the former gateway knowledge API stored the
+    shared knowledge base as 'global' (and other legacy aliases), so the canonical default
+    tenant must match those as well.
+    """
+    tenant_id = normalize_tenant_id(tenant_id)
+    if tenant_id == DEFAULT_TENANT_ID:
+        return {"$in": sorted(FALLBACK_TENANT_ALIASES | {DEFAULT_TENANT_ID})}
+    return tenant_id
 
 
 class MongoDocumentRepositoryAdapter(DocumentRepositoryPort):
@@ -82,10 +95,13 @@ class MongoDocumentRepositoryAdapter(DocumentRepositoryPort):
         department: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
+        status: Optional[str] = None,
     ) -> Tuple[List[Dict[str, Any]], int]:
-        query: Dict[str, Any] = {"tenant_id": tenant_id}
+        query: Dict[str, Any] = {"tenant_id": _tenant_filter(tenant_id)}
         if department:
             query["department"] = department
+        if status:
+            query["status"] = status
 
         skip = (page - 1) * page_size
         items: List[Dict[str, Any]] = []
@@ -103,9 +119,12 @@ class MongoDocumentRepositoryAdapter(DocumentRepositoryPort):
             logger.debug("Mongo list_documents fallback (%s)", exc)
 
         # In-memory fallback
-        matched = [d for d in self._memory_docs.values() if d.get("tenant_id") == tenant_id]
+        tenant_id = normalize_tenant_id(tenant_id)
+        matched = [d for d in self._memory_docs.values() if normalize_tenant_id(d.get("tenant_id")) == tenant_id]
         if department:
             matched = [d for d in matched if d.get("department") == department]
+        if status:
+            matched = [d for d in matched if d.get("status") == status]
         total = len(matched)
         items = matched[skip : skip + page_size]
         return items, total
@@ -114,7 +133,7 @@ class MongoDocumentRepositoryAdapter(DocumentRepositoryPort):
         self._memory_docs.pop(doc_id, None)
         try:
             coll = self._get_collection()
-            res = await coll.delete_one({"doc_id": doc_id, "tenant_id": tenant_id})
+            res = await coll.delete_one({"doc_id": doc_id, "tenant_id": _tenant_filter(tenant_id)})
             return res.deleted_count > 0
         except Exception as exc:
             logger.warning("Mongo delete_document fallback (%s)", exc)

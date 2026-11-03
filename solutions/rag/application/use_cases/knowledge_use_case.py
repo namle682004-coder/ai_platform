@@ -6,10 +6,12 @@ document listing with pagination, and complete cascading deletion.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from ...domain.entities import (
@@ -39,6 +41,52 @@ logger = logging.getLogger("aip-rag.knowledge_use_case")
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md", ".json", ".csv"}
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
+DEFAULT_DEPARTMENT = "GENERAL"
+TERMINAL_STATUSES = frozenset({DocumentStatus.INDEXED.value, DocumentStatus.FAILED.value})
+
+
+def _iso_timestamp(value: Any) -> str:
+    """Render a stored timestamp as ISO-8601 UTC; records hold epoch seconds or ISO strings."""
+    if isinstance(value, datetime):
+        dt = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    elif isinstance(value, (int, float)):
+        dt = datetime.fromtimestamp(value, tz=timezone.utc)
+    elif isinstance(value, str) and value:
+        try:
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return value
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = datetime.now(timezone.utc)
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _title_from_filename(filename: str) -> str:
+    base_name = os.path.splitext(filename)[0]
+    return base_name.replace("_", " ").replace("-", " ").strip() or filename
+
+
+def _to_document_dto(d: Dict[str, Any], fallback_tenant: str = "") -> DocumentResponseDTO:
+    return DocumentResponseDTO(
+        doc_id=d["doc_id"],
+        tenant_id=d.get("tenant_id", fallback_tenant),
+        title=d.get("title", ""),
+        filename=d.get("filename", ""),
+        file_type=d.get("file_type", ""),
+        file_size_bytes=d.get("file_size_bytes", 0),
+        status=d.get("status", "PENDING"),
+        total_chunks=d.get("total_chunks", 0),
+        department=d.get("department"),
+        allowed_roles=d.get("allowed_roles", ["*"]),
+        created_at=_iso_timestamp(d.get("created_at")),
+        updated_at=_iso_timestamp(d.get("updated_at")),
+        s3_uri=d.get("s3_uri"),
+        effective_status=d.get("effective_status", "ACTIVE"),
+        effective_date=d.get("effective_date"),
+        expiry_date=d.get("expiry_date"),
+    )
 
 
 class KnowledgeManagementUseCase:
@@ -99,8 +147,8 @@ class KnowledgeManagementUseCase:
             data=file_bytes,
         )
 
-        resolved_title = title.strip() if title and title.strip() not in ("", "string") else filename
-        resolved_dept = department.strip() if department and department.strip() not in ("", "string") else None
+        resolved_title = title.strip() if title and title.strip() not in ("", "string") else _title_from_filename(filename)
+        resolved_dept = department.strip() if department and department.strip() not in ("", "string") else DEFAULT_DEPARTMENT
         roles = allowed_roles or ["*"]
 
         now = int(time.time())
@@ -135,6 +183,7 @@ class KnowledgeManagementUseCase:
         department: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
+        status: Optional[str] = None,
     ) -> DocumentListResponseDTO:
         tenant_id = normalize_tenant_id(tenant_id)
         docs, total = await self.doc_repo.list_documents(
@@ -142,35 +191,11 @@ class KnowledgeManagementUseCase:
             department=department,
             page=page,
             page_size=page_size,
+            status=status,
         )
 
-        items = []
-        for d in docs:
-            created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(d.get("created_at", time.time())))
-            updated_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(d.get("updated_at", time.time())))
-            items.append(
-                DocumentResponseDTO(
-                    doc_id=d["doc_id"],
-                    tenant_id=d.get("tenant_id", tenant_id),
-                    title=d.get("title", ""),
-                    filename=d.get("filename", ""),
-                    file_type=d.get("file_type", ""),
-                    file_size_bytes=d.get("file_size_bytes", 0),
-                    status=d.get("status", "PENDING"),
-                    total_chunks=d.get("total_chunks", 0),
-                    department=d.get("department"),
-                    allowed_roles=d.get("allowed_roles", ["*"]),
-                    created_at=created_at,
-                    updated_at=updated_at,
-                    s3_uri=d.get("s3_uri"),
-                    effective_status=d.get("effective_status", "ACTIVE"),
-                    effective_date=d.get("effective_date"),
-                    expiry_date=d.get("expiry_date"),
-                )
-            )
-
         return DocumentListResponseDTO(
-            items=items,
+            items=[_to_document_dto(d, tenant_id) for d in docs],
             total=total,
             page=page,
             page_size=page_size,
@@ -180,31 +205,23 @@ class KnowledgeManagementUseCase:
         d = await self.doc_repo.get_document(doc_id)
         if not d:
             return None
-        created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(d.get("created_at", time.time())))
-        updated_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(d.get("updated_at", time.time())))
-        return DocumentResponseDTO(
-            doc_id=d["doc_id"],
-            tenant_id=d.get("tenant_id", ""),
-            title=d.get("title", ""),
-            filename=d.get("filename", ""),
-            file_type=d.get("file_type", ""),
-            file_size_bytes=d.get("file_size_bytes", 0),
-            status=d.get("status", "PENDING"),
-            total_chunks=d.get("total_chunks", 0),
-            department=d.get("department"),
-            allowed_roles=d.get("allowed_roles", ["*"]),
-            created_at=created_at,
-            updated_at=updated_at,
-            s3_uri=d.get("s3_uri"),
-            effective_status=d.get("effective_status", "ACTIVE"),
-            effective_date=d.get("effective_date"),
-            expiry_date=d.get("expiry_date"),
-        )
+        return _to_document_dto(d)
+
+    async def wait_for_indexing(self, doc_id: str, timeout_seconds: float, poll_interval: float = 0.1) -> Optional[DocumentResponseDTO]:
+        """Poll until the worker marks the document INDEXED/FAILED or the timeout expires; returns the latest state."""
+        deadline = time.monotonic() + max(0.0, timeout_seconds)
+        while True:
+            doc = await self.get_document(doc_id)
+            if doc is None or doc.status in TERMINAL_STATUSES or time.monotonic() >= deadline:
+                return doc
+            await asyncio.sleep(poll_interval)
 
     async def delete_document(self, doc_id: str, tenant_id: str = DEFAULT_TENANT_ID) -> bool:
         tenant_id = normalize_tenant_id(tenant_id)
         doc = await self.doc_repo.get_document(doc_id)
-        if not doc:
+        # Ownership check before touching vectors or object storage, so one tenant cannot
+        # destroy another tenant's raw file.
+        if not doc or normalize_tenant_id(doc.get("tenant_id")) != tenant_id:
             return False
 
         # 1. Delete points in Vector DB

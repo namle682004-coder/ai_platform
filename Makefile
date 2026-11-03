@@ -2,7 +2,7 @@
         docker-up up docker-down down docker-pull pull docker-build build docker-ps ps docker-clean \
         docker-ai docker-vllm docker-translation docker-monitoring \
         docker-logs docker-logs-ui docker-logs-dispatcher docker-logs-callback \
-        dev-gateway dev-vllm dev-translation dev-stt dev-ocr dev-moderation dev-tts \
+        dev-gateway dev-rag dev-rag-worker deploy-server dev-vllm dev-translation dev-stt dev-ocr dev-moderation dev-tts \
 		prepare-translation-model \
         dev-dispatcher dev-callback worker-image \
         dev-ui ui frontend-dev frontend-build \
@@ -133,6 +133,22 @@ dev-gateway:
 	cd platform/gateway && \
 	PYTHONPATH=../../packages/common:../../packages/contracts:../../packages/sdk:src:. \
 	../../$(UVICORN) src.main:app --reload --host 0.0.0.0 --port 8000
+
+# Enterprise RAG API; the gateway forwards /v1/rag and /v1/knowledge here (RAG_SERVICE_URL).
+dev-rag:
+	@echo "▶ Starting Enterprise RAG API on http://localhost:8010 ..."
+	PYTHONPATH=.:packages/common:packages/contracts \
+	RAG_TRUST_IDENTITY_HEADERS=$${RAG_TRUST_IDENTITY_HEADERS:-true} \
+	RAG_ENFORCE_SHARED_KB_WRITE_ACL=$${RAG_ENFORCE_SHARED_KB_WRITE_ACL:-false} \
+	$(PYTHON) -m solutions.rag.main --mode api --host 0.0.0.0 --port 8010
+
+dev-rag-worker:
+	@echo "▶ Starting RAG ingestion worker ..."
+	PYTHONPATH=.:packages/common:packages/contracts $(PYTHON) -m solutions.rag.main --mode worker
+
+# Ship the committed revision (default HEAD) to the internal server msp: gateway + RAG API + worker
+deploy-server:
+	@bash scripts/deploy_server.sh $(REF)
 
 # ─── Quản lý toàn bộ AI Data Plane (Start / Stop / Status 1 Click) ───
 start-all:

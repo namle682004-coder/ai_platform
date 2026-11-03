@@ -26,8 +26,14 @@ RUN pip install --no-cache-dir \
     pymongo \
     grpcio \
     protobuf \
-    python-multipart
+    python-multipart \
+    prometheus-client \
+    redis
 
 ENV PYTHONPATH="/app:/app/solutions/rag:/app/packages/common:/app/packages/contracts"
 
+EXPOSE 8010
+
+# Same image runs both roles: the worker (default) and the REST API
+# (`python -m solutions.rag.main --mode api --port 8010`).
 CMD ["python", "solutions/rag/worker.py"]

@@ -22,6 +22,17 @@ from ...domain.ports import MessageBrokerPort
 
 logger = logging.getLogger("aip-rag.adapter.rabbitmq")
 
+# Used only to create the queue when it does not exist yet; matches the platform topology
+# (common.messaging.topology). An existing queue is never re-declared, because RabbitMQ rejects
+# a declare whose arguments differ from the live queue (PRECONDITION_FAILED).
+RAG_QUEUE_ARGUMENTS: Dict[str, Any] = {
+    "x-queue-type": "quorum",
+    "x-dead-letter-exchange": "aip.dlx",
+    "x-dead-letter-routing-key": "aip.dlx.rag.failed",
+    "x-delivery-limit": 4,
+    "x-max-length": 100_000,
+}
+
 
 class RabbitMQBrokerAdapter(MessageBrokerPort):
     """
@@ -46,6 +57,7 @@ class RabbitMQBrokerAdapter(MessageBrokerPort):
         self._lock = asyncio.Lock()
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._is_closing = False
+        self._ready_queues: set[str] = set()
 
     def _ensure_active_loop(self) -> None:
         """Reset pools if the running event loop has changed or closed."""
@@ -93,6 +105,25 @@ class RabbitMQBrokerAdapter(MessageBrokerPort):
                     )
         return self._channel_pool
 
+    async def _ensure_queue(self, queue_name: str) -> None:
+        """Create the queue if it is missing, without touching the arguments of an existing one."""
+        if queue_name in self._ready_queues:
+            return
+        pool = await self._get_connection_pool()
+        async with pool.acquire() as connection:
+            channel = await connection.channel()
+            try:
+                await channel.declare_queue(queue_name, passive=True)
+            except aio_pika.exceptions.ChannelNotFoundEntity:
+                # The broker closes a channel after a failed passive declare.
+                channel = await connection.channel()
+                await channel.declare_queue(queue_name, durable=True, arguments=RAG_QUEUE_ARGUMENTS)
+                logger.info("Created missing RabbitMQ queue '%s'", queue_name)
+            finally:
+                if not channel.is_closed:
+                    await channel.close()
+        self._ready_queues.add(queue_name)
+
     async def publish(
         self,
         queue_name: str,
@@ -112,11 +143,9 @@ class RabbitMQBrokerAdapter(MessageBrokerPort):
 
         for attempt in range(1, max_retries + 1):
             try:
+                await self._ensure_queue(queue_name)
                 channel_pool = await self._get_channel_pool()
                 async with channel_pool.acquire() as channel:
-                    # Declare queue as durable to guarantee surviving broker restarts
-                    await channel.declare_queue(queue_name, durable=True)
-                    
                     message = aio_pika.Message(
                         body=message_bytes,
                         delivery_mode=aio_pika.DeliveryMode.PERSISTENT,

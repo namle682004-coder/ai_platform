@@ -182,6 +182,11 @@ class RagSolutionSettings(BaseSettings):
         default=4,
         validation_alias=AliasChoices("WORKER_PREFETCH_COUNT", "prefetch_count"),
     )
+    upload_wait_timeout_seconds: float = Field(
+        default=4.0,
+        validation_alias=AliasChoices("RAG_UPLOAD_WAIT_TIMEOUT_SECONDS", "upload_wait_timeout_seconds"),
+        description="Max time an upload with wait_for_completion=true waits for the worker to finish indexing",
+    )
     internal_api_key: str = Field(
         default=os.getenv("AIP_INTERNAL_API_KEY", ""),
         validation_alias=AliasChoices("AIP_INTERNAL_API_KEY", "internal_api_key"),

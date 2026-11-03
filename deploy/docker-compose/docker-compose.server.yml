@@ -1,0 +1,75 @@
+# Internal company server (msp / 172.16.20.2) — application stack.
+#
+# Infra (Redis, RabbitMQ, MinIO, Qdrant) already runs there as compose project `aip-infra`;
+# these services join its network and reach it by container name. Models run on the host:
+# chat (llama.cpp) on :8011, embedding + rerank (platform/runtimes/embedding-server) on :8012.
+#
+# Only the gateway is published (:8000, LAN). Teams call /v1/rag/* and /v1/knowledge/* there
+# with their own API key; the RAG API (:8010) is reachable only from this Docker network.
+#
+# Deploy with scripts/deploy_server.sh. Secrets live on the server in $AIP_ENV_FILE
+# (see deploy/docker-compose/server.env.example), never in this repo.
+
+name: aip-app
+
+x-aip-env: &aip-env
+  env_file:
+    - ${AIP_ENV_FILE:?set AIP_ENV_FILE to the server env file}
+
+services:
+  gateway:
+    <<: *aip-env
+    build:
+      context: ../..
+      dockerfile: platform/gateway/Dockerfile
+    image: aip/gateway:${AIP_VERSION:-latest}
+    container_name: aip-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - RAG_SERVICE_URL=http://aip-rag-api:8010
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      rag-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rag-api:
+    <<: *aip-env
+    build:
+      context: ../..
+      dockerfile: solutions/rag/Dockerfile
+    image: aip/rag:${AIP_VERSION:-latest}
+    container_name: aip-rag-api
+    command: ["python", "-m", "solutions.rag.main", "--mode", "api", "--host", "0.0.0.0", "--port", "8010"]
+    environment:
+      # Identity headers are trusted only together with AIP_RUNTIME_TOKEN (sent by the gateway).
+      - RAG_TRUST_IDENTITY_HEADERS=false
+      - RAG_ENFORCE_SHARED_KB_WRITE_ACL=true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8010/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  rag-worker:
+    <<: *aip-env
+    image: aip/rag:${AIP_VERSION:-latest}
+    container_name: aip-rag-worker
+    command: ["python", "solutions/rag/worker.py"]
+    depends_on:
+      rag-api:
+        condition: service_started
+    restart: unless-stopped
+
+networks:
+  default:
+    name: aip-infra_default
+    external: true

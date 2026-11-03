@@ -150,6 +150,7 @@ class DocumentRepositoryPort(ABC):
         department: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
+        status: Optional[str] = None,
     ) -> Tuple[List[Dict[str, Any]], int]:
         """List documents with pagination and tenant filtering."""
         ...

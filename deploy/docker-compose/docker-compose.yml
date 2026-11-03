@@ -156,9 +156,9 @@ services:
       - OCR_SERVER_URL=http://host.docker.internal:8004
       - MODERATION_SERVER_URL=http://host.docker.internal:8006
       - TTS_SERVER_URL=http://host.docker.internal:8007
+      - RAG_SERVICE_URL=http://rag-api:8010
     volumes:
       - ../../platform/gateway:/app/platform/gateway
-      - ../../solutions/rag:/app/solutions/rag
       - ../../frontend:/app/frontend:ro
       - ../../packages/common:/app/packages/common
       - ../../packages/contracts:/app/packages/contracts
@@ -166,6 +166,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
+      rag-api:
+        condition: service_started
       redis:
         condition: service_healthy
       rabbitmq:
@@ -234,6 +236,56 @@ services:
       - rabbitmq
     restart: unless-stopped
 
+  # Enterprise RAG REST API (solutions/rag). Clients reach it through the gateway (:8000),
+  # which authenticates the API key and forwards /v1/rag/* and /v1/knowledge/*.
+  rag-api:
+    build:
+      context: ../..
+      dockerfile: solutions/rag/Dockerfile
+    container_name: aip-rag-api
+    ports:
+      - "8010:8010"
+    environment:
+      - ENVIRONMENT=development
+      - PYTHONPATH=/app:/app/solutions/rag:/app/packages/common:/app/packages/contracts
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
+      # Dev only: without a runtime token, trust X-Tenant-ID / X-User-Role forwarded by the gateway
+      # (or sent directly when testing :8010). Never enable alongside a publicly reachable :8010.
+      - RAG_TRUST_IDENTITY_HEADERS=${RAG_TRUST_IDENTITY_HEADERS:-true}
+      # Dev only: let non-admin sandbox keys write the shared knowledge base, as the UI does.
+      - RAG_ENFORCE_SHARED_KB_WRITE_ACL=${RAG_ENFORCE_SHARED_KB_WRITE_ACL:-false}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
+      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0}
+      - QDRANT_URL=http://qdrant:6333
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - EMBEDDING_GRPC_TARGET=host.docker.internal:50058
+      - VLLM_SERVER_URL=http://host.docker.internal:8001/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../solutions/rag:/app/solutions/rag
+      - ../../packages/common:/app/packages/common
+      - ../../packages/contracts:/app/packages/contracts
+    command: ["python", "-m", "solutions.rag.main", "--mode", "api", "--host", "0.0.0.0", "--port", "8010"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8010/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
   rag-worker:
     build:
       context: ../..
@@ -242,8 +294,10 @@ services:
     environment:
       - ENVIRONMENT=development
       - PYTHONPATH=/app:/app/solutions/rag:/app/packages/common:/app/packages/contracts
+      - AIP_RUNTIME_TOKEN=${AIP_RUNTIME_TOKEN:-}
       - RABBITMQ_URL=${RABBITMQ_URL:-amqp://aip:${RABBITMQ_PASSWORD:-aip_dev_secret}@rabbitmq:5672/aip}
       - MONGO_URI=${MONGO_URI:-mongodb+srv://namle:1234@namle.52nsi1k.mongodb.net/ai_platform?appName=namle}
+      - REDIS_URL=${REDIS_URL:-redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379/0}
       - QDRANT_URL=http://qdrant:6333
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}

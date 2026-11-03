@@ -3,7 +3,7 @@ import asyncio
 from common.repositories.document_repository import MongoDocumentRepository
 from common.chunking import TextChunker
 from fastapi.testclient import TestClient
-from src.main import app
+from solutions.rag.main import app
 
 client = TestClient(app)
 

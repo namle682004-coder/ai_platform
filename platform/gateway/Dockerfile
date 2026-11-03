@@ -6,7 +6,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 
 COPY packages/common /app/packages/common
 COPY packages/contracts /app/packages/contracts
-COPY solutions /app/solutions
 COPY platform/gateway /app/platform/gateway
 COPY frontend /app/frontend
 

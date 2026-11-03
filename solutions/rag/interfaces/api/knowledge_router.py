@@ -27,12 +27,14 @@ from ...application.dtos import (
     DocumentListResponseDTO,
     DocumentResponseDTO,
     FeedbackRequestDTO,
+    FeedbackResponseDTO,
     QACreateRequestDTO,
     QACreateResponseDTO,
     QADeleteResponseDTO,
 )
 from ...application.use_cases.knowledge_use_case import KnowledgeManagementUseCase
 from ...domain.entities import DEFAULT_TENANT_ID, normalize_iso_date, normalize_tenant_id
+from .chat_router import record_rag_feedback
 from .identity import can_write_tenant, extract_role, extract_tenant, is_admin
 from ...infrastructure.adapters.embedding_adapter import HttpEmbeddingAdapter
 from ...infrastructure.adapters.qdrant_adapter import QdrantVectorStoreAdapter
@@ -126,6 +128,10 @@ async def upload_document(
     effective_status: Optional[str] = Form("ACTIVE"),
     effective_date: Optional[str] = Form(None),
     expiry_date: Optional[str] = Form(None),
+    wait_for_completion: bool = Query(
+        True,
+        description="Wait (up to RAG_UPLOAD_WAIT_TIMEOUT_SECONDS) for the worker to finish indexing before responding",
+    ),
 ) -> DocumentResponseDTO:
     """Upload a raw document for asynchronous parsing, chunking, and vector indexing."""
     tenant_id = _extract_tenant(request)
@@ -156,9 +162,12 @@ async def upload_document(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
     # Dispatch ingestion task to RabbitMQ worker
-    await _dispatch_to_rabbitmq(doc_record)
+    dispatched = await _dispatch_to_rabbitmq(doc_record)
 
-    doc_dto = await knowledge_use_case.get_document(doc_record["doc_id"])
+    if wait_for_completion and dispatched:
+        doc_dto = await knowledge_use_case.wait_for_indexing(doc_record["doc_id"], rag_settings.upload_wait_timeout_seconds)
+    else:
+        doc_dto = await knowledge_use_case.get_document(doc_record["doc_id"])
     if not doc_dto:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve created document")
     return doc_dto
@@ -170,6 +179,7 @@ async def list_documents(
     department: Optional[str] = Query(None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    status_filter: Optional[str] = Query(None, alias="status", description="Filter by ingestion status, e.g. INDEXED"),
 ) -> DocumentListResponseDTO:
     """List indexed documents with pagination and tenancy isolation."""
     tenant_id = _extract_tenant(request)
@@ -178,6 +188,7 @@ async def list_documents(
         department=department,
         page=page,
         page_size=page_size,
+        status=status_filter,
     )
 
 
@@ -288,14 +299,13 @@ async def delete_document(
     deleted = await knowledge_use_case.delete_document(doc_id=doc_id, tenant_id=tenant_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Document '{doc_id}' not found")
-    return {"status": "deleted", "doc_id": doc_id}
+    return {"status": "deleted", "deleted": True, "doc_id": doc_id, "message": "Document and associated vectors deleted"}
 
 
-@router.post("/feedback")
-async def record_feedback(payload: FeedbackRequestDTO) -> Dict[str, str]:
-    """Collect human reinforcement feedback (Thumbs Up / Down) on RAG answers."""
-    logger.info("Collected feedback for query '%s' rating=%d", payload.query[:40], payload.rating)
-    return {"status": "recorded"}
+@router.post("/feedback", response_model=FeedbackResponseDTO, status_code=status.HTTP_200_OK)
+async def record_feedback(payload: FeedbackRequestDTO, request: Request) -> FeedbackResponseDTO:
+    """Collect human feedback (Thumbs Up / Down) on RAG answers; alias of POST /v1/rag/feedback."""
+    return await record_rag_feedback(payload, request)
 
 
 @router.post("/qa", response_model=QACreateResponseDTO, status_code=status.HTTP_201_CREATED)

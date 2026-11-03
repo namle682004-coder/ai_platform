@@ -172,6 +172,9 @@ class GatewaySettings(BaseSettings):
     tts_server_url: str = Field(default="http://localhost:8007", alias="TTS_SERVER_URL")
     vllm_server_url: str = Field(default="http://localhost:8001/v1", alias="VLLM_SERVER_URL")
     vllm_grpc_target: str = Field(default="localhost:50051", alias="VLLM_GRPC_TARGET")
+    # Standalone Enterprise RAG service (solutions/rag); the gateway only forwards /v1/rag and /v1/knowledge
+    rag_service_url: str = Field(default="http://localhost:8010", alias="RAG_SERVICE_URL")
+    rag_proxy_timeout_seconds: float = Field(default=300.0, alias="RAG_PROXY_TIMEOUT_SECONDS")
 
 
     @model_validator(mode="before")

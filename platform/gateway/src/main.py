@@ -42,9 +42,8 @@ from src.api.user_portal import router as user_portal_router
 from src.api.simulations import router as simulations_router
 from src.api.usage import router as usage_router
 
-# 4. Knowledge Base & Enterprise RAG Routers
-from src.api.knowledge import router as knowledge_router
-from src.api.rag_chat import router as rag_chat_router
+# 4. Knowledge Base & Enterprise RAG (forwarded to the standalone RAG service)
+from src.api.rag_proxy import router as rag_proxy_router
 
 # Admin Routers
 from src.admin.keys import router as admin_keys_router
@@ -110,17 +109,6 @@ async def lifespan(app: FastAPI):
     from src.jobs.scheduler import job_scheduler
 
     job_scheduler.start()
-
-    # 4. Warm up the in-process RAG reranker only when it is the configured backend;
-    #    the default backend is the remote bge-reranker (rerank-standard alias).
-    try:
-        from solutions.rag.config import rag_settings
-
-        if rag_settings.reranker_backend == "local":
-            from solutions.rag.application.components.reranker import cross_encoder_reranker
-            cross_encoder_reranker.warmup()
-    except Exception as exc:
-        logger.warning(f"RAG Reranker lifespan warmup skipped: {exc}")
 
     yield
 
@@ -342,8 +330,7 @@ app.include_router(simulations_router)
 app.include_router(usage_router)
 
 # 5. Knowledge Base & Enterprise RAG
-app.include_router(knowledge_router)
-app.include_router(rag_chat_router)
+app.include_router(rag_proxy_router)
 
 # Admin Routers
 app.include_router(admin_keys_router)
