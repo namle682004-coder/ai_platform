@@ -9,8 +9,9 @@ All rules are structural, not lexical:
 - GitHub admonitions ("> [!IMPORTANT]"), images whose URL is not in the retrieved passages, chunk
   breadcrumbs, echoed system-prompt sentences and runs of scripts other than the answer language
   (CJK / Cyrillic code-switching artefacts) are removed;
-- a model refusal (the configured refusal sentence) is detected from the first characters, before
-  anything is streamed, so the caller can replace it with an escalation reply.
+- a model refusal (the configured refusal sentence, compared accent- and markdown-free so bold, line
+  breaks or a reworded opening still match) is detected from the opening sentence, before anything is
+  streamed, so the caller can replace it with an escalation reply.
 
 `AnswerStreamFilter` streams prose as soon as a line is clearly longer than a heading and holds short
 or structural lines (lists, quotes, tables, headings) until they are complete.
@@ -36,12 +37,43 @@ _MARKER_RE = re.compile(r"\[(\d{1,2})\]")
 _STRUCTURAL_START_RE = re.compile(r"^\s*(?:[#>\|!\[]|[-*+]\s|\d+[\.\)]\s|\*\*)")
 _MARKDOWN_EDGES_RE = re.compile(r"^[\s#>*_\-]+|[\s*_]+$")
 
+_SENTENCE_END_RE = re.compile(r"[.!?…](?=\s|$)|\n\s*\n")
+
 HEADING_MAX_CHARS = 80
+
+# The refusal sentinel compared accent-free and markdown-free: models wrap it in bold, break the line
+# after the first word or reword the opening ("Hiện tại, …"), which a raw prefix test misses.
+_REFUSAL_NORM = normalize_for_match(REFUSAL_MESSAGE)
+_REFUSAL_TOKENS = set(_REFUSAL_NORM.split())
+REFUSAL_MIN_TOKEN_OVERLAP = 0.8
+REFUSAL_MAX_EXTRA_TOKENS = 4
+
+
+def _opening_sentence(text: str) -> Optional[str]:
+    """First sentence of `text` (normalized), or None while it is still incomplete."""
+    head = (text or "").strip()
+    m = _SENTENCE_END_RE.search(head)
+    return normalize_for_match(head[: m.start()]) if m else None
 
 
 def is_llm_refusal(text: str) -> bool:
-    head = (text or "").strip()[:200]
-    return bool(head) and head.startswith(REFUSAL_MESSAGE[:40])
+    """The answer opens with the configured refusal sentence (formatting and light rewording tolerated)."""
+    first = _opening_sentence(text)
+    if first is None:
+        first = normalize_for_match((text or "").strip()[:300])
+    if not first:
+        return False
+    if first.startswith(_REFUSAL_NORM):
+        return True
+    tokens = first.split()
+    if len(tokens) > len(_REFUSAL_NORM.split()) + REFUSAL_MAX_EXTRA_TOKENS:
+        return False
+    return len(_REFUSAL_TOKENS & set(tokens)) / len(_REFUSAL_TOKENS) >= REFUSAL_MIN_TOKEN_OVERLAP
+
+
+def refusal_probe_ready(text: str) -> bool:
+    """Enough of the answer has arrived to tell a refusal from a real answer."""
+    return _opening_sentence(text) is not None or len(normalize_for_match(text)) > len(_REFUSAL_NORM) + 20
 
 
 @dataclass
@@ -56,7 +88,6 @@ class SanitizeContext:
 class AnswerStreamFilter:
     """Incremental sanitizer: feed raw LLM tokens, get back text that is safe to show."""
 
-    PROBE_CHARS = 48
     MAX_INLINE_HOLD = 40
 
     def __init__(self, ctx: SanitizeContext) -> None:
@@ -180,7 +211,7 @@ class AnswerStreamFilter:
     def _drain(self, final: bool) -> List[str]:
         out: List[str] = []
         if not self._probed:
-            if len(self._buf.strip()) < self.PROBE_CHARS and not final:
+            if not final and not refusal_probe_ready(self._buf):
                 return out
             self._probed = True
             if is_llm_refusal(self._buf):

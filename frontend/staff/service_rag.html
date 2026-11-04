@@ -782,17 +782,122 @@
         }
       }
 
-      .msg-user {
+      .msg-user-wrapper {
         align-self: flex-end;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        max-width: 75%;
+        margin-left: auto;
+        box-sizing: border-box;
+      }
+
+      .msg-user-wrapper.editing {
+        width: 75%;
+        min-width: min(100%, 360px);
+      }
+
+      .msg-user {
         background: #f4f4f4;
         color: #0d0d0d;
         border: none;
         border-radius: 22px;
         padding: 10px 18px;
-        max-width: 75%;
+        width: fit-content;
+        max-width: 100%;
         word-break: break-word;
         box-shadow: none;
-        margin-left: auto;
+        box-sizing: border-box;
+        transition: width 0.2s ease, min-width 0.2s ease;
+      }
+
+      .msg-user.editing {
+        width: 100%;
+        min-width: min(100%, 360px);
+      }
+
+      .msg-user-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 4px;
+        margin-right: 4px;
+      }
+
+      .msg-user-text {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #0d0d0d;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .msg-user-edit-box {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .msg-user-edit-textarea {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-family: inherit;
+        font-size: 15px;
+        line-height: 1.5;
+        color: #0d0d0d;
+        resize: none;
+        padding: 2px 0 6px 0;
+        margin: 0;
+        box-sizing: border-box;
+        display: block;
+        max-height: 250px;
+        overflow-y: auto;
+      }
+
+      .msg-user-edit-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .btn-user-cancel {
+        background: #ffffff;
+        color: #0d0d0d;
+        border: 1px solid #e5e5e5;
+        border-radius: 9999px;
+        padding: 5px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        line-height: 1.4;
+        transition: all 0.15s ease;
+      }
+      .btn-user-cancel:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      .btn-user-send {
+        background: #0d0d0d;
+        color: #ffffff;
+        border: none;
+        border-radius: 9999px;
+        padding: 5px 18px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        line-height: 1.4;
+        transition: background 0.15s ease;
+      }
+      .btn-user-send:hover {
+        background: #262626;
+      }
+      .btn-user-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
 
       .msg-assistant {
@@ -4417,12 +4522,7 @@
               data.messages.forEach((m) => {
                 staffChatHistory.push({ role: m.role, content: m.content });
                 if (m.role === "user") {
-                  container.innerHTML += `
-                                    <div class="msg-bubble msg-user">
-                                        <div class="msg-header"><i class="fa-regular fa-user" style="color: #64748b;"></i> Bạn</div>
-                                        <div>${escapeHtml(m.content)}</div>
-                                    </div>
-                                `;
+                  container.innerHTML += renderStaffUserMessageHtml(m.content);
                 } else {
                   let citHtml = formatStaffCitations(
                     m.citations || [],
@@ -7228,13 +7328,231 @@
             "Nhập câu hỏi tra cứu (Nhấn Enter để gửi, Shift+Enter xuống dòng)...";
       }
 
-      async function sendStaffChat() {
-        const input = document.getElementById("staff-chat-input");
-        const query = input.value.trim();
+      let staffIsChatStreaming = false;
+
+      function renderStaffUserMessageHtml(query, adhocBadgeHtml = "", adhocContext = null, adhocFilename = null) {
+        const safeQuery = escapeHtml(query);
+        const safeContext = adhocContext ? escapeHtml(adhocContext) : "";
+        const safeFilename = adhocFilename ? escapeHtml(adhocFilename) : "";
+        return `
+          <div class="msg-user-wrapper">
+            <div class="msg-bubble msg-user" data-user-query="${safeQuery}" data-adhoc-context="${safeContext}" data-adhoc-filename="${safeFilename}">
+              <div class="msg-user-view">
+                ${adhocBadgeHtml || ""}
+                <div class="msg-header"><i class="fa-regular fa-user" style="color: #64748b;"></i> Bạn</div>
+                <div class="msg-user-text">${safeQuery}</div>
+              </div>
+              <div class="msg-user-edit-box" style="display: none;">
+                <textarea class="msg-user-edit-textarea" rows="1" placeholder="Nhập câu hỏi tra cứu...">${safeQuery}</textarea>
+                <div class="msg-user-edit-actions">
+                  <button type="button" class="btn-user-cancel" onclick="cancelStaffUserEdit(this)">Cancel</button>
+                  <button type="button" class="btn-user-send" onclick="submitStaffUserEdit(this)">Send</button>
+                </div>
+              </div>
+            </div>
+            <div class="msg-user-actions">
+              <button type="button" class="btn-action-icon" title="Sửa" onclick="startStaffUserEdit(this)"><i class="fa-regular fa-pen-to-square"></i></button>
+              <button type="button" class="btn-action-icon" title="Sao chép" onclick="copyStaffUserQuery(this)"><i class="fa-regular fa-copy"></i></button>
+            </div>
+          </div>
+        `;
+      }
+
+      function copyStaffUserQuery(btn) {
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        const query = bubble ? (bubble.getAttribute("data-user-query") || bubble.querySelector(".msg-user-text")?.innerText || "") : "";
         if (!query) return;
 
-        input.value = "";
-        autoResizeStaffChatInput();
+        const updateIcon = () => {
+          const icon = btn.querySelector("i");
+          if (icon) {
+            const origClass = icon.className;
+            icon.className = "fa-solid fa-check";
+            icon.style.color = "#10b981";
+            setTimeout(() => {
+              icon.className = origClass;
+              icon.style.color = "";
+            }, 1500);
+          }
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(query).then(updateIcon).catch(() => {
+            fallbackCopyText(query, updateIcon);
+          });
+        } else {
+          fallbackCopyText(query, updateIcon);
+        }
+      }
+
+      function fallbackCopyText(text, callback) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand("copy");
+          if (callback) callback();
+        } catch (e) {
+          console.error("fallbackCopyText error:", e);
+        }
+        document.body.removeChild(ta);
+      }
+
+      function startStaffUserEdit(btn) {
+        if (staffIsChatStreaming) return;
+        // Close any other open edit box
+        document.querySelectorAll(".msg-user-wrapper.editing .btn-user-cancel").forEach((b) => b.click());
+
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        if (!bubble) return;
+
+        const viewDiv = bubble.querySelector(".msg-user-view");
+        const editDiv = bubble.querySelector(".msg-user-edit-box");
+        const actionsDiv = wrapper.querySelector(".msg-user-actions");
+        const textarea = editDiv ? editDiv.querySelector(".msg-user-edit-textarea") : null;
+        if (!textarea) return;
+
+        const currentQuery = bubble.getAttribute("data-user-query") || bubble.querySelector(".msg-user-text")?.innerText || "";
+        textarea.value = currentQuery;
+
+        wrapper.classList.add("editing");
+        bubble.classList.add("editing");
+        if (viewDiv) viewDiv.style.display = "none";
+        if (editDiv) editDiv.style.display = "block";
+        if (actionsDiv) actionsDiv.style.display = "none";
+
+        // Auto-resize textarea to content
+        textarea.style.height = "auto";
+        textarea.style.height = Math.max(38, textarea.scrollHeight) + "px";
+
+        // Focus & place cursor at the end
+        textarea.focus();
+        const len = textarea.value.length;
+        textarea.setSelectionRange(len, len);
+
+        if (!textarea._bound) {
+          textarea._bound = true;
+          textarea.addEventListener("input", () => {
+            textarea.style.height = "auto";
+            textarea.style.height = Math.max(38, textarea.scrollHeight) + "px";
+          });
+          textarea.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              const sendBtn = editDiv.querySelector(".btn-user-send");
+              if (sendBtn) sendBtn.click();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              const cancelBtn = editDiv.querySelector(".btn-user-cancel");
+              if (cancelBtn) cancelBtn.click();
+            }
+          });
+        }
+      }
+
+      function cancelStaffUserEdit(btn) {
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        if (!bubble) return;
+
+        const viewDiv = bubble.querySelector(".msg-user-view");
+        const editDiv = bubble.querySelector(".msg-user-edit-box");
+        const actionsDiv = wrapper.querySelector(".msg-user-actions");
+        const textarea = editDiv ? editDiv.querySelector(".msg-user-edit-textarea") : null;
+
+        const currentQuery = bubble.getAttribute("data-user-query") || bubble.querySelector(".msg-user-text")?.innerText || "";
+        if (textarea) textarea.value = currentQuery;
+
+        wrapper.classList.remove("editing");
+        bubble.classList.remove("editing");
+        if (editDiv) editDiv.style.display = "none";
+        if (viewDiv) viewDiv.style.display = "block";
+        if (actionsDiv) actionsDiv.style.display = "flex";
+      }
+
+      async function submitStaffUserEdit(btn) {
+        if (staffIsChatStreaming) return;
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        if (!bubble) return;
+
+        const editDiv = bubble.querySelector(".msg-user-edit-box");
+        const textarea = editDiv ? editDiv.querySelector(".msg-user-edit-textarea") : null;
+        const newQuery = textarea ? textarea.value.trim() : "";
+        if (!newQuery) {
+          if (textarea) textarea.focus();
+          return;
+        }
+
+        const adhocContext = bubble.getAttribute("data-adhoc-context") || null;
+        const adhocFilename = bubble.getAttribute("data-adhoc-filename") || null;
+
+        bubble.setAttribute("data-user-query", newQuery);
+        const textEl = bubble.querySelector(".msg-user-text");
+        if (textEl) textEl.textContent = newQuery;
+
+        cancelStaffUserEdit(btn);
+
+        const container =
+          document.getElementById("staff-stream-container") ||
+          document.getElementById("staff-chat-messages");
+        if (!container) return;
+
+        const allUserWrappers = Array.from(container.querySelectorAll(".msg-user-wrapper"));
+        const userIndex = allUserWrappers.indexOf(wrapper);
+
+        while (wrapper.nextSibling) {
+          wrapper.nextSibling.remove();
+        }
+
+        if (userIndex >= 0) {
+          staffChatHistory = staffChatHistory.slice(0, userIndex * 2);
+          if (userIndex === 0) {
+            const list = document.getElementById("chatgpt-recents-list");
+            if (list) {
+              const activeItem = list.querySelector(`.chatgpt-recent-item[data-session-id="${staffConversationId}"]`);
+              if (activeItem) {
+                const titleSpan = activeItem.querySelector(".chatgpt-recent-title");
+                if (titleSpan) {
+                  titleSpan.innerText = newQuery.length > 35 ? newQuery.substring(0, 35) + "..." : newQuery;
+                }
+              }
+            }
+          }
+        }
+
+        await sendStaffChat(newQuery, { isEdit: true, adhocContext, adhocFilename });
+      }
+
+      async function sendStaffChat(overrideQuery, options = {}) {
+        const isEdit = Boolean(options && options.isEdit);
+        const input = document.getElementById("staff-chat-input");
+        const query =
+          overrideQuery !== undefined && overrideQuery !== null
+            ? String(overrideQuery).trim()
+            : input
+              ? input.value.trim()
+              : "";
+        if (!query) return;
+
+        if (staffIsChatStreaming) return;
+        staffIsChatStreaming = true;
+        const sendBtnEl = document.getElementById("staff-send-btn");
+        if (sendBtnEl) sendBtnEl.disabled = true;
+
+        if (!isEdit && input) {
+          input.value = "";
+          autoResizeStaffChatInput();
+        }
         const container =
           document.getElementById("staff-stream-container") ||
           document.getElementById("staff-chat-messages");
@@ -7304,26 +7622,31 @@
         let adhocContextPayload = null;
         let adhocFilenamePayload = null;
 
-        if (currentStaffAdhocAttachment && currentStaffAdhocAttachment.text) {
+        if (isEdit && options) {
+          if (options.adhocContext) {
+            adhocContextPayload = options.adhocContext;
+            adhocFilenamePayload = options.adhocFilename;
+          }
+        } else if (currentStaffAdhocAttachment && currentStaffAdhocAttachment.text) {
           adhocBadgeHtml = `<div class="msg-adhoc-badge"><i class="fa-solid fa-paperclip"></i> ${escapeHtml(currentStaffAdhocAttachment.filename)}</div>`;
           adhocContextPayload = currentStaffAdhocAttachment.text;
           adhocFilenamePayload = currentStaffAdhocAttachment.filename;
         }
 
-        container.innerHTML += `
-                <div class="msg-bubble msg-user">
-                    ${adhocBadgeHtml}
-                    <div>${escapeHtml(query)}</div>
-                </div>
-            `;
-        scrollArea.scrollTop = scrollArea.scrollHeight;
+        if (!isEdit) {
+          container.insertAdjacentHTML(
+            "beforeend",
+            renderStaffUserMessageHtml(query, adhocBadgeHtml, adhocContextPayload, adhocFilenamePayload),
+          );
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+        }
 
         const botId = "staff-bot-" + Date.now();
         const botName =
           staffActivePersona && staffActivePersona.name
             ? staffActivePersona.name
             : "Trợ lý Tri thức";
-        container.innerHTML += `
+        container.insertAdjacentHTML("beforeend", `
                 <div class="msg-bubble msg-assistant" id="${botId}">
                     <div class="msg-header">
                         <i class="fa-solid fa-robot" style="color: #0f4c81;"></i> <span class="assistant-status-title">${botName}</span>
@@ -7332,7 +7655,7 @@
                         <span style="color: #8e8e8e; font-size: 13.5px;"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i>Đang suy luận...</span>
                     </div>
                 </div>
-            `;
+            `);
         scrollArea.scrollTop = scrollArea.scrollHeight;
 
         try {
@@ -7554,6 +7877,10 @@
           const el = document.getElementById(botId);
           if (el)
             el.innerHTML = `<div style="color:#ef4444; padding:8px 0;">Lỗi kết nối tới máy chủ AI.</div>`;
+        } finally {
+          staffIsChatStreaming = false;
+          const sendBtnEl = document.getElementById("staff-send-btn");
+          if (sendBtnEl) sendBtnEl.disabled = false;
         }
         scrollArea.scrollTop = scrollArea.scrollHeight;
       }

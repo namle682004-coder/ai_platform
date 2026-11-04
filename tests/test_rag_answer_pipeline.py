@@ -151,6 +151,30 @@ def test_refusal_sentence_is_detected_before_streaming():
     assert f.refused and emitted == []
 
 
+def test_reformatted_refusal_is_detected_and_nothing_leaks():
+    first_word, rest = REFUSAL_MESSAGE.split(" ", 1)
+    variants = [
+        f"{first_word}\n{rest}",  # line break after the first word used to stream "Hiện" alone
+        f"**{REFUSAL_MESSAGE}**",
+        f"> {REFUSAL_MESSAGE}",
+        f"{first_word} tại, {rest[0].lower()}{rest[1:]}",
+    ]
+    for raw in variants:
+        f = AnswerStreamFilter(_ctx())
+        emitted = []
+        for i in range(0, len(raw), 3):
+            emitted += f.feed(raw[i:i + 3])
+        emitted += f.finish()
+        assert f.refused and emitted == [], raw
+
+
+def test_answer_sharing_the_refusal_opening_is_not_a_refusal():
+    opening = " ".join(REFUSAL_MESSAGE.split()[:6])
+    raw = f"{opening} về mục này, nhưng mục liên quan quy định thời hạn 30 ngày [1]."
+    text, _, refused = sanitize_answer(raw, _ctx())
+    assert not refused and "30 ngày" in text
+
+
 def test_streaming_output_equals_batch_output():
     raw = (
         "Nhân viên được làm việc từ xa tối đa hai ngày mỗi tuần theo quy chế hiện hành của công ty [3], "
