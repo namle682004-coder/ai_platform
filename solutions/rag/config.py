@@ -313,6 +313,37 @@ class RagSolutionSettings(BaseSettings):
         default=12,
         validation_alias=AliasChoices("RAG_CONTEXT_MAX_CHUNKS", "context_max_chunks"),
     )
+    # Prompt sizing against the chat runtime's context window. 0 = detect it from the runtime
+    # (llama.cpp /props n_ctx, vLLM /v1/models max_model_len); passages are dropped lowest-score first
+    # until system prompt + history + question + completion fit.
+    llm_context_window_tokens: int = Field(
+        default=0,
+        validation_alias=AliasChoices("RAG_LLM_CONTEXT_WINDOW_TOKENS", "llm_context_window_tokens"),
+    )
+    # Conservative characters-per-token for prompt estimation (Qwen2.5 on Vietnamese text measures ~2.6).
+    llm_chars_per_token: float = Field(
+        default=2.3,
+        validation_alias=AliasChoices("RAG_LLM_CHARS_PER_TOKEN", "llm_chars_per_token"),
+    )
+    llm_prompt_safety_tokens: int = Field(
+        default=192,
+        validation_alias=AliasChoices("RAG_LLM_PROMPT_SAFETY_TOKENS", "llm_prompt_safety_tokens"),
+    )
+    # Cross-encoders score query + passage as ONE sequence; llama.cpp rejects the whole /rerank call
+    # when a pair exceeds its physical batch (-ub, 512 by default). Pairs are truncated to fit.
+    reranker_max_input_tokens: int = Field(
+        default=512,
+        validation_alias=AliasChoices("RAG_RERANKER_MAX_INPUT_TOKENS", "reranker_max_input_tokens"),
+    )
+    # Conservative characters-per-token of the reranker tokenizer (bge-m3 / XLM-R measures ~2.9 on Vietnamese).
+    reranker_chars_per_token: float = Field(
+        default=2.5,
+        validation_alias=AliasChoices("RAG_RERANKER_CHARS_PER_TOKEN", "reranker_chars_per_token"),
+    )
+    llm_min_completion_tokens: int = Field(
+        default=384,
+        validation_alias=AliasChoices("RAG_LLM_MIN_COMPLETION_TOKENS", "llm_min_completion_tokens"),
+    )
     context_relative_cutoff: float = Field(
         default=0.6,
         validation_alias=AliasChoices("RAG_CONTEXT_RELATIVE_CUTOFF", "context_relative_cutoff"),

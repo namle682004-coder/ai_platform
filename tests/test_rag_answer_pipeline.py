@@ -82,6 +82,16 @@ def test_identifiers_are_generic_and_partial_ids_match_suffix():
     assert scope == "HR.A2" and codes == ["HR.A2.1", "HR.A2.MR1"]
 
 
+def test_numeric_premise_absent_from_passages_is_reported():
+    from solutions.rag.application.components.lexical_evidence import absent_numeric_details
+
+    passages = [_chunk(1, "Chương I", "Nhân viên được nghỉ phép 12 ngày mỗi năm theo quy chế ban hành năm 2025.")]
+    assert absent_numeric_details("Theo quy chế năm 2019 thì được nghỉ mấy ngày?", passages) == ["năm 2019 thì"]
+    assert absent_numeric_details("Nghỉ phép 12 ngày theo quy chế năm 2025 đúng không?", passages) == []
+    assert absent_numeric_details("Mã HR.A2.MR1 là gì?", passages) == []
+    assert absent_numeric_details("Quy chế 2025 nói về gì?", passages) == []  # number present, other neighbours
+
+
 def test_unaccented_query_is_reaccented_from_passages():
     restored = restore_diacritics_from_corpus("ngay phep nam", [c["payload"]["text"] for c in CORPUS])
     assert restored == "ngày phép năm"
@@ -168,6 +178,22 @@ def test_reformatted_refusal_is_detected_and_nothing_leaks():
         assert f.refused and emitted == [], raw
 
 
+def test_refusal_followed_by_evidenced_answer_keeps_the_answer():
+    from solutions.rag.application.components.answer_postprocessor import PARTIAL_ANSWER_OPENING
+
+    raw = f"{REFUSAL_MESSAGE} Tuy nhiên, phép thâm niên được quy định ở mục HR.A2.MR1 [1]."
+    f = AnswerStreamFilter(_ctx())
+    emitted = []
+    for i in range(0, len(raw), 4):
+        emitted += f.feed(raw[i:i + 4])
+    emitted += f.finish()
+    text = "".join(emitted)
+    assert not f.refused and text.startswith(PARTIAL_ANSWER_OPENING) and "HR.A2.MR1 [1]" in text
+
+    bare = sanitize_answer(f"{REFUSAL_MESSAGE} Vui lòng hỏi lại sau.", _ctx())
+    assert bare[2] is True
+
+
 def test_answer_sharing_the_refusal_opening_is_not_a_refusal():
     opening = " ".join(REFUSAL_MESSAGE.split()[:6])
     raw = f"{opening} về mục này, nhưng mục liên quan quy định thời hạn 30 ngày [1]."
@@ -204,6 +230,10 @@ def test_analyzer_parses_json_and_falls_back_on_garbage():
     history = [{"role": "user", "content": "Chương I gồm những gì?"}, {"role": "assistant", "content": "..."}]
     parsed = qa.parse('```json\n{"intent": "document_question", "standalone_query": "Chương II gồm những gì?", "new_topic": false}\n```', "Còn chương II?", history, 1.0)
     assert parsed.intent == Intent.DOCUMENT_QUESTION and parsed.standalone_query == "Chương II gồm những gì?"
+    phone = qa.parse('{"intent": "support_request"}', "Có, số của tôi là 0900 123 456.", history, 1.0)
+    assert phone.intent == Intent.CONTACT_INFO and phone.phone == "0900123456"
+    lossy = qa.parse('{"intent": "document_question", "standalone_query": "Tài liệu có tên là gì?"}', "HR.A2.MR1", [], 1.0)
+    assert lossy.standalone_query == "HR.A2.MR1"
     fallback = qa.parse("not json", "Còn chương II?", history, 1.0)
     assert fallback.source == "fallback" and fallback.standalone_query.startswith("Chương I gồm những gì")
 
@@ -275,6 +305,67 @@ class ScoreReranker:
 def _use_case(llm) -> Tuple[RagChatUseCase, CorpusStore, Repo]:
     store, repo = CorpusStore(), Repo()
     return RagChatUseCase(store, Embedder(), llm, repo, reranker_service=ScoreReranker()), store, repo
+
+
+class SmallWindowLLM(ScriptedLLM):
+    """A runtime with a small context window that records the completion budget it was asked for."""
+
+    def __init__(self, analysis, answer, window):
+        super().__init__(analysis, answer)
+        self.window = window
+        self.max_tokens: List[int] = []
+
+    async def context_window(self, model):
+        return self.window
+
+    async def generate(self, messages, model, temperature=0.2, max_tokens=1024, authorization=None):
+        if ANALYZER_MARKER not in messages[0]["content"]:
+            self.max_tokens.append(max_tokens)
+        return await super().generate(messages, model, temperature, max_tokens, authorization)
+
+
+def test_prompt_is_fitted_to_the_runtime_context_window():
+    from solutions.rag.config import rag_settings
+
+    analysis = {"intent": "document_question", "standalone_query": "Liệt kê toàn bộ quy định về nghỉ phép", "wants_list": True}
+    request = dict(query="Liệt kê toàn bộ quy định về nghỉ phép", similarity_threshold=0.0, max_tokens=1024)
+    wide = SmallWindowLLM(analysis, "Theo quy chế [1].", window=None)
+    asyncio.run(_use_case(wide)[0].execute(RagChatRequestDTO(**request)))
+    full_prompt = wide.calls[-1][0]["content"]
+    assert wide.max_tokens[-1] == 1024
+
+    # One token short of fitting the full context plus the minimum completion: a passage must go.
+    cpt = rag_settings.llm_chars_per_token
+    full_tokens = int(sum(len(m["content"]) for m in wide.calls[-1]) / cpt)
+    window = full_tokens + rag_settings.llm_min_completion_tokens + rag_settings.llm_prompt_safety_tokens - 1
+    narrow = SmallWindowLLM(analysis, "Theo quy chế [1].", window=window)
+    asyncio.run(_use_case(narrow)[0].execute(RagChatRequestDTO(**request)))
+    messages = narrow.calls[-1]
+    prompt_tokens = sum(len(m["content"]) for m in messages) / cpt
+    assert len(messages[0]["content"]) < len(full_prompt)
+    assert prompt_tokens + narrow.max_tokens[-1] <= window
+    assert narrow.max_tokens[-1] >= rag_settings.llm_min_completion_tokens
+
+
+def test_unclear_verdict_is_verified_against_retrieval():
+    supported = ScriptedLLM({"intent": "unclear"}, "Có phép thâm niên theo HR.A2.MR1 [1].")
+    resp = asyncio.run(_use_case(supported)[0].execute(RagChatRequestDTO(query="Phép thâm niên được quy định thế nào?", similarity_threshold=0.65)))
+    assert resp.intent == "QA_STUFF" and resp.answer.startswith("Có phép thâm niên")
+
+    first_turn_feedback = ScriptedLLM({"intent": "feedback"}, "Có phép thâm niên theo HR.A2.MR1 [1].")
+    uc, _, repo = _use_case(first_turn_feedback)
+    resp = asyncio.run(uc.execute(RagChatRequestDTO(query="Phép thâm niên được quy định thế nào?", similarity_threshold=0.65)))
+    assert resp.intent == "QA_STUFF" and not repo.tickets
+
+    real_feedback = ScriptedLLM({"intent": "feedback"}, "unused")
+    uc, _, repo = _use_case(real_feedback)
+    resp = asyncio.run(uc.execute(RagChatRequestDTO(query="Câu vừa rồi chưa đúng ý, tôi muốn báo lỗi.", similarity_threshold=0.65)))
+    assert resp.intent == "FEEDBACK" and repo.tickets and repo.tickets[0]["reason"] == "user_feedback"
+
+    unsupported = ScriptedLLM({"intent": "unclear"}, "unused")
+    uc, _, repo = _use_case(unsupported)
+    resp = asyncio.run(uc.execute(RagChatRequestDTO(query="Cái đó thì sao?", similarity_threshold=0.65)))
+    assert resp.intent == "CLARIFICATION" and not repo.tickets
 
 
 def test_follow_up_is_rewritten_before_retrieval_and_answer_gets_footer():
@@ -352,3 +443,65 @@ def test_out_of_scope_is_declined_with_reason():
     uc, _, _ = _use_case(llm)
     resp = asyncio.run(uc.execute(RagChatRequestDTO(query="Lương giám đốc bao nhiêu?")))
     assert resp.intent == "OUT_OF_SCOPE" and "lương, thưởng" in resp.answer
+
+
+# ---------------------------------------------------------------- LLM runtime adapter
+def _adapter(handler):
+    import httpx
+
+    from solutions.rag.infrastructure.adapters.llm_adapter import HttpLlmAdapter
+
+    adapter = HttpLlmAdapter(base_url="http://llm.test/v1")
+    adapter._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    return adapter
+
+
+def test_runtime_error_event_mid_stream_is_raised_not_returned_as_answer():
+    import httpx
+    import pytest
+
+    from solutions.rag.domain.exceptions import LLMGenerationError
+
+    body = (
+        'data: {"choices": [{"delta": {"content": "Lớ"}}]}\n\n'
+        'data: {"error": {"code": 500, "message": "Context size has been exceeded."}}\n\n'
+    )
+    adapter = _adapter(lambda request: httpx.Response(200, text=body, headers={"content-type": "text/event-stream"}))
+
+    async def consume():
+        return [t async for t in adapter.stream_generate([{"role": "user", "content": "x"}], "m")]
+
+    with pytest.raises(LLMGenerationError):
+        asyncio.run(consume())
+
+
+def test_context_window_is_read_from_the_runtime():
+    import httpx
+
+    def handler(request):
+        if request.url.path == "/props":
+            return httpx.Response(200, json={"default_generation_settings": {"n_ctx": 4096}})
+        return httpx.Response(404)
+
+    assert asyncio.run(_adapter(handler).context_window("m")) == 4096
+
+
+def test_reranker_pairs_fit_the_runtime_batch():
+    import httpx
+
+    from solutions.rag.config import rag_settings
+    from solutions.rag.infrastructure.adapters.reranker_adapter import HttpCrossEncoderReranker
+
+    sent = {}
+
+    def handler(request):
+        sent.update(json.loads(request.content))
+        return httpx.Response(200, json={"results": [{"index": i, "relevance_score": 0.5} for i in range(2)]})
+
+    reranker = HttpCrossEncoderReranker(base_url="http://rerank.test/v1")
+    reranker._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    long_text = "nội dung " * 2000
+    candidates = [{"text": long_text, "title": TITLE}, {"text": "ngắn", "title": TITLE}]
+    asyncio.run(reranker.arerank("câu hỏi " * 300, candidates, top_n=2, min_threshold=0.0))
+    budget = rag_settings.reranker_max_input_tokens * rag_settings.reranker_chars_per_token
+    assert all(len(sent["query"]) + len(doc) <= budget for doc in sent["documents"])

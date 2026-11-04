@@ -76,6 +76,25 @@ def refusal_probe_ready(text: str) -> bool:
     return _opening_sentence(text) is not None or len(normalize_for_match(text)) > len(_REFUSAL_NORM) + 20
 
 
+# Models often open with the refusal sentence and then answer anyway ("… chưa có thông tin… Tuy nhiên,
+# X thuộc mục Y [2]."). Such a continuation is kept when it carries evidence (a citation marker or an
+# identifier); the misleading opening is replaced by a neutral one.
+PARTIAL_ANSWER_OPENING = "Tài liệu không có thông tin đúng như câu hỏi đặt ra."
+REFUSAL_CONTINUATION_MIN_CHARS = 40
+
+
+def _after_opening_sentence(text: str) -> str:
+    head = (text or "").strip()
+    m = _SENTENCE_END_RE.search(head)
+    return head[m.end():] if m else ""
+
+
+def _is_evidenced_continuation(rest: str) -> bool:
+    return len(normalize_for_match(rest)) >= REFUSAL_CONTINUATION_MIN_CHARS and bool(
+        _MARKER_RE.search(rest) or extract_identifiers(rest)
+    )
+
+
 @dataclass
 class SanitizeContext:
     titles: Sequence[str] = ()
@@ -94,6 +113,7 @@ class AnswerStreamFilter:
         self.ctx = ctx
         self._buf = ""
         self._probed = False
+        self._refusal_pending = False
         self._line_mode: Optional[str] = None  # None | "stream" | "hold"
         self._emitted_any = False
         self._pending_header: Optional[str] = None
@@ -214,9 +234,18 @@ class AnswerStreamFilter:
             if not final and not refusal_probe_ready(self._buf):
                 return out
             self._probed = True
-            if is_llm_refusal(self._buf):
+            self._refusal_pending = is_llm_refusal(self._buf)
+        if self._refusal_pending:
+            # Hold everything until the continuation shows evidence (partial answer) or the stream ends.
+            rest = _after_opening_sentence(self._buf)
+            if _is_evidenced_continuation(rest):
+                self._refusal_pending = False
+                self._buf = f"{PARTIAL_ANSWER_OPENING} {rest.lstrip()}"
+            elif final:
                 self.refused = True
                 self._buf = ""
+                return out
+            else:
                 return out
         while self._buf:
             nl = self._buf.find("\n")

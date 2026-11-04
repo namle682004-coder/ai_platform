@@ -24,6 +24,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence
 
+from .lexical_evidence import extract_identifiers
+
 logger = logging.getLogger("aip-rag.query-analyzer")
 
 ANALYZER_MARKER = "[QUERY_ANALYZER]"
@@ -182,12 +184,18 @@ class QueryAnalyzer:
         except ValueError:
             intent = Intent.DOCUMENT_QUESTION
         standalone = str(data.get("standalone_query") or "").strip() or query.strip()
+        if not set(extract_identifiers(query)) <= set(extract_identifiers(standalone)):
+            # The rewrite dropped a code/number the user typed: it changed the question, keep the original.
+            standalone = self.fallback(query, history, latency_ms).standalone_query
         phone = str(data.get("phone") or "").strip()
         if phone and not PHONE_RE.search(phone):
             phone = ""
+        typed_phone = PHONE_RE.search(query)
         if intent == Intent.CONTACT_INFO and not phone:
-            m = PHONE_RE.search(query)
-            phone = re.sub(r"[\s.\-]", "", m.group(1)) if m else ""
+            phone = re.sub(r"[\s.\-]", "", typed_phone.group(1)) if typed_phone else ""
+        if typed_phone and len(query.split()) <= 12 and intent in (Intent.SUPPORT_REQUEST, Intent.UNCLEAR):
+            # A short message carrying a phone number is the user leaving their contact, whatever the label.
+            intent, phone = Intent.CONTACT_INFO, re.sub(r"[\s.\-]", "", typed_phone.group(1))
         return QueryAnalysis(
             intent=intent,
             standalone_query=standalone,

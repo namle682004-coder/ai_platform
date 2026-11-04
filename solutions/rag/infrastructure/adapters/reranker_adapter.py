@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import math
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
@@ -34,8 +34,9 @@ from .model_registry import (
 
 logger = logging.getLogger("aip-rag.adapter.reranker")
 
-# Keep request bodies bounded; bge-reranker-v2-m3 truncates at reranker_max_length tokens anyway.
-_MAX_PASSAGE_CHARS = 4000
+# Special tokens and separators around a query/passage pair.
+_PAIR_OVERHEAD_TOKENS = 16
+_MIN_PASSAGE_CHARS = 200
 
 # Alias `runtime` values whose /rerank returns raw logits instead of probabilities.
 _LOGIT_RUNTIMES = frozenset({"llama.cpp", "llamacpp", "llama-server"})
@@ -80,13 +81,21 @@ class HttpCrossEncoderReranker(RerankerPort):
         return self._client
 
     @staticmethod
-    def _passages(candidates: List[CandidateType]) -> List[str]:
+    def _fit_pair(query: str) -> Tuple[str, int]:
+        """(query, passage char limit) so that every query + passage pair fits the runtime's batch."""
+        cpt = max(rag_settings.reranker_chars_per_token, 1.0)
+        budget_chars = int((rag_settings.reranker_max_input_tokens - _PAIR_OVERHEAD_TOKENS) * cpt)
+        query = query[: budget_chars // 3]
+        return query, max(_MIN_PASSAGE_CHARS, budget_chars - len(query))
+
+    @staticmethod
+    def _passages(candidates: List[CandidateType], max_chars: int) -> List[str]:
         passages = []
         for c in candidates:
             text, title = NeuralCrossEncoderReranker._extract_cand_text_title(c)
             if title and not text.startswith(f"[Tài liệu: {title}"):
                 text = f"[Tài liệu: {title}]\n{text}"
-            passages.append(text[:_MAX_PASSAGE_CHARS])
+            passages.append(text[:max_chars])
         return passages
 
     def _apply_scores(
@@ -123,11 +132,12 @@ class HttpCrossEncoderReranker(RerankerPort):
             raise RerankerError(str(exc)) from exc
 
         t0 = time.perf_counter()
+        pair_query, max_chars = self._fit_pair(query)
         try:
             data = await post_json_with_retry(
                 self._get_client(),
                 f"{endpoint.base_url}/rerank",
-                {"model": self.model_alias, "query": query, "documents": self._passages(candidates)},
+                {"model": self.model_alias, "query": pair_query, "documents": self._passages(candidates, max_chars)},
                 headers=runtime_headers(),
                 timeout=self.timeout,
             )

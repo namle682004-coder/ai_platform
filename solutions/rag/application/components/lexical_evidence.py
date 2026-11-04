@@ -220,6 +220,29 @@ def score_evidence(query: str, candidates: Sequence[Any]) -> EvidenceReport:
     )
 
 
+def absent_numeric_details(query: str, candidates: Sequence[Any]) -> List[str]:
+    """
+    Numeric details of the question (years, article numbers, levels, quantities) whose number never occurs
+    in the retrieved passages, returned as the original wording around them.
+    They signal a premise the documents do not support ("theo quy định năm X" when no document mentions X).
+    Identifiers are excluded: the identifier gate handles them.
+    """
+    words = (query or "").split()
+    if not words or not candidates:
+        return []
+    norm_texts = [_padded(normalize_for_match(candidate_text(c) + " " + candidate_heading(c))) for c in candidates]
+    details: List[str] = []
+    for i, word in enumerate(words):
+        number = normalize_for_match(word)
+        if not any(ch.isdigit() for ch in number) or extract_identifiers(word):
+            continue
+        # The number itself anywhere in the passages (whatever its neighbours) means it is not a missing premise.
+        if any(_padded(number) in t for t in norm_texts):
+            continue
+        details.append(" ".join(words[max(0, i - 1):i + 2]).strip(" ?.,!;:"))
+    return unique_in_order(details)
+
+
 def restore_diacritics_from_corpus(query: str, texts: Iterable[str]) -> str:
     """
     Re-accents an unaccented query using the vocabulary of the retrieved passages.

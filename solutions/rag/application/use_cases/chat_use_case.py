@@ -64,6 +64,7 @@ from ..components.conversation_policy import (
 from ..components.hyde_generator import HyDEResult, hyde_generator
 from ..components.intent_classifier import intent_classifier
 from ..components.lexical_evidence import (
+    absent_numeric_details,
     candidate_text,
     has_vietnamese_diacritics,
     nearest_existing_codes,
@@ -291,6 +292,8 @@ class _TurnPlan:
     raw_citations: List[Dict[str, Any]] = field(default_factory=list)
     system_prompt: str = ""
     user_content: str = ""
+    max_tokens: Optional[int] = None  # completion budget left by the prompt in the model window
+    unverified_feedback: bool = False  # labelled feedback on a session's first turn; retrieval decides
     strategy: str = "stuff"
     sanitize_ctx: Optional[SanitizeContext] = None
 
@@ -298,6 +301,8 @@ class _TurnPlan:
 INFRASTRUCTURE_ERRORS = (EmbeddingError, RerankerError, VectorStoreError, LLMGenerationError)
 # Combine strategies whose final answer is synthesised over several passes and cites by original index.
 SYNTHESIS_STRATEGIES = ("map_reduce", "refine")
+# A document is "related" to the question when its best passage scores at least this share of the best one.
+RELATED_DOCUMENT_RATIO = 0.5
 
 
 class RagChatUseCase:
@@ -1011,8 +1016,17 @@ class RagChatUseCase:
         plan = _TurnPlan(analysis=analysis, rewrite=rewrite, standalone_query=rewrite.text or standalone)
         plan.generation_history = [] if (analysis.new_topic or not history) else self._llm_history(history)
 
-        # 2. Non-document turns get deterministic support replies.
-        if not analysis.is_document_question:
+        # 2. Non-document turns get deterministic support replies. "unclear" is a weak judgement of a
+        # small model ("RAG học ở lớp mấy?" can look vague without the corpus), so it is verified
+        # against retrieval: the evidence gate answers it when the documents support it and asks
+        # the user to rephrase otherwise.
+        if analysis.intent == Intent.FEEDBACK and not any(m.get("role") == "assistant" for m in history):
+            # Nothing answered in this session yet: a document question is often mislabelled as feedback.
+            # Retrieval decides; without evidence the message is still recorded as feedback.
+            analysis.intent, plan.unverified_feedback = Intent.UNCLEAR, True
+        if analysis.intent == Intent.CONTACT_INFO and not analysis.phone:
+            analysis.intent = Intent.UNCLEAR  # asking FOR contact details is not giving one's own
+        if not analysis.is_document_question and analysis.intent != Intent.UNCLEAR:
             return await self._plan_support_turn(plan, request, history, tenant_id, user_id, user_role, session_id)
 
         if intent_classifier.is_ambiguous_symptom(plan.standalone_query):
@@ -1160,11 +1174,18 @@ class RagChatUseCase:
             blended[candidate_key(c)] = max(r, lex) + 0.25 * min(r, lex)
         best_lexical = evidence.best_coverage if evidence else 0.0
         texts = [candidate_text(c) for c in pool]
-        plan.titles = unique_in_order(str(payload_of(c).get("title") or "") for c in sorted(
-            pool, key=lambda c: blended.get(candidate_key(c), 0.0), reverse=True)[:6])[:2]
-        plan.outline = outline_from_candidates(
-            [c for c in pool if str(payload_of(c).get("doc_id")) in set(expanded) or c in reranked[:16]]
-        )
+        # Documents named to the user (refusal / clarification) must be the ones that matched, not every
+        # document of the shared knowledge base that happened to be retrieved.
+        ranked = sorted(pool, key=lambda c: blended.get(candidate_key(c), 0.0), reverse=True)
+        best_blended = blended.get(candidate_key(ranked[0]), 0.0) if ranked else 0.0
+        related = [c for c in ranked if blended.get(candidate_key(c), 0.0) >= RELATED_DOCUMENT_RATIO * best_blended]
+        plan.titles = unique_in_order(str(payload_of(c).get("title") or "") for c in related[:6])[:2]
+        titled_docs = {str(payload_of(c).get("doc_id")) for c in related if str(payload_of(c).get("title") or "") in plan.titles}
+        plan.outline = outline_from_candidates([
+            c for c in pool
+            if str(payload_of(c).get("doc_id")) in titled_docs
+            and (str(payload_of(c).get("doc_id")) in set(expanded) or c in reranked[:16])
+        ])
 
         # 3. Evidence gate. Identifiers the documents do not contain are answered deterministically.
         if evidence and evidence.query_identifiers and len(evidence.missing_identifiers) == len(evidence.query_identifiers):
@@ -1175,6 +1196,8 @@ class RagChatUseCase:
             plan.gate_latency_ms = (time.perf_counter() - t_gate) * 1000
             return
 
+        # A question naming an identifier the documents contain is about that item, not about the document.
+        about_document = analysis.about_document and not (evidence and evidence.query_identifiers)
         threshold = self._effective_threshold(request)
         no_evidence = (
             not pool
@@ -1182,7 +1205,7 @@ class RagChatUseCase:
                 threshold > 0.0
                 and plan.top_score < min(threshold, rag_settings.gate_min_rerank_score)
                 and best_lexical < rag_settings.gate_min_lexical_coverage
-                and not analysis.about_document
+                and not about_document
             )
         )
         plan.gate_latency_ms = (time.perf_counter() - t_gate) * 1000
@@ -1192,6 +1215,17 @@ class RagChatUseCase:
                 "Evidence gate: no support (rerank %.3f, lexical %.3f); refusing without generation.",
                 plan.top_score, best_lexical,
             )
+            if plan.unverified_feedback:
+                ticket_id, plan.escalation = await self._record_ticket(
+                    session_id, tenant_id, user_id, request.query, reason="user_feedback"
+                )
+                plan.kind, plan.intent = "direct", "FEEDBACK"
+                plan.answer = self.support.feedback(ticket_id, plan.titles, plan.outline)
+                return
+            if analysis.intent == Intent.UNCLEAR:
+                plan.kind, plan.intent = "direct", "CLARIFICATION"
+                plan.answer = self.support.clarify(plan.titles, plan.outline)
+                return
             await self._make_refusal_plan(plan, request, tenant_id, user_id, session_id)
             return
 
@@ -1207,8 +1241,9 @@ class RagChatUseCase:
             max_k=rag_settings.context_max_chunks,
         )
         chosen = list(selection.chunks)
-        if analysis.about_document:
-            for doc_id in unique_in_order(str(payload_of(c).get("doc_id") or "") for c in chosen)[:2]:
+        if about_document:
+            card_docs = [d for d in unique_in_order(str(payload_of(c).get("doc_id") or "") for c in chosen) if d in titled_docs]
+            for doc_id in card_docs[:2]:
                 doc_chunks = expanded.get(doc_id) or [c for c in pool if str(payload_of(c).get("doc_id")) == doc_id]
                 card = build_document_card(doc_chunks)
                 if card:
@@ -1220,22 +1255,72 @@ class RagChatUseCase:
             c for c in sorted(pool, key=lambda c: blended.get(candidate_key(c), 0.0), reverse=True)[:12]
             if c not in chosen
         ]
-        plan.wrapped = [CandidateWrapper(c) for c in chosen]
-        plan.raw_citations, plan.system_prompt = prompt_builder.build_context_and_citations(
-            plan.wrapped, query=query
-        )
         user_content = f"Câu hỏi của người dùng: {request.query}"
         if query.strip() != request.query.strip():
             user_content += f"\n(Câu hỏi đầy đủ theo ngữ cảnh hội thoại: {query})"
         if analysis.challenge:
             user_content += "\n(Người dùng đang phản bác hoặc chỉ ra thiếu sót của câu trả lời trước: đối chiếu lại tài liệu.)"
+        absent = absent_numeric_details(request.query, pool)
+        if absent:
+            user_content += (
+                "\n(Kiểm tra tiền đề: các chi tiết sau trong câu hỏi KHÔNG xuất hiện trong tài liệu: "
+                + "; ".join(f"«{d}»" for d in absent)
+                + ". Câu đầu tiên phải nói rõ tài liệu không có/ghi khác chi tiết đó, rồi mới nêu thông tin tài liệu có.)"
+            )
         plan.user_content = user_content + "\n(Trả lời bằng tiếng Việt.)"
+        await self._build_prompt_within_window(plan, request, query, chosen, blended)
         plan.sanitize_ctx = SanitizeContext(
             titles=unique_in_order(str(c.get("title") or "") for c in plan.raw_citations),
             allowed_image_urls=collect_image_urls(c.get("text", "") for c in plan.raw_citations),
             prompt_text=ANSWER_RULES + "\n" + PROCEDURE_RULES,
             valid_indices={int(c.get("index", 0)) for c in plan.raw_citations},
         )
+
+    async def _build_prompt_within_window(
+        self,
+        plan: "_TurnPlan",
+        request: RagChatRequestDTO,
+        query: str,
+        chosen: List[Dict[str, Any]],
+        scores: Dict[str, float],
+    ) -> None:
+        """
+        Builds the stuff prompt so that prompt + completion fit the runtime's context window: the
+        lowest-scoring passages are dropped first (document cards and the best passage are kept) and
+        the completion budget is capped to what the prompt leaves.
+        """
+        try:
+            window = await self.llm_service.context_window(request.model)
+        except Exception as exc:  # noqa: BLE001 - sizing is best effort
+            logger.debug("Context window lookup failed: %s", exc)
+            window = None
+        cpt = max(rag_settings.llm_chars_per_token, 1.0)
+        history_chars = sum(len(m.get("content") or "") for m in plan.generation_history)
+        wanted = request.max_tokens or 1024
+        floor = min(wanted, rag_settings.llm_min_completion_tokens)
+        chosen, selected = list(chosen), len(chosen)
+        while True:
+            plan.wrapped = [CandidateWrapper(c) for c in chosen]
+            plan.raw_citations, plan.system_prompt = prompt_builder.build_context_and_citations(plan.wrapped, query=query)
+            if not window:
+                break
+            prompt_tokens = int((len(plan.system_prompt) + history_chars + len(plan.user_content)) / cpt)
+            if prompt_tokens + floor + rag_settings.llm_prompt_safety_tokens <= window or len(chosen) <= 1:
+                break
+            droppable = [i for i, c in enumerate(chosen) if candidate_key(c) in scores]
+            if len(droppable) <= 1:
+                break
+            chosen.pop(min(droppable, key=lambda i: scores[candidate_key(chosen[i])]))
+        plan.context_chunks = chosen
+        plan.max_tokens = wanted
+        if window:
+            left = window - prompt_tokens - rag_settings.llm_prompt_safety_tokens
+            plan.max_tokens = max(128, min(wanted, left))
+            if len(chosen) < selected or plan.max_tokens < wanted:
+                logger.info(
+                    "Prompt fitted to %d-token window: %d/%d passages, ~%d prompt tokens, completion %d tokens",
+                    window, len(chosen), selected, prompt_tokens, plan.max_tokens,
+                )
 
     async def _make_refusal_plan(
         self,
@@ -1376,7 +1461,7 @@ class RagChatUseCase:
             plan.strategy = "stuff"
         return await self.llm_service.generate(
             messages=self._stuff_messages(plan), model=request.model, temperature=request.temperature,
-            max_tokens=request.max_tokens, authorization=authorization,
+            max_tokens=plan.max_tokens or request.max_tokens, authorization=authorization,
         )
 
     async def _generate_stream(
@@ -1407,11 +1492,13 @@ class RagChatUseCase:
                 return
         else:
             plan.strategy = "stuff"
+        max_tokens = request.max_tokens
         if messages is None:
             messages = self._stuff_messages(plan)
+            max_tokens = plan.max_tokens or request.max_tokens
         async for token in self.llm_service.stream_generate(
             messages=messages, model=request.model, temperature=request.temperature,
-            max_tokens=request.max_tokens, authorization=authorization,
+            max_tokens=max_tokens, authorization=authorization,
         ):
             yield token
 

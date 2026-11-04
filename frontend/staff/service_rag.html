@@ -9914,6 +9914,13 @@
                       accumulatedAnswer += parsed.token;
                       scheduleStreamUpdate();
                     }
+                    if (parsed.error && parsed.message) {
+                      // Upstream failure (e.g. LLM runtime down): show it instead of an empty bubble.
+                      firstChunkReceived = true;
+                      accumulatedAnswer +=
+                        (accumulatedAnswer ? "\n\n" : "") + "⚠️ " + parsed.message;
+                      scheduleStreamUpdate();
+                    }
                     if (parsed.done) {
                       if (parsed.citations) {
                         finalCitations = parsed.citations;

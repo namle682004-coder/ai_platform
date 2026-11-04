@@ -132,6 +132,10 @@ class LLMPort(ABC):
         """Stream response tokens as an asynchronous generator."""
         ...
 
+    async def context_window(self, model: str) -> Optional[int]:
+        """Tokens (prompt + completion) the runtime serving `model` accepts per request; None if unknown."""
+        return None
+
 
 class DocumentRepositoryPort(ABC):
     """Port for Document metadata persistence (MongoDB/PostgreSQL)."""

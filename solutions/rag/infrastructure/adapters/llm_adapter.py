@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import AsyncGenerator, Dict, List, Optional, Tuple
 
 import httpx
@@ -28,6 +29,8 @@ from .model_registry import (
 
 logger = logging.getLogger("aip-rag.adapter.llm")
 
+CONTEXT_WINDOW_CACHE_SECONDS = 300.0
+
 
 class HttpLlmAdapter(LLMPort):
     """Chat completion client for llama-server / vLLM runtimes registered as model aliases."""
@@ -45,6 +48,7 @@ class HttpLlmAdapter(LLMPort):
         self.resolver = resolver or model_endpoint_resolver
         self.timeout = timeout or rag_settings.llm_timeout_seconds
         self._client: Optional[httpx.AsyncClient] = None
+        self._context_windows: Dict[str, Tuple[Optional[int], float]] = {}
 
     def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -132,8 +136,20 @@ class HttpLlmAdapter(LLMPort):
                     if raw == "[DONE]":
                         return
                     try:
-                        delta = json.loads(raw)["choices"][0].get("delta", {}).get("content", "")
-                    except (json.JSONDecodeError, KeyError, IndexError):
+                        event = json.loads(raw)
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(event, dict) and event.get("error"):
+                        # e.g. llama.cpp "Context size has been exceeded" mid-generation: the answer
+                        # is truncated, so it must not be returned as a complete one.
+                        err = event["error"]
+                        raise ModelRuntimeError(
+                            f"stream error: {err.get('message') if isinstance(err, dict) else err}",
+                            status_code=err.get("code") if isinstance(err, dict) else None,
+                        )
+                    try:
+                        delta = event["choices"][0].get("delta", {}).get("content", "")
+                    except (KeyError, IndexError, TypeError, AttributeError):
                         continue
                     if delta:
                         emitted = True
@@ -147,6 +163,39 @@ class HttpLlmAdapter(LLMPort):
 
         answer, _, _ = await self.generate(messages, model, temperature, max_tokens, authorization)
         yield answer
+
+    async def context_window(self, model: str) -> Optional[int]:
+        if rag_settings.llm_context_window_tokens > 0:
+            return rag_settings.llm_context_window_tokens
+        try:
+            base_url = await self._resolve_base_url(model or self.default_model)
+        except LLMGenerationError:
+            return None
+        cached = self._context_windows.get(base_url)
+        if cached and time.monotonic() - cached[1] < CONTEXT_WINDOW_CACHE_SECONDS:
+            return cached[0]
+        window = await self._probe_context_window(base_url)
+        self._context_windows[base_url] = (window, time.monotonic())
+        return window
+
+    async def _probe_context_window(self, base_url: str) -> Optional[int]:
+        """llama.cpp reports the per-request n_ctx on /props, vLLM reports max_model_len on /v1/models."""
+        root = base_url[:-3] if base_url.endswith("/v1") else base_url
+        client = self._get_client()
+        try:
+            res = await client.get(f"{root}/props", timeout=3.0)
+            if res.status_code == 200:
+                n_ctx = (res.json().get("default_generation_settings") or {}).get("n_ctx")
+                if n_ctx:
+                    return int(n_ctx)
+            res = await client.get(f"{base_url}/models", timeout=3.0)
+            if res.status_code == 200:
+                for entry in res.json().get("data") or []:
+                    if entry.get("max_model_len"):
+                        return int(entry["max_model_len"])
+        except (httpx.HTTPError, ValueError, TypeError, AttributeError) as exc:
+            logger.warning("Could not read the context window of %s: %s", base_url, exc)
+        return None
 
     async def close(self) -> None:
         if self._client is not None and not self._client.is_closed:
