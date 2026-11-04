@@ -1763,6 +1763,257 @@
         margin-bottom: 6px;
         font-weight: 500;
       }
+
+      /* Spotlight Chat Search Modal */
+      .chat-search-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 12vh;
+        animation: fadeInSearch 0.15s ease-out;
+      }
+
+      @keyframes fadeInSearch {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      .chat-search-modal-box {
+        background: #ffffff;
+        width: 92%;
+        max-width: 520px;
+        border-radius: 16px;
+        box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.15), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+        padding: 16px 20px 20px 20px;
+        display: flex;
+        flex-direction: column;
+        animation: slideDownSearch 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      @keyframes slideDownSearch {
+        from { transform: translateY(-12px) scale(0.98); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+
+      .chat-search-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 12px;
+      }
+
+      .chat-search-input-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+
+      .chat-search-input {
+        width: 100%;
+        border: none;
+        outline: none;
+        font-size: 16px;
+        color: #111827;
+        font-family: inherit;
+        background: transparent;
+      }
+
+      .chat-search-input::placeholder {
+        color: #9ca3af;
+        font-weight: 400;
+      }
+
+      .chat-search-close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #6b7280;
+        cursor: pointer;
+        line-height: 1;
+        padding: 4px;
+        border-radius: 6px;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .chat-search-close-btn:hover {
+        background: #f3f4f6;
+        color: #111827;
+      }
+
+      .chat-search-subtitle {
+        font-size: 13px;
+        font-weight: 500;
+        color: #6b7280;
+        margin: 14px 4px 8px 4px;
+      }
+
+      .chat-search-list {
+        max-height: 360px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .chat-search-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+        color: #1f2937;
+        text-decoration: none;
+      }
+
+      .chat-search-item i {
+        font-size: 15px;
+        color: #374151;
+        flex-shrink: 0;
+        width: 18px;
+        text-align: center;
+      }
+
+      .chat-search-item-title {
+        font-size: 14px;
+        color: #1f2937;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+
+      .chat-search-item:hover,
+      .chat-search-item.highlighted {
+        background: #f3f4f6;
+      }
+
+      .chat-search-item.active {
+        background: #e5e7eb;
+        font-weight: 500;
+      }
+
+      .chat-search-empty {
+        padding: 28px 16px;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 13.5px;
+      }
+
+      /* Stop Generating Button State */
+      #staff-send-btn.btn-stop-generating {
+        background: #0f172a !important;
+        color: #ffffff !important;
+        border: 1px solid #334155 !important;
+        animation: pulseStopBtn 1.5s infinite;
+      }
+
+      #staff-send-btn.btn-stop-generating i {
+        font-size: 11px;
+      }
+
+      @keyframes pulseStopBtn {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.4); }
+        70% { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(15, 23, 42, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(15, 23, 42, 0); }
+      }
+
+      /* Feedback Popover */
+      .staff-feedback-popover {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 0;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        padding: 14px 16px;
+        width: 320px;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        animation: fadeInFeedback 0.15s ease-out;
+      }
+
+      @keyframes fadeInFeedback {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .staff-feedback-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .staff-feedback-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .feedback-chip {
+        padding: 4px 9px;
+        font-size: 11.5px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .feedback-chip:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+      }
+
+      .feedback-chip.selected {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #b91c1c;
+        font-weight: 500;
+      }
+
+      .staff-feedback-textarea {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 12px;
+        font-family: inherit;
+        resize: none;
+        height: 48px;
+        outline: none;
+        box-sizing: border-box;
+      }
+
+      .staff-feedback-textarea:focus {
+        border-color: #94a3b8;
+      }
+
+      .staff-feedback-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+      }
     </style>
   </head>
   <body>
@@ -1964,7 +2215,25 @@
               </div>
             </div>
           </div>
-          <div style="display: flex; gap: 10px; align-items: center">
+          <div style="display: flex; gap: 8px; align-items: center">
+            <button
+              class="btn-staff-secondary"
+              id="btn-search-chat-history"
+              onclick="openChatSearchModal()"
+              title="Tìm kiếm cuộc trò chuyện (Ctrl+K)"
+              style="
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 15px;
+                border-radius: 8px;
+              "
+            >
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
             <button
               class="btn-staff-secondary"
               id="btn-open-chat-history"
@@ -2176,7 +2445,7 @@
                 <button
                   id="staff-send-btn"
                   class="btn-send-round"
-                  onclick="sendStaffChat()"
+                  onclick="handleStaffSendOrStop()"
                   title="Gửi tin nhắn"
                 >
                   <i class="fa-solid fa-arrow-right"></i>
@@ -2217,6 +2486,14 @@
             >
               <i class="fa-regular fa-pen-to-square"></i>
               <span>New chat</span>
+            </div>
+            <div
+              class="chatgpt-menu-item"
+              onclick="openChatSearchModal()"
+              title="Tìm kiếm cuộc trò chuyện (Ctrl+K)"
+            >
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>Search chats</span>
             </div>
             <div
               class="chatgpt-menu-item"
@@ -2340,6 +2617,46 @@
     </div>
 
     <!-- POPUP MODAL INGEST & KNOWLEDGE MANAGEMENT -->
+
+    <!-- Modal: Tìm Kiếm Lịch Sử Cuộc Trò Chuyện (Spotlight Search) -->
+    <div
+      id="modal-chat-search"
+      class="chat-search-modal-backdrop"
+      onclick="handleChatSearchBackdropClick(event)"
+    >
+      <div class="chat-search-modal-box" onclick="event.stopPropagation()">
+        <div class="chat-search-top-row">
+          <div class="chat-search-input-wrap">
+            <input
+              type="text"
+              id="chat-search-input"
+              class="chat-search-input"
+              placeholder="Search..."
+              autocomplete="off"
+              oninput="handleChatSearchInput(this.value)"
+              onkeydown="handleChatSearchKeydown(event)"
+            />
+          </div>
+          <button
+            type="button"
+            class="chat-search-close-btn"
+            onclick="closeChatSearchModal()"
+            title="Đóng (Esc)"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="chat-search-subtitle">Recent chats</div>
+
+        <div
+          class="chat-search-list slim-scrollbar"
+          id="chat-search-results-list"
+        >
+          <!-- Danh sách hội thoại nạp động -->
+        </div>
+      </div>
+    </div>
 
     <!-- Modal: Chi tiết Đoạn Trích Dẫn & Bôi Vàng Text Trùng Lặp (Đồng bộ 100% với Modal Ingest) -->
     <div
@@ -2899,6 +3216,7 @@
                   display: flex;
                   justify-content: space-between;
                   align-items: center;
+                  gap: 12px;
                   margin-bottom: 10px;
                 "
               >
@@ -2907,14 +3225,44 @@
                   <i class="fa-regular fa-eye text-primary"></i> để xem nội dung
                   tài liệu gốc.</span
                 >
-                <button
-                  type="button"
-                  class="btn-staff-secondary"
-                  style="font-size: 11.5px; padding: 4px 10px"
-                  onclick="loadStaffDocList()"
-                >
-                  <i class="fa-solid fa-rotate-right"></i> Làm mới
-                </button>
+                <div style="display: flex; gap: 8px; align-items: center">
+                  <div style="position: relative; width: 220px">
+                    <i
+                      class="fa-solid fa-magnifying-glass"
+                      style="
+                        position: absolute;
+                        left: 9px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        font-size: 11px;
+                        color: #94a3b8;
+                      "
+                    ></i>
+                    <input
+                      type="text"
+                      id="staff-doc-search-input"
+                      placeholder="Tìm kiếm tài liệu..."
+                      oninput="handleStaffDocSearch(this.value)"
+                      style="
+                        width: 100%;
+                        padding: 4px 10px 4px 28px;
+                        font-size: 12px;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 6px;
+                        outline: none;
+                        box-sizing: border-box;
+                      "
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-staff-secondary"
+                    style="font-size: 11.5px; padding: 4px 10px; white-space: nowrap"
+                    onclick="loadStaffDocList()"
+                  >
+                    <i class="fa-solid fa-rotate-right"></i> Làm mới
+                  </button>
+                </div>
               </div>
               <div
                 id="staff-docs-scroll-container"
@@ -4270,6 +4618,184 @@
       let staffCurrentModel = "chat-general-standard";
       let isHistorySidebarOpen = false;
 
+      let allStaffRecentSessionsCache = [];
+      let chatSearchSelectedIndex = 0;
+      let staffCurrentAbortController = null;
+      let allStaffDocListCache = [];
+      let currentFeedbackTargetBtn = null;
+      let currentFeedbackSessionId = null;
+      let selectedFeedbackChips = new Set();
+
+      async function openChatSearchModal() {
+        const modal = document.getElementById("modal-chat-search");
+        if (!modal) return;
+        modal.style.display = "flex";
+        const input = document.getElementById("chat-search-input");
+        if (input) {
+          input.value = "";
+          setTimeout(() => input.focus(), 50);
+        }
+        if (!allStaffRecentSessionsCache || allStaffRecentSessionsCache.length === 0) {
+          await loadStaffRecentSessions();
+        }
+        renderChatSearchResults("");
+      }
+
+      function closeChatSearchModal() {
+        const modal = document.getElementById("modal-chat-search");
+        if (modal) modal.style.display = "none";
+      }
+
+      function handleChatSearchBackdropClick(e) {
+        if (e.target && e.target.id === "modal-chat-search") {
+          closeChatSearchModal();
+        }
+      }
+
+      function renderChatSearchResults(query = "") {
+        const listEl = document.getElementById("chat-search-results-list");
+        if (!listEl) return;
+        const q = (query || "").trim().toLowerCase();
+        let list = allStaffRecentSessionsCache || [];
+        if (q) {
+          list = list.filter((s) => (s.title || "").toLowerCase().includes(q));
+        }
+        chatSearchSelectedIndex = 0;
+        if (!list || list.length === 0) {
+          listEl.innerHTML = `
+            <div class="chat-search-empty">
+              <i class="fa-regular fa-folder-open" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+              ${q ? "Không tìm thấy cuộc trò chuyện nào phù hợp" : "Chưa có cuộc trò chuyện nào gần đây"}
+            </div>
+          `;
+          return;
+        }
+
+        listEl.innerHTML = list
+          .map((s, idx) => {
+            const isAct = s.session_id === staffConversationId;
+            const title = escapeHtml(s.title || "Cuộc trò chuyện");
+            return `
+              <div class="chat-search-item ${isAct ? "active" : ""} ${idx === 0 ? "highlighted" : ""}"
+                   data-session-id="${s.session_id}"
+                   data-index="${idx}"
+                   onclick="selectChatSearchResult('${s.session_id}')"
+                   onmouseenter="highlightChatSearchItem(${idx})">
+                <i class="fa-regular fa-comment"></i>
+                <span class="chat-search-item-title">${title}</span>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function highlightChatSearchItem(idx) {
+        chatSearchSelectedIndex = idx;
+        const items = document.querySelectorAll(".chat-search-item");
+        items.forEach((item, i) => {
+          if (i === idx) item.classList.add("highlighted");
+          else item.classList.remove("highlighted");
+        });
+      }
+
+      function handleChatSearchInput(val) {
+        renderChatSearchResults(val);
+      }
+
+      function handleChatSearchKeydown(e) {
+        const items = document.querySelectorAll(".chat-search-item");
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (items.length > 0) {
+            chatSearchSelectedIndex = (chatSearchSelectedIndex + 1) % items.length;
+            highlightChatSearchItem(chatSearchSelectedIndex);
+            items[chatSearchSelectedIndex].scrollIntoView({ block: "nearest" });
+          }
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (items.length > 0) {
+            chatSearchSelectedIndex = (chatSearchSelectedIndex - 1 + items.length) % items.length;
+            highlightChatSearchItem(chatSearchSelectedIndex);
+            items[chatSearchSelectedIndex].scrollIntoView({ block: "nearest" });
+          }
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (items.length > 0 && items[chatSearchSelectedIndex]) {
+            const sessId = items[chatSearchSelectedIndex].getAttribute("data-session-id");
+            if (sessId) selectChatSearchResult(sessId);
+          }
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          closeChatSearchModal();
+        }
+      }
+
+      function selectChatSearchResult(sessionId) {
+        closeChatSearchModal();
+        if (sessionId) {
+          switchStaffConversation(null, sessionId);
+        }
+      }
+
+      function handleStaffSendOrStop() {
+        if (staffIsChatStreaming) {
+          stopStaffChatGeneration();
+        } else {
+          sendStaffChat();
+        }
+      }
+
+      function stopStaffChatGeneration() {
+        if (staffCurrentAbortController) {
+          try {
+            staffCurrentAbortController.abort();
+          } catch (e) {
+            console.warn("Abort error:", e);
+          }
+        }
+        staffIsChatStreaming = false;
+        resetStaffSendButton();
+      }
+
+      function updateStaffSendButtonToStop() {
+        const sendBtn = document.getElementById("staff-send-btn");
+        if (sendBtn) {
+          sendBtn.classList.add("btn-stop-generating");
+          sendBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+          sendBtn.title = "Dừng sinh câu trả lời";
+          sendBtn.disabled = false;
+        }
+      }
+
+      function resetStaffSendButton() {
+        const sendBtn = document.getElementById("staff-send-btn");
+        if (sendBtn) {
+          sendBtn.classList.remove("btn-stop-generating");
+          sendBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
+          sendBtn.title = "Gửi tin nhắn";
+          sendBtn.disabled = false;
+        }
+      }
+
+      // Phím tắt toàn cục: Ctrl+K / Cmd+K mở tìm kiếm cuộc trò chuyện, Escape đóng modal
+      window.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+          e.preventDefault();
+          const modal = document.getElementById("modal-chat-search");
+          if (modal && modal.style.display === "flex") {
+            closeChatSearchModal();
+          } else {
+            openChatSearchModal();
+          }
+        } else if (e.key === "Escape") {
+          const modal = document.getElementById("modal-chat-search");
+          if (modal && modal.style.display === "flex") {
+            closeChatSearchModal();
+          }
+          closeStaffFeedbackPopover();
+        }
+      });
+
       function toggleStaffHistorySidebar() {
         const rightSidebar = document.getElementById(
           "staff-right-history-sidebar",
@@ -4355,6 +4881,7 @@
             const resData = await res.json();
             const sessions =
               resData.items || (Array.isArray(resData) ? resData : []);
+            allStaffRecentSessionsCache = sessions;
             list.innerHTML = "";
             if (!sessions || sessions.length === 0) {
               list.innerHTML = `<div style="padding: 10px 12px; font-size: 12.5px; color: #94a3b8; font-style: italic;">Chưa có lịch sử hội thoại</div>`;
@@ -4553,11 +5080,12 @@
                                         <div class="msg-header"><i class="fa-solid fa-robot" style="color: #0f4c81;"></i> Trợ lý Tri thức</div>
                                         <div class="staff-markdown-body">${renderStaffMarkdown(m.content)}</div>
                                         ${citHtml}
-                                        <div class="msg-actions">
+                                        <div class="msg-actions" style="position: relative;">
                                             <button class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${escapeHtml(m.content)}"><i class="fa-regular fa-copy"></i></button>
                                             <button class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${convId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
                                             <button class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${convId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
                                             <button class="btn-action-icon" title="Chia sẻ" onclick="shareStaffAnswer(this)"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
+                                            <button class="btn-action-icon" title="Thử lại" onclick="retryStaffQuery('${escapeHtml(m.content)}')"><i class="fa-solid fa-rotate-right"></i></button>
                                         </div>
                                     </div>
                                 `;
@@ -6231,6 +6759,87 @@
       let staffDocPageSize = 5;
       let staffDocTotal = 0;
 
+      function renderStaffDocRows(items) {
+        const tbody = document.getElementById("staff-docs-tbody");
+        if (!tbody) return;
+        if (!items || items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:18px 15px; color:#64748b; line-height: 1.6;">Không tìm thấy tài liệu phù hợp với từ khóa</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = items
+          .map((doc) => {
+            const title = escapeHtml(doc.title || doc.filename);
+            const fileType = (doc.file_type || "").toLowerCase();
+            const rawSize = doc.file_size_bytes
+              ? doc.file_size_bytes > 1048576
+                ? (doc.file_size_bytes / 1048576).toFixed(1) + " MB"
+                : (doc.file_size_bytes / 1024).toFixed(0) + " KB"
+              : "-";
+            let badgeColor = "#64748b";
+            let badgeBg = "#f1f5f9";
+            let fileIcon = "fa-file-lines";
+            if (fileType === "pdf") {
+              badgeColor = "#b91c1c";
+              badgeBg = "#fee2e2";
+              fileIcon = "fa-file-pdf";
+            } else if (fileType === "docx") {
+              badgeColor = "#1d4ed8";
+              badgeBg = "#dbeafe";
+              fileIcon = "fa-file-word";
+            } else if (fileType === "md") {
+              badgeColor = "#047857";
+              badgeBg = "#d1fae5";
+              fileIcon = "fa-file-code";
+            }
+
+            const escapedSafeTitle = title.replace(/'/g, "\\'");
+            return `
+                    <tr style="border-bottom: 1px solid #f1f5f9; cursor:pointer;" class="staff-doc-tr" onclick="openStaffDocViewer('${doc.doc_id}', '${escapedSafeTitle}', '${fileType}')">
+                        <td style="padding: 10px 12px; width: 42%; overflow: hidden;">
+                            <div style="font-weight:600; color:#0f172a; display:flex; align-items:center; gap:8px; overflow:hidden;">
+                                <i class="fa-regular ${fileIcon}" style="color:${badgeColor}; font-size:14px; flex-shrink:0;"></i>
+                                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>
+                            </div>
+                            <div style="font-size:11px; color:#94a3b8; margin-left:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Mã: ${escapeHtml(doc.doc_id)}</div>
+                        </td>
+                        <td style="padding: 10px 6px; width: 13%; text-align: center; white-space: nowrap;">
+                            <span style="background:${badgeBg}; color:${badgeColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; text-transform:uppercase;">${fileType}</span>
+                        </td>
+                        <td style="padding: 10px 8px; width: 17%; color:#64748b; font-size:12px; white-space: nowrap;">${rawSize}</td>
+                        <td style="padding: 10px 8px; width: 14%; text-align: center; white-space: nowrap;">
+                            <span style="font-size:11px; font-weight:600; color:${doc.status === "READY" ? "#059669" : "#0284c7"}; background:${doc.status === "READY" ? "#ecfdf5" : "#e0f2fe"}; padding:2px 6px; border-radius:4px;">${doc.status}</span>
+                        </td>
+                        <td style="padding: 10px 10px; width: 14%; text-align: center; white-space: nowrap;" onclick="event.stopPropagation()">
+                            <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                                <button title="Xem tài liệu gốc" onclick="openStaffDocViewer('${doc.doc_id}', '${escapedSafeTitle}', '${fileType}')" style="background:#e0f2fe; color:#0284c7; border:none; border-radius:4px; padding:5px 8px; cursor:pointer;">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                                <button title="Xóa tài liệu" onclick="deleteStaffDoc('${doc.doc_id}')" style="background:#fee2e2; color:#ef4444; border:none; border-radius:4px; padding:5px 8px; cursor:pointer;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+          })
+          .join("");
+      }
+
+      function handleStaffDocSearch(query) {
+        const q = (query || "").trim().toLowerCase();
+        if (!q) {
+          renderStaffDocRows(allStaffDocListCache);
+          return;
+        }
+        const filtered = (allStaffDocListCache || []).filter((doc) => {
+          const t = (doc.title || doc.filename || "").toLowerCase();
+          const id = (doc.doc_id || "").toLowerCase();
+          const ft = (doc.file_type || "").toLowerCase();
+          return t.includes(q) || id.includes(q) || ft.includes(q);
+        });
+        renderStaffDocRows(filtered);
+      }
+
       async function loadStaffDocList(page = null) {
         if (page !== null) staffDocPage = page;
         const tbody = document.getElementById("staff-docs-tbody");
@@ -6268,6 +6877,7 @@
               } catch (e) {}
             }
 
+            allStaffDocListCache = data.items || [];
             updateStaffDocPagination();
 
             if (!data.items || data.items.length === 0) {
@@ -6277,63 +6887,13 @@
               tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:18px 15px; color:#64748b; line-height: 1.6;">${emptyMsg}</td></tr>`;
               return;
             }
-            tbody.innerHTML = data.items
-              .map((doc) => {
-                const title = escapeHtml(doc.title || doc.filename);
-                const fileType = (doc.file_type || "").toLowerCase();
-                const rawSize = doc.file_size_bytes
-                  ? doc.file_size_bytes > 1048576
-                    ? (doc.file_size_bytes / 1048576).toFixed(1) + " MB"
-                    : (doc.file_size_bytes / 1024).toFixed(0) + " KB"
-                  : "-";
-                let badgeColor = "#64748b";
-                let badgeBg = "#f1f5f9";
-                let fileIcon = "fa-file-lines";
-                if (fileType === "pdf") {
-                  badgeColor = "#b91c1c";
-                  badgeBg = "#fee2e2";
-                  fileIcon = "fa-file-pdf";
-                } else if (fileType === "docx") {
-                  badgeColor = "#1d4ed8";
-                  badgeBg = "#dbeafe";
-                  fileIcon = "fa-file-word";
-                } else if (fileType === "md") {
-                  badgeColor = "#047857";
-                  badgeBg = "#d1fae5";
-                  fileIcon = "fa-file-code";
-                }
 
-                const escapedSafeTitle = title.replace(/'/g, "\\'");
-                return `
-                        <tr style="border-bottom: 1px solid #f1f5f9; cursor:pointer;" class="staff-doc-tr" onclick="openStaffDocViewer('${doc.doc_id}', '${escapedSafeTitle}', '${fileType}')">
-                            <td style="padding: 10px 12px; width: 42%; overflow: hidden;">
-                                <div style="font-weight:600; color:#0f172a; display:flex; align-items:center; gap:8px; overflow:hidden;">
-                                    <i class="fa-regular ${fileIcon}" style="color:${badgeColor}; font-size:14px; flex-shrink:0;"></i>
-                                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${title}</span>
-                                </div>
-                                <div style="font-size:11px; color:#94a3b8; margin-left:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Mã: ${escapeHtml(doc.doc_id)}</div>
-                            </td>
-                            <td style="padding: 10px 6px; width: 13%; text-align: center; white-space: nowrap;">
-                                <span style="background:${badgeBg}; color:${badgeColor}; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; text-transform:uppercase;">${fileType}</span>
-                            </td>
-                            <td style="padding: 10px 8px; width: 17%; color:#64748b; font-size:12px; white-space: nowrap;">${rawSize}</td>
-                            <td style="padding: 10px 8px; width: 14%; text-align: center; white-space: nowrap;">
-                                <span style="font-size:11px; font-weight:600; color:${doc.status === "READY" ? "#059669" : "#0284c7"}; background:${doc.status === "READY" ? "#ecfdf5" : "#e0f2fe"}; padding:2px 6px; border-radius:4px;">${doc.status}</span>
-                            </td>
-                            <td style="padding: 10px 10px; width: 14%; text-align: center; white-space: nowrap;" onclick="event.stopPropagation()">
-                                <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                                    <button title="Xem tài liệu gốc" onclick="openStaffDocViewer('${doc.doc_id}', '${escapedSafeTitle}', '${fileType}')" style="background:#e0f2fe; color:#0284c7; border:none; border-radius:4px; padding:5px 8px; cursor:pointer;">
-                                        <i class="fa-regular fa-eye"></i>
-                                    </button>
-                                    <button title="Xóa tài liệu" onclick="deleteStaffDoc('${doc.doc_id}')" style="background:#fee2e2; color:#ef4444; border:none; border-radius:4px; padding:5px 8px; cursor:pointer;">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        `;
-              })
-              .join("");
+            const searchInp = document.getElementById("staff-doc-search-input");
+            if (searchInp && searchInp.value.trim()) {
+              handleStaffDocSearch(searchInp.value);
+            } else {
+              renderStaffDocRows(allStaffDocListCache);
+            }
           }
         } catch (e) {
           tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444;">Lỗi tải dữ liệu kho tri thức</td></tr>`;
@@ -7427,6 +7987,7 @@
       }
 
       function handleStaffFeedback(btn, sessionId, score) {
+        closeStaffFeedbackPopover();
         const isUp = score === 1;
         if (isUp) {
           btn.style.color = "#10b981";
@@ -7435,20 +7996,100 @@
             "Cảm ơn bạn đã phản hồi câu trả lời hữu ích!",
             "success",
           );
+          const group = btn.closest(".msg-actions");
+          if (group) {
+            const downBtn = group.querySelector(".btn-thumbs-down");
+            if (downBtn) downBtn.style.color = "";
+          }
         } else {
-          btn.style.color = "#ef4444";
-          btn.title = "Đã ghi nhận phản hồi chưa chuẩn";
-          showStaffToast(
-            "Đã ghi nhận phản hồi để cải tiến chất lượng tri thức.",
-            "info",
-          );
+          currentFeedbackTargetBtn = btn;
+          currentFeedbackSessionId = sessionId;
+          selectedFeedbackChips.clear();
+          openStaffFeedbackPopover(btn, sessionId);
         }
+      }
+
+      function openStaffFeedbackPopover(btn, sessionId) {
+        closeStaffFeedbackPopover();
         const group = btn.closest(".msg-actions");
-        if (group) {
-          group
-            .querySelectorAll(".btn-thumbs-up, .btn-thumbs-down")
-            .forEach((b) => (b.disabled = true));
+        if (!group) return;
+
+        const popover = document.createElement("div");
+        popover.className = "staff-feedback-popover";
+        popover.id = "staff-active-feedback-popover";
+        popover.innerHTML = `
+          <div class="staff-feedback-title">
+            <span><i class="fa-solid fa-circle-exclamation" style="color:#ef4444; margin-right:6px;"></i>Góp ý câu trả lời</span>
+            <button type="button" class="chat-search-close-btn" onclick="closeStaffFeedbackPopover()" style="font-size:16px;">&times;</button>
+          </div>
+          <div style="font-size: 11.5px; color: #64748b;">Chọn lý do để cải thiện chất lượng tri thức:</div>
+          <div class="staff-feedback-chips">
+            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Sai thông tin')">❌ Sai thông tin</button>
+            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Thiếu nguồn trích dẫn')">📄 Thiếu nguồn</button>
+            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Không đúng tài liệu')">🔍 Sai tài liệu</button>
+            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Ảo giác AI')">🌀 Ảo giác</button>
+          </div>
+          <textarea class="staff-feedback-textarea" id="staff-feedback-custom-text" placeholder="Góp ý chi tiết thêm cho Quản trị viên (tùy chọn)..."></textarea>
+          <div class="staff-feedback-footer">
+            <button type="button" class="btn-staff-secondary" style="font-size:11px; padding:4px 9px;" onclick="closeStaffFeedbackPopover()">Hủy</button>
+            <button type="button" class="btn-staff-primary" style="font-size:11px; padding:4px 12px; background:#ef4444; border-color:#dc2626;" onclick="submitStaffFeedback()">Gửi phản hồi</button>
+          </div>
+        `;
+        group.appendChild(popover);
+      }
+
+      function toggleFeedbackChip(btn, reason) {
+        if (selectedFeedbackChips.has(reason)) {
+          selectedFeedbackChips.delete(reason);
+          btn.classList.remove("selected");
+        } else {
+          selectedFeedbackChips.add(reason);
+          btn.classList.add("selected");
         }
+      }
+
+      function closeStaffFeedbackPopover() {
+        const popover = document.getElementById("staff-active-feedback-popover");
+        if (popover) popover.remove();
+      }
+
+      function submitStaffFeedback() {
+        const customTextEl = document.getElementById("staff-feedback-custom-text");
+        const customText = customTextEl ? customTextEl.value.trim() : "";
+        const reasons = Array.from(selectedFeedbackChips);
+
+        if (currentFeedbackTargetBtn) {
+          currentFeedbackTargetBtn.style.color = "#ef4444";
+          currentFeedbackTargetBtn.title = "Đã gửi phản hồi chưa chuẩn";
+          const group = currentFeedbackTargetBtn.closest(".msg-actions");
+          if (group) {
+            const upBtn = group.querySelector(".btn-thumbs-up");
+            if (upBtn) upBtn.style.color = "";
+          }
+        }
+
+        try {
+          const feedbackPayload = {
+            session_id: currentFeedbackSessionId,
+            score: -1,
+            reasons: reasons,
+            comment: customText,
+            timestamp: new Date().toISOString()
+          };
+          fetch(`${API_BASE}/v1/rag/feedback`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: DEFAULT_TOKEN,
+              "X-Tenant-Id": getStaffActiveTenantId(),
+              "X-User-Id": getStaffCurrentUserId()
+            },
+            body: JSON.stringify(feedbackPayload)
+          }).catch(() => {});
+        } catch (err) {}
+
+        closeStaffFeedbackPopover();
+        showStaffToast("Đã gửi phản hồi chi tiết tới Quản trị viên. Xin cảm ơn bạn!", "info");
       }
 
       function shareStaffAnswer(btn) {
@@ -7478,14 +8119,14 @@
       }
 
       function retryStaffQuery(q) {
-        if (q) {
-          const inp = document.getElementById("staff-chat-input");
-          if (inp) {
-            inp.value = q;
-            autoResizeStaffChatInput();
-            inp.focus();
-          }
+        if (!q) return;
+        if (staffIsChatStreaming) return;
+        const inp = document.getElementById("staff-chat-input");
+        if (inp) {
+          inp.value = q;
+          autoResizeStaffChatInput();
         }
+        sendStaffChat(q);
       }
 
       let currentStaffAdhocAttachment = null; // { filename, text, size_bytes, file_type }
@@ -7806,8 +8447,9 @@
 
         if (staffIsChatStreaming) return;
         staffIsChatStreaming = true;
+        staffCurrentAbortController = new AbortController();
+        updateStaffSendButtonToStop();
         const sendBtnEl = document.getElementById("staff-send-btn");
-        if (sendBtnEl) sendBtnEl.disabled = true;
 
         if (!isEdit && input) {
           input.value = "";
@@ -7918,6 +8560,11 @@
             `);
         scrollArea.scrollTop = scrollArea.scrollHeight;
 
+        let accumulatedAnswer = "";
+        let serverSessionId = staffConversationId;
+        let finalCitations = [];
+        let firstChunkReceived = false;
+
         try {
           const ragSettings = getStaffRagSettings();
           const tenantId = getStaffActiveTenantId();
@@ -7928,6 +8575,7 @@
 
           const res = await fetch(`${API_BASE}/v1/rag/chat`, {
             method: "POST",
+            signal: staffCurrentAbortController ? staffCurrentAbortController.signal : undefined,
             headers: {
               "Content-Type": "application/json",
               Authorization: DEFAULT_TOKEN,
@@ -7954,11 +8602,6 @@
           const contentEl = document.getElementById(`${botId}-content`);
 
           if (res.ok) {
-            let accumulatedAnswer = "";
-            let serverSessionId = staffConversationId;
-            let finalCitations = [];
-            let firstChunkReceived = false;
-
             const streamCursorHtml =
               '<span class="stream-typing-cursor"></span>';
             function renderStreamBubble(targetEl, text) {
@@ -8020,6 +8663,7 @@
               }
 
               while (true) {
+                if (!staffIsChatStreaming) break;
                 const { done, value } = await reader.read();
                 if (done) break;
                 buffer += decoder.decode(value, { stream: true });
@@ -8116,7 +8760,7 @@
               const actionsDiv = document.createElement("div");
               actionsDiv.innerHTML = `
                             ${citHtml}
-                            <div class="msg-actions">
+                            <div class="msg-actions" style="position: relative;">
                                 <button class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${escapeHtml(accumulatedAnswer)}"><i class="fa-regular fa-copy"></i></button>
                                 <button class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${serverSessionId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
                                 <button class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${serverSessionId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
@@ -8133,14 +8777,47 @@
               botEl.innerHTML = `<div style="color:#ef4444; padding:8px 0;">Lỗi: ${escapeHtml(err.detail || err.error?.message || "Không thể lấy phản hồi từ máy chủ")}</div>`;
           }
         } catch (e) {
-          console.error("sendStaffChat error:", e);
-          const el = document.getElementById(botId);
-          if (el)
-            el.innerHTML = `<div style="color:#ef4444; padding:8px 0;">Lỗi kết nối tới máy chủ AI.</div>`;
+          if (e && (e.name === "AbortError" || e.message === "The user aborted a request.")) {
+            console.log("sendStaffChat generation stopped by user");
+            const botEl = document.getElementById(botId);
+            const contentEl = document.getElementById(`${botId}-content`);
+            if (contentEl) {
+              contentEl.querySelectorAll(".stream-typing-cursor").forEach((c) => c.remove());
+              const stopBadge = document.createElement("div");
+              stopBadge.style.cssText = "margin-top: 8px; font-size: 11.5px; color: #94a3b8; font-style: italic;";
+              stopBadge.innerHTML = '<i class="fa-solid fa-stop-circle" style="margin-right: 4px;"></i>Phản hồi đã dừng theo yêu cầu người dùng.';
+              contentEl.appendChild(stopBadge);
+            }
+            if (accumulatedAnswer) {
+              staffChatHistory.push({ role: "user", content: query });
+              staffChatHistory.push({
+                role: "assistant",
+                content: accumulatedAnswer,
+              });
+              if (botEl) {
+                const actionsDiv = document.createElement("div");
+                actionsDiv.innerHTML = `
+                  <div class="msg-actions" style="position: relative;">
+                    <button class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${escapeHtml(accumulatedAnswer)}"><i class="fa-regular fa-copy"></i></button>
+                    <button class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${serverSessionId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
+                    <button class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${serverSessionId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
+                    <button class="btn-action-icon" title="Chia sẻ" onclick="shareStaffAnswer(this)"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
+                    <button class="btn-action-icon" title="Thử lại" onclick="retryStaffQuery('${escapeHtml(query)}')"><i class="fa-solid fa-rotate-right"></i></button>
+                  </div>
+                `;
+                botEl.appendChild(actionsDiv);
+              }
+            }
+          } else {
+            console.error("sendStaffChat error:", e);
+            const el = document.getElementById(botId);
+            if (el)
+              el.innerHTML = `<div style="color:#ef4444; padding:8px 0;">Lỗi kết nối tới máy chủ AI.</div>`;
+          }
         } finally {
           staffIsChatStreaming = false;
-          const sendBtnEl = document.getElementById("staff-send-btn");
-          if (sendBtnEl) sendBtnEl.disabled = false;
+          staffCurrentAbortController = null;
+          resetStaffSendButton();
         }
         scrollArea.scrollTop = scrollArea.scrollHeight;
       }
