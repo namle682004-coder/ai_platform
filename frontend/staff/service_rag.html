@@ -4990,6 +4990,7 @@
       let isHistorySidebarOpen = false;
 
       let allStaffRecentSessionsCache = [];
+      let allStaffProjectsCache = [];
       let chatSearchSelectedIndex = 0;
       let staffCurrentAbortController = null;
       let allStaffDocListCache = [];
@@ -5131,6 +5132,20 @@
           }
           await loadStaffRecentSessions();
         }
+        if (!allStaffProjectsCache || allStaffProjectsCache.length === 0) {
+          try {
+            allStaffProjectsCache = await fetchRealUserProjects();
+          } catch (e) {
+            allStaffProjectsCache = [];
+          }
+        }
+        if (!allStaffDocListCache || allStaffDocListCache.length === 0) {
+          try {
+            if (typeof loadStaffDocListDirect === "function") {
+              await loadStaffDocListDirect();
+            }
+          } catch (e) {}
+        }
         renderChatSearchResults("");
       }
 
@@ -5200,16 +5215,57 @@
           return;
         }
 
-        // HAS QUERY: Show filtered search results with category tabs, snippets & dates
+        // HAS QUERY: Show filtered search results
         if (clearBtn) clearBtn.style.display = "inline-block";
         if (divider) divider.style.display = "inline-block";
         if (filtersEl) filtersEl.style.display = "flex";
         if (subtitleEl) subtitleEl.style.display = "none";
 
-        let filtered = [];
+        // TAB: PROJECTS
+        if (currentSearchFilterTab === "projects") {
+          const projs = (allStaffProjectsCache || []).filter((p) => {
+            const name = (p.project_name || p.name || "").toLowerCase();
+            const type = (p.type || "").toLowerCase();
+            const pid = (p.project_id || p.id || "").toLowerCase();
+            return !qLower || name.includes(qLower) || type.includes(qLower) || pid.includes(qLower);
+          });
+          if (projs.length === 0) {
+            listEl.innerHTML = `
+              <div class="chat-search-empty">
+                <i class="fa-solid fa-diagram-project" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+                Không tìm thấy dự án nào khớp với "${escapeHtml(q)}"
+              </div>
+            `;
+            return;
+          }
+          listEl.innerHTML = projs
+            .map((p, idx) => {
+              const name = p.project_name || p.name || "Dự án";
+              const titleHtml = highlightSearchMatch(name, q);
+              const pType = (p.type || "Prepaid").toUpperCase();
+              const pid = p.project_id || p.id || "";
+              const dateStr = formatChatSearchDate(p.created_at);
+              const isActive = (localStorage.getItem("aip_active_project") || "").trim().toLowerCase() === name.trim().toLowerCase();
+              return `
+                <div class="chat-search-item ${isActive ? "active" : ""} ${idx === 0 ? "highlighted" : ""}"
+                     data-index="${idx}"
+                     onclick="closeChatSearchModal(); switchStaffProject('${escapeHtml(name)}', '${escapeHtml(pid)}')"
+                     onmouseenter="highlightChatSearchItem(${idx})">
+                  <i class="fa-solid fa-diagram-project" style="color: #0284c7;"></i>
+                  <div class="chat-search-item-content">
+                    <div class="chat-search-item-title">${titleHtml} ${isActive ? '<span style="font-size:10px; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">Đang chọn</span>' : ""}</div>
+                    <div class="chat-search-item-snippet">Loại: ${pType} | ID: ${escapeHtml(pid)}</div>
+                  </div>
+                  <span class="chat-search-item-date">${dateStr}</span>
+                </div>
+              `;
+            })
+            .join("");
+          return;
+        }
 
+        // TAB: DOCUMENTS
         if (currentSearchFilterTab === "documents") {
-          // Filter documents
           const docs = (allStaffDocListCache || []).filter((doc) => {
             const title = (doc.title || doc.filename || "").toLowerCase();
             return title.includes(qLower);
@@ -5225,17 +5281,14 @@
           }
           listEl.innerHTML = docs
             .map((doc, idx) => {
-              const titleHtml = highlightSearchMatch(
-                doc.title || doc.filename || "Tài liệu",
-                q,
-              );
+              const titleHtml = highlightSearchMatch(doc.title || doc.filename || "Tài liệu", q);
               const fileType = (doc.file_type || "doc").toUpperCase();
               return `
                 <div class="chat-search-item ${idx === 0 ? "highlighted" : ""}"
                      data-index="${idx}"
                      onclick="closeChatSearchModal(); openStaffDocViewer('${doc.doc_id}', '${escapeHtml(doc.title || doc.filename)}', '${doc.file_type}')"
                      onmouseenter="highlightChatSearchItem(${idx})">
-                  <i class="fa-regular fa-file-lines"></i>
+                  <i class="fa-regular fa-file-lines" style="color: #059669;"></i>
                   <div class="chat-search-item-content">
                     <div class="chat-search-item-title">${titleHtml}</div>
                     <div class="chat-search-item-snippet">Định dạng: ${fileType} | ID: ${escapeHtml(doc.doc_id)}</div>
@@ -5247,48 +5300,180 @@
           return;
         }
 
-        // Filter sessions
-        filtered = (allStaffRecentSessionsCache || []).filter((s) => {
+        // TAB: IMAGES
+        if (currentSearchFilterTab === "images") {
+          const docs = (allStaffDocListCache || []).filter((doc) => {
+            const ft = (doc.file_type || "").toLowerCase();
+            const title = (doc.title || doc.filename || "").toLowerCase();
+            const isImg = ft === "png" || ft === "jpg" || ft === "jpeg" || ft === "webp" || ft === "gif";
+            return (isImg || title.includes("ảnh") || title.includes("image")) && (!qLower || title.includes(qLower));
+          });
+          if (docs.length === 0) {
+            listEl.innerHTML = `
+              <div class="chat-search-empty">
+                <i class="fa-regular fa-image" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+                Không tìm thấy tệp hình ảnh nào khớp với "${escapeHtml(q)}"
+              </div>
+            `;
+            return;
+          }
+          listEl.innerHTML = docs
+            .map((doc, idx) => {
+              const titleHtml = highlightSearchMatch(doc.title || doc.filename || "Hình ảnh", q);
+              return `
+                <div class="chat-search-item ${idx === 0 ? "highlighted" : ""}"
+                     data-index="${idx}"
+                     onclick="closeChatSearchModal(); openStaffDocViewer('${doc.doc_id}', '${escapeHtml(doc.title || doc.filename)}', '${doc.file_type}')"
+                     onmouseenter="highlightChatSearchItem(${idx})">
+                  <i class="fa-regular fa-image" style="color: #8b5cf6;"></i>
+                  <div class="chat-search-item-content">
+                    <div class="chat-search-item-title">${titleHtml}</div>
+                    <div class="chat-search-item-snippet">Định dạng: ${(doc.file_type || "IMG").toUpperCase()} | ID: ${escapeHtml(doc.doc_id)}</div>
+                  </div>
+                </div>
+              `;
+            })
+            .join("");
+          return;
+        }
+
+        // TAB: CHATS
+        if (currentSearchFilterTab === "chats") {
+          const filtered = (allStaffRecentSessionsCache || []).filter((s) => {
+            const t = (s.title || "").toLowerCase();
+            const lastMsg = (s.last_message || "").toLowerCase();
+            return t.includes(qLower) || lastMsg.includes(qLower);
+          });
+          if (filtered.length === 0) {
+            listEl.innerHTML = `
+              <div class="chat-search-empty">
+                <i class="fa-regular fa-folder-open" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+                Không tìm thấy cuộc trò chuyện nào khớp với "${escapeHtml(q)}"
+              </div>
+            `;
+            return;
+          }
+          listEl.innerHTML = filtered
+            .map((s, idx) => {
+              const isAct = s.session_id === staffConversationId;
+              const titleHtml = highlightSearchMatch(s.title || "Cuộc trò chuyện", q);
+              const snippetHtml = getSearchSnippet(s, q);
+              const dateStr = formatChatSearchDate(s.updated_at || s.created_at);
+              return `
+                <div class="chat-search-item ${isAct ? "active" : ""} ${idx === 0 ? "highlighted" : ""}"
+                     data-session-id="${s.session_id}"
+                     data-index="${idx}"
+                     onclick="selectChatSearchResult('${s.session_id}')"
+                     onmouseenter="highlightChatSearchItem(${idx})">
+                  <i class="fa-regular fa-comment"></i>
+                  <div class="chat-search-item-content">
+                    <div class="chat-search-item-title">${titleHtml}</div>
+                    ${snippetHtml ? `<div class="chat-search-item-snippet">${snippetHtml}</div>` : ""}
+                  </div>
+                  <span class="chat-search-item-date">${dateStr}</span>
+                </div>
+              `;
+            })
+            .join("");
+          return;
+        }
+
+        // TAB: ALL (Search across Projects, Documents, and Chats)
+        const matchedProjs = (allStaffProjectsCache || []).filter((p) => {
+          const name = (p.project_name || p.name || "").toLowerCase();
+          const type = (p.type || "").toLowerCase();
+          const pid = (p.project_id || p.id || "").toLowerCase();
+          return name.includes(qLower) || type.includes(qLower) || pid.includes(qLower);
+        });
+
+        const matchedDocs = (allStaffDocListCache || []).filter((doc) => {
+          const title = (doc.title || doc.filename || "").toLowerCase();
+          return title.includes(qLower);
+        });
+
+        const matchedSessions = (allStaffRecentSessionsCache || []).filter((s) => {
           const t = (s.title || "").toLowerCase();
           const lastMsg = (s.last_message || "").toLowerCase();
           return t.includes(qLower) || lastMsg.includes(qLower);
         });
 
-        if (!filtered || filtered.length === 0) {
+        let allHtml = "";
+        let totalCount = 0;
+
+        // Render matching projects first
+        matchedProjs.forEach((p) => {
+          const name = p.project_name || p.name || "Dự án";
+          const titleHtml = highlightSearchMatch(name, q);
+          const pType = (p.type || "Prepaid").toUpperCase();
+          const pid = p.project_id || p.id || "";
+          const dateStr = formatChatSearchDate(p.created_at);
+          const isAct = (localStorage.getItem("aip_active_project") || "").trim().toLowerCase() === name.trim().toLowerCase();
+          allHtml += `
+            <div class="chat-search-item ${isAct ? "active" : ""} ${totalCount === 0 ? "highlighted" : ""}"
+                 data-index="${totalCount++}"
+                 onclick="closeChatSearchModal(); switchStaffProject('${escapeHtml(name)}', '${escapeHtml(pid)}')"
+                 onmouseenter="highlightChatSearchItem(${totalCount - 1})">
+              <i class="fa-solid fa-diagram-project" style="color: #0284c7;"></i>
+              <div class="chat-search-item-content">
+                <div class="chat-search-item-title">${titleHtml} <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">DỰ ÁN</span></div>
+                <div class="chat-search-item-snippet">Loại: ${pType} | ID: ${escapeHtml(pid)}</div>
+              </div>
+              <span class="chat-search-item-date">${dateStr}</span>
+            </div>
+          `;
+        });
+
+        // Render matching documents
+        matchedDocs.forEach((doc) => {
+          const titleHtml = highlightSearchMatch(doc.title || doc.filename || "Tài liệu", q);
+          const fileType = (doc.file_type || "doc").toUpperCase();
+          allHtml += `
+            <div class="chat-search-item ${totalCount === 0 ? "highlighted" : ""}"
+                 data-index="${totalCount++}"
+                 onclick="closeChatSearchModal(); openStaffDocViewer('${doc.doc_id}', '${escapeHtml(doc.title || doc.filename)}', '${doc.file_type}')"
+                 onmouseenter="highlightChatSearchItem(${totalCount - 1})">
+              <i class="fa-regular fa-file-lines" style="color: #059669;"></i>
+              <div class="chat-search-item-content">
+                <div class="chat-search-item-title">${titleHtml} <span style="font-size:10px; background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">TÀI LIỆU</span></div>
+                <div class="chat-search-item-snippet">Định dạng: ${fileType} | ID: ${escapeHtml(doc.doc_id)}</div>
+              </div>
+            </div>
+          `;
+        });
+
+        // Render matching chats
+        matchedSessions.forEach((s) => {
+          const isAct = s.session_id === staffConversationId;
+          const titleHtml = highlightSearchMatch(s.title || "Cuộc trò chuyện", q);
+          const snippetHtml = getSearchSnippet(s, q);
+          const dateStr = formatChatSearchDate(s.updated_at || s.created_at);
+          allHtml += `
+            <div class="chat-search-item ${isAct ? "active" : ""} ${totalCount === 0 ? "highlighted" : ""}"
+                 data-session-id="${s.session_id}"
+                 data-index="${totalCount++}"
+                 onclick="selectChatSearchResult('${s.session_id}')"
+                 onmouseenter="highlightChatSearchItem(${totalCount - 1})">
+              <i class="fa-regular fa-comment" style="color: #64748b;"></i>
+              <div class="chat-search-item-content">
+                <div class="chat-search-item-title">${titleHtml} <span style="font-size:10px; background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:4px; font-weight:700; margin-left:6px;">HỘI THOẠI</span></div>
+                ${snippetHtml ? `<div class="chat-search-item-snippet">${snippetHtml}</div>` : ""}
+              </div>
+              <span class="chat-search-item-date">${dateStr}</span>
+            </div>
+          `;
+        });
+
+        if (!allHtml) {
           listEl.innerHTML = `
             <div class="chat-search-empty">
               <i class="fa-regular fa-folder-open" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
-              Không tìm thấy cuộc trò chuyện nào khớp với "${escapeHtml(q)}"
+              Không tìm thấy kết quả nào khớp với "${escapeHtml(q)}"
             </div>
           `;
           return;
         }
 
-        listEl.innerHTML = filtered
-          .map((s, idx) => {
-            const isAct = s.session_id === staffConversationId;
-            const titleHtml = highlightSearchMatch(
-              s.title || "Cuộc trò chuyện",
-              q,
-            );
-            const snippetHtml = getSearchSnippet(s, q);
-            const dateStr = formatChatSearchDate(s.updated_at || s.created_at);
-            return `
-              <div class="chat-search-item ${isAct ? "active" : ""} ${idx === 0 ? "highlighted" : ""}"
-                   data-session-id="${s.session_id}"
-                   data-index="${idx}"
-                   onclick="selectChatSearchResult('${s.session_id}')"
-                   onmouseenter="highlightChatSearchItem(${idx})">
-                <i class="fa-regular fa-comment"></i>
-                <div class="chat-search-item-content">
-                  <div class="chat-search-item-title">${titleHtml}</div>
-                  ${snippetHtml ? `<div class="chat-search-item-snippet">${snippetHtml}</div>` : ""}
-                </div>
-                <span class="chat-search-item-date">${dateStr}</span>
-              </div>
-            `;
-          })
-          .join("");
+        listEl.innerHTML = allHtml;
       }
 
       function highlightChatSearchItem(idx) {
@@ -5325,9 +5510,7 @@
         } else if (e.key === "Enter") {
           e.preventDefault();
           if (items.length > 0 && items[chatSearchSelectedIndex]) {
-            const sessId =
-              items[chatSearchSelectedIndex].getAttribute("data-session-id");
-            if (sessId) selectChatSearchResult(sessId);
+            items[chatSearchSelectedIndex].click();
           }
         } else if (e.key === "Escape") {
           e.preventDefault();
@@ -5647,7 +5830,42 @@
         document
           .querySelectorAll(".chatgpt-recent-item")
           .forEach((item) => item.classList.remove("active"));
-        if (el) el.classList.add("active");
+
+        let targetItem = el;
+        if (!targetItem && convId) {
+          targetItem = document.querySelector(
+            `.chatgpt-recent-item[data-session-id="${convId}"]`,
+          );
+          if (!targetItem) {
+            await loadStaffRecentSessions();
+            targetItem = document.querySelector(
+              `.chatgpt-recent-item[data-session-id="${convId}"]`,
+            );
+          }
+        }
+
+        // Open history sidebar if closed so user sees the active chat
+        const rightSidebar = document.getElementById("staff-right-history-sidebar");
+        if (rightSidebar && !isHistorySidebarOpen && typeof toggleStaffHistorySidebar === "function") {
+          toggleStaffHistorySidebar();
+        }
+
+        if (targetItem) {
+          targetItem.classList.add("active");
+          // Smoothly scroll the sidebar to center the active chat title!
+          setTimeout(() => {
+            targetItem.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+              inline: "nearest",
+            });
+            targetItem.style.transition = "background-color 0.4s ease, border-color 0.4s ease";
+            targetItem.style.backgroundColor = "#e0f2fe";
+            setTimeout(() => {
+              targetItem.style.backgroundColor = "";
+            }, 1800);
+          }, 120);
+        }
         if (convId) staffConversationId = convId;
         staffChatHistory = [];
 
