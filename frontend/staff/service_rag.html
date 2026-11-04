@@ -997,6 +997,72 @@
         color: #0d0d0d;
       }
 
+      .msg-more-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+      .msg-more-popover {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 0;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+        padding: 6px;
+        min-width: 190px;
+        z-index: 120;
+        white-space: nowrap;
+        animation: popoverFadeIn 0.15s ease-out;
+      }
+      .msg-user-actions .msg-more-popover {
+        left: auto;
+        right: 0;
+      }
+      @keyframes popoverFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .msg-popover-time {
+        padding: 6px 10px 6px 10px;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: #64748b;
+        user-select: none;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 4px;
+      }
+      .msg-popover-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1e293b;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+        user-select: none;
+      }
+      .msg-popover-item:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+      }
+      .msg-popover-item i {
+        font-size: 13px;
+        color: #475569;
+        width: 16px;
+        text-align: center;
+      }
+
       .quick-chips {
         display: flex;
         flex-direction: column;
@@ -5891,10 +5957,23 @@
             const data = await res.json();
             container.innerHTML = "";
             if (data && data.messages && data.messages.length > 0) {
-              data.messages.forEach((m) => {
-                staffChatHistory.push({ role: m.role, content: m.content });
+              data.messages.forEach((m, idx) => {
+                const mTs = m.timestamp || (Date.now() - (data.messages.length - idx) * 60000);
+                staffChatHistory.push({
+                  role: m.role,
+                  content: m.content,
+                  citations: m.citations || [],
+                  timestamp: mTs,
+                });
                 if (m.role === "user") {
-                  container.innerHTML += renderStaffUserMessageHtml(m.content);
+                  container.innerHTML += renderStaffUserMessageHtml(
+                    m.content,
+                    "",
+                    null,
+                    null,
+                    mTs,
+                    idx,
+                  );
                 } else {
                   let citHtml = formatStaffCitations(
                     m.citations || [],
@@ -5902,19 +5981,13 @@
                     m.content,
                   );
                   container.innerHTML += `
-                                    <div class="msg-bubble msg-assistant">
-                                        <div class="msg-header"><i class="fa-solid fa-robot" style="color: #0f4c81;"></i> Trợ lý Tri thức</div>
-                                        <div class="staff-markdown-body">${renderStaffMarkdown(m.content)}</div>
-                                        ${citHtml}
-                                        <div class="msg-actions" style="position: relative;">
-                                            <button class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${escapeHtml(m.content)}"><i class="fa-regular fa-copy"></i></button>
-                                            <button class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${convId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
-                                            <button class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${convId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
-                                            <button class="btn-action-icon" title="Chia sẻ" onclick="shareStaffAnswer(this)"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
-                                            <button class="btn-action-icon" title="Thử lại" onclick="retryStaffQuery('${escapeHtml(m.content)}')"><i class="fa-solid fa-rotate-right"></i></button>
-                                        </div>
-                                    </div>
-                                `;
+                    <div class="msg-bubble msg-assistant" data-msg-index="${idx}">
+                      <div class="msg-header"><i class="fa-solid fa-robot" style="color: #0f4c81;"></i> Trợ lý Tri thức</div>
+                      <div class="staff-markdown-body">${renderStaffMarkdown(m.content)}</div>
+                      ${citHtml}
+                      ${renderStaffAssistantActionsHtml(m.content, convId, m.citations || [], mTs, idx)}
+                    </div>
+                  `;
                 }
               });
               container.scrollTop = container.scrollHeight;
@@ -8995,6 +9068,206 @@
         sendStaffChat(q);
       }
 
+      function parseTimestampToMs(ts) {
+        if (!ts) return Date.now();
+        if (typeof ts === "number") {
+          return ts < 1e11 ? ts * 1000 : ts;
+        }
+        if (typeof ts === "string") {
+          const num = Number(ts);
+          if (!isNaN(num) && num > 0) {
+            return num < 1e11 ? num * 1000 : num;
+          }
+          const parsed = Date.parse(ts);
+          if (!isNaN(parsed)) return parsed;
+        }
+        return Date.now();
+      }
+
+      function formatMessageTimestamp(ts) {
+        const ms = parseTimestampToMs(ts);
+        const d = new Date(ms);
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const month = months[d.getMonth()];
+        const day = d.getDate();
+        let hours = d.getHours();
+        const minutes = d.getMinutes().toString().padStart(2, "0");
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        return `${month} ${day}, ${hours}:${minutes} ${ampm}`;
+      }
+
+      function toggleMsgMoreMenu(event, btn) {
+        if (event) event.stopPropagation();
+        const parent = btn.closest(".msg-more-wrapper");
+        if (!parent) return;
+        const popover = parent.querySelector(".msg-more-popover");
+        if (!popover) return;
+        const isShowing = popover.style.display !== "none";
+        closeAllMsgMorePopovers();
+        if (!isShowing) {
+          popover.style.display = "block";
+        }
+      }
+
+      function closeAllMsgMorePopovers() {
+        document.querySelectorAll(".msg-more-popover").forEach((p) => {
+          p.style.display = "none";
+        });
+      }
+
+      document.addEventListener("click", () => {
+        closeAllMsgMorePopovers();
+      });
+
+      function speakStaffAnswer(btn) {
+        if (!("speechSynthesis" in window)) {
+          showStaffToast("Trình duyệt không hỗ trợ đọc văn bản", "warning");
+          return;
+        }
+        if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+          btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          btn.title = "Đọc câu trả lời";
+          return;
+        }
+        const answerBtn = btn.closest(".msg-actions")?.querySelector("button[data-answer]");
+        let text = answerBtn?.getAttribute("data-answer") || "";
+        if (!text) {
+          const bubble = btn.closest(".msg-bubble");
+          text = bubble?.querySelector(".staff-markdown-body")?.innerText || "";
+        }
+        if (!text) return;
+        text = text.replace(/[*#`_\[\]()]/g, " ").replace(/\s+/g, " ").trim();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "vi-VN";
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark" style="color: #ef4444;"></i>';
+        btn.title = "Dừng đọc";
+        utterance.onend = () => {
+          btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          btn.title = "Đọc câu trả lời";
+        };
+        utterance.onerror = () => {
+          btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          btn.title = "Đọc câu trả lời";
+        };
+        window.speechSynthesis.speak(utterance);
+      }
+
+      async function branchStaffChatFromIndex(msgIndex) {
+        closeAllMsgMorePopovers();
+        if (
+          msgIndex === null ||
+          msgIndex === undefined ||
+          msgIndex < 0 ||
+          msgIndex >= staffChatHistory.length
+        ) {
+          showStaffToast("Không tìm thấy tin nhắn để rẽ nhánh", "warning");
+          return;
+        }
+
+        const branched = staffChatHistory.slice(0, msgIndex + 1);
+        if (branched.length === 0) return;
+
+        const newConvId =
+          "sess_" +
+          Date.now().toString(36) +
+          "_" +
+          Math.random().toString(36).substring(2, 6);
+        staffConversationId = newConvId;
+        localStorage.setItem("aip_active_rag_session", newConvId);
+
+        staffChatHistory = JSON.parse(JSON.stringify(branched));
+
+        const container =
+          document.getElementById("staff-stream-container") ||
+          document.getElementById("staff-chat-messages");
+        if (container) {
+          container.innerHTML = "";
+          staffChatHistory.forEach((m, idx) => {
+            const mTs = m.timestamp || Date.now();
+            if (m.role === "user") {
+              container.innerHTML += renderStaffUserMessageHtml(
+                m.content,
+                "",
+                null,
+                null,
+                mTs,
+                idx,
+              );
+            } else {
+              let citHtml = formatStaffCitations(
+                m.citations || [],
+                "",
+                m.content,
+              );
+              container.innerHTML += `
+                <div class="msg-bubble msg-assistant" data-msg-index="${idx}">
+                  <div class="msg-header"><i class="fa-solid fa-robot" style="color: #0f4c81;"></i> Trợ lý Tri thức</div>
+                  <div class="staff-markdown-body">${renderStaffMarkdown(m.content)}</div>
+                  ${citHtml}
+                  ${renderStaffAssistantActionsHtml(m.content, newConvId, m.citations || [], mTs, idx)}
+                </div>
+              `;
+            }
+          });
+          container.scrollTop = container.scrollHeight;
+        }
+
+        document
+          .querySelectorAll(".chatgpt-recent-item")
+          .forEach((el) => el.classList.remove("active"));
+
+        showStaffToast("Đã tạo nhánh cuộc trò chuyện mới!", "success");
+
+        const input = document.getElementById("staff-chat-input");
+        if (input) input.focus();
+      }
+
+      function renderStaffAssistantActionsHtml(
+        content,
+        sessionId,
+        citations = [],
+        timestamp = null,
+        msgIndex = null,
+        query = "",
+      ) {
+        const formattedTime = formatMessageTimestamp(timestamp);
+        const safeContent = escapeHtml(content || "");
+        const safeQuery = escapeHtml(query || "");
+        const sessId = escapeHtml(sessionId || staffConversationId || "");
+        const idx = msgIndex !== null && msgIndex !== undefined ? msgIndex : "";
+
+        return `
+          <div class="msg-actions" style="position: relative;" data-msg-index="${idx}">
+            <button type="button" class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${safeContent}"><i class="fa-regular fa-copy"></i></button>
+            <button type="button" class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${sessId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
+            <button type="button" class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${sessId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
+            <button type="button" class="btn-action-icon btn-listen" title="Đọc câu trả lời" onclick="speakStaffAnswer(this)"><i class="fa-solid fa-volume-high"></i></button>
+            <button type="button" class="btn-action-icon" title="Chia sẻ" onclick="shareStaffAnswer(this)"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
+            <button type="button" class="btn-action-icon" title="Thử lại" onclick="retryStaffQuery('${safeQuery || safeContent}')"><i class="fa-solid fa-rotate-right"></i></button>
+            <div class="msg-more-wrapper">
+              <button type="button" class="btn-action-icon btn-msg-more" title="Tùy chọn khác (${formattedTime})" onclick="toggleMsgMoreMenu(event, this)"><i class="fa-solid fa-ellipsis"></i></button>
+              <div class="msg-more-popover" style="display: none;">
+                <div class="msg-popover-time">${formattedTime}</div>
+                <div class="msg-popover-item" onclick="branchStaffChatFromIndex(${idx})">
+                  <i class="fa-solid fa-code-branch"></i>
+                  <span>Branch in new chat</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      window.formatMessageTimestamp = formatMessageTimestamp;
+      window.toggleMsgMoreMenu = toggleMsgMoreMenu;
+      window.closeAllMsgMorePopovers = closeAllMsgMorePopovers;
+      window.speakStaffAnswer = speakStaffAnswer;
+      window.branchStaffChatFromIndex = branchStaffChatFromIndex;
+      window.renderStaffAssistantActionsHtml = renderStaffAssistantActionsHtml;
+
       let currentStaffAdhocAttachment = null; // { filename, text, size_bytes, file_type }
 
       function triggerStaffFileAttach() {
@@ -9102,12 +9375,17 @@
         adhocBadgeHtml = "",
         adhocContext = null,
         adhocFilename = null,
+        timestamp = null,
+        msgIndex = null,
       ) {
         const safeQuery = escapeHtml(query);
         const safeContext = adhocContext ? escapeHtml(adhocContext) : "";
         const safeFilename = adhocFilename ? escapeHtml(adhocFilename) : "";
+        const formattedTime = formatMessageTimestamp(timestamp);
+        const idx = msgIndex !== null && msgIndex !== undefined ? msgIndex : "";
+
         return `
-          <div class="msg-user-wrapper">
+          <div class="msg-user-wrapper" data-msg-index="${idx}">
             <div class="msg-bubble msg-user" data-user-query="${safeQuery}" data-adhoc-context="${safeContext}" data-adhoc-filename="${safeFilename}">
               <div class="msg-user-view">
                 ${adhocBadgeHtml || ""}
@@ -9122,9 +9400,19 @@
                 </div>
               </div>
             </div>
-            <div class="msg-user-actions">
+            <div class="msg-user-actions" style="position: relative;">
               <button type="button" class="btn-action-icon" title="Sửa" onclick="startStaffUserEdit(this)"><i class="fa-regular fa-pen-to-square"></i></button>
               <button type="button" class="btn-action-icon" title="Sao chép" onclick="copyStaffUserQuery(this)"><i class="fa-regular fa-copy"></i></button>
+              <div class="msg-more-wrapper">
+                <button type="button" class="btn-action-icon btn-msg-more" title="Tùy chọn khác (${formattedTime})" onclick="toggleMsgMoreMenu(event, this)"><i class="fa-solid fa-ellipsis"></i></button>
+                <div class="msg-more-popover" style="display: none;">
+                  <div class="msg-popover-time">${formattedTime}</div>
+                  <div class="msg-popover-item" onclick="branchStaffChatFromIndex(${idx})">
+                    <i class="fa-solid fa-code-branch"></i>
+                    <span>Branch in new chat</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         `;
@@ -9444,6 +9732,8 @@
           adhocFilenamePayload = currentStaffAdhocAttachment.filename;
         }
 
+        const nowTs = Date.now();
+        const pendingUserIdx = staffChatHistory.length;
         if (!isEdit) {
           container.insertAdjacentHTML(
             "beforeend",
@@ -9452,6 +9742,8 @@
               adhocBadgeHtml,
               adhocContextPayload,
               adhocFilenamePayload,
+              nowTs,
+              pendingUserIdx,
             ),
           );
           scrollArea.scrollTop = scrollArea.scrollHeight;
@@ -9505,7 +9797,10 @@
             body: JSON.stringify({
               query: effectiveQuery,
               conversation_id: staffConversationId,
-              history: staffChatHistory,
+              history: staffChatHistory.map((h) => ({
+                role: h.role,
+                content: h.content,
+              })),
               model: staffCurrentModel,
               similarity_threshold: ragSettings.similarity_threshold || 0.65,
               top_k: ragSettings.top_k || 4,
@@ -9659,10 +9954,20 @@
             scrollArea.scrollTop = scrollArea.scrollHeight;
 
             // Save turn to chat history
-            staffChatHistory.push({ role: "user", content: query });
+            const userMsgTs = Date.now();
+            const botMsgTs = Date.now();
+            const userMsgIdx = staffChatHistory.length;
+            const botMsgIdx = userMsgIdx + 1;
+            staffChatHistory.push({
+              role: "user",
+              content: query,
+              timestamp: userMsgTs,
+            });
             staffChatHistory.push({
               role: "assistant",
               content: accumulatedAnswer,
+              citations: finalCitations,
+              timestamp: botMsgTs,
             });
             if (serverSessionId) {
               staffConversationId = serverSessionId;
@@ -9676,17 +9981,12 @@
               accumulatedAnswer,
             );
             if (botEl) {
+              botEl.setAttribute("data-msg-index", botMsgIdx);
               const actionsDiv = document.createElement("div");
               actionsDiv.innerHTML = `
-                            ${citHtml}
-                            <div class="msg-actions" style="position: relative;">
-                                <button class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${escapeHtml(accumulatedAnswer)}"><i class="fa-regular fa-copy"></i></button>
-                                <button class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${serverSessionId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
-                                <button class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${serverSessionId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
-                                <button class="btn-action-icon" title="Chia sẻ" onclick="shareStaffAnswer(this)"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
-                                <button class="btn-action-icon" title="Thử lại" onclick="retryStaffQuery('${escapeHtml(query)}')"><i class="fa-solid fa-rotate-right"></i></button>
-                            </div>
-                        `;
+                ${citHtml}
+                ${renderStaffAssistantActionsHtml(accumulatedAnswer, serverSessionId, finalCitations, botMsgTs, botMsgIdx, query)}
+              `;
               botEl.appendChild(actionsDiv);
             }
             await loadStaffRecentSessions();
@@ -9716,22 +10016,31 @@
               contentEl.appendChild(stopBadge);
             }
             if (accumulatedAnswer) {
-              staffChatHistory.push({ role: "user", content: query });
+              const userMsgTs = Date.now();
+              const botMsgTs = Date.now();
+              const userMsgIdx = staffChatHistory.length;
+              const botMsgIdx = userMsgIdx + 1;
+              staffChatHistory.push({
+                role: "user",
+                content: query,
+                timestamp: userMsgTs,
+              });
               staffChatHistory.push({
                 role: "assistant",
                 content: accumulatedAnswer,
+                timestamp: botMsgTs,
               });
               if (botEl) {
+                botEl.setAttribute("data-msg-index", botMsgIdx);
                 const actionsDiv = document.createElement("div");
-                actionsDiv.innerHTML = `
-                  <div class="msg-actions" style="position: relative;">
-                    <button class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${escapeHtml(accumulatedAnswer)}"><i class="fa-regular fa-copy"></i></button>
-                    <button class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${serverSessionId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
-                    <button class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${serverSessionId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
-                    <button class="btn-action-icon" title="Chia sẻ" onclick="shareStaffAnswer(this)"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
-                    <button class="btn-action-icon" title="Thử lại" onclick="retryStaffQuery('${escapeHtml(query)}')"><i class="fa-solid fa-rotate-right"></i></button>
-                  </div>
-                `;
+                actionsDiv.innerHTML = renderStaffAssistantActionsHtml(
+                  accumulatedAnswer,
+                  serverSessionId,
+                  [],
+                  botMsgTs,
+                  botMsgIdx,
+                  query,
+                );
                 botEl.appendChild(actionsDiv);
               }
             }
