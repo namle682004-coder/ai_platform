@@ -775,6 +775,45 @@ class QdrantVectorStoreAdapter(VectorStorePort):
         combined.sort(key=lambda x: (x.get("rrf_score", 0.0), x.get("score", 0.0)), reverse=True)
         return combined[:top_k]
 
+    async def fetch_document_chunks(
+        self,
+        doc_id: str,
+        tenant_id: str,
+        user_role: str = "user",
+        limit: int = 300,
+    ) -> List[Dict[str, Any]]:
+        """Scrolls every chunk of `doc_id` visible to the caller, ordered by chunk_index."""
+        must_conditions = self._build_filter_conditions(tenant_id, user_role, doc_ids=[doc_id])
+        points: List[Dict[str, Any]] = []
+        offset: Any = None
+        try:
+            client = await self._get_client()
+            while len(points) < limit:
+                body: Dict[str, Any] = {
+                    "filter": {"must": must_conditions},
+                    "limit": min(128, limit - len(points)),
+                    "with_payload": True,
+                    "with_vector": False,
+                }
+                if offset is not None:
+                    body["offset"] = offset
+                res = await client.post(
+                    f"{self.base_url}/collections/{self.collection_name}/points/scroll", json=body
+                )
+                if res.status_code != 200:
+                    break
+                result = res.json().get("result", {}) or {}
+                points.extend(result.get("points", []) or [])
+                offset = result.get("next_page_offset")
+                if offset is None:
+                    break
+        except httpx.HTTPError as exc:
+            logger.warning("Document chunk scroll failed for %s: %s", doc_id, exc)
+            return []
+        items = [{"id": p.get("id"), "score": 0.0, "payload": p.get("payload", {}) or {}} for p in points]
+        items.sort(key=lambda c: int(c["payload"].get("chunk_index", 0) or 0))
+        return items
+
     async def delete_stale_chunks(self, doc_id: str, tenant_id: str, keep_count: int) -> bool:
         """
         Delete points of `doc_id` with chunk_index >= keep_count.

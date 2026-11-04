@@ -209,6 +209,30 @@ def test_hyde_vector_fusion_math():
     assert mismatched == q_vec
 
 
+async def _assert_auto_hyde(use_case, req_short, emb_service):
+    resp: RagChatResponseDTO = await use_case.execute(req_short)
+    assert resp.hyde_active is True
+    assert resp.hypothetical_doc is not None
+    assert "làm việc từ xa" in resp.hypothetical_doc
+    assert resp.hyde_latency_ms >= 0.0
+    # Check that both query and hypothetical doc were embedded
+    assert len(emb_service.calls) >= 2
+
+    # 2. Streaming execution with HyDE
+    stream_gen = use_case.stream_execute(req_short)
+    stream_events = []
+    async for event in stream_gen:
+        if event.startswith("data: "):
+            payload = json.loads(event[6:].strip())
+            stream_events.append(payload)
+
+    done_event = next((e for e in stream_events if e.get("done") is True), None)
+    assert done_event is not None
+    assert done_event.get("hyde_active") is True
+    assert done_event.get("hypothetical_doc") is not None
+
+
+
 def test_rag_chat_use_case_with_hyde_integration():
     """Validates that RagChatUseCase executes with HyDE vector search and returns metadata."""
     async def _run():
@@ -254,32 +278,19 @@ def test_rag_chat_use_case_with_hyde_integration():
             session_repo=MockSessionRepo(),
         )
 
-        # 1. Short query -> Auto-activates HyDE
+        # 1. Short query -> Auto-activates HyDE (auto mode is opt-in via RAG_HYDE_AUTO_ENABLED)
+        from solutions.rag.config import rag_settings
+
         req_short = RagChatRequestDTO(
             query="Chính sách WFH",
             history=None,
         )
-        resp: RagChatResponseDTO = await use_case.execute(req_short)
-
-        assert resp.hyde_active is True
-        assert resp.hypothetical_doc is not None
-        assert "làm việc từ xa" in resp.hypothetical_doc
-        assert resp.hyde_latency_ms >= 0.0
-        # Check that both query and hypothetical doc were embedded
-        assert len(emb_service.calls) >= 2
-
-        # 2. Streaming execution with HyDE
-        stream_gen = use_case.stream_execute(req_short)
-        stream_events = []
-        async for event in stream_gen:
-            if event.startswith("data: "):
-                payload = json.loads(event[6:].strip())
-                stream_events.append(payload)
-
-        done_event = next((e for e in stream_events if e.get("done") is True), None)
-        assert done_event is not None
-        assert done_event.get("hyde_active") is True
-        assert done_event.get("hypothetical_doc") is not None
+        previous = rag_settings.hyde_auto_enabled
+        rag_settings.hyde_auto_enabled = True
+        try:
+            await _assert_auto_hyde(use_case, req_short, emb_service)
+        finally:
+            rag_settings.hyde_auto_enabled = previous
 
         # 3. Explicit disable (enable_hyde=False) -> Bypasses HyDE
         emb_service.calls.clear()

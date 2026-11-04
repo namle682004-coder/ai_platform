@@ -9,6 +9,7 @@ import time
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
 from solutions.rag.application.components.prompt_builder import REFUSAL_MESSAGE
+from solutions.rag.application.components.query_analyzer import ANALYZER_MARKER
 from solutions.rag.application.dtos import (
     CONFIDENCE_GATE_MIN_THRESHOLD,
     DEFAULT_CONFIDENCE_THRESHOLD,
@@ -79,6 +80,11 @@ class MockSessionRepo(SessionRepositoryPort):
 
     async def delete_message(self, session_id, message_id, user_id, tenant_id):
         return True
+
+
+def generation_calls(calls: List[List[Dict[str, str]]]) -> List[List[Dict[str, str]]]:
+    """LLM calls that generate an answer (the per-turn query-analysis call is excluded)."""
+    return [m for m in calls if ANALYZER_MARKER not in m[0]["content"]]
 
 
 class MockLLMService(LLMPort):
@@ -157,15 +163,15 @@ def test_circuit_breaker_triggers_on_low_score_chunk():
         resp: RagChatResponseDTO = await use_case.execute(req)
         elapsed_ms = (time.time() - start_t) * 1000
 
-        # Must trigger refusal
-        assert resp.answer == REFUSAL_MESSAGE
+        # Must trigger refusal (with ticket and contact channels appended)
+        assert resp.answer.startswith(REFUSAL_MESSAGE)
         assert resp.intent == "REFUSAL"
         assert resp.circuit_breaker_triggered is True
         assert resp.is_refusal is True
         assert len(resp.citations) == 0
 
         # Zero LLM generation calls
-        assert len(llm.calls) == 0
+        assert len(generation_calls(llm.calls)) == 0
 
         # Fast execution (< 100ms in test environment)
         assert elapsed_ms < 100
@@ -211,7 +217,7 @@ def test_circuit_breaker_triggers_on_streaming():
         assert len(events) >= 2
         # First event is refusal message token
         token_payload = json.loads(events[0].replace("data: ", "").strip())
-        assert token_payload.get("token") == REFUSAL_MESSAGE
+        assert token_payload.get("token", "").startswith(REFUSAL_MESSAGE)
 
         # Done event has telemetry
         done_payload = json.loads(events[-1].replace("data: ", "").strip())
@@ -258,7 +264,7 @@ def test_gatekeeper_allows_high_score_chunk():
 
         assert resp.circuit_breaker_triggered is False
         assert resp.is_refusal is False
-        assert len(llm.calls) == 1
+        assert len(generation_calls(llm.calls)) == 1
         assert len(resp.citations) == 1
         assert resp.citations[0].doc_id == "doc_diplomacy"
 

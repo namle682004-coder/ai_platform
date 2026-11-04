@@ -28,6 +28,8 @@ from ...domain.ports import CachePort
 
 logger = logging.getLogger("aip-rag.adapter.redis_cache")
 
+CACHE_PIPELINE_VERSION = "p2"
+
 
 class RedisCacheAdapter(CachePort):
     """
@@ -99,7 +101,8 @@ class RedisCacheAdapter(CachePort):
         norm_tenant = normalize_tenant_id(tenant_id)
         normalized_q = query.strip().lower()
         thresh_str = f"{round(similarity_threshold, 2)}" if similarity_threshold else "0.0"
-        key_raw = f"{norm_tenant}:{user_role}:{department or '*'}:{normalized_q}:{combine_strategy}:{as_of_date or 'CURRENT'}:{thresh_str}"
+        # The pipeline version invalidates answers produced by an earlier retrieval/generation pipeline.
+        key_raw = f"{CACHE_PIPELINE_VERSION}:{norm_tenant}:{user_role}:{department or '*'}:{normalized_q}:{combine_strategy}:{as_of_date or 'CURRENT'}:{thresh_str}"
         hash_digest = hashlib.sha256(key_raw.encode("utf-8")).hexdigest()
         return f"aip:rag:cache:{norm_tenant}:{hash_digest}"
 

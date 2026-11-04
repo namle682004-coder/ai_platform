@@ -10,6 +10,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 import pytest
 
 from solutions.rag.application.components.prompt_builder import REFUSAL_MESSAGE, RagPromptBuilder
+from solutions.rag.application.components.query_analyzer import ANALYZER_MARKER
 from solutions.rag.application.dtos import RagChatRequestDTO, RagChatResponseDTO
 from solutions.rag.application.use_cases.chat_use_case import CandidateWrapper, RagChatUseCase
 from solutions.rag.domain.ports import EmbeddingPort, LLMPort, SessionRepositoryPort, VectorStorePort
@@ -234,10 +235,12 @@ def test_resolve_combine_strategy(sample_candidates):
     single_wrapped = [wrapped[0]]
     assert use_case._resolve_combine_strategy("auto", "hỏi bình thường", single_wrapped) == "stuff"
 
-    # Auto-detection for summary keywords
-    assert use_case._resolve_combine_strategy("auto", "Hãy tổng hợp toàn bộ các quy định công tác phí", wrapped) == "map_reduce"
-    assert use_case._resolve_combine_strategy("auto", "Tóm tắt ngắn gọn", wrapped) == "map_reduce"
+    # 'auto' is decided by context size, not by keywords in the question
+    assert use_case._resolve_combine_strategy("auto", "Hãy tổng hợp toàn bộ các quy định công tác phí", wrapped) == "stuff"
     assert use_case._resolve_combine_strategy("auto", "công tác phí bao nhiêu tiền?", wrapped) == "stuff"
+    from solutions.rag.config import rag_settings
+    oversized = [CandidateWrapper({**c, "payload": {**c["payload"], "text": "x" * (rag_settings.context_char_budget + 1)}}) for c in sample_candidates]
+    assert use_case._resolve_combine_strategy("auto", "hỏi bình thường", oversized) == "map_reduce"
 
 
 def test_execute_with_map_reduce(sample_candidates):
@@ -406,7 +409,14 @@ def test_anti_hallucination_gatekeeper_rejection():
         vs = MockVectorStore(low_candidates)
         emb = MockEmbeddingService()
         repo = MockSessionRepo()
-        use_case = RagChatUseCase(vs, emb, llm, repo)
+
+        class CalibratedReranker:
+            """Keeps the calibrated scores of the fixture (the local English reranker is not calibrated for Vietnamese)."""
+
+            async def arerank(self, query, candidates, top_n=5, min_threshold=0.0):
+                return sorted(candidates, key=lambda c: c["score"], reverse=True)[:top_n]
+
+        use_case = RagChatUseCase(vs, emb, llm, repo, reranker_service=CalibratedReranker())
 
         req = RagChatRequestDTO(
             query="Bí quyết du hành vũ trụ đến sao Hỏa?",
@@ -415,9 +425,11 @@ def test_anti_hallucination_gatekeeper_rejection():
         resp: RagChatResponseDTO = await use_case.execute(req)
 
         assert resp.intent == "REFUSAL"
-        assert resp.answer == REFUSAL_MESSAGE
+        assert resp.answer.startswith(REFUSAL_MESSAGE)
+        assert resp.escalation["escalation_data"]["ticket_id"] in resp.answer
         assert resp.citations == []
-        assert len(llm.calls) == 0
+        # Only the query-analysis call ran; nothing was generated from the weak passage.
+        assert not [m for m in llm.calls if ANALYZER_MARKER not in m[0]["content"]]
 
     asyncio.run(_run())
 

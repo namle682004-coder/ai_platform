@@ -64,6 +64,19 @@ class VectorStorePort(ABC):
         """Remove all points associated with a document."""
         ...
 
+    async def fetch_document_chunks(
+        self,
+        doc_id: str,
+        tenant_id: str,
+        user_role: str = "user",
+        limit: int = 300,
+    ) -> List[Dict[str, Any]]:
+        """
+        All chunks of one document (same ACL filters as search), ordered by chunk_index.
+        Used to expand a section or read a document header; adapters without it return nothing.
+        """
+        return []
+
     async def delete_stale_chunks(self, doc_id: str, tenant_id: str, keep_count: int) -> bool:
         """
         Remove points of a re-indexed document whose chunk_index >= keep_count.

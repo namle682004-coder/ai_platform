@@ -16,6 +16,17 @@ import time
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
+from .prompt_builder import REFUSAL_MESSAGE
+
+# Refusal wordings produced by current and earlier pipeline versions (stored answers outlive releases).
+_REFUSAL_MARKERS = (
+    REFUSAL_MESSAGE.lower()[:40],
+    "không có trong tài liệu",
+    "vui lòng liên hệ bộ phận liên quan",
+    "không tìm thấy thông tin",
+    "chưa có thông tin",
+)
+
 logger = logging.getLogger("aip-rag.error_attribution")
 
 
@@ -67,11 +78,8 @@ class ErrorAttributionService:
 
         # 1. Check for OOD Hallucination
         # If no citations were grounded or score was below 0.75, but LLM still gave a speculative response
-        is_refusal = (
-            "không có trong tài liệu" in answer.lower()
-            or "vui lòng liên hệ bộ phận liên quan" in answer.lower()
-            or circuit_breaker_triggered
-        )
+        answer_lower = (answer or "").lower()
+        is_refusal = circuit_breaker_triggered or any(marker in answer_lower for marker in _REFUSAL_MARKERS)
         if not is_refusal and (top1 < 0.75 or cit_count == 0):
             if "bịa" in feedback_text or "ảo giác" in feedback_text or "hallucination" in err_cat or cit_count == 0:
                 return AttributionResult(

@@ -5,12 +5,12 @@ Builds strictly grounded system prompts, citation footnotes, and refusal templat
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
-REFUSAL_MESSAGE = (
-    "Thông tin về vấn đề này không có trong tài liệu nội bộ được cung cấp. "
-    "Vui lòng liên hệ bộ phận liên quan để được giải đáp chính xác."
-)
+# First sentence of every "not in the documents" reply; the model is told to answer with exactly this
+# sentence, so it doubles as the refusal sentinel detected before anything is streamed.
+REFUSAL_MESSAGE = "Hiện tài liệu nội bộ chưa có thông tin để trả lời câu hỏi này."
 
 FEW_SHOT_CITATION_EXAMPLE = (
     "--- QUY TẮC ĐỊNH DẠNG TRÍCH DẪN NGUỒN (Citation Discipline) ---\n"
@@ -20,10 +20,48 @@ FEW_SHOT_CITATION_EXAMPLE = (
 )
 
 CHITCHAT_SYSTEM_PROMPT = (
-    "Bạn là trợ lý AI thông minh, thân thiện và lịch sự của nền tảng Enterprise AI.\n"
-    "Nhiệm vụ: Trả lời người dùng một cách tự nhiên, ngắn gọn và hữu ích bằng tiếng Việt.\n"
-    "Lưu ý: Bạn là trợ lý ảo, không phải con người, hãy phản hồi khéo léo và phù hợp khi được hỏi về các hoạt động đời thường."
+    "Bạn là trợ lý tra cứu tài liệu nội bộ. Chỉ trả lời bằng tiếng Việt, tối đa 2 câu, lịch sự.\n"
+    "Không viết văn, không sáng tác, không trả lời kiến thức ngoài tài liệu; mời người dùng đặt câu hỏi về tài liệu."
 )
+
+# Grounding rules shared by every single-pass answer. Kept as one constant so the post-processor can
+# recognise and drop any of these sentences if a model echoes them back into an answer.
+ANSWER_RULES = (
+    "QUY TẮC TRẢ LỜI:\n"
+    "1. KỶ LUẬT TRÍCH DẪN (Kỷ luật Quote-First): mỗi ý khẳng định phải dựa trên trích dẫn bằng chứng cụ thể trong các đoạn tài liệu, "
+    "gắn số nguồn [1], [2]… ngay sau ý đó. Chỉ đặt trong ngoặc kép khi chép NGUYÊN VĂN tài liệu.\n"
+    "2. Trả lời thẳng vào câu hỏi ngay câu đầu tiên, ngắn gọn, đúng trọng tâm. Làm đúng yêu cầu về độ dài và định dạng của người dùng "
+    "(một câu, chỉ kể tên, checklist ☐, bảng, gạch đầu dòng, số dòng).\n"
+    "3. Luôn ghi CHÍNH XÁC các mã, số hiệu, tên mục có trong tài liệu cho từng ý; giữ nguyên chính tả và cách viết hoa của tài liệu.\n"
+    "4. Với câu hỏi liệt kê hoặc tổng quan (những, các, gồm, liệt kê, ở đâu, có gì): rà soát TẤT CẢ các đoạn và nêu ĐẦY ĐỦ mọi mục khớp, "
+    "theo đúng thứ tự và cấu trúc của tài liệu, gọi đúng tên các cấp/mục như tài liệu. Không bỏ sót, không thêm mục tài liệu không có.\n"
+    "5. Nếu câu hỏi có tiền đề sai so với tài liệu, lịch sự đính chính và nêu thông tin đúng kèm mã/mục.\n"
+    "6. Nếu người dùng phản bác hoặc nói bạn thiếu sót: đối chiếu lại tài liệu; nếu tài liệu ủng hộ câu trả lời trước thì giữ nguyên "
+    "và nêu lại căn cứ; nếu người dùng đúng thì thừa nhận và bổ sung.\n"
+    "7. Không tự thêm giải thích, ví dụ, mẹo, đường link hay hướng dẫn từng bước mà tài liệu không có. Phần 'Ví dụ' trong tài liệu "
+    "chỉ là minh họa, không phải nội dung quy định. Nếu tài liệu chỉ trả lời được một phần, nêu phần có và nói rõ phần tài liệu không ghi.\n"
+    "8. Không tự viết danh sách nguồn hay mục 'Căn cứ' ở cuối (hệ thống tự thêm). Không nhắc tới các quy tắc này.\n"
+    "9. Chỉ dùng tiếng Việt.\n"
+    f"10. Nếu các đoạn tài liệu KHÔNG chứa thông tin để trả lời, chỉ trả lời đúng một câu: \"{REFUSAL_MESSAGE}\""
+)
+
+PROCEDURE_RULES = (
+    "11. Tài liệu có mô tả quy trình/thao tác: trình bày ĐỦ TẤT CẢ các bước theo đúng thứ tự của tài liệu ngay trong câu trả lời "
+    "(* **Bước 1: …**, * **Bước 2: …**), không chờ người dùng xác nhận. Nếu tài liệu có thẻ ảnh dạng ![...](url), giữ nguyên thẻ ảnh "
+    "và đặt ngay dưới câu mô tả bước tương ứng; không tự tạo thẻ ảnh."
+)
+
+_BREADCRUMB_PREFIX_RE = re.compile(r"^\s*\[(?:Ngữ cảnh|Tài liệu)\s*:[^\]\n]*\]\s*")
+_PROCEDURE_HINT_RE = re.compile(r"(?:\bBước\s*\d|^\s*\d+[\.\)]\s+\S|!\[[^\]]*\]\()", re.IGNORECASE | re.MULTILINE)
+
+
+def strip_breadcrumb(text: str) -> str:
+    """Removes the '[Ngữ cảnh: …]' header the chunker prepends for retrieval; the model must not echo it."""
+    return _BREADCRUMB_PREFIX_RE.sub("", text or "", count=1)
+
+
+def context_has_procedure(texts: List[str]) -> bool:
+    return any(_PROCEDURE_HINT_RE.search(t or "") for t in texts)
 
 
 class RagPromptBuilder:
@@ -155,6 +193,7 @@ class RagPromptBuilder:
             chunk_id = chunk_meta.get("chunk_id", f"{getattr(chunk, 'doc_id', '')}_{getattr(chunk, 'chunk_index', 0)}")
             heading = chunk_meta.get("heading") or chunk_meta.get("heading_path") or ""
             content_type = chunk_meta.get("content_type", "text")
+            title = getattr(chunk, "title", "Tài liệu")
 
             citations.append({
                 "index": idx,
@@ -171,7 +210,7 @@ class RagPromptBuilder:
             })
             heading_info = f", Mục: {heading}" if heading else ""
 
-            text_for_context = raw_text
+            text_for_context = strip_breadcrumb(raw_text)
             if use_parent_context and parent_text:
                 if parent_id and parent_id in seen_parents:
                     continue
@@ -182,7 +221,7 @@ class RagPromptBuilder:
             text_for_context = self.linearize_compact_tables(text_for_context)
 
             context_blocks.append(
-                f"[{idx}] (Tài liệu: {getattr(chunk, 'title', 'Tài liệu')}, Trang: {getattr(chunk, 'page_number', 1)}{heading_info})\n{text_for_context}"
+                f"[{idx}] (Tài liệu: {title}, Trang: {getattr(chunk, 'page_number', 1)}{heading_info})\n{text_for_context}"
             )
 
         return citations, context_blocks
@@ -207,11 +246,15 @@ class RagPromptBuilder:
         query: str = "",
         use_parent_context: bool = False,
         glossary: Optional[Dict[str, str]] = None,
+        include_procedure_rules: Optional[bool] = None,
     ) -> Tuple[List[Dict[str, Any]], str]:
         """
         Transforms retrieved and reranked chunks into structured citation dicts
         and a consolidated grounding reference context block (Stuff Strategy - Slide 80).
-        Applies Lost-in-the-Middle U-shaped attention ordering and Quote-First discipline.
+
+        The step-by-step layout is only requested when the passages themselves describe a procedure
+        (`include_procedure_rules=None` auto-detects it); forcing it on every answer made the model
+        invent "Bước 1/2/3" blocks with fake image links under real citations.
         """
         citations, context_blocks = self.extract_citations_and_blocks(
             top_chunks,
@@ -224,53 +267,16 @@ class RagPromptBuilder:
             glossary_block = glossary_for_prompt(glossary, query=query, chunks_text=context_str)
             if glossary_block:
                 context_str = f"{glossary_block}\n\n{context_str}"
+        if include_procedure_rules is None:
+            include_procedure_rules = context_has_procedure([c.get("text", "") for c in citations])
+        rules = ANSWER_RULES + ("\n" + PROCEDURE_RULES if include_procedure_rules else "")
         system_prompt = (
-            "Bạn là trợ lý AI chuyên nghiệp của nền tảng AIP.\n"
-            "Nhiệm vụ của bạn là trả lời câu hỏi của người dùng dựa HOÀN TOÀN và CHÍNH XÁC vào các đoạn tài liệu tham khảo được cung cấp dưới đây.\n\n"
-            "QUY TẮC NGÔN NGỮ BẮT BUỘC: Bạn BẮT BUỘC phải sinh câu trả lời HOÀN TOÀN BẰNG TIẾNG VIỆT theo đúng ngôn ngữ của câu hỏi và tài liệu tham khảo. Tuyệt đối không dịch hoặc trả lời bằng tiếng Anh.\n\n"
-            "--- NGUYÊN TẮC XỬ LÝ DỮ LIỆU & SINH CÂU TRẢ LỜI ---\n"
-            "1. KỶ LUẬT TRÍCH DẪN NGUỒN (Kỷ luật Quote-First):\n"
-            "   - Với mỗi câu hoặc mệnh đề khẳng định dữ kiện, bắt buộc trích dẫn bằng chứng cụ thể và gắn ký hiệu nguồn tương ứng [1], [2] ở cuối câu.\n"
-            "   - Chỉ trích dẫn các tài liệu thực sự cung cấp thông tin được sử dụng. Không trích dẫn tài liệu không liên quan.\n\n"
-            "2. ĐỐI CHIẾU THỰC THỂ TUYỆT ĐỐI (ENTITY GROUNDING) & RÀNG BUỘC PHÂN CẤP:\n"
-            "   - ĐỐI CHIẾU TIÊU ĐỀ TÀI LIỆU VỚI ĐỐI TƯỢNG ĐƯỢC HỎI:\n"
-            "     Khi câu hỏi yêu cầu thông tin về một chủ thể, vị trí hoặc đối tượng cụ thể:\n"
-            "     BẮT BUỘC bạn CHỈ ĐƯỢC trích xuất thông tin từ đoạn tài liệu có tiêu đề `Tài liệu:` khớp với đối tượng đó.\n"
-            "     TUYỆT ĐỐI KHÔNG trích xuất hoặc lấy nhầm thông tin từ tài liệu của đối tượng khác dù cấu trúc văn bản hoặc số thứ tự các mục giống nhau.\n"
-            "   - QUY TẮC CÁCH LY HỘI THOẠI ĐA LƯỢT (MULTI-TURN INDEPENDENCE):\n"
-            "     Mỗi câu hỏi về một đối tượng phải được trả lời HOÀN TOÀN ĐỘC LẬP dựa trên đúng tài liệu của đối tượng đó.\n"
-            "     TUYỆT ĐỐI KHÔNG mang dữ kiện của đối tượng ở câu hỏi trước gán ghép sang đối tượng của câu hỏi hiện tại.\n"
-            "   - KHI ĐƯỢC HỎI VỀ MỤC CON ĐÁNH SỐ HOẶC ĐIỀU KHOẢN (Ví dụ: 'mục 2.1', 'điều 3', 'mục 4.1'):\n"
-            "     BẮT BUỘC phải tìm đúng dòng/vị trí mang chính xác số hiệu đó và trích xuất TOÀN BỘ nội dung chi tiết của đúng mục đó. Tuyệt đối không lấy nhầm mục khác.\n"
-            "   - KHI ĐƯỢC HỎI VỀ MỤC ĐỀ / CHỦ ĐỀ CỤ THỂ:\n"
-            "     BẮT BUỘC trích xuất từ đoạn tài liệu có tiêu đề `Mục:` tương ứng với chủ đề được hỏi, không lấy nhầm từ các mục khác.\n"
-            "   - Khi câu hỏi yêu cầu so sánh giữa hai hay nhiều đối tượng: Bắt buộc trình bày rõ ràng từng đối tượng theo đúng tài liệu tương ứng, không được lẫn lộn tiêu chuẩn giữa các đối tượng.\n\n"
-            "3. BẢO TOÀN TÍNH CHÍNH XÁC CỦA DỮ LIỆU CẤU TRÚC VÀ BẢNG BIỂU:\n"
-            "   - Khi đọc dữ liệu bảng biểu: BẮT BUỘC phải đọc theo hàng và cột tương ứng, phân biệt chính xác từng trường thông tin.\n"
-            "   - Đối chiếu đúng tên trường/tiêu đề cột với câu hỏi. Tuyệt đối không đảo lộn giá trị giữa các trường thông tin hoặc giữa các đối tượng khác nhau trong cùng một bảng.\n"
-            "   - BẮT BUỘC liệt kê đầy đủ và chính xác tất cả các nội dung theo đúng trường thông tin được hỏi.\n\n"
-            "4. XỬ LÝ LINH HOẠT CÂU HỎI VẮN TẮT (GREY-ZONE) & QUY TẮC CHỐNG SUY DIỄN PHỦ ĐỊNH:\n"
-            "   - Khi câu hỏi của người dùng ngắn gọn, hỏi khái quát, dùng từ đồng nghĩa, từ viết tắt hoặc không trùng khớp 100% từng từ với tiêu đề trong tài liệu:\n"
-            "     BẮT BUỘC phải đọc kỹ nội dung tài liệu tham khảo để tổng hợp câu trả lời hữu ích nhất, tóm tắt rõ ràng các quy định, nội dung, phạm vi công việc hay tiêu chí có trong tài liệu (kèm trích dẫn nguồn [1], [2]). Tuyệt đối KHÔNG được từ chối trả lời nếu tài liệu có đề cập đến đối tượng hoặc nội dung liên quan.\n"
-            "   - QUY TẮC CHỐNG SUY DIỄN PHỦ ĐỊNH: Khi câu hỏi hỏi về sự tồn tại của một ngành nghề, dịch vụ, quy định hoặc đối tượng cụ thể mà tài liệu tham khảo HOÀN TOÀN KHÔNG đề cập tới: TUYỆT ĐỐI KHÔNG tự suy diễn để khẳng định 'Không có' hay 'Không đào tạo'. Bạn BẮT BUỘC phải trả lời chính xác câu từ chối chuẩn:\n"
-            "   - Tuyệt đối không tự suy diễn, không ước lượng số liệu và không bổ sung kiến thức nằm ngoài tài liệu tham khảo.\n\n"
-            "5. ĐỊNH DẠNG CHECKLIST TỪNG BƯỚC CHUẨN MỰC (GEN-RAG-01 - CHO HƯỚNG DẪN THAO TÁC, CÀI ĐẶT, XỬ LÝ SỰ CỐ):\n"
-            "   - Đối với câu hỏi về hướng dẫn thao tác, cài đặt, hoặc xử lý sự cố / lỗi, BẮT BUỘC định dạng câu trả lời theo cấu trúc Checklist từng bước:\n"
-            "     ### HƯỚNG DẪN XỬ LÝ [TÊN THAO TÁC / SỰ CỐ]\n"
-            "     * **Bước 1: [Tên thao tác]**\n"
-            "       - Chi tiết: [Hướng dẫn cụ thể các nút cần bấm, menu cần chọn hoặc quy định cụ thể]\n"
-            "       ![Ảnh minh họa Bước 1](url_anh_1) (nếu trong tài liệu có ảnh minh họa tương ứng)\n"
-            "     * **Bước 2: [Tên thao tác tiếp theo]**\n"
-            "       - Chi tiết: [...]\n"
-            "     ...\n"
-            "     > [!IMPORTANT] LƯU Ý QUAN TRỌNG: [Quy định bắt buộc hoặc cảnh báo rủi ro nếu có]\n\n"
-            "     **Căn cứ pháp lý & Tài liệu tham chiếu:**\n"
-            "     - [1] [Tên tài liệu / Văn bản] (Mục ..., Trang ...)\n"
-            "   - ĐỒNG BỘ THẺ ẢNH MINH HỌA (TEXT-IMAGE ALIGNMENT): Nếu tài liệu tham khảo có thẻ ảnh dạng `![...](url)`, BẮT BUỘC phải giữ nguyên thẻ ảnh và đặt ngay dưới câu mô tả bước thao tác tương ứng, tuyệt đối không di chuyển thẻ ảnh lên trước câu hướng dẫn và không làm mất thẻ ảnh.\n\n"
-            "6. ĐỊNH DẠNG CHUNG: Trình bày rõ ràng, mạch lạc, dùng tiếng Việt chuẩn mực.\n\n"
+            "Bạn là trợ lý tra cứu tài liệu nội bộ. Trả lời HOÀN TOÀN BẰNG TIẾNG VIỆT, chỉ dựa trên các đoạn "
+            "TÀI LIỆU NỘI BỘ THAM KHẢO dưới đây.\n\n"
+            f"{rules}\n\n"
             f"{FEW_SHOT_CITATION_EXAMPLE}\n\n"
             f"--- TÀI LIỆU NỘI BỘ THAM KHẢO ---\n{context_str}\n---------------------------------\n"
-            "Hãy đọc kỹ các đoạn tài liệu trên và trả lời câu hỏi của người dùng hoàn toàn bằng TIẾNG VIỆT:"
+            "Đọc kỹ toàn bộ các đoạn tài liệu trên rồi trả lời câu hỏi của người dùng bằng tiếng Việt."
         )
         return citations, system_prompt
 
@@ -330,8 +336,10 @@ class RagPromptBuilder:
             "1. Luôn bảo toàn và ghim các ký hiệu trích dẫn [1], [2], [3]... ở cuối mỗi câu hoặc thông tin khẳng định.\n"
             "2. Trình bày khoa học: Sử dụng danh sách gạch đầu dòng hoặc bảng Markdown (| Cột 1 | Cột 2 |) nếu có số liệu so sánh.\n"
             "3. Tuyệt đối không tự ý bịa đặt hoặc suy diễn thông tin nằm ngoài các dữ kiện được cung cấp.\n"
-            "4. Trả lời bằng tiếng Việt chuẩn mực, rõ ràng.\n"
-            "5. Nếu câu hỏi là hướng dẫn thao tác, cài đặt, hoặc xử lý sự cố, bắt buộc trình bày dạng Checklist từng bước (* **Bước X: ...**), kèm thẻ ảnh minh họa ngay dưới câu mô tả bước tương ứng nếu có.\n\n"
+            "4. Trả lời bằng tiếng Việt chuẩn mực, rõ ràng; ghi chính xác mã/số hiệu có trong dữ kiện; liệt kê đủ mọi mục khớp.\n"
+            "5. Chỉ trình bày dạng từng bước (* **Bước X: ...**) khi dữ kiện thực sự mô tả một quy trình; giữ thẻ ảnh có trong dữ kiện ngay dưới bước tương ứng, không tự tạo thẻ ảnh.\n"
+            "6. Không tự viết danh sách nguồn ở cuối câu trả lời.\n"
+            f"7. Nếu dữ kiện không trả lời được câu hỏi, chỉ trả lời đúng một câu: \"{REFUSAL_MESSAGE}\"\n\n"
             f"{FEW_SHOT_CITATION_EXAMPLE}"
         )
 
