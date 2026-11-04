@@ -3074,6 +3074,23 @@
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px">
+                  <button
+                    type="button"
+                    id="staff-viewer-copy-btn"
+                    class="btn-staff-secondary"
+                    onclick="copyStaffDocContent(this)"
+                    style="
+                      padding: 6px 12px;
+                      font-size: 12px;
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 6px;
+                      cursor: pointer;
+                    "
+                    title="Sao chép toàn bộ nội dung tài liệu"
+                  >
+                    <i class="fa-regular fa-copy"></i> Sao chép
+                  </button>
                   <a
                     id="staff-viewer-download-btn"
                     href="#"
@@ -3098,16 +3115,18 @@
                     type="button"
                     id="staff-viewer-newtab-btn"
                     class="btn-staff-secondary"
+                    onclick="openStaffDocInNewTab()"
                     style="
                       padding: 6px 12px;
                       font-size: 12px;
                       display: inline-flex;
                       align-items: center;
                       gap: 6px;
+                      cursor: pointer;
                     "
+                    title="Mở tài liệu trong tab trình duyệt mới"
                   >
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Tab
-                    mới
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Tab mới
                   </button>
                 </div>
               </div>
@@ -6482,6 +6501,230 @@
         loadStaffDocList();
       }
 
+      let currentStaffDocViewerState = {
+        docId: "",
+        title: "",
+        fileType: "",
+        content: "",
+        rawUrl: "",
+        meta: "",
+      };
+
+      function copyStaffDocContent(btn) {
+        const textEl = document.getElementById("staff-viewer-text");
+        const content =
+          textEl && textEl.style.display !== "none" && textEl.innerText
+            ? textEl.innerText.trim()
+            : (currentStaffDocViewerState.content || "").trim();
+
+        if (
+          !content ||
+          content.startsWith("Đang tải") ||
+          content.startsWith("(Tài liệu trống") ||
+          content.startsWith("Không thể tải")
+        ) {
+          showStaffToast("Chưa có nội dung văn bản để sao chép.", "info");
+          return;
+        }
+
+        const updateBtn = () => {
+          const origHtml = btn.innerHTML;
+          btn.innerHTML =
+            '<i class="fa-solid fa-check" style="color: #10b981;"></i> Đã chép';
+          btn.style.color = "#10b981";
+          btn.style.borderColor = "#10b981";
+          showStaffToast(
+            "Đã sao chép toàn bộ nội dung tài liệu vào clipboard!",
+            "success",
+          );
+          setTimeout(() => {
+            btn.innerHTML = origHtml;
+            btn.style.color = "";
+            btn.style.borderColor = "";
+          }, 2000);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(content).then(updateBtn).catch(() => {
+            fallbackCopyText(content, updateBtn);
+          });
+        } else {
+          fallbackCopyText(content, updateBtn);
+        }
+      }
+
+      function openStaffDocInNewTab() {
+        const ft = (currentStaffDocViewerState.fileType || "").toLowerCase();
+        const rawUrl = currentStaffDocViewerState.rawUrl;
+
+        // If PDF file, open native browser PDF viewer tab
+        if (ft === "pdf" && rawUrl) {
+          window.open(rawUrl, "_blank");
+          return;
+        }
+
+        const textEl = document.getElementById("staff-viewer-text");
+        const content =
+          textEl && textEl.innerText
+            ? textEl.innerText
+            : currentStaffDocViewerState.content || "";
+        const title =
+          currentStaffDocViewerState.title ||
+          document.getElementById("staff-viewer-title")?.innerText ||
+          "Tài liệu";
+        const meta =
+          currentStaffDocViewerState.meta ||
+          document.getElementById("staff-viewer-meta")?.innerText ||
+          "";
+
+        const newTab = window.open("", "_blank");
+        if (!newTab) {
+          showStaffToast(
+            "Trình duyệt đã chặn tab mới. Vui lòng bật cho phép popup.",
+            "error",
+          );
+          return;
+        }
+
+        const readerHtml = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)} - Xem tài liệu</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.6;
+    }
+    .top-header {
+      position: sticky;
+      top: 0;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 50;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .top-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-width: 60%;
+    }
+    .doc-main-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .doc-main-meta {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-reader {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+    }
+    .btn-reader:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .btn-reader-primary {
+      background: #00684a;
+      border-color: #00684a;
+      color: #ffffff;
+    }
+    .btn-reader-primary:hover {
+      background: #005038;
+      color: #ffffff;
+    }
+    .reader-container {
+      max-width: 880px;
+      margin: 32px auto 80px auto;
+      background: #ffffff;
+      padding: 48px 56px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+    .reader-content {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #1e293b;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @media print {
+      .top-header { display: none; }
+      .reader-container { border: none; box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-header">
+    <div class="top-info">
+      <div class="doc-main-title">${escapeHtml(title)}</div>
+      <div class="doc-main-meta">${escapeHtml(meta)}</div>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-reader" onclick="copyReaderText(this)">
+        <i class="fa-regular fa-copy"></i> Sao chép nội dung
+      </button>
+      <button type="button" class="btn-reader" onclick="window.print()">
+        <i class="fa-solid fa-print"></i> In / Lưu PDF
+      </button>
+      ${rawUrl ? '<a href="' + rawUrl + '" download class="btn-reader btn-reader-primary"><i class="fa-solid fa-download"></i> Tải file gốc</a>' : ""}
+    </div>
+  </header>
+  <main class="reader-container">
+    <div class="reader-content" id="reader-body">${escapeHtml(content || "Chưa có nội dung văn bản trích xuất.")}</div>
+  </main>
+  <script>
+    function copyReaderText(btn) {
+      const el = document.getElementById("reader-body");
+      if (!el) return;
+      navigator.clipboard.writeText(el.innerText).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i> Đã sao chép!';
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
+      });
+    }
+  <\/script>
+</body>
+</html>`;
+
+        newTab.document.open();
+        newTab.document.write(readerHtml);
+        newTab.document.close();
+      }
+
       async function openStaffDocViewer(docId, title, fileType) {
         const modalBox = document.getElementById("staff-ingest-modal-box");
         if (modalBox) modalBox.style.width = "980px";
@@ -6490,10 +6733,10 @@
         const viewerView = document.getElementById("staff-doc-viewer-view");
         viewerView.style.display = "flex";
 
+        const metaText = `Định dạng: ${(fileType || "unknown").toUpperCase()} | Mã ID: ${docId}`;
         document.getElementById("staff-viewer-title").innerText =
           title || "Tài liệu gốc";
-        document.getElementById("staff-viewer-meta").innerText =
-          `Định dạng: ${(fileType || "unknown").toUpperCase()} | Mã ID: ${docId}`;
+        document.getElementById("staff-viewer-meta").innerText = metaText;
 
         const tokenParam = "aip_live_valid_test_key_12345";
         const rawUrl = `${API_BASE}/v1/knowledge/documents/${docId}/raw?token=${tokenParam}`;
@@ -6502,8 +6745,20 @@
         );
         downloadBtn.href = rawUrl;
 
+        const ft = (fileType || "").toLowerCase();
+        currentStaffDocViewerState = {
+          docId,
+          title: title || "Tài liệu gốc",
+          fileType: ft,
+          content: "",
+          rawUrl,
+          meta: metaText,
+        };
+
         const newtabBtn = document.getElementById("staff-viewer-newtab-btn");
-        newtabBtn.onclick = () => window.open(rawUrl, "_blank");
+        if (newtabBtn) {
+          newtabBtn.onclick = () => openStaffDocInNewTab();
+        }
 
         const loadingEl = document.getElementById("staff-viewer-loading");
         const iframeEl = document.getElementById("staff-viewer-iframe");
@@ -6513,9 +6768,8 @@
         iframeEl.style.display = "none";
         textEl.style.display = "none";
 
-        const ft = (fileType || "").toLowerCase();
-
         if (ft === "pdf") {
+          currentStaffDocViewerState.content = `[Tài liệu PDF: ${title || docId}]`;
           iframeEl.style.display = "block";
           iframeEl.src = rawUrl;
           iframeEl.onload = () => {
@@ -6540,16 +6794,22 @@
             );
             if (res.ok) {
               const data = await res.json();
-              textEl.innerText =
+              const fetchedContent =
                 data.content ||
                 "(Tài liệu trống hoặc chưa có nội dung văn bản trích xuất)";
+              textEl.innerText = fetchedContent;
+              currentStaffDocViewerState.content = fetchedContent;
+
               if (data.file_type) {
-                document.getElementById("staff-viewer-meta").innerText =
-                  `Định dạng: ${(data.file_type || ft || "unknown").toUpperCase()} | Mã ID: ${docId}`;
+                const updatedMeta = `Định dạng: ${(data.file_type || ft || "unknown").toUpperCase()} | Mã ID: ${docId}`;
+                document.getElementById("staff-viewer-meta").innerText = updatedMeta;
+                currentStaffDocViewerState.meta = updatedMeta;
+                currentStaffDocViewerState.fileType = data.file_type.toLowerCase();
               }
               if (data.title || data.filename) {
-                document.getElementById("staff-viewer-title").innerText =
-                  data.title || data.filename || title;
+                const updatedTitle = data.title || data.filename || title;
+                document.getElementById("staff-viewer-title").innerText = updatedTitle;
+                currentStaffDocViewerState.title = updatedTitle;
               }
             } else {
               textEl.innerText =
