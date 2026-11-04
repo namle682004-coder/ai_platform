@@ -808,7 +808,9 @@
         word-break: break-word;
         box-shadow: none;
         box-sizing: border-box;
-        transition: width 0.2s ease, min-width 0.2s ease;
+        transition:
+          width 0.2s ease,
+          min-width 0.2s ease;
       }
 
       .msg-user.editing {
@@ -1935,9 +1937,16 @@
       .chat-search-list {
         max-height: 420px;
         overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         display: flex;
         flex-direction: column;
         gap: 2px;
+      }
+      .chat-search-list::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
       }
 
       /* Item in Recent / Search Results */
@@ -2052,6 +2061,26 @@
       }
 
       /* Share Feedback Dialog Modal (Image 3) */
+      #modal-share-feedback {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        z-index: 10000 !important;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      #modal-share-feedback.active {
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
       .staff-feedback-dialog-card {
         background: #ffffff;
         width: 92%;
@@ -2797,11 +2826,16 @@
               id="chat-search-clear-btn"
               class="chat-search-clear-btn"
               onclick="clearChatSearch()"
-              style="display: none;"
+              style="display: none"
             >
               Clear
             </button>
-            <span id="chat-search-divider" class="chat-search-divider" style="display: none;">|</span>
+            <span
+              id="chat-search-divider"
+              class="chat-search-divider"
+              style="display: none"
+              >|</span
+            >
             <button
               type="button"
               class="chat-search-close-btn"
@@ -2814,18 +2848,59 @@
         </div>
 
         <!-- Filter tabs: All, Chats, Images, Documents, Projects -->
-        <div class="chat-search-filters" id="chat-search-filters" style="display: none;">
-          <button type="button" class="chat-search-filter-pill active" data-tab="all" onclick="setChatSearchFilterTab('all')">All</button>
-          <button type="button" class="chat-search-filter-pill" data-tab="chats" onclick="setChatSearchFilterTab('chats')">Chats</button>
-          <button type="button" class="chat-search-filter-pill" data-tab="images" onclick="setChatSearchFilterTab('images')">Images</button>
-          <button type="button" class="chat-search-filter-pill" data-tab="documents" onclick="setChatSearchFilterTab('documents')">Documents</button>
-          <button type="button" class="chat-search-filter-pill" data-tab="projects" onclick="setChatSearchFilterTab('projects')">Projects</button>
+        <div
+          class="chat-search-filters"
+          id="chat-search-filters"
+          style="display: none"
+        >
+          <button
+            type="button"
+            class="chat-search-filter-pill active"
+            data-tab="all"
+            onclick="setChatSearchFilterTab('all')"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            class="chat-search-filter-pill"
+            data-tab="chats"
+            onclick="setChatSearchFilterTab('chats')"
+          >
+            Chats
+          </button>
+          <button
+            type="button"
+            class="chat-search-filter-pill"
+            data-tab="images"
+            onclick="setChatSearchFilterTab('images')"
+          >
+            Images
+          </button>
+          <button
+            type="button"
+            class="chat-search-filter-pill"
+            data-tab="documents"
+            onclick="setChatSearchFilterTab('documents')"
+          >
+            Documents
+          </button>
+          <button
+            type="button"
+            class="chat-search-filter-pill"
+            data-tab="projects"
+            onclick="setChatSearchFilterTab('projects')"
+          >
+            Projects
+          </button>
         </div>
 
-        <div class="chat-search-subtitle" id="chat-search-subtitle">Recent chats</div>
+        <div class="chat-search-subtitle" id="chat-search-subtitle">
+          Recent chats
+        </div>
 
         <div
-          class="chat-search-list slim-scrollbar"
+          class="chat-search-list"
           id="chat-search-results-list"
         >
           <!-- Danh sách 8 hội thoại gần nhất hoặc kết quả tìm kiếm -->
@@ -2838,7 +2913,12 @@
       id="modal-share-feedback"
       class="staff-modal-overlay"
       onclick="closeStaffShareFeedbackModal(event)"
-      style="display: none; align-items: center; justify-content: center; z-index: 10000;"
+      style="
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      "
     >
       <div class="staff-feedback-dialog-card" onclick="event.stopPropagation()">
         <div class="staff-feedback-dialog-header">
@@ -2854,16 +2934,60 @@
         </div>
 
         <div class="staff-feedback-dialog-chips">
-          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Visual is unhelpful or broken')">Visual is unhelpful or broken</button>
-          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Incorrect or incomplete')">Incorrect or incomplete</button>
-          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Not what I asked for')">Not what I asked for</button>
-          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Slow or buggy')">Slow or buggy</button>
-          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Style or tone')">Style or tone</button>
-          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Safety or legal concern')">Safety or legal concern</button>
-          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Other')">Other</button>
+          <button
+            type="button"
+            class="feedback-dialog-chip"
+            onclick="
+              toggleDialogFeedbackChip(this, 'Visual is unhelpful or broken')
+            "
+          >
+            Visual is unhelpful or broken
+          </button>
+          <button
+            type="button"
+            class="feedback-dialog-chip"
+            onclick="toggleDialogFeedbackChip(this, 'Incorrect or incomplete')"
+          >
+            Incorrect or incomplete
+          </button>
+          <button
+            type="button"
+            class="feedback-dialog-chip"
+            onclick="toggleDialogFeedbackChip(this, 'Not what I asked for')"
+          >
+            Not what I asked for
+          </button>
+          <button
+            type="button"
+            class="feedback-dialog-chip"
+            onclick="toggleDialogFeedbackChip(this, 'Slow or buggy')"
+          >
+            Slow or buggy
+          </button>
+          <button
+            type="button"
+            class="feedback-dialog-chip"
+            onclick="toggleDialogFeedbackChip(this, 'Style or tone')"
+          >
+            Style or tone
+          </button>
+          <button
+            type="button"
+            class="feedback-dialog-chip"
+            onclick="toggleDialogFeedbackChip(this, 'Safety or legal concern')"
+          >
+            Safety or legal concern
+          </button>
+          <button
+            type="button"
+            class="feedback-dialog-chip"
+            onclick="toggleDialogFeedbackChip(this, 'Other')"
+          >
+            Other
+          </button>
         </div>
 
-        <div style="margin-top: 14px;">
+        <div style="margin-top: 14px">
           <textarea
             id="staff-dialog-feedback-text"
             class="staff-feedback-dialog-textarea"
@@ -2874,7 +2998,19 @@
 
         <div class="staff-feedback-dialog-footer">
           <div class="staff-feedback-dialog-note">
-            Your conversation will be included with your feedback to help improve AIP Platform. <a href="#" onclick="event.preventDefault(); showStaffToast('Phản hồi sẽ được gửi bảo mật cho Quản trị viên.', 'info')">Learn more</a>
+            Your conversation will be included with your feedback to help
+            improve AIP Platform.
+            <a
+              href="#"
+              onclick="
+                event.preventDefault();
+                showStaffToast(
+                  'Phản hồi sẽ được gửi bảo mật cho Quản trị viên.',
+                  'info',
+                );
+              "
+              >Learn more</a
+            >
           </div>
           <button
             type="button"
@@ -3487,7 +3623,11 @@
                   <button
                     type="button"
                     class="btn-staff-secondary"
-                    style="font-size: 11.5px; padding: 4px 10px; white-space: nowrap"
+                    style="
+                      font-size: 11.5px;
+                      padding: 4px 10px;
+                      white-space: nowrap;
+                    "
                     onclick="loadStaffDocList()"
                   >
                     <i class="fa-solid fa-rotate-right"></i> Làm mới
@@ -3752,7 +3892,8 @@
                     "
                     title="Mở tài liệu trong tab trình duyệt mới"
                   >
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Tab mới
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Tab
+                    mới
                   </button>
                 </div>
               </div>
@@ -4861,14 +5002,19 @@
         if (!timestamp) return "Today";
         let d;
         if (typeof timestamp === "number") {
-          d = timestamp < 1e11 ? new Date(timestamp * 1000) : new Date(timestamp);
+          d =
+            timestamp < 1e11 ? new Date(timestamp * 1000) : new Date(timestamp);
         } else {
           d = new Date(timestamp);
         }
         if (isNaN(d.getTime())) return "Today";
 
         const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        );
         const yesterdayStart = new Date(todayStart.getTime() - 86400000);
 
         if (d >= todayStart) {
@@ -4877,8 +5023,18 @@
           return "Yesterday";
         } else {
           const months = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
           ];
           if (d.getFullYear() === now.getFullYear()) {
             return `${months[d.getMonth()]} ${d.getDate()}`;
@@ -4897,16 +5053,21 @@
       }
 
       function getSearchSnippet(session, query) {
-        const text = session.last_message || session.snippet || session.preview || "";
+        const text =
+          session.last_message || session.snippet || session.preview || "";
         if (!text) return "";
         if (!query) {
-          return escapeHtml(text.length > 85 ? text.substring(0, 85) + "..." : text);
+          return escapeHtml(
+            text.length > 85 ? text.substring(0, 85) + "..." : text,
+          );
         }
         const lower = text.toLowerCase();
         const qLower = query.toLowerCase();
         const idx = lower.indexOf(qLower);
         if (idx === -1) {
-          return escapeHtml(text.length > 85 ? text.substring(0, 85) + "..." : text);
+          return escapeHtml(
+            text.length > 85 ? text.substring(0, 85) + "..." : text,
+          );
         }
         const start = Math.max(0, idx - 25);
         const end = Math.min(text.length, idx + query.length + 55);
@@ -4937,7 +5098,8 @@
         }
         currentSearchFilterTab = "all";
         document.querySelectorAll(".chat-search-filter-pill").forEach((btn) => {
-          if (btn.getAttribute("data-tab") === "all") btn.classList.add("active");
+          if (btn.getAttribute("data-tab") === "all")
+            btn.classList.add("active");
           else btn.classList.remove("active");
         });
         renderChatSearchResults("");
@@ -4952,10 +5114,23 @@
           input.value = "";
           setTimeout(() => input.focus(), 50);
         }
-        if (!allStaffRecentSessionsCache || allStaffRecentSessionsCache.length === 0) {
+        currentSearchFilterTab = "all";
+
+        const listEl = document.getElementById("chat-search-results-list");
+        if (
+          !allStaffRecentSessionsCache ||
+          allStaffRecentSessionsCache.length === 0
+        ) {
+          if (listEl) {
+            listEl.innerHTML = `
+              <div class="chat-search-empty" style="padding: 30px 16px;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: #00684a; display: block; margin-bottom: 8px;"></i>
+                Đang tải danh sách cuộc trò chuyện...
+              </div>
+            `;
+          }
           await loadStaffRecentSessions();
         }
-        currentSearchFilterTab = "all";
         renderChatSearchResults("");
       }
 
@@ -5050,7 +5225,10 @@
           }
           listEl.innerHTML = docs
             .map((doc, idx) => {
-              const titleHtml = highlightSearchMatch(doc.title || doc.filename || "Tài liệu", q);
+              const titleHtml = highlightSearchMatch(
+                doc.title || doc.filename || "Tài liệu",
+                q,
+              );
               const fileType = (doc.file_type || "doc").toUpperCase();
               return `
                 <div class="chat-search-item ${idx === 0 ? "highlighted" : ""}"
@@ -5089,7 +5267,10 @@
         listEl.innerHTML = filtered
           .map((s, idx) => {
             const isAct = s.session_id === staffConversationId;
-            const titleHtml = highlightSearchMatch(s.title || "Cuộc trò chuyện", q);
+            const titleHtml = highlightSearchMatch(
+              s.title || "Cuộc trò chuyện",
+              q,
+            );
             const snippetHtml = getSearchSnippet(s, q);
             const dateStr = formatChatSearchDate(s.updated_at || s.created_at);
             return `
@@ -5128,21 +5309,24 @@
         if (e.key === "ArrowDown") {
           e.preventDefault();
           if (items.length > 0) {
-            chatSearchSelectedIndex = (chatSearchSelectedIndex + 1) % items.length;
+            chatSearchSelectedIndex =
+              (chatSearchSelectedIndex + 1) % items.length;
             highlightChatSearchItem(chatSearchSelectedIndex);
             items[chatSearchSelectedIndex].scrollIntoView({ block: "nearest" });
           }
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
           if (items.length > 0) {
-            chatSearchSelectedIndex = (chatSearchSelectedIndex - 1 + items.length) % items.length;
+            chatSearchSelectedIndex =
+              (chatSearchSelectedIndex - 1 + items.length) % items.length;
             highlightChatSearchItem(chatSearchSelectedIndex);
             items[chatSearchSelectedIndex].scrollIntoView({ block: "nearest" });
           }
         } else if (e.key === "Enter") {
           e.preventDefault();
           if (items.length > 0 && items[chatSearchSelectedIndex]) {
-            const sessId = items[chatSearchSelectedIndex].getAttribute("data-session-id");
+            const sessId =
+              items[chatSearchSelectedIndex].getAttribute("data-session-id");
             if (sessId) selectChatSearchResult(sessId);
           }
         } else if (e.key === "Escape") {
@@ -5291,7 +5475,6 @@
 
       async function loadStaffRecentSessions() {
         const list = document.getElementById("chatgpt-recents-list");
-        if (!list) return;
         try {
           const res = await fetch(`${API_BASE}/v1/rag/sessions`, {
             headers: {
@@ -5306,6 +5489,7 @@
             const sessions =
               resData.items || (Array.isArray(resData) ? resData : []);
             allStaffRecentSessionsCache = sessions;
+            if (!list) return;
             list.innerHTML = "";
             if (!sessions || sessions.length === 0) {
               list.innerHTML = `<div style="padding: 10px 12px; font-size: 12.5px; color: #94a3b8; font-style: italic;">Chưa có lịch sử hội thoại</div>`;
@@ -7420,9 +7604,12 @@
         };
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(content).then(updateBtn).catch(() => {
-            fallbackCopyText(content, updateBtn);
-          });
+          navigator.clipboard
+            .writeText(content)
+            .then(updateBtn)
+            .catch(() => {
+              fallbackCopyText(content, updateBtn);
+            });
         } else {
           fallbackCopyText(content, updateBtn);
         }
@@ -7677,13 +7864,16 @@
 
               if (data.file_type) {
                 const updatedMeta = `Định dạng: ${(data.file_type || ft || "unknown").toUpperCase()} | Mã ID: ${docId}`;
-                document.getElementById("staff-viewer-meta").innerText = updatedMeta;
+                document.getElementById("staff-viewer-meta").innerText =
+                  updatedMeta;
                 currentStaffDocViewerState.meta = updatedMeta;
-                currentStaffDocViewerState.fileType = data.file_type.toLowerCase();
+                currentStaffDocViewerState.fileType =
+                  data.file_type.toLowerCase();
               }
               if (data.title || data.filename) {
                 const updatedTitle = data.title || data.filename || title;
-                document.getElementById("staff-viewer-title").innerText = updatedTitle;
+                document.getElementById("staff-viewer-title").innerText =
+                  updatedTitle;
                 currentStaffDocViewerState.title = updatedTitle;
               }
             } else {
@@ -8435,7 +8625,10 @@
         selectedDialogFeedbackChips.clear();
 
         const modal = document.getElementById("modal-share-feedback");
-        if (!modal) return;
+        if (!modal) {
+          console.error("modal-share-feedback element not found!");
+          return;
+        }
 
         // Reset chips
         modal.querySelectorAll(".feedback-dialog-chip").forEach((chip) => {
@@ -8450,7 +8643,11 @@
         const submitBtn = document.getElementById("staff-btn-submit-feedback");
         if (submitBtn) submitBtn.classList.remove("active");
 
+        modal.classList.add("active");
         modal.style.display = "flex";
+        setTimeout(() => {
+          modal.style.opacity = "1";
+        }, 10);
       }
 
       function closeStaffShareFeedbackModal(e) {
@@ -8463,7 +8660,13 @@
           return;
         }
         const modal = document.getElementById("modal-share-feedback");
-        if (modal) modal.style.display = "none";
+        if (modal) {
+          modal.style.opacity = "0";
+          modal.classList.remove("active");
+          setTimeout(() => {
+            modal.style.display = "none";
+          }, 150);
+        }
       }
 
       function toggleDialogFeedbackChip(btn, reason) {
@@ -8526,10 +8729,16 @@
           }).catch(() => {});
         } catch (err) {}
 
-        const modal = document.getElementById("modal-share-feedback");
-        if (modal) modal.style.display = "none";
+        closeStaffShareFeedbackModal();
         showStaffToast("Thank you for sharing your feedback!", "info");
       }
+
+      window.handleStaffFeedback = handleStaffFeedback;
+      window.openStaffShareFeedbackModal = openStaffShareFeedbackModal;
+      window.closeStaffShareFeedbackModal = closeStaffShareFeedbackModal;
+      window.toggleDialogFeedbackChip = toggleDialogFeedbackChip;
+      window.handleFeedbackDialogInput = handleFeedbackDialogInput;
+      window.submitStaffDialogFeedback = submitStaffDialogFeedback;
 
       function shareStaffAnswer(btn) {
         const copyBtn = btn
@@ -8670,7 +8879,12 @@
 
       let staffIsChatStreaming = false;
 
-      function renderStaffUserMessageHtml(query, adhocBadgeHtml = "", adhocContext = null, adhocFilename = null) {
+      function renderStaffUserMessageHtml(
+        query,
+        adhocBadgeHtml = "",
+        adhocContext = null,
+        adhocFilename = null,
+      ) {
         const safeQuery = escapeHtml(query);
         const safeContext = adhocContext ? escapeHtml(adhocContext) : "";
         const safeFilename = adhocFilename ? escapeHtml(adhocFilename) : "";
@@ -8702,7 +8916,11 @@
         const wrapper = btn.closest(".msg-user-wrapper");
         if (!wrapper) return;
         const bubble = wrapper.querySelector(".msg-user");
-        const query = bubble ? (bubble.getAttribute("data-user-query") || bubble.querySelector(".msg-user-text")?.innerText || "") : "";
+        const query = bubble
+          ? bubble.getAttribute("data-user-query") ||
+            bubble.querySelector(".msg-user-text")?.innerText ||
+            ""
+          : "";
         if (!query) return;
 
         const updateIcon = () => {
@@ -8719,9 +8937,12 @@
         };
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(query).then(updateIcon).catch(() => {
-            fallbackCopyText(query, updateIcon);
-          });
+          navigator.clipboard
+            .writeText(query)
+            .then(updateIcon)
+            .catch(() => {
+              fallbackCopyText(query, updateIcon);
+            });
         } else {
           fallbackCopyText(query, updateIcon);
         }
@@ -8746,7 +8967,9 @@
       function startStaffUserEdit(btn) {
         if (staffIsChatStreaming) return;
         // Close any other open edit box
-        document.querySelectorAll(".msg-user-wrapper.editing .btn-user-cancel").forEach((b) => b.click());
+        document
+          .querySelectorAll(".msg-user-wrapper.editing .btn-user-cancel")
+          .forEach((b) => b.click());
 
         const wrapper = btn.closest(".msg-user-wrapper");
         if (!wrapper) return;
@@ -8756,10 +8979,15 @@
         const viewDiv = bubble.querySelector(".msg-user-view");
         const editDiv = bubble.querySelector(".msg-user-edit-box");
         const actionsDiv = wrapper.querySelector(".msg-user-actions");
-        const textarea = editDiv ? editDiv.querySelector(".msg-user-edit-textarea") : null;
+        const textarea = editDiv
+          ? editDiv.querySelector(".msg-user-edit-textarea")
+          : null;
         if (!textarea) return;
 
-        const currentQuery = bubble.getAttribute("data-user-query") || bubble.querySelector(".msg-user-text")?.innerText || "";
+        const currentQuery =
+          bubble.getAttribute("data-user-query") ||
+          bubble.querySelector(".msg-user-text")?.innerText ||
+          "";
         textarea.value = currentQuery;
 
         wrapper.classList.add("editing");
@@ -8806,9 +9034,14 @@
         const viewDiv = bubble.querySelector(".msg-user-view");
         const editDiv = bubble.querySelector(".msg-user-edit-box");
         const actionsDiv = wrapper.querySelector(".msg-user-actions");
-        const textarea = editDiv ? editDiv.querySelector(".msg-user-edit-textarea") : null;
+        const textarea = editDiv
+          ? editDiv.querySelector(".msg-user-edit-textarea")
+          : null;
 
-        const currentQuery = bubble.getAttribute("data-user-query") || bubble.querySelector(".msg-user-text")?.innerText || "";
+        const currentQuery =
+          bubble.getAttribute("data-user-query") ||
+          bubble.querySelector(".msg-user-text")?.innerText ||
+          "";
         if (textarea) textarea.value = currentQuery;
 
         wrapper.classList.remove("editing");
@@ -8826,7 +9059,9 @@
         if (!bubble) return;
 
         const editDiv = bubble.querySelector(".msg-user-edit-box");
-        const textarea = editDiv ? editDiv.querySelector(".msg-user-edit-textarea") : null;
+        const textarea = editDiv
+          ? editDiv.querySelector(".msg-user-edit-textarea")
+          : null;
         const newQuery = textarea ? textarea.value.trim() : "";
         if (!newQuery) {
           if (textarea) textarea.focus();
@@ -8834,7 +9069,8 @@
         }
 
         const adhocContext = bubble.getAttribute("data-adhoc-context") || null;
-        const adhocFilename = bubble.getAttribute("data-adhoc-filename") || null;
+        const adhocFilename =
+          bubble.getAttribute("data-adhoc-filename") || null;
 
         bubble.setAttribute("data-user-query", newQuery);
         const textEl = bubble.querySelector(".msg-user-text");
@@ -8847,7 +9083,9 @@
           document.getElementById("staff-chat-messages");
         if (!container) return;
 
-        const allUserWrappers = Array.from(container.querySelectorAll(".msg-user-wrapper"));
+        const allUserWrappers = Array.from(
+          container.querySelectorAll(".msg-user-wrapper"),
+        );
         const userIndex = allUserWrappers.indexOf(wrapper);
 
         while (wrapper.nextSibling) {
@@ -8859,18 +9097,29 @@
           if (userIndex === 0) {
             const list = document.getElementById("chatgpt-recents-list");
             if (list) {
-              const activeItem = list.querySelector(`.chatgpt-recent-item[data-session-id="${staffConversationId}"]`);
+              const activeItem = list.querySelector(
+                `.chatgpt-recent-item[data-session-id="${staffConversationId}"]`,
+              );
               if (activeItem) {
-                const titleSpan = activeItem.querySelector(".chatgpt-recent-title");
+                const titleSpan = activeItem.querySelector(
+                  ".chatgpt-recent-title",
+                );
                 if (titleSpan) {
-                  titleSpan.innerText = newQuery.length > 35 ? newQuery.substring(0, 35) + "..." : newQuery;
+                  titleSpan.innerText =
+                    newQuery.length > 35
+                      ? newQuery.substring(0, 35) + "..."
+                      : newQuery;
                 }
               }
             }
           }
         }
 
-        await sendStaffChat(newQuery, { isEdit: true, adhocContext, adhocFilename });
+        await sendStaffChat(newQuery, {
+          isEdit: true,
+          adhocContext,
+          adhocFilename,
+        });
       }
 
       async function sendStaffChat(overrideQuery, options = {}) {
@@ -8968,7 +9217,10 @@
             adhocContextPayload = options.adhocContext;
             adhocFilenamePayload = options.adhocFilename;
           }
-        } else if (currentStaffAdhocAttachment && currentStaffAdhocAttachment.text) {
+        } else if (
+          currentStaffAdhocAttachment &&
+          currentStaffAdhocAttachment.text
+        ) {
           adhocBadgeHtml = `<div class="msg-adhoc-badge"><i class="fa-solid fa-paperclip"></i> ${escapeHtml(currentStaffAdhocAttachment.filename)}</div>`;
           adhocContextPayload = currentStaffAdhocAttachment.text;
           adhocFilenamePayload = currentStaffAdhocAttachment.filename;
@@ -8977,7 +9229,12 @@
         if (!isEdit) {
           container.insertAdjacentHTML(
             "beforeend",
-            renderStaffUserMessageHtml(query, adhocBadgeHtml, adhocContextPayload, adhocFilenamePayload),
+            renderStaffUserMessageHtml(
+              query,
+              adhocBadgeHtml,
+              adhocContextPayload,
+              adhocFilenamePayload,
+            ),
           );
           scrollArea.scrollTop = scrollArea.scrollHeight;
         }
@@ -8987,7 +9244,9 @@
           staffActivePersona && staffActivePersona.name
             ? staffActivePersona.name
             : "Trợ lý Tri thức";
-        container.insertAdjacentHTML("beforeend", `
+        container.insertAdjacentHTML(
+          "beforeend",
+          `
                 <div class="msg-bubble msg-assistant" id="${botId}">
                     <div class="msg-header">
                         <i class="fa-solid fa-robot" style="color: #0f4c81;"></i> <span class="assistant-status-title">${botName}</span>
@@ -8996,7 +9255,8 @@
                         <span style="color: #8e8e8e; font-size: 13.5px;"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i>Đang suy luận...</span>
                     </div>
                 </div>
-            `);
+            `,
+        );
         scrollArea.scrollTop = scrollArea.scrollHeight;
 
         let accumulatedAnswer = "";
@@ -9014,7 +9274,9 @@
 
           const res = await fetch(`${API_BASE}/v1/rag/chat`, {
             method: "POST",
-            signal: staffCurrentAbortController ? staffCurrentAbortController.signal : undefined,
+            signal: staffCurrentAbortController
+              ? staffCurrentAbortController.signal
+              : undefined,
             headers: {
               "Content-Type": "application/json",
               Authorization: DEFAULT_TOKEN,
@@ -9216,15 +9478,23 @@
               botEl.innerHTML = `<div style="color:#ef4444; padding:8px 0;">Lỗi: ${escapeHtml(err.detail || err.error?.message || "Không thể lấy phản hồi từ máy chủ")}</div>`;
           }
         } catch (e) {
-          if (e && (e.name === "AbortError" || e.message === "The user aborted a request.")) {
+          if (
+            e &&
+            (e.name === "AbortError" ||
+              e.message === "The user aborted a request.")
+          ) {
             console.log("sendStaffChat generation stopped by user");
             const botEl = document.getElementById(botId);
             const contentEl = document.getElementById(`${botId}-content`);
             if (contentEl) {
-              contentEl.querySelectorAll(".stream-typing-cursor").forEach((c) => c.remove());
+              contentEl
+                .querySelectorAll(".stream-typing-cursor")
+                .forEach((c) => c.remove());
               const stopBadge = document.createElement("div");
-              stopBadge.style.cssText = "margin-top: 8px; font-size: 11.5px; color: #94a3b8; font-style: italic;";
-              stopBadge.innerHTML = '<i class="fa-solid fa-stop-circle" style="margin-right: 4px;"></i>Phản hồi đã dừng theo yêu cầu người dùng.';
+              stopBadge.style.cssText =
+                "margin-top: 8px; font-size: 11.5px; color: #94a3b8; font-style: italic;";
+              stopBadge.innerHTML =
+                '<i class="fa-solid fa-stop-circle" style="margin-right: 4px;"></i>Phản hồi đã dừng theo yêu cầu người dùng.';
               contentEl.appendChild(stopBadge);
             }
             if (accumulatedAnswer) {

@@ -1890,9 +1890,16 @@
       .chat-search-list {
         max-height: 420px;
         overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         display: flex;
         flex-direction: column;
         gap: 2px;
+      }
+      .chat-search-list::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
       }
 
       /* Item in Recent / Search Results */
@@ -2007,6 +2014,26 @@
       }
 
       /* Share Feedback Dialog Modal (Image 3) */
+      #modal-share-feedback {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        z-index: 10000 !important;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      #modal-share-feedback.active {
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
       .staff-feedback-dialog-card {
         background: #ffffff;
         width: 92%;
@@ -2780,7 +2807,7 @@
         <div class="chat-search-subtitle" id="chat-search-subtitle">Recent chats</div>
 
         <div
-          class="chat-search-list slim-scrollbar"
+          class="chat-search-list"
           id="chat-search-results-list"
         >
           <!-- Danh sách 8 hội thoại gần nhất hoặc kết quả tìm kiếm -->
@@ -4907,13 +4934,23 @@
           input.value = "";
           setTimeout(() => input.focus(), 50);
         }
+        currentSearchFilterTab = "all";
+
+        const listEl = document.getElementById("chat-search-results-list");
         if (
           !allStaffRecentSessionsCache ||
           allStaffRecentSessionsCache.length === 0
         ) {
+          if (listEl) {
+            listEl.innerHTML = `
+              <div class="chat-search-empty" style="padding: 30px 16px;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: #00684a; display: block; margin-bottom: 8px;"></i>
+                Đang tải danh sách cuộc trò chuyện...
+              </div>
+            `;
+          }
           await loadStaffRecentSessions();
         }
-        currentSearchFilterTab = "all";
         renderChatSearchResults("");
       }
 
@@ -5252,7 +5289,6 @@
 
       async function loadStaffRecentSessions() {
         const list = document.getElementById("chatgpt-recents-list");
-        if (!list) return;
         try {
           const tenantId = getStaffActiveTenantId();
           const res = await fetch(`${API_BASE}/v1/rag/sessions`, {
@@ -5267,6 +5303,8 @@
             const resData = await res.json();
             const sessions =
               resData.items || (Array.isArray(resData) ? resData : []);
+            allStaffRecentSessionsCache = sessions;
+            if (!list) return;
             list.innerHTML = "";
             if (!sessions || sessions.length === 0) {
               list.innerHTML = `<div style="padding: 10px 12px; font-size: 12.5px; color: #94a3b8; font-style: italic;">Chưa có lịch sử hội thoại</div>`;
@@ -8558,7 +8596,10 @@
         selectedDialogFeedbackChips.clear();
 
         const modal = document.getElementById("modal-share-feedback");
-        if (!modal) return;
+        if (!modal) {
+          console.error("modal-share-feedback element not found!");
+          return;
+        }
 
         // Reset chips
         modal.querySelectorAll(".feedback-dialog-chip").forEach((chip) => {
@@ -8573,7 +8614,11 @@
         const submitBtn = document.getElementById("staff-btn-submit-feedback");
         if (submitBtn) submitBtn.classList.remove("active");
 
+        modal.classList.add("active");
         modal.style.display = "flex";
+        setTimeout(() => {
+          modal.style.opacity = "1";
+        }, 10);
       }
 
       function closeStaffShareFeedbackModal(e) {
@@ -8586,7 +8631,13 @@
           return;
         }
         const modal = document.getElementById("modal-share-feedback");
-        if (modal) modal.style.display = "none";
+        if (modal) {
+          modal.style.opacity = "0";
+          modal.classList.remove("active");
+          setTimeout(() => {
+            modal.style.display = "none";
+          }, 150);
+        }
       }
 
       function toggleDialogFeedbackChip(btn, reason) {
@@ -8649,10 +8700,16 @@
           }).catch(() => {});
         } catch (err) {}
 
-        const modal = document.getElementById("modal-share-feedback");
-        if (modal) modal.style.display = "none";
+        closeStaffShareFeedbackModal();
         showStaffToast("Thank you for sharing your feedback!", "info");
       }
+
+      window.handleStaffFeedback = handleStaffFeedback;
+      window.openStaffShareFeedbackModal = openStaffShareFeedbackModal;
+      window.closeStaffShareFeedbackModal = closeStaffShareFeedbackModal;
+      window.toggleDialogFeedbackChip = toggleDialogFeedbackChip;
+      window.handleFeedbackDialogInput = handleFeedbackDialogInput;
+      window.submitStaffDialogFeedback = submitStaffDialogFeedback;
 
       function shareStaffAnswer(btn) {
         const copyBtn = btn
