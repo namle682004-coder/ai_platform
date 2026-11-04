@@ -640,7 +640,9 @@
         color: #475569;
         font-weight: 600;
         white-space: nowrap;
-        min-width: 135px;
+        min-width: 155px;
+        width: max-content;
+        flex-shrink: 0;
         box-sizing: border-box;
       }
       .auto-refresh-select {
@@ -652,6 +654,11 @@
         cursor: pointer;
         outline: none;
         white-space: nowrap;
+        min-width: 105px;
+        width: auto;
+        flex-shrink: 0;
+        line-height: 1.4;
+        font-family: inherit;
         padding-right: 4px;
       }
       .live-pulse {

@@ -1718,7 +1718,7 @@
         font-weight: 500;
       }
 
-      /* Spotlight Chat Search Modal */
+      /* Spotlight Chat Search Modal (Expanded - Image 1 & 2) */
       .chat-search-modal-backdrop {
         position: fixed;
         inset: 0;
@@ -1729,7 +1729,7 @@
         display: none;
         align-items: flex-start;
         justify-content: center;
-        padding-top: 12vh;
+        padding-top: 10vh;
         animation: fadeInSearch 0.15s ease-out;
       }
 
@@ -1744,14 +1744,14 @@
 
       .chat-search-modal-box {
         background: #ffffff;
-        width: 92%;
-        max-width: 520px;
+        width: 94%;
+        max-width: 660px;
         border-radius: 16px;
         box-shadow:
           0 20px 35px -10px rgba(0, 0, 0, 0.15),
           0 10px 15px -3px rgba(0, 0, 0, 0.05);
         border: 1px solid #e5e7eb;
-        padding: 16px 20px 20px 20px;
+        padding: 18px 22px 20px 22px;
         display: flex;
         flex-direction: column;
         animation: slideDownSearch 0.18s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1773,8 +1773,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 12px;
+        padding-bottom: 10px;
       }
 
       .chat-search-input-wrap {
@@ -1798,6 +1797,36 @@
         font-weight: 400;
       }
 
+      .chat-search-actions-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .chat-search-clear-btn {
+        background: none;
+        border: none;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: all 0.15s;
+      }
+
+      .chat-search-clear-btn:hover {
+        color: #111827;
+        background: #f3f4f6;
+      }
+
+      .chat-search-divider {
+        color: #d1d5db;
+        font-size: 13px;
+        user-select: none;
+      }
+
       .chat-search-close-btn {
         background: none;
         border: none;
@@ -1818,27 +1847,61 @@
         color: #111827;
       }
 
+      /* Filter Pills (All, Chats, Images, Documents, Projects) */
+      .chat-search-filters {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 0 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 6px;
+      }
+
+      .chat-search-filter-pill {
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .chat-search-filter-pill:hover {
+        background: #f9fafb;
+        color: #111827;
+      }
+
+      .chat-search-filter-pill.active {
+        background: #f3f4f6;
+        color: #111827;
+        font-weight: 600;
+      }
+
       .chat-search-subtitle {
         font-size: 13px;
         font-weight: 500;
         color: #6b7280;
-        margin: 14px 4px 8px 4px;
+        margin: 10px 4px 8px 4px;
       }
 
       .chat-search-list {
-        max-height: 360px;
+        max-height: 420px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
 
+      /* Item in Recent / Search Results */
       .chat-search-item {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 14px;
         padding: 10px 12px;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
         transition:
           background 0.15s,
@@ -1853,15 +1916,51 @@
         flex-shrink: 0;
         width: 18px;
         text-align: center;
+        margin-top: 3px;
+      }
+
+      .chat-search-item-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
       }
 
       .chat-search-item-title {
         font-size: 14px;
+        font-weight: 500;
         color: #1f2937;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        flex: 1;
+      }
+
+      .chat-search-item-title b {
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .chat-search-item-snippet {
+        font-size: 12px;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 480px;
+      }
+
+      .chat-search-item-snippet b {
+        font-weight: 600;
+        color: #0f172a;
+      }
+
+      .chat-search-item-date {
+        font-size: 12px;
+        color: #6b7280;
+        margin-left: auto;
+        flex-shrink: 0;
+        margin-top: 2px;
       }
 
       .chat-search-item:hover,
@@ -1871,7 +1970,6 @@
 
       .chat-search-item.active {
         background: #e5e7eb;
-        font-weight: 500;
       }
 
       .chat-search-empty {
@@ -1908,96 +2006,122 @@
         }
       }
 
-      /* Feedback Popover */
-      .staff-feedback-popover {
-        position: absolute;
-        bottom: calc(100% + 8px);
-        left: 0;
+      /* Share Feedback Dialog Modal (Image 3) */
+      .staff-feedback-dialog-card {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        box-shadow:
-          0 10px 25px -5px rgba(0, 0, 0, 0.1),
-          0 8px 10px -6px rgba(0, 0, 0, 0.05);
-        padding: 14px 16px;
-        width: 320px;
-        z-index: 100;
+        width: 92%;
+        max-width: 540px;
+        border-radius: 18px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: 1px solid #e5e7eb;
+        padding: 24px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        animation: fadeInFeedback 0.15s ease-out;
+        animation: slideDownSearch 0.18s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
-      @keyframes fadeInFeedback {
-        from {
-          opacity: 0;
-          transform: translateY(6px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .staff-feedback-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: #1e293b;
+      .staff-feedback-dialog-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-bottom: 18px;
       }
 
-      .staff-feedback-chips {
+      .staff-feedback-dialog-title {
+        font-size: 19px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+      }
+
+      .staff-feedback-dialog-chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px 10px;
       }
 
-      .feedback-chip {
-        padding: 4px 9px;
-        font-size: 11.5px;
-        border-radius: 14px;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-        color: #475569;
+      .feedback-dialog-chip {
+        padding: 8px 16px;
+        font-size: 13.5px;
+        border-radius: 9999px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #1f2937;
         cursor: pointer;
         transition: all 0.15s;
+        user-select: none;
       }
 
-      .feedback-chip:hover {
-        background: #f1f5f9;
-        border-color: #cbd5e1;
+      .feedback-dialog-chip:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
       }
 
-      .feedback-chip.selected {
-        background: #fee2e2;
-        border-color: #fca5a5;
-        color: #b91c1c;
+      .feedback-dialog-chip.selected {
+        background: #0f172a;
+        color: #ffffff;
+        border-color: #0f172a;
         font-weight: 500;
       }
 
-      .staff-feedback-textarea {
+      .staff-feedback-dialog-textarea {
         width: 100%;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 6px 8px;
-        font-size: 12px;
+        border: 1.5px solid #3b82f6;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
         font-family: inherit;
-        resize: none;
-        height: 48px;
+        resize: vertical;
+        min-height: 90px;
         outline: none;
         box-sizing: border-box;
+        color: #111827;
       }
 
-      .staff-feedback-textarea:focus {
-        border-color: #94a3b8;
+      .staff-feedback-dialog-textarea::placeholder {
+        color: #9ca3af;
       }
 
-      .staff-feedback-footer {
+      .staff-feedback-dialog-footer {
         display: flex;
-        justify-content: flex-end;
-        gap: 6px;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .staff-feedback-dialog-note {
+        font-size: 12px;
+        color: #6b7280;
+        line-height: 1.45;
+        flex: 1;
+      }
+
+      .staff-feedback-dialog-note a {
+        color: #4b5563;
+        text-decoration: underline;
+      }
+
+      .btn-feedback-dialog-submit {
+        border-radius: 9999px;
+        padding: 9px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        background: #9ca3af;
+        color: #ffffff;
+        cursor: pointer;
+        transition: all 0.15s;
+        flex-shrink: 0;
+      }
+
+      .btn-feedback-dialog-submit.active {
+        background: #0f172a;
+        color: #ffffff;
+      }
+
+      .btn-feedback-dialog-submit.active:hover {
+        background: #1e293b;
       }
     </style>
   </head>
@@ -2622,23 +2746,99 @@
               onkeydown="handleChatSearchKeydown(event)"
             />
           </div>
-          <button
-            type="button"
-            class="chat-search-close-btn"
-            onclick="closeChatSearchModal()"
-            title="Đóng (Esc)"
-          >
-            &times;
-          </button>
+          <div class="chat-search-actions-right">
+            <button
+              type="button"
+              id="chat-search-clear-btn"
+              class="chat-search-clear-btn"
+              onclick="clearChatSearch()"
+              style="display: none;"
+            >
+              Clear
+            </button>
+            <span id="chat-search-divider" class="chat-search-divider" style="display: none;">|</span>
+            <button
+              type="button"
+              class="chat-search-close-btn"
+              onclick="closeChatSearchModal()"
+              title="Đóng (Esc)"
+            >
+              &times;
+            </button>
+          </div>
         </div>
 
-        <div class="chat-search-subtitle">Recent chats</div>
+        <!-- Filter tabs: All, Chats, Images, Documents, Projects (Image 1) -->
+        <div class="chat-search-filters" id="chat-search-filters" style="display: none;">
+          <button type="button" class="chat-search-filter-pill active" data-tab="all" onclick="setChatSearchFilterTab('all')">All</button>
+          <button type="button" class="chat-search-filter-pill" data-tab="chats" onclick="setChatSearchFilterTab('chats')">Chats</button>
+          <button type="button" class="chat-search-filter-pill" data-tab="images" onclick="setChatSearchFilterTab('images')">Images</button>
+          <button type="button" class="chat-search-filter-pill" data-tab="documents" onclick="setChatSearchFilterTab('documents')">Documents</button>
+          <button type="button" class="chat-search-filter-pill" data-tab="projects" onclick="setChatSearchFilterTab('projects')">Projects</button>
+        </div>
+
+        <div class="chat-search-subtitle" id="chat-search-subtitle">Recent chats</div>
 
         <div
           class="chat-search-list slim-scrollbar"
           id="chat-search-results-list"
         >
-          <!-- Danh sách hội thoại nạp động -->
+          <!-- Danh sách 8 hội thoại gần nhất hoặc kết quả tìm kiếm -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Share feedback (Popup phản hồi chuyên nghiệp - Image 3) -->
+    <div
+      id="modal-share-feedback"
+      class="staff-modal-overlay"
+      onclick="closeStaffShareFeedbackModal(event)"
+      style="display: none; align-items: center; justify-content: center; z-index: 10000;"
+    >
+      <div class="staff-feedback-dialog-card" onclick="event.stopPropagation()">
+        <div class="staff-feedback-dialog-header">
+          <h3 class="staff-feedback-dialog-title">Share feedback</h3>
+          <button
+            type="button"
+            class="chat-search-close-btn"
+            onclick="closeStaffShareFeedbackModal()"
+            title="Đóng"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="staff-feedback-dialog-chips">
+          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Visual is unhelpful or broken')">Visual is unhelpful or broken</button>
+          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Incorrect or incomplete')">Incorrect or incomplete</button>
+          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Not what I asked for')">Not what I asked for</button>
+          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Slow or buggy')">Slow or buggy</button>
+          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Style or tone')">Style or tone</button>
+          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Safety or legal concern')">Safety or legal concern</button>
+          <button type="button" class="feedback-dialog-chip" onclick="toggleDialogFeedbackChip(this, 'Other')">Other</button>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <textarea
+            id="staff-dialog-feedback-text"
+            class="staff-feedback-dialog-textarea"
+            placeholder="Share details (optional)"
+            oninput="handleFeedbackDialogInput()"
+          ></textarea>
+        </div>
+
+        <div class="staff-feedback-dialog-footer">
+          <div class="staff-feedback-dialog-note">
+            Your conversation will be included with your feedback to help improve AIP Platform. <a href="#" onclick="event.preventDefault(); showStaffToast('Phản hồi sẽ được gửi bảo mật cho Quản trị viên.', 'info')">Learn more</a>
+          </div>
+          <button
+            type="button"
+            id="staff-btn-submit-feedback"
+            class="btn-feedback-dialog-submit"
+            onclick="submitStaffDialogFeedback()"
+          >
+            Submit
+          </button>
         </div>
       </div>
     </div>
@@ -4609,7 +4809,94 @@
       let allStaffDocListCache = [];
       let currentFeedbackTargetBtn = null;
       let currentFeedbackSessionId = null;
-      let selectedFeedbackChips = new Set();
+      let currentSearchFilterTab = "all";
+      let selectedDialogFeedbackChips = new Set();
+
+      function formatChatSearchDate(timestamp) {
+        if (!timestamp) return "Today";
+        let d;
+        if (typeof timestamp === "number") {
+          d = timestamp < 1e11 ? new Date(timestamp * 1000) : new Date(timestamp);
+        } else {
+          d = new Date(timestamp);
+        }
+        if (isNaN(d.getTime())) return "Today";
+
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+
+        if (d >= todayStart) {
+          return "Today";
+        } else if (d >= yesterdayStart) {
+          return "Yesterday";
+        } else {
+          const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+          ];
+          if (d.getFullYear() === now.getFullYear()) {
+            return `${months[d.getMonth()]} ${d.getDate()}`;
+          }
+          return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+        }
+      }
+
+      function highlightSearchMatch(text, query) {
+        if (!text) return "";
+        const safe = escapeHtml(text);
+        if (!query) return safe;
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`(${escaped})`, "gi");
+        return safe.replace(regex, "<b>$1</b>");
+      }
+
+      function getSearchSnippet(session, query) {
+        const text = session.last_message || session.snippet || session.preview || "";
+        if (!text) return "";
+        if (!query) {
+          return escapeHtml(text.length > 85 ? text.substring(0, 85) + "..." : text);
+        }
+        const lower = text.toLowerCase();
+        const qLower = query.toLowerCase();
+        const idx = lower.indexOf(qLower);
+        if (idx === -1) {
+          return escapeHtml(text.length > 85 ? text.substring(0, 85) + "..." : text);
+        }
+        const start = Math.max(0, idx - 25);
+        const end = Math.min(text.length, idx + query.length + 55);
+        let snippet = text.substring(start, end);
+        if (start > 0) snippet = "..." + snippet;
+        if (end < text.length) snippet = snippet + "...";
+        return highlightSearchMatch(snippet, query);
+      }
+
+      function setChatSearchFilterTab(tab) {
+        currentSearchFilterTab = tab;
+        document.querySelectorAll(".chat-search-filter-pill").forEach((btn) => {
+          if (btn.getAttribute("data-tab") === tab) {
+            btn.classList.add("active");
+          } else {
+            btn.classList.remove("active");
+          }
+        });
+        const input = document.getElementById("chat-search-input");
+        renderChatSearchResults(input ? input.value : "");
+      }
+
+      function clearChatSearch() {
+        const input = document.getElementById("chat-search-input");
+        if (input) {
+          input.value = "";
+          input.focus();
+        }
+        currentSearchFilterTab = "all";
+        document.querySelectorAll(".chat-search-filter-pill").forEach((btn) => {
+          if (btn.getAttribute("data-tab") === "all") btn.classList.add("active");
+          else btn.classList.remove("active");
+        });
+        renderChatSearchResults("");
+      }
 
       async function openChatSearchModal() {
         const modal = document.getElementById("modal-chat-search");
@@ -4626,6 +4913,7 @@
         ) {
           await loadStaffRecentSessions();
         }
+        currentSearchFilterTab = "all";
         renderChatSearchResults("");
       }
 
@@ -4643,26 +4931,125 @@
       function renderChatSearchResults(query = "") {
         const listEl = document.getElementById("chat-search-results-list");
         if (!listEl) return;
-        const q = (query || "").trim().toLowerCase();
-        let list = allStaffRecentSessionsCache || [];
-        if (q) {
-          list = list.filter((s) => (s.title || "").toLowerCase().includes(q));
-        }
+        const q = (query || "").trim();
+        const qLower = q.toLowerCase();
+
+        const clearBtn = document.getElementById("chat-search-clear-btn");
+        const divider = document.getElementById("chat-search-divider");
+        const filtersEl = document.getElementById("chat-search-filters");
+        const subtitleEl = document.getElementById("chat-search-subtitle");
+
         chatSearchSelectedIndex = 0;
-        if (!list || list.length === 0) {
+
+        if (!q) {
+          // EMPTY SEARCH: Show 8 Recent Chats (Image 2)
+          if (clearBtn) clearBtn.style.display = "none";
+          if (divider) divider.style.display = "none";
+          if (filtersEl) filtersEl.style.display = "none";
+          if (subtitleEl) {
+            subtitleEl.style.display = "block";
+            subtitleEl.innerText = "Recent chats";
+          }
+
+          const recent8 = (allStaffRecentSessionsCache || []).slice(0, 8);
+          if (!recent8 || recent8.length === 0) {
+            listEl.innerHTML = `
+              <div class="chat-search-empty">
+                <i class="fa-regular fa-folder-open" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+                Chưa có cuộc trò chuyện nào gần đây
+              </div>
+            `;
+            return;
+          }
+
+          listEl.innerHTML = recent8
+            .map((s, idx) => {
+              const isAct = s.session_id === staffConversationId;
+              const title = escapeHtml(s.title || "Cuộc trò chuyện");
+              return `
+                <div class="chat-search-item ${isAct ? "active" : ""} ${idx === 0 ? "highlighted" : ""}"
+                     data-session-id="${s.session_id}"
+                     data-index="${idx}"
+                     onclick="selectChatSearchResult('${s.session_id}')"
+                     onmouseenter="highlightChatSearchItem(${idx})">
+                  <i class="fa-regular fa-comment"></i>
+                  <div class="chat-search-item-content">
+                    <span class="chat-search-item-title">${title}</span>
+                  </div>
+                </div>
+              `;
+            })
+            .join("");
+          return;
+        }
+
+        // HAS QUERY: Show filtered search results (Image 1)
+        if (clearBtn) clearBtn.style.display = "inline-block";
+        if (divider) divider.style.display = "inline-block";
+        if (filtersEl) filtersEl.style.display = "flex";
+        if (subtitleEl) subtitleEl.style.display = "none";
+
+        let filtered = [];
+
+        if (currentSearchFilterTab === "documents") {
+          // Filter documents
+          const docs = (allStaffDocListCache || []).filter((doc) => {
+            const title = (doc.title || doc.filename || "").toLowerCase();
+            return title.includes(qLower);
+          });
+          if (docs.length === 0) {
+            listEl.innerHTML = `
+              <div class="chat-search-empty">
+                <i class="fa-regular fa-file" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+                Không tìm thấy tài liệu nào khớp với "${escapeHtml(q)}"
+              </div>
+            `;
+            return;
+          }
+          listEl.innerHTML = docs
+            .map((doc, idx) => {
+              const titleHtml = highlightSearchMatch(doc.title || doc.filename || "Tài liệu", q);
+              const fileType = (doc.file_type || "doc").toUpperCase();
+              return `
+                <div class="chat-search-item ${idx === 0 ? "highlighted" : ""}"
+                     data-index="${idx}"
+                     onclick="closeChatSearchModal(); openStaffDocViewer('${doc.doc_id}', '${escapeHtml(doc.title || doc.filename)}', '${doc.file_type}')"
+                     onmouseenter="highlightChatSearchItem(${idx})">
+                  <i class="fa-regular fa-file-lines"></i>
+                  <div class="chat-search-item-content">
+                    <div class="chat-search-item-title">${titleHtml}</div>
+                    <div class="chat-search-item-snippet">Định dạng: ${fileType} | ID: ${escapeHtml(doc.doc_id)}</div>
+                  </div>
+                </div>
+              `;
+            })
+            .join("");
+          return;
+        }
+
+        // Filter sessions
+        filtered = (allStaffRecentSessionsCache || []).filter((s) => {
+          const t = (s.title || "").toLowerCase();
+          const lastMsg = (s.last_message || "").toLowerCase();
+          return t.includes(qLower) || lastMsg.includes(qLower);
+        });
+
+        if (!filtered || filtered.length === 0) {
           listEl.innerHTML = `
             <div class="chat-search-empty">
               <i class="fa-regular fa-folder-open" style="font-size: 22px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
-              ${q ? "Không tìm thấy cuộc trò chuyện nào phù hợp" : "Chưa có cuộc trò chuyện nào gần đây"}
+              Không tìm thấy cuộc trò chuyện nào khớp với "${escapeHtml(q)}"
             </div>
           `;
           return;
         }
 
-        listEl.innerHTML = list
+        listEl.innerHTML = filtered
           .map((s, idx) => {
             const isAct = s.session_id === staffConversationId;
-            const title = escapeHtml(s.title || "Cuộc trò chuyện");
+            const titleHtml = highlightSearchMatch(s.title || "Cuộc trò chuyện", q);
+            const snippetHtml = getSearchSnippet(s, q);
+            const dateStr = formatChatSearchDate(s.updated_at || s.created_at);
             return `
               <div class="chat-search-item ${isAct ? "active" : ""} ${idx === 0 ? "highlighted" : ""}"
                    data-session-id="${s.session_id}"
@@ -4670,7 +5057,11 @@
                    onclick="selectChatSearchResult('${s.session_id}')"
                    onmouseenter="highlightChatSearchItem(${idx})">
                 <i class="fa-regular fa-comment"></i>
-                <span class="chat-search-item-title">${title}</span>
+                <div class="chat-search-item-content">
+                  <div class="chat-search-item-title">${titleHtml}</div>
+                  ${snippetHtml ? `<div class="chat-search-item-snippet">${snippetHtml}</div>` : ""}
+                </div>
+                <span class="chat-search-item-date">${dateStr}</span>
               </div>
             `;
           })
@@ -4783,7 +5174,10 @@
           if (modal && modal.style.display === "flex") {
             closeChatSearchModal();
           }
-          closeStaffFeedbackPopover();
+          const fbModal = document.getElementById("modal-share-feedback");
+          if (fbModal && fbModal.style.display === "flex") {
+            fbModal.style.display = "none";
+          }
         }
       });
 
@@ -8140,7 +8534,6 @@
       }
 
       function handleStaffFeedback(btn, sessionId, score) {
-        closeStaffFeedbackPopover();
         const isUp = score === 1;
         if (isUp) {
           btn.style.color = "#10b981";
@@ -8155,65 +8548,80 @@
             if (downBtn) downBtn.style.color = "";
           }
         } else {
-          currentFeedbackTargetBtn = btn;
-          currentFeedbackSessionId = sessionId;
-          selectedFeedbackChips.clear();
-          openStaffFeedbackPopover(btn, sessionId);
+          openStaffShareFeedbackModal(btn, sessionId);
         }
       }
 
-      function openStaffFeedbackPopover(btn, sessionId) {
-        closeStaffFeedbackPopover();
-        const group = btn.closest(".msg-actions");
-        if (!group) return;
+      function openStaffShareFeedbackModal(btn, sessionId) {
+        currentFeedbackTargetBtn = btn;
+        currentFeedbackSessionId = sessionId;
+        selectedDialogFeedbackChips.clear();
 
-        const popover = document.createElement("div");
-        popover.className = "staff-feedback-popover";
-        popover.id = "staff-active-feedback-popover";
-        popover.innerHTML = `
-          <div class="staff-feedback-title">
-            <span><i class="fa-solid fa-circle-exclamation" style="color:#ef4444; margin-right:6px;"></i>Góp ý câu trả lời</span>
-            <button type="button" class="chat-search-close-btn" onclick="closeStaffFeedbackPopover()" style="font-size:16px;">&times;</button>
-          </div>
-          <div style="font-size: 11.5px; color: #64748b;">Chọn lý do để cải thiện chất lượng tri thức:</div>
-          <div class="staff-feedback-chips">
-            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Sai thông tin')">❌ Sai thông tin</button>
-            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Thiếu nguồn trích dẫn')">📄 Thiếu nguồn</button>
-            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Không đúng tài liệu')">🔍 Sai tài liệu</button>
-            <button type="button" class="feedback-chip" onclick="toggleFeedbackChip(this, 'Ảo giác AI')">🌀 Ảo giác</button>
-          </div>
-          <textarea class="staff-feedback-textarea" id="staff-feedback-custom-text" placeholder="Góp ý chi tiết thêm cho Quản trị viên (tùy chọn)..."></textarea>
-          <div class="staff-feedback-footer">
-            <button type="button" class="btn-staff-secondary" style="font-size:11px; padding:4px 9px;" onclick="closeStaffFeedbackPopover()">Hủy</button>
-            <button type="button" class="btn-staff-primary" style="font-size:11px; padding:4px 12px; background:#ef4444; border-color:#dc2626;" onclick="submitStaffFeedback()">Gửi phản hồi</button>
-          </div>
-        `;
-        group.appendChild(popover);
+        const modal = document.getElementById("modal-share-feedback");
+        if (!modal) return;
+
+        // Reset chips
+        modal.querySelectorAll(".feedback-dialog-chip").forEach((chip) => {
+          chip.classList.remove("selected");
+        });
+
+        // Reset text
+        const textarea = document.getElementById("staff-dialog-feedback-text");
+        if (textarea) textarea.value = "";
+
+        // Reset submit button state
+        const submitBtn = document.getElementById("staff-btn-submit-feedback");
+        if (submitBtn) submitBtn.classList.remove("active");
+
+        modal.style.display = "flex";
       }
 
-      function toggleFeedbackChip(btn, reason) {
-        if (selectedFeedbackChips.has(reason)) {
-          selectedFeedbackChips.delete(reason);
+      function closeStaffShareFeedbackModal(e) {
+        if (
+          e &&
+          e.target &&
+          e.target.id !== "modal-share-feedback" &&
+          !e.target.closest(".chat-search-close-btn")
+        ) {
+          return;
+        }
+        const modal = document.getElementById("modal-share-feedback");
+        if (modal) modal.style.display = "none";
+      }
+
+      function toggleDialogFeedbackChip(btn, reason) {
+        if (selectedDialogFeedbackChips.has(reason)) {
+          selectedDialogFeedbackChips.delete(reason);
           btn.classList.remove("selected");
         } else {
-          selectedFeedbackChips.add(reason);
+          selectedDialogFeedbackChips.add(reason);
           btn.classList.add("selected");
+        }
+        handleFeedbackDialogInput();
+      }
+
+      function handleFeedbackDialogInput() {
+        const textarea = document.getElementById("staff-dialog-feedback-text");
+        const hasText = textarea && textarea.value.trim().length > 0;
+        const hasChips = selectedDialogFeedbackChips.size > 0;
+        const submitBtn = document.getElementById("staff-btn-submit-feedback");
+        if (submitBtn) {
+          if (hasText || hasChips) {
+            submitBtn.classList.add("active");
+          } else {
+            submitBtn.classList.remove("active");
+          }
         }
       }
 
-      function closeStaffFeedbackPopover() {
-        const popover = document.getElementById("staff-active-feedback-popover");
-        if (popover) popover.remove();
-      }
-
-      function submitStaffFeedback() {
-        const customTextEl = document.getElementById("staff-feedback-custom-text");
-        const customText = customTextEl ? customTextEl.value.trim() : "";
-        const reasons = Array.from(selectedFeedbackChips);
+      function submitStaffDialogFeedback() {
+        const textarea = document.getElementById("staff-dialog-feedback-text");
+        const customText = textarea ? textarea.value.trim() : "";
+        const reasons = Array.from(selectedDialogFeedbackChips);
 
         if (currentFeedbackTargetBtn) {
           currentFeedbackTargetBtn.style.color = "#ef4444";
-          currentFeedbackTargetBtn.title = "Đã gửi phản hồi chưa chuẩn";
+          currentFeedbackTargetBtn.title = "Đã gửi phản hồi";
           const group = currentFeedbackTargetBtn.closest(".msg-actions");
           if (group) {
             const upBtn = group.querySelector(".btn-thumbs-up");
@@ -8227,7 +8635,7 @@
             score: -1,
             reasons: reasons,
             comment: customText,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
           fetch(`${API_BASE}/v1/rag/feedback`, {
             method: "POST",
@@ -8235,14 +8643,15 @@
               "Content-Type": "application/json",
               Authorization: DEFAULT_TOKEN,
               "X-Tenant-Id": getStaffActiveTenantId(),
-              "X-User-Id": getStaffCurrentUserId()
+              "X-User-Id": getStaffCurrentUserId(),
             },
-            body: JSON.stringify(feedbackPayload)
+            body: JSON.stringify(feedbackPayload),
           }).catch(() => {});
         } catch (err) {}
 
-        closeStaffFeedbackPopover();
-        showStaffToast("Đã gửi phản hồi chi tiết tới Quản trị viên. Xin cảm ơn bạn!", "info");
+        const modal = document.getElementById("modal-share-feedback");
+        if (modal) modal.style.display = "none";
+        showStaffToast("Thank you for sharing your feedback!", "info");
       }
 
       function shareStaffAnswer(btn) {
