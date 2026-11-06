@@ -21,7 +21,17 @@ scrape_configs:
           service: "control-plane"
           platform: "aip"
 
-  # 2. RabbitMQ Broker Metrics (Native Prometheus Plugin :15692)
+  # 2. Enterprise RAG API (solutions/rag :8010): stage latency, answer outcomes, verification, errors
+  - job_name: "aip-rag"
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["rag-api:8010", "host.docker.internal:8010"]
+        labels:
+          service: "rag-api"
+          platform: "aip"
+
+  # 3. RabbitMQ Broker Metrics (Native Prometheus Plugin :15692)
   - job_name: "rabbitmq"
     metrics_path: "/metrics"
     scrape_interval: 10s

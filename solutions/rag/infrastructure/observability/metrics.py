@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Optional
+from typing import Any, List, Optional
 from prometheus_client import (
     Counter,
     Gauge,
@@ -94,6 +94,26 @@ AIP_RAG_INGESTION_DURATION_SECONDS = Histogram(
     "Total document ingestion and parsing duration in seconds",
     ["tenant_id", "file_type"],
     buckets=[0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 180.0],
+)
+
+# Online quality signals: a jump in refusals, verification drops or corrections flags a regression
+# (bad ingestion, retrieval drift, model change) before users report it.
+AIP_RAG_ANSWER_OUTCOMES_TOTAL = Counter(
+    "aip_rag_answer_outcomes_total",
+    "Chat turns by answer route and intent",
+    ["route", "intent", "refused", "tenant_id"],
+)
+
+AIP_RAG_VERIFICATION_DROPS_TOTAL = Counter(
+    "aip_rag_verification_drops_total",
+    "Answer sentences removed by verification, by problem kind",
+    ["problem", "tenant_id"],
+)
+
+AIP_RAG_CORRECTIONS_TOTAL = Counter(
+    "aip_rag_corrections_total",
+    "Corrective regenerations after verification, by result",
+    ["result", "tenant_id"],
 )
 
 
@@ -244,6 +264,41 @@ class PrometheusObservabilityAdapter(ObservabilityPort):
             ).observe(duration)
         except Exception as exc:
             logger.debug("Failed recording ingestion metrics: %s", exc)
+
+    def record_answer_outcome(
+        self,
+        route: str,
+        intent: str,
+        refused: bool,
+        tenant_id: str = DEFAULT_TENANT_ID,
+    ) -> None:
+        try:
+            AIP_RAG_ANSWER_OUTCOMES_TOTAL.labels(
+                route=route or "unknown",
+                intent=intent or "unknown",
+                refused="true" if refused else "false",
+                tenant_id=normalize_tenant_id(tenant_id),
+            ).inc()
+        except Exception as exc:
+            logger.debug("Failed recording answer outcome: %s", exc)
+
+    def record_verification(
+        self,
+        problems: List[str],
+        corrected: Optional[bool],
+        tenant_id: str = DEFAULT_TENANT_ID,
+    ) -> None:
+        t_id = normalize_tenant_id(tenant_id)
+        try:
+            for problem in problems:
+                # "number:12,5" -> "number": the kind only, never the value (label cardinality).
+                AIP_RAG_VERIFICATION_DROPS_TOTAL.labels(problem=problem.split(":", 1)[0], tenant_id=t_id).inc()
+            if corrected is not None:
+                AIP_RAG_CORRECTIONS_TOTAL.labels(
+                    result="accepted" if corrected else "rejected", tenant_id=t_id
+                ).inc()
+        except Exception as exc:
+            logger.debug("Failed recording verification metrics: %s", exc)
 
 
 # Global singleton instance

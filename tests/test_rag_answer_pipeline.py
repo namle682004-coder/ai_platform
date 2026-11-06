@@ -324,9 +324,12 @@ class SmallWindowLLM(ScriptedLLM):
         return await super().generate(messages, model, temperature, max_tokens, authorization)
 
 
-def test_prompt_is_fitted_to_the_runtime_context_window():
+def test_prompt_is_fitted_to_the_runtime_context_window(monkeypatch):
     from solutions.rag.config import rag_settings
 
+    # The question names a group of the table ("Nghỉ phép"), which the structured path would list in
+    # code; this test is about fitting a generation prompt, so generation must answer.
+    monkeypatch.setattr(rag_settings, "structured_listing_enabled", False)
     analysis = {"intent": "document_question", "standalone_query": "Liệt kê toàn bộ quy định về nghỉ phép", "wants_list": True}
     request = dict(query="Liệt kê toàn bộ quy định về nghỉ phép", similarity_threshold=0.0, max_tokens=1024)
     wide = SmallWindowLLM(analysis, "Theo quy chế [1].", window=None)
@@ -406,7 +409,12 @@ def test_streaming_model_refusal_is_replaced_by_escalation():
     assert done["intent"] == "REFUSAL" and done["is_refusal"] is True
 
 
-def test_support_request_returns_contact_channels_and_ticket():
+def test_support_request_returns_contact_channels_and_ticket(monkeypatch):
+    from solutions.rag.config import rag_settings
+
+    # Routing only: the speculative first-message search (run during analysis, then cancelled for
+    # non-document turns) is covered by test_rag_speculative_retrieval.py.
+    monkeypatch.setattr(rag_settings, "speculative_retrieval_enabled", False)
     llm = ScriptedLLM({"intent": "support_request"}, "unused")
     uc, store, repo = _use_case(llm)
     resp = asyncio.run(uc.execute(RagChatRequestDTO(query="Cho tôi gặp nhân viên hỗ trợ")))

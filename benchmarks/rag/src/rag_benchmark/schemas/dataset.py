@@ -6,7 +6,7 @@ Compliant with Track A (Fixed Context) & Track B (End-to-End) requirements.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -52,6 +52,12 @@ class ReviewMetadata(BaseModel):
     notes: Optional[str] = Field(default="")
 
 
+class SessionMode(str, Enum):
+    SINGLE = "single"  # one question
+    MULTI_TURN = "multi_turn"  # `turns` asked in order in one conversation; graded as a whole
+    SEPARATE_SESSIONS = "separate_sessions"  # each turn in a fresh conversation; every one must pass
+
+
 class GoldenCase(BaseModel):
     """A single gold-standard test case in the Golden Benchmark Dataset (JSONL row)."""
     case_id: str = Field(..., description="Unique case identifier e.g. internal_hr_0001")
@@ -69,5 +75,27 @@ class GoldenCase(BaseModel):
     tags: List[str] = Field(default_factory=list)
     review: ReviewMetadata = Field(default_factory=ReviewMetadata)
 
+    # Acceptance-suite fields (end-to-end suite runner, judge rubric, go-live gate).
+    group: str = Field(default="", description="Test group / problem class, the unit of per-group pass rates")
+    category: str = Field(default="", description="Human-readable name of the group")
+    session_mode: SessionMode = Field(default=SessionMode.SINGLE)
+    turns: List[str] = Field(default_factory=list, description="Conversation turns; empty = [question]")
+    required_identifiers: List[str] = Field(
+        default_factory=list, description="Codes / document numbers the graded answer must contain verbatim"
+    )
+    fail_conditions: str = Field(default="", description="What makes the answer fail (judge rubric)")
+    must_pass: bool = Field(default=False, description="Critical case: any failure blocks go-live")
+
     def is_approved(self) -> bool:
         return self.review.status == ReviewStatus.APPROVED
+
+    def conversation(self) -> List[str]:
+        return list(self.turns) or [self.question]
+
+    def evidence_needles(self) -> List[str]:
+        """
+        Strings the supporting passages must contain: required identifiers, else the short required facts,
+        else evidence quotes (a long verbatim quote rarely survives chunking / paraphrase intact).
+        """
+        return (list(self.required_identifiers) or list(self.required_facts)
+                or [e.quote for e in self.evidence if e.quote])

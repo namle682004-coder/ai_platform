@@ -7,6 +7,7 @@ vector embedding generation, and Qdrant indexing.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from typing import Any, Dict, List, Optional
 
@@ -23,8 +24,10 @@ from ...domain.ports import (
     StoragePort,
     VectorStorePort,
 )
+from ..components import media_assets
 from ..components.chunker import DocumentChunker
 from ..components.acronym_harvester import acronym_harvester
+from ...config import rag_settings
 
 logger = logging.getLogger("aip-rag.ingestion_use_case")
 
@@ -51,6 +54,49 @@ class DocumentIngestionUseCase:
         self.vector_store = vector_store
         self.cache_service = cache_service or NullCacheAdapter()
         self.obs = observability_service or NullObservabilityAdapter()
+
+    def _store_images(self, parsed_doc: Any, tenant_id: str, doc_id: str) -> int:
+        """
+        Uploads the images the parser extracted (bytes + content hash) and rewrites their tags in the page
+        text to the served path. An image that cannot be stored keeps no tag pointing at nothing: the tag is
+        removed, the text stays. Returns the number of images stored.
+        """
+        images = (parsed_doc.metadata or {}).get("images") or []
+        if not (rag_settings.media_enabled and images):
+            return 0
+        bucket = rag_settings.media_bucket or rag_settings.minio_bucket
+        prefix = rag_settings.media_path_prefix
+        stored, failed = set(), set()
+        for img in images:
+            data, digest = img.get("data"), str(img.get("hash") or "")
+            ext = str(img.get("ext") or "png").lower().lstrip(".")
+            filename = f"{digest}.{ext}"
+            if not data or not media_assets.valid_ref(doc_id, filename):
+                failed.add(filename)
+                continue
+            if len(data) > rag_settings.media_max_image_bytes:
+                logger.info("Image %s of %s skipped (%d bytes)", filename, doc_id, len(data))
+                failed.add(filename)
+                continue
+            try:
+                self.storage.upload_bytes(bucket, media_assets.object_key(tenant_id, doc_id, filename), data,
+                                          content_type=media_assets.content_type(filename))
+                stored.add(filename)
+            except Exception as exc:  # noqa: BLE001 - an image never fails the ingestion
+                logger.warning("Storing image %s of %s failed: %s", filename, doc_id, exc)
+                failed.add(filename)
+            img.pop("data", None)  # bytes are not kept in the parsed metadata past this point
+
+        def rewrite(text: str) -> str:
+            text = media_assets.rewrite_legacy_urls(text, prefix, doc_id)
+            for name in failed - stored:
+                text = re.sub(rf"!\[[^\]]*\]\([^)\s]*{re.escape(name)}\)\n?", "", text)
+            return text
+
+        for page in parsed_doc.pages:
+            page.text = rewrite(page.text)
+        logger.info("Document %s: %d image(s) stored in %s, %d skipped", doc_id, len(stored), bucket, len(failed - stored))
+        return len(stored)
 
     async def ingest_document(self, task_payload: Dict[str, Any]) -> Dict[str, Any]:
         doc_id = task_payload.get("doc_id") or task_payload.get("task_id", "")
@@ -108,6 +154,9 @@ class DocumentIngestionUseCase:
             logger.error(err)
             await self.doc_repo.update_document_status(doc_id, "FAILED", {"error": err})
             return {"status": "failed", "error": err, "doc_id": doc_id}
+
+        # 3.0 Images: stored in MinIO under the document's tenant; passages reference the served path.
+        stored_images = self._store_images(parsed_doc, tenant_id, doc_id)
 
         full_doc_text = parsed_doc.full_text()
 
@@ -195,6 +244,7 @@ class DocumentIngestionUseCase:
                 "indexed_at": int(time.time()),
                 "glossary": doc_glossary,
                 "glossary_count": len(doc_glossary),
+                "images_stored": stored_images,
             },
         )
         logger.info("Document %s successfully indexed with %d points", doc_id, upserted)

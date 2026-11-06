@@ -45,21 +45,62 @@ ANSWER_RULES = (
     "của tài liệu thành 'Bước 1, Bước 2' khi tài liệu không mô tả quy trình. Phần 'Ví dụ' trong tài liệu chỉ là minh họa: mã, số liệu, "
     "đối tượng xuất hiện trong ví dụ không phải nội dung quy định và không được dùng để trả lời. Nếu tài liệu chỉ trả lời được một "
     "phần, nêu phần có và nói rõ phần tài liệu không ghi.\n"
-    "8. Không tự viết danh sách nguồn hay mục 'Căn cứ' ở cuối (hệ thống tự thêm). Không nhắc tới các quy tắc này.\n"
-    "9. Chỉ dùng tiếng Việt.\n"
+    "8. Không tự viết danh sách nguồn hay mục 'Căn cứ' ở cuối (hệ thống tự thêm). Không chép dòng tiêu đề của đoạn tài liệu "
+    "('Tài liệu: …, Trang: …') hay nguyên một bảng; chỉ trình bày bảng khi người dùng yêu cầu. Không nhắc tới các quy tắc này.\n"
+    "9. Chỉ dùng tiếng Việt, kể cả khi diễn giải; không chuyển sang tiếng Anh.\n"
     "10. Nếu đối tượng được hỏi CÓ trong tài liệu nhưng ở mục, đối tượng áp dụng hoặc thời điểm khác với câu hỏi, đó là tiền đề sai: "
     "áp dụng quy tắc 5 (nói rõ và nêu nơi tài liệu thực sự đề cập kèm mã/mục), không từ chối.\n"
-    f"11. Chỉ khi KHÔNG đoạn tài liệu nào nói về đối tượng được hỏi, trả lời đúng một câu: \"{REFUSAL_MESSAGE}\""
+    "10b. ĐƠN VỊ ĐẾM: mỗi con số phải đi đúng đơn vị như câu tài liệu gốc (chép nguyên cụm 'số + đơn vị'). Khi tài liệu "
+    "đếm cùng một nhóm theo nhiều đơn vị khác nhau, nêu rõ từng đơn vị, không gán con số của đơn vị này cho đơn vị kia. "
+    "Chỉ dùng con số có trong tài liệu; không tự tính, không ước lượng, không lặp lại số liệu của câu trả lời trước.\n"
+    "11. TÔN TRỌNG CẤU TRÚC PHÂN CẤP VĂN BẢN: phân biệt rõ ràng giữa nhóm/tiêu đề cấp trên và các mục/phần tử con thuộc nhóm đó. "
+    "Không đánh đồng hoặc nhầm lẫn số lượng nhóm với số lượng mục con bên trong.\n"
+    "12. KHÔNG SUY DIỄN SỐ LIỆU VÀ CỰC TRỊ: với câu hỏi so sánh hoặc tìm cực trị (cao nhất, thấp nhất, nhiều nhất, ít nhất), "
+    "chỉ kết luận dựa trên các số liệu thực tế được nêu rõ ràng trong tài liệu; tuyệt đối không tự tính toán ngoại suy, ước lượng hay tự chế số liệu. "
+    "Nếu tài liệu không đủ dữ liệu so sánh, phải nêu rõ các thông tin có được và khẳng định tài liệu chưa đủ dữ liệu để kết luận.\n"
+    "13. Khi người dùng hỏi về mối quan hệ giữa các khái niệm hoặc mục trong tài liệu: giải thích theo đúng cấu trúc thứ bậc "
+    "trong tài liệu, không từ chối khi tài liệu có thể hiện mối liên hệ đó.\n"
+    f"14. Chỉ khi KHÔNG đoạn tài liệu nào nói về đối tượng được hỏi, trả lời đúng một câu: \"{REFUSAL_MESSAGE}\""
 )
 
 PROCEDURE_RULES = (
-    "12. Tài liệu có mô tả quy trình/thao tác: trình bày ĐỦ TẤT CẢ các bước theo đúng thứ tự của tài liệu ngay trong câu trả lời "
+    "15. Tài liệu có mô tả quy trình/thao tác: trình bày ĐỦ TẤT CẢ các bước theo đúng thứ tự của tài liệu ngay trong câu trả lời "
     "(* **Bước 1: …**, * **Bước 2: …**), không chờ người dùng xác nhận. Nếu tài liệu có thẻ ảnh dạng ![...](url), giữ nguyên thẻ ảnh "
     "và đặt ngay dưới câu mô tả bước tương ứng; không tự tạo thẻ ảnh."
 )
 
+SYSTEM_PREAMBLE = (
+    "Bạn là trợ lý tra cứu tài liệu nội bộ. Trả lời HOÀN TOÀN BẰNG TIẾNG VIỆT, chỉ dựa trên các đoạn "
+    "TÀI LIỆU NỘI BỘ THAM KHẢO dưới đây."
+)
+CLOSING_INSTRUCTION = "Đọc kỹ toàn bộ các đoạn tài liệu trên rồi trả lời câu hỏi của người dùng bằng tiếng Việt."
+
+
+def instruction_text() -> str:
+    """
+    Every instruction of the answer prompt except the document passages. An answer that reproduces
+    a stretch of it is disclosing the system prompt (prompt injection), never quoting a document.
+    """
+    return "\n".join((SYSTEM_PREAMBLE, ANSWER_RULES, PROCEDURE_RULES, FEW_SHOT_CITATION_EXAMPLE, CLOSING_INSTRUCTION))
+
+
 _BREADCRUMB_PREFIX_RE = re.compile(r"^\s*\[(?:Ngữ cảnh|Tài liệu)\s*:[^\]\n]*\]\s*")
-_PROCEDURE_HINT_RE = re.compile(r"(?:\bBước\s*\d|^\s*\d+[\.\)]\s+\S|!\[[^\]]*\]\()", re.IGNORECASE | re.MULTILINE)
+# Steps written as steps. An image alone is not a procedure (news photos, charts): treating it as one made
+# the model number a plain summary "Bước 1, Bước 2"; images are attached to answers in code instead.
+_PROCEDURE_HINT_RE = re.compile(r"(?:\bBước\s*\d|^\s*\d+[\.\)]\s+\S)", re.IGNORECASE | re.MULTILINE)
+
+
+_IMAGE_FILE_TAG_RE = re.compile(r"!\[([^\]]*)\]\([^)\s]*?/([0-9a-f]{8})[0-9a-f]{8}\.[a-z0-9]{2,5}\)")
+IMAGE_ALIAS_PREFIX = "img:"
+
+
+def compact_image_tags(text: str) -> str:
+    """
+    Image tags of stored images shortened for the prompt ("![Ảnh](img:c53be262)"): a long URL of hex
+    and path segments costs dozens of tokens in a small window. The answer post-processor maps the alias
+    back to the passage's image (and signs it), so the model can still place an image under its step.
+    """
+    return _IMAGE_FILE_TAG_RE.sub(lambda m: f"![{m.group(1)}]({IMAGE_ALIAS_PREFIX}{m.group(2)})", text or "")
 
 
 def strip_breadcrumb(text: str) -> str:
@@ -211,6 +252,7 @@ class RagPromptBuilder:
                 "heading": heading,
                 "page_number": getattr(chunk, "page_number", 1),
                 "content_type": content_type,
+                "file_type": str(chunk_meta.get("file_type") or ""),  # docx / pdf / ...: how the viewer opens the source
                 "score": round(float(getattr(chunk, "score", 0.0)), 4),
                 "excerpt": excerpt,
                 "text": raw_text,
@@ -225,7 +267,7 @@ class RagPromptBuilder:
                     seen_parents.add(parent_id)
                 text_for_context = self.prune_context_noise(parent_text, query=query)
 
-            text_for_context = self.linearize_compact_tables(text_for_context)
+            text_for_context = compact_image_tags(self.linearize_compact_tables(text_for_context))
 
             context_blocks.append(
                 f"[{idx}] (Tài liệu: {title}, Trang: {getattr(chunk, 'page_number', 1)}{heading_info})\n{text_for_context}"
@@ -278,12 +320,11 @@ class RagPromptBuilder:
             include_procedure_rules = context_has_procedure([c.get("text", "") for c in citations])
         rules = ANSWER_RULES + ("\n" + PROCEDURE_RULES if include_procedure_rules else "")
         system_prompt = (
-            "Bạn là trợ lý tra cứu tài liệu nội bộ. Trả lời HOÀN TOÀN BẰNG TIẾNG VIỆT, chỉ dựa trên các đoạn "
-            "TÀI LIỆU NỘI BỘ THAM KHẢO dưới đây.\n\n"
+            f"{SYSTEM_PREAMBLE}\n\n"
             f"{rules}\n\n"
             f"{FEW_SHOT_CITATION_EXAMPLE}\n\n"
             f"--- TÀI LIỆU NỘI BỘ THAM KHẢO ---\n{context_str}\n---------------------------------\n"
-            "Đọc kỹ toàn bộ các đoạn tài liệu trên rồi trả lời câu hỏi của người dùng bằng tiếng Việt."
+            f"{CLOSING_INSTRUCTION}"
         )
         return citations, system_prompt
 

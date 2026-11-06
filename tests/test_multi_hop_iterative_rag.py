@@ -317,8 +317,13 @@ class MockSessionRepo:
         pass
 
 
-def test_rag_chat_use_case_multi_hop_comparative_flow():
+def test_rag_chat_use_case_multi_hop_comparative_flow(monkeypatch):
     """Validates complete multi-hop execution flow for comparative queries."""
+    from solutions.rag.config import rag_settings
+
+    # Routing only: the speculative first-message search (run during analysis, then cancelled for
+    # non-document turns) is covered by test_rag_speculative_retrieval.py.
+    monkeypatch.setattr(rag_settings, "speculative_retrieval_enabled", False)
     async def _run():
         mock_llm = MockMultiHopLLM(
             canned_answer="So sánh giữa React và Vue: React dùng JSX [1], trong khi Vue dùng SFC template [2]."

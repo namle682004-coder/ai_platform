@@ -20,6 +20,33 @@ except ImportError:
     BeautifulSoup = None
 
 
+# Table-of-contents entries ("Section title<TAB>12") and Word field codes left in extracted text: they
+# duplicate real headings with page numbers glued on and must not become headings or content.
+_TOC_LINE_RE = re.compile(r"^\S.{1,200}?\t+\s*\d{1,4}\s*$")
+_FIELD_CODE_RE = re.compile(r"(?:\bPAGEREF\s+_Toc|\bTOC\s+\\[a-z]|\bHYPERLINK\s+\\l)")
+# A line ending with one of these closes its sentence; anything else may continue on the next line.
+_CLOSING_CHARS = tuple(".!?:;…\"”’)]»|*")
+_LIST_START_RE = re.compile(r"^\s*(?:[-*+•]\s|\d{1,3}[.)]\s|[a-zđ][.)]\s|\|)")
+# Day-of-week words (language resource): a line made only of them is a date label, not a heading.
+CALENDAR_WORDS = frozenset({
+    "thu", "hai", "ba", "tu", "nam", "sau", "bay", "chu", "nhat",
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+})
+CALENDAR_LEADS = frozenset({"thu", "chu", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"})
+
+
+def _is_calendar_label(text: str) -> bool:
+    words = re.findall(r"[^\W\d_]+", strip_accents_lower(text))
+    return bool(words) and words[0] in CALENDAR_LEADS and all(w in CALENDAR_WORDS for w in words)
+
+
+def strip_accents_lower(text: str) -> str:
+    import unicodedata
+
+    t = unicodedata.normalize("NFD", (text or "").lower().replace("đ", "d"))
+    return "".join(ch for ch in t if unicodedata.category(ch) != "Mn")
+
+
 class DocumentChunker:
     """
     Enterprise Universal Structure-Aware & Atomic Table Document Chunker.
@@ -123,6 +150,47 @@ class DocumentChunker:
             blocks.extend(paras)
 
         return blocks
+
+    def _continues(self, prev_line: str, next_line: str) -> bool:
+        """`next_line` is the rest of a sentence that a hard line/paragraph break cut in two."""
+        a, b = prev_line.rstrip(), next_line.lstrip()
+        if not a or not b or a.endswith(_CLOSING_CHARS):
+            return False
+        if _LIST_START_RE.match(b) or self._extract_heading(a) is not None or self._extract_heading(b) is not None:
+            return False
+        first = next((ch for ch in b if ch.isalpha()), "")
+        if not first or not first.islower():
+            return False
+        # "... corresponding to" + "4 customers, ..." – a figure continuing a sentence that ends on a word.
+        return b[0].isalpha() or (b[0].isdigit() and a[-1].isalpha() and a[-1].islower())
+
+    def _repair_blocks(self, blocks: List[str]) -> List[str]:
+        """
+        Drops table-of-contents lines and field codes, and re-joins sentences that layout line breaks
+        (text boxes, columns, fixed-width paragraphs) split across lines or paragraphs, so that a
+        statement such as "N items, corresponding to M groups" is never cut between two chunks.
+        """
+        out: List[str] = []
+        for block in blocks:
+            if self._is_table_block(block) or block.lstrip().startswith(("```", "<table")):
+                out.append(block)
+                continue
+            lines: List[str] = []
+            for line in block.split("\n"):
+                if _TOC_LINE_RE.match(line.strip()) or _FIELD_CODE_RE.search(line):
+                    continue
+                if lines and self._continues(lines[-1], line):
+                    lines[-1] = lines[-1].rstrip() + " " + line.strip()
+                else:
+                    lines.append(line)
+            text = "\n".join(lines).strip()
+            if not text:
+                continue
+            if out and not self._is_table_block(out[-1]) and self._continues(out[-1].split("\n")[-1], text.split("\n")[0]):
+                out[-1] = out[-1].rstrip() + " " + text
+                continue
+            out.append(text)
+        return out
 
     @staticmethod
     def _is_table_block(text: str) -> bool:
@@ -398,6 +466,7 @@ class DocumentChunker:
         if (
             4 <= len(stripped) <= 60
             and stripped.isupper()
+            and not _is_calendar_label(stripped)
             and not stripped.endswith((".", "!", "?", ";", ":"))
             and not re.match(r"^(\d+[\.\)]|[\*\-\+])\s+", stripped)
             and any(c.isalpha() for c in stripped)
@@ -732,7 +801,7 @@ class DocumentChunker:
             # Hierarchical Structure & Atomic Table Processing
             page_parent_windows = self._compute_page_parent_windows(clean_text, doc_id, page.page_number)
             page_cursor = 0
-            paragraphs = self._split_into_blocks(clean_text)
+            paragraphs = self._repair_blocks(self._split_into_blocks(clean_text))
             curr_text_buffer: List[str] = []
             curr_buffer_len = 0
 

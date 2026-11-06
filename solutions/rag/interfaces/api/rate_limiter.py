@@ -209,14 +209,21 @@ class SlidingWindowRateLimiter:
         request: Request,
         rpm_limit: Optional[int] = None,
         tenant_id: Optional[str] = None,
+        scope_key: Optional[str] = None,
     ) -> None:
         """
         Evaluate sliding window rate limit for the incoming request.
         Raises HTTP 429 if request exceeds rate limit.
+
+        `scope_key` replaces the per tenant + IP key with a shared one (e.g. a service-wide budget
+        that all tenants draw from together).
         """
         limit = rpm_limit or self.default_rpm
-        tid, client_ip = self._extract_rate_key(request, tenant_id=tenant_id)
-        rate_key = f"{tid}:{client_ip}"
+        if scope_key:
+            rate_key = scope_key
+        else:
+            tid, client_ip = self._extract_rate_key(request, tenant_id=tenant_id)
+            rate_key = f"{tid}:{client_ip}"
         now = time.time()
 
         # 1. Primary: Evaluate in distributed Redis (atomic across all Uvicorn workers)
@@ -267,6 +274,23 @@ class RateLimitDependency:
 
     async def __call__(self, request: Request) -> None:
         await rate_limiter.check_rate_limit(request, rpm_limit=self.rpm)
+
+
+class ChatRateLimitDependency:
+    """
+    Chat turns cost model time, the scarcest resource of the deployment: a per tenant + IP limit
+    keeps one client from taking it all, and a service-wide limit keeps all clients together within
+    what the model host can answer (limits read from settings on every call).
+    """
+
+    async def __call__(self, request: Request) -> None:
+        from ...config import rag_settings
+
+        await rate_limiter.check_rate_limit(request, rpm_limit=rag_settings.chat_rate_limit_per_minute)
+        if rag_settings.chat_global_rate_limit_per_minute > 0:
+            await rate_limiter.check_rate_limit(
+                request, rpm_limit=rag_settings.chat_global_rate_limit_per_minute, scope_key="global:chat"
+            )
 
 
 class RateLimitHeaderMiddleware(BaseHTTPMiddleware):

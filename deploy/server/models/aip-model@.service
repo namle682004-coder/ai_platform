@@ -1,0 +1,33 @@
+# Model runtime (llama.cpp llama-server) as a systemd service, one instance per model:
+#   aip-model@chat  aip-model@embedding  aip-model@rerank
+# Settings per instance: /etc/aip/models/<instance>.env (templates in deploy/server/models/*.env);
+# its memory limits are a drop-in written by deploy/server/install.sh from MEMORY_HIGH / MEMORY_MAX of
+# that file (systemd does not expand environment variables in resource directives).
+#
+# Why a service instead of a hand-started process (incident 2026-11-05, host out of memory and frozen):
+#   - MemoryMax caps what one runtime may take: past it the kernel kills this service only, the host
+#     (SSH, Docker, the other runtimes) stays alive, and systemd starts the runtime again.
+#   - Restart / WantedBy bring the runtimes back after a crash or a reboot without anyone logging in.
+[Unit]
+Description=AIP model runtime (%i)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=lenam
+EnvironmentFile=/etc/aip/models/%i.env
+ExecStart=/bin/sh -c 'exec "$LLAMA_SERVER" -m "$MODEL_PATH" --host "$HOST" --port "$PORT" $LLAMA_ARGS'
+Restart=always
+RestartSec=10
+MemorySwapMax=0
+# Under host memory pressure the kernel kills a runtime before system services (sshd, dockerd).
+OOMScoreAdjust=500
+TimeoutStopSec=20
+StandardOutput=append:/var/log/aip/model-%i.log
+StandardError=append:/var/log/aip/model-%i.log
+
+[Install]
+WantedBy=multi-user.target

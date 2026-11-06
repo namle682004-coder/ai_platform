@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .lexical_evidence import candidate_text
+from .vietnamese_resources import ENTERPRISE_TERMS_CATALOG
 
 _BREADCRUMB_PREFIX_RE = re.compile(r"^\[(?:Ngữ cảnh|Tài liệu)[^\]]*\]\s*", re.MULTILINE)
 
@@ -92,6 +93,24 @@ def select_adaptive_context(
     return ContextSelection(chunks=ordered, scores={candidate_key(c): scores.get(candidate_key(c), 0.0) for c in ordered})
 
 
+_LETTER = r"A-Za-zÀ-ỹĐđ"
+
+
+def header_abbreviations(text: str) -> List[Tuple[str, str]]:
+    """Verified administrative abbreviations (glossary, direct expansion) written in `text`, in order."""
+    found: List[Tuple[str, str]] = []
+    for term in ENTERPRISE_TERMS_CATALOG:
+        if not (term.verified and term.expansion_policy == "direct" and term.term_type == "abbreviation"):
+            continue
+        for alias in term.aliases:
+            if len(alias) >= 2 and alias.upper() == alias and re.search(
+                rf"(?<![{_LETTER}]){re.escape(alias)}(?![{_LETTER}])", text or ""
+            ):
+                found.append((alias, term.canonical))
+                break
+    return sorted(found, key=lambda ac: (text or "").find(ac[0]))
+
+
 @dataclass
 class DocumentCard:
     doc_id: str
@@ -106,6 +125,11 @@ class DocumentCard:
         ]
         if self.header_lines:
             lines.append("- Các dòng đầu văn bản: " + " | ".join(self.header_lines))
+            glossary = header_abbreviations(" ".join([self.title, *self.header_lines]))
+            if glossary:
+                # The header is written in administrative shorthand ("QĐ Số: 2422/QĐ-BGDĐT"); a question
+                # in full words ("Quyết định số mấy?") must still find it.
+                lines.append("- Chữ viết tắt ở phần đầu: " + "; ".join(f"{a} = {c}" for a, c in glossary))
         if self.outline:
             lines.append("- Các phần chính theo thứ tự trong văn bản: " + "; ".join(self.outline))
         return "\n".join(lines)

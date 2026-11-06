@@ -11,7 +11,7 @@ Complies with industrial scientific standards:
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 import numpy as np
 from scipy import stats
 

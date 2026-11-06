@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/staff/project_routes.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIP Platform - APIs Catalog</title>
@@ -1868,23 +1869,6 @@
             "api_translation": "e9fc2adb-3598-40a9-1c5a-286149d87012"
         };
 
-        function getCurrentProjectId() {
-            const pathMatch = window.location.pathname.match(/\/project\/([a-zA-Z0-9_-]+)/);
-            if (pathMatch && pathMatch[1]) return pathMatch[1];
-
-            const stored = localStorage.getItem('aip_active_project_id');
-            if (stored) return stored;
-
-            const rawProjs = localStorage.getItem('aip_projects');
-            if (rawProjs) {
-                try {
-                    const arr = JSON.parse(rawProjs);
-                    if (arr.length > 0 && arr[0].project_id) return arr[0].project_id;
-                } catch(e) {}
-            }
-            return 'f40b6a70-ea64-4d01-90dc-53a2d7a81395';
-        }
-
         function navigateToService(item) {
             let apiId = '';
             let apiName = '';
@@ -1956,8 +1940,9 @@
                 }
             }
 
-            const projectId = getCurrentProjectId();
-            window.location.href = `/project/${projectId}/apis/${apiId}`;
+            window.location.href = window.AipRoutes
+                ? window.AipRoutes.serviceHref(apiId)
+                : `/services/${encodeURIComponent(apiId)}`;
         }
 
         function showToast(msg, type = 'info') {

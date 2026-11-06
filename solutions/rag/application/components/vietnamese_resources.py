@@ -299,6 +299,12 @@ ENTERPRISE_TERMS_CATALOG: List[EnterpriseTerm] = [
         domain=["legal", "government"], term_type="abbreviation", expansion_policy="direct",
         source="local_government_law", verified=True, priority=100
     ),
+    EnterpriseTerm(
+        term_id="LEG_023", canonical="Bộ Giáo dục và Đào tạo",
+        aliases=["BGDĐT", "BGD&ĐT", "BGDDT"],
+        domain=["legal", "government", "education"], term_type="abbreviation", expansion_policy="direct",
+        source="vbpl.moj.gov.vn", verified=True, priority=100
+    ),
 
     # --------------------------------------------------------------------------
     # Nhóm C — Nhân sự, tiền lương và đánh giá công việc (HR & Labor Law)

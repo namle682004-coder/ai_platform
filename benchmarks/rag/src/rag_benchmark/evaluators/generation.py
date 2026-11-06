@@ -8,7 +8,7 @@ Strict separation:
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 
 def _tokenize(text: str) -> List[str]:

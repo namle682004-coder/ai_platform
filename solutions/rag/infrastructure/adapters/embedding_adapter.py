@@ -69,6 +69,7 @@ class HttpEmbeddingAdapter(EmbeddingPort):
                 {"model": alias, "input": texts},
                 headers=runtime_headers(),
                 timeout=self.timeout,
+                kind="embedding",
             )
         except ModelRuntimeError as exc:
             raise EmbeddingError(f"Embedding runtime '{alias}' at {endpoint.base_url} unavailable: {exc}") from exc

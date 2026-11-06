@@ -109,6 +109,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             or path.startswith("/v1/user/")
             or path.startswith("/v1/status")
             or path == "/v1/models/status"
+            # Document images of RAG answers: loaded by <img> tags (no headers); each URL carries an HMAC
+            # signature that the RAG service verifies before serving the object.
+            or (request.method == "GET" and path.startswith("/v1/rag/media/"))
             or path in ["/status", "/status/models", "/health", "/health/live", "/health/ready", "/docs", "/openapi.json", "/redoc", "/favicon.ico"]
         ):
             return await call_next(request)

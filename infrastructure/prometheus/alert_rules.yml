@@ -49,3 +49,60 @@ groups:
         annotations:
           summary: "Tỷ lệ lỗi HTTP 5xx trên Gateway tăng cao"
           description: "Gateway đang trả về nhiều lỗi máy chủ nội bộ 5xx (> 5% tổng request trong 5 phút)."
+
+  # RAG answer quality (online). Thresholds are starting points: tune them on a week of production
+  # traffic. Investigate with GET /v1/rag/traces?feedback=negative and the per-turn trace.
+  - name: aip_rag_quality_alerts
+    rules:
+      - alert: RagRefusalRateHigh
+        expr: |
+          (sum by (tenant_id) (rate(aip_rag_answer_outcomes_total{refused="true"}[30m]))
+            / sum by (tenant_id) (rate(aip_rag_answer_outcomes_total[30m]))) > 0.30
+          and sum by (tenant_id) (rate(aip_rag_answer_outcomes_total[30m])) > 0.005
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG từ chối trả lời > 30% (tenant {{ $labels.tenant_id }})"
+          description: "Tỷ lệ câu bị từ chối/chuyển hỗ trợ tăng cao: kiểm tra tài liệu mới nạp, gate threshold hoặc retrieval (xem trace các câu REFUSAL)."
+
+      - alert: RagVerificationDropsHigh
+        expr: |
+          sum by (tenant_id) (rate(aip_rag_verification_drops_total[30m]))
+            / sum by (tenant_id) (rate(aip_rag_answer_outcomes_total{route="generate"}[30m])) > 0.25
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Nhiều câu trả lời bị bộ kiểm chứng cắt (tenant {{ $labels.tenant_id }})"
+          description: "Mô hình đang sinh số liệu/mã/đơn vị không có trong tài liệu với tần suất cao (nguy cơ ảo giác). Xem trace có stage verification.dropped."
+
+      - alert: RagCorrectionRejectedHigh
+        expr: |
+          sum (rate(aip_rag_corrections_total{result="rejected"}[1h]))
+            / sum (rate(aip_rag_corrections_total[1h])) > 0.5
+          and sum (rate(aip_rag_corrections_total[1h])) > 0.001
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sinh lại có kiểm chứng thất bại > 50%"
+          description: "Phần lớn lần sinh lại sau khi phát hiện sai số liệu vẫn không qua kiểm chứng."
+
+      - alert: RagLlmLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate(aip_rag_stage_duration_seconds_bucket{stage="llm_generate"}[10m]))) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Thời gian sinh câu trả lời p95 > 10s"
+          description: "LLM runtime chậm (p95 {{ $value }}s): kiểm tra GPU, độ dài prompt và hàng đợi runtime."
+
+      - alert: RagPipelineErrors
+        expr: sum by (stage) (rate(aip_rag_errors_total[5m])) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Lỗi pipeline RAG ở stage {{ $labels.stage }}"
+          description: "Embedding / reranker / vector store / LLM đang lỗi; câu trả lời bị gián đoạn."

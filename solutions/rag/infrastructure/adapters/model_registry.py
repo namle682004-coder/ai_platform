@@ -15,9 +15,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 import time
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 from ...config import rag_settings
 
@@ -143,27 +145,93 @@ async def post_json_with_retry(
     headers: Dict[str, str],
     timeout: float,
     max_retries: Optional[int] = None,
+    kind: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """POST JSON with exponential backoff on transport errors, 429 and 5xx gateway errors."""
+    """
+    POST JSON with exponential backoff on connection errors, 429 and 5xx gateway errors.
+
+    `kind` ('llm' | 'embedding' | 'rerank') routes every attempt through that runtime's guard
+    (concurrency limit + circuit breaker). A read timeout is not retried: the runtime was busy with
+    the request, and sending it again only doubles the load on a host that is already saturated.
+    """
     import httpx
 
+    from .runtime_guard import runtime_guard
+
+    guard = runtime_guard(kind) if kind else None
     retries = rag_settings.model_max_retries if max_retries is None else max_retries
     last_error: Optional[str] = None
     last_status: Optional[int] = None
-    for attempt in range(retries + 1):
-        try:
-            res = await client.post(url, json=payload, headers=headers, timeout=timeout)
-            if res.status_code == 200:
-                return res.json()
-            last_status = res.status_code
-            last_error = f"HTTP {res.status_code}: {res.text[:300]}"
-            if res.status_code not in _RETRYABLE_STATUS:
+    attempt = 0
+    # A runtime out of KV space is busy, not broken: such refusals are retried (serialized, see below) for
+    # as long as a caller would wait for a slot, without using up the retries meant for real failures.
+    kv_deadline = time.monotonic() + rag_settings.runtime_queue_timeout_seconds
+    while True:
+        retry_after = 0.0
+        retryable = kv_full = False
+        async with (guard.slot() if guard else _no_guard()):
+            try:
+                res = await client.post(url, json=payload, headers=headers, timeout=timeout)
+            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+                last_error, retryable = f"{type(exc).__name__}: {exc}", True
+            except (httpx.TransportError, httpx.TimeoutException) as exc:
+                last_error = f"{type(exc).__name__}: {exc}"
+            else:
+                if res.status_code == 200:
+                    if guard:
+                        guard.record_success()
+                    return res.json()
+                last_status = res.status_code
+                last_error = f"HTTP {res.status_code}: {res.text[:300]}"
+                retryable = res.status_code in _RETRYABLE_STATUS
+                retry_after = _retry_after_seconds(res.headers.get("Retry-After"))
+                if res.status_code == 500 and is_kv_cache_full(res.text):
+                    # llama.cpp whose slots share one KV cache refuses requests that do not fit next to the
+                    # others in flight. Concurrent callers then all fail together and, retried together, fail
+                    # again: the guard drops to one call at a time so the retry runs alone.
+                    kv_full = True
+                    last_error = f"HTTP 500 (KV cache full under load): {res.text[:200]}"
+                    if guard:
+                        guard.throttle()
+                elif not retryable and res.status_code < 500:
+                    # The runtime answered (a request error, not an outage): the breaker stays as it is.
+                    if guard:
+                        guard.record_success()
+                    break
+            if guard and not kv_full:
+                guard.record_failure()
+        # The slot is released before waiting: a sleeping retry must not hold one.
+        if kv_full:
+            if time.monotonic() >= kv_deadline:
                 break
-        except (httpx.TransportError, httpx.TimeoutException) as exc:
-            last_error = f"{type(exc).__name__}: {exc}"
-        if attempt < retries:
-            await asyncio.sleep(0.2 * (2**attempt))
+            await asyncio.sleep(KV_FULL_RETRY_SECONDS * (0.5 + random.random()))
+            continue
+        if not retryable or attempt >= retries:
+            break
+        await asyncio.sleep(max(0.2 * (2**attempt), min(retry_after, MAX_RETRY_AFTER_SECONDS)))
+        attempt += 1
     raise ModelRuntimeError(f"POST {url} failed: {last_error}", status_code=last_status)
+
+
+MAX_RETRY_AFTER_SECONDS = 5.0
+KV_FULL_RETRY_SECONDS = 1.5
+
+
+def is_kv_cache_full(body: str) -> bool:
+    """llama.cpp's refusal when the shared KV cache has no room for the request (prompt + completion)."""
+    return "context size has been exceeded" in (body or "").lower()
+
+
+def _retry_after_seconds(value: Optional[str]) -> float:
+    try:
+        return max(0.0, float(value)) if value else 0.0
+    except ValueError:
+        return 0.0
+
+
+@asynccontextmanager
+async def _no_guard() -> AsyncIterator[None]:
+    yield None
 
 
 def runtime_headers(authorization: Optional[str] = None) -> Dict[str, str]:

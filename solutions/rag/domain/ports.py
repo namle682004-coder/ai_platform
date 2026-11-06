@@ -136,6 +136,10 @@ class LLMPort(ABC):
         """Tokens (prompt + completion) the runtime serving `model` accepts per request; None if unknown."""
         return None
 
+    async def count_tokens(self, text: str, model: str) -> Optional[int]:
+        """Tokens of `text` with the runtime's own tokenizer; None if the runtime cannot tell."""
+        return None
+
 
 class DocumentRepositoryPort(ABC):
     """Port for Document metadata persistence (MongoDB/PostgreSQL)."""
@@ -251,6 +255,25 @@ class SessionRepositoryPort(ABC):
         """Record unresolved OOD query escalation ticket to MongoDB (RER-RAG-02)."""
         return ""
 
+    async def list_escalation_tickets(  # noqa: B027 - optional capability
+        self,
+        tenant_id: str,
+        status: Optional[str] = None,
+        reasons: Optional[List[str]] = None,
+        query: Optional[str] = None,
+        hidden_session_prefixes: Optional[List[str]] = None,
+        offset: int = 0,
+        limit: int = 20,
+    ) -> Dict[str, Any]:
+        """{"items": [...], "total": n, "counts": {"open": n, "resolved": n}} newest first."""
+        return {"items": [], "total": 0, "counts": {"open": 0, "resolved": 0}}
+
+    async def update_escalation_ticket(  # noqa: B027 - optional capability
+        self, ticket_id: str, tenant_id: str, fields: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Updates a ticket of this tenant (status, note…); the updated ticket, None if not found."""
+        return None
+
     async def record_feedback(self, feedback_data: Dict[str, Any]) -> str:
         """Record user feedback and error attribution to MongoDB (EXEC-RAG-04, FR-EXEC-03)."""
         return ""
@@ -283,6 +306,10 @@ class StoragePort(ABC):
     def delete_object(self, bucket: str, object_name: str) -> bool:
         """Remove file object from storage."""
         ...
+
+    def delete_prefix(self, bucket: str, prefix: str) -> int:
+        """Remove every object under a prefix (a document's images); number removed. Optional capability."""
+        return 0
 
 
 class DocumentParserPort(ABC):
@@ -525,6 +552,72 @@ class ObservabilityPort(ABC):
     ) -> None:
         """Record document ingestion metrics."""
         ...
+
+    def record_answer_outcome(
+        self,
+        route: str,
+        intent: str,
+        refused: bool,
+        tenant_id: str = DEFAULT_TENANT_ID,
+    ) -> None:
+        """Record how a turn was answered: route in {'generate', 'numeric', 'structured', 'support', 'gate', 'cache', ...}."""
+        return None
+
+    def record_verification(
+        self,
+        problems: List[str],
+        corrected: Optional[bool],
+        tenant_id: str = DEFAULT_TENANT_ID,
+    ) -> None:
+        """Record sentences removed by answer verification (by problem kind) and the corrective regeneration result."""
+        return None
+
+
+class TraceStorePort(ABC):
+    """Persists per-turn pipeline traces (stage inputs/outputs) for diagnosis, feedback linking and evaluation."""
+
+    @abstractmethod
+    async def save(self, record: Dict[str, Any]) -> None:
+        ...
+
+    @abstractmethod
+    async def get(self, trace_id: str, tenant_id: str) -> Optional[Dict[str, Any]]:
+        ...
+
+    @abstractmethod
+    async def list(
+        self,
+        tenant_id: str,
+        session_id: Optional[str] = None,
+        feedback: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Recent traces (newest first); feedback in {'negative', 'positive', 'any'} keeps rated turns only."""
+        ...
+
+    @abstractmethod
+    async def attach_feedback(self, trace_id: str, tenant_id: str, feedback: Dict[str, Any]) -> bool:
+        ...
+
+
+class NullTraceStore(TraceStorePort):
+    async def save(self, record: Dict[str, Any]) -> None:
+        pass
+
+    async def get(self, trace_id: str, tenant_id: str) -> Optional[Dict[str, Any]]:
+        return None
+
+    async def list(
+        self,
+        tenant_id: str,
+        session_id: Optional[str] = None,
+        feedback: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        return []
+
+    async def attach_feedback(self, trace_id: str, tenant_id: str, feedback: Dict[str, Any]) -> bool:
+        return False
 
 
 class NullObservabilityAdapter(ObservabilityPort):

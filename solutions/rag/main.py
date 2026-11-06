@@ -48,7 +48,22 @@ def create_app() -> FastAPI:
     @app.get("/health/live", tags=["Health"], summary="Liveness Probe")
     @app.get("/health/ready", tags=["Health"], summary="Readiness Probe")
     async def health_check():
-        return {"status": "ok", "service": "aip-rag"}
+        # The process is up (liveness); "load" tells callers whether model runtimes are saturated or
+        # their circuit is open, so a client can back off before it is refused.
+        from .infrastructure.adapters.runtime_guard import guards_snapshot
+        from .interfaces.api.chat_router import chat_use_case
+
+        guards = guards_snapshot()
+        admission = chat_use_case.admission
+        degraded = any(g["state"] != "closed" for g in guards.values())
+        return {
+            "status": "ok", "service": "aip-rag",
+            "load": {
+                "degraded": degraded,
+                "chat_in_flight": admission.in_flight, "chat_max_inflight": admission.limit,
+                "chat_rejected": admission.rejected, "runtimes": guards,
+            },
+        }
 
     return app
 

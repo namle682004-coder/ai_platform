@@ -23,6 +23,7 @@ from ...application.components.reranker import NeuralCrossEncoderReranker
 from ...config import rag_settings
 from ...domain.exceptions import RerankerError
 from ...domain.ports import CandidateType, RerankerPort
+from .runtime_guard import runtime_guard
 from .model_registry import (
     ModelEndpointNotFoundError,
     ModelEndpointResolver,
@@ -74,11 +75,26 @@ class HttpCrossEncoderReranker(RerankerPort):
         self.resolver = resolver or model_endpoint_resolver
         self.timeout = timeout or rag_settings.reranker_timeout_seconds
         self._client: Optional[httpx.AsyncClient] = None
+        self._probed: set = set()
 
     def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
             self._client = httpx.AsyncClient(limits=httpx.Limits(max_keepalive_connections=20, max_connections=50))
         return self._client
+
+    async def _probe_slots(self, base_url: str) -> None:
+        """Size the rerank bulkhead from the runtime's parallel slots, once per runtime (llama-server /props)."""
+        if not rag_settings.concurrency_from_runtime_slots or base_url in self._probed:
+            return
+        self._probed.add(base_url)
+        root = base_url[:-3] if base_url.endswith("/v1") else base_url
+        try:
+            res = await self._get_client().get(f"{root}/props", timeout=3.0)
+            slots = res.json().get("total_slots") if res.status_code == 200 else None
+            if isinstance(slots, int) and slots > 0:
+                runtime_guard("rerank").adopt_capacity(slots)
+        except (httpx.HTTPError, ValueError, AttributeError) as exc:
+            logger.debug("Rerank runtime probe failed for %s: %s", base_url, exc)
 
     @staticmethod
     def _fit_pair(query: str) -> Tuple[str, int]:
@@ -131,6 +147,7 @@ class HttpCrossEncoderReranker(RerankerPort):
         except ModelEndpointNotFoundError as exc:
             raise RerankerError(str(exc)) from exc
 
+        await self._probe_slots(endpoint.base_url)
         t0 = time.perf_counter()
         pair_query, max_chars = self._fit_pair(query)
         try:
@@ -140,6 +157,7 @@ class HttpCrossEncoderReranker(RerankerPort):
                 {"model": self.model_alias, "query": pair_query, "documents": self._passages(candidates, max_chars)},
                 headers=runtime_headers(),
                 timeout=self.timeout,
+                kind="rerank",
             )
         except ModelRuntimeError as exc:
             raise RerankerError(f"Reranker runtime '{self.model_alias}' at {endpoint.base_url} unavailable: {exc}") from exc

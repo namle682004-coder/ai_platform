@@ -5,14 +5,11 @@ standardized evaluation scoring, and audit provenance logging.
 
 from __future__ import annotations
 
-import asyncio
-import hashlib
 import json
 import logging
 import os
-import subprocess
 import time
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from ..adapters.base import RAGAdapter
 from ..adapters.fixed_context import FixedContextAdapter
@@ -29,32 +26,9 @@ from ..schemas.result import (
     RetrievedChunkResult,
     RunResult,
 )
+from .provenance import compute_file_sha256, get_git_commit
 
 logger = logging.getLogger("rag-benchmark.orchestrator")
-
-
-def compute_file_sha256(filepath: str) -> str:
-    h = hashlib.sha256()
-    with open(filepath, "rb") as f:
-        while chunk := f.read(8192):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def get_git_commit() -> Optional[str]:
-    try:
-        res = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-        if res.returncode == 0:
-            return res.stdout.strip()
-    except Exception:
-        pass
-    return "untracked"
 
 
 def load_dataset(file_path: str) -> List[GoldenCase]:

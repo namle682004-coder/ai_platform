@@ -85,3 +85,16 @@ class MinioStorageAdapter(StoragePort):
         except Exception as exc:
             logger.warning("Failed to delete object '%s' in bucket '%s': %s", object_name, bucket, exc)
             return False
+
+    def delete_prefix(self, bucket: str, prefix: str) -> int:
+        if not prefix:
+            return 0  # never empty a bucket by accident
+        client = self._get_client()
+        removed = 0
+        try:
+            for obj in client.list_objects(bucket, prefix=prefix, recursive=True):
+                client.remove_object(bucket_name=bucket, object_name=obj.object_name)
+                removed += 1
+        except Exception as exc:
+            logger.warning("Failed to delete objects under '%s' in bucket '%s': %s", prefix, bucket, exc)
+        return removed

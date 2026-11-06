@@ -31,8 +31,6 @@ API_ROUTE_CONFIG = json.loads(
     (STAFF_DIR / "api_detail_routes.json").read_text(encoding="utf-8")
 )
 SERVICE_LEGACY_TO_UUID = API_ROUTE_CONFIG["legacyAliases"]
-API_UUID_TO_LEGACY_PAGE = API_ROUTE_CONFIG["apiPages"]
-DEFAULT_PROJECT_ID = API_ROUTE_CONFIG["defaultProjectId"]
 
 
 def _resolve_page(base_dir: Path, page_name: str) -> Optional[Path]:
@@ -53,33 +51,98 @@ def _resolve_page(base_dir: Path, page_name: str) -> Optional[Path]:
     return None
 
 
-# --- 1. ENTERPRISE FPT.AI-COMPLIANT PROJECT & APIS URL ROUTES ---
-# Example: /project/{project_id}/apis/{api_id}
+# --- 1. PROJECT CONSOLE ROUTES ---
+# Canonical URLs (one table, frontend/shared/api_detail_routes.json, also read by vite in dev):
+#   /projects/{project}                          project dashboard
+#   /projects/{project}/services                 service catalog
+#   /projects/{project}/services/{service}/...   service page; what follows the service is a view of the
+#                                                page (e.g. rag-chatbot/chat/{session_id}, /knowledge/qa)
+#   /services/{service}/...                      same page in the viewer's current project (the page
+#                                                rewrites the URL to the canonical one)
+# {project} is the project's slug ("shared" for the shared knowledge scope); the page checks it against
+# the viewer's projects. Links of the former scheme (/project/{uuid}/apis/{uuid}) answer 301.
 
+ROUTE_PAGES = API_ROUTE_CONFIG["pages"]
+SERVICES = API_ROUTE_CONFIG["services"]
+SHARED_PROJECT = API_ROUTE_CONFIG["sharedProject"]
+SERVICE_BY_LEGACY_ID = {
+    legacy.lower(): slug for slug, service in SERVICES.items() for legacy in service.get("legacyIds", [])
+}
+
+
+def _service_slug(value: str) -> Optional[str]:
+    value = (value or "").lower()
+    return value if value in SERVICES else SERVICE_BY_LEGACY_ID.get(value)
+
+
+def _project_segment(project: str) -> str:
+    return SHARED_PROJECT["slug"] if project.lower() == SHARED_PROJECT["id"] else project
+
+
+def _frontend_page(relative: str) -> FileResponse:
+    page = (FRONTEND_DIR / relative).resolve()
+    if FRONTEND_DIR.resolve() in page.parents and page.is_file():
+        return FileResponse(page, headers={"Cache-Control": "no-cache"})
+    raise HTTPException(status_code=404, detail="Page not found")
+
+
+def _service_response(project: Optional[str], service: str, view: str = "", query: str = ""):
+    slug = _service_slug(service)
+    if slug is None:
+        raise HTTPException(status_code=404, detail="Service not found")
+    if slug != service:  # a former id or different casing: one canonical URL per page
+        base = f"/projects/{_project_segment(project)}" if project else ""
+        target = f"{base}/services/{slug}" + (f"/{view.strip('/')}" if view.strip("/") else "")
+        return RedirectResponse(url=target + (f"?{query}" if query else ""), status_code=301)
+    entry = SERVICES[slug]
+    return _frontend_page(entry["page"] if entry.get("live") else ROUTE_PAGES["underDevelopment"])
+
+
+@router.get("/projects", include_in_schema=False)
+@router.get("/projects/", include_in_schema=False)
+@router.get("/projects/{project}", include_in_schema=False)
+@router.get("/projects/{project}/", include_in_schema=False)
+@router.get("/projects/{project}/dashboard", include_in_schema=False)
+async def serve_project_dashboard(project: str = ""):
+    return _frontend_page(ROUTE_PAGES["dashboard"])
+
+
+@router.get("/projects/{project}/services", include_in_schema=False)
+@router.get("/projects/{project}/services/", include_in_schema=False)
+async def serve_project_services(project: str):
+    return _frontend_page(ROUTE_PAGES["services"])
+
+
+@router.get("/projects/{project}/services/{service}", include_in_schema=False)
+@router.get("/projects/{project}/services/{service}/{view:path}", include_in_schema=False)
+async def serve_project_service(request: Request, project: str, service: str, view: str = ""):
+    return _service_response(project, service, view, request.url.query)
+
+
+@router.get("/services/{service}", include_in_schema=False)
+@router.get("/services/{service}/{view:path}", include_in_schema=False)
+async def serve_current_project_service(request: Request, service: str, view: str = ""):
+    return _service_response(None, service, view, request.url.query)
+
+
+# Former scheme: permanent redirects keep bookmarks and shared links working.
 @router.get("/project/{project_id}/apis/{api_id}", include_in_schema=False)
 @router.get("/project/{project_id}/apis/{api_id}/", include_in_schema=False)
 @router.get("/staff/project/{project_id}/apis/{api_id}", include_in_schema=False)
 @router.get("/staff/project/{project_id}/apis/{api_id}/", include_in_schema=False)
-async def serve_project_api_detail(project_id: str, api_id: str):
-    page_name = API_UUID_TO_LEGACY_PAGE.get(api_id.lower())
-    if not page_name:
+async def redirect_legacy_project_api(project_id: str, api_id: str):
+    slug = _service_slug(api_id)
+    if slug is None:
         raise HTTPException(status_code=404, detail="API detail page not found")
-
-    service_page = STAFF_DIR / page_name
-    if service_page.is_file():
-        return FileResponse(service_page)
-    raise HTTPException(status_code=404, detail="Service detail page not found")
+    return RedirectResponse(url=f"/projects/{_project_segment(project_id)}/services/{slug}", status_code=301)
 
 
 @router.get("/project/{project_id}/apis", include_in_schema=False)
 @router.get("/project/{project_id}/apis/", include_in_schema=False)
 @router.get("/staff/project/{project_id}/apis", include_in_schema=False)
 @router.get("/staff/project/{project_id}/apis/", include_in_schema=False)
-async def serve_project_apis_catalog(project_id: str):
-    apis_html = STAFF_DIR / "apis.html"
-    if apis_html.exists():
-        return FileResponse(apis_html)
-    raise HTTPException(status_code=404, detail="APIs catalog page not found")
+async def redirect_legacy_project_apis(project_id: str):
+    return RedirectResponse(url=f"/projects/{_project_segment(project_id)}/services", status_code=301)
 
 
 @router.get("/project/{project_id}", include_in_schema=False)
@@ -87,11 +150,8 @@ async def serve_project_apis_catalog(project_id: str):
 @router.get("/project/{project_id}/dashboard", include_in_schema=False)
 @router.get("/staff/project/{project_id}", include_in_schema=False)
 @router.get("/staff/project/{project_id}/dashboard", include_in_schema=False)
-async def serve_project_dashboard(project_id: str):
-    dash = STAFF_DIR / "dashboard.html"
-    if dash.exists():
-        return FileResponse(dash)
-    raise HTTPException(status_code=404, detail="Project dashboard not found")
+async def redirect_legacy_project_dashboard(project_id: str):
+    return RedirectResponse(url=f"/projects/{_project_segment(project_id)}", status_code=301)
 
 
 # --- 2. STAFF PORTAL ROOT & CONVENIENCE ROUTES ---
@@ -128,8 +188,8 @@ async def serve_staff_page(page: str):
     # Redirect cleanly to /project/{project_id}/apis/{api_id}
     clean_without_ext = clean_page.replace(".html", "")
     if clean_without_ext in SERVICE_LEGACY_TO_UUID:
-        target_uuid = SERVICE_LEGACY_TO_UUID[clean_without_ext]
-        return RedirectResponse(url=f"/project/{DEFAULT_PROJECT_ID}/apis/{target_uuid}", status_code=302)
+        slug = _service_slug(SERVICE_LEGACY_TO_UUID[clean_without_ext])
+        return RedirectResponse(url=f"/services/{slug}", status_code=301)
 
     found = _resolve_page(STAFF_DIR, page)
     if found:
@@ -212,10 +272,7 @@ async def serve_profile():
 @router.get("/rag", include_in_schema=False)
 @router.get("/chat", include_in_schema=False)
 async def serve_rag_alias():
-    rag_index = SOLUTIONS_DIR / "rag" / "index.html"
-    if rag_index.is_file():
-        return FileResponse(rag_index)
-    raise HTTPException(status_code=404, detail="RAG solution page not found")
+    return RedirectResponse(url="/services/rag-chatbot", status_code=301)
 
 
 @router.get("/solutions/{path:path}", include_in_schema=False)

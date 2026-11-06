@@ -120,6 +120,51 @@ class RagSolutionSettings(BaseSettings):
         validation_alias=AliasChoices("RAG_MODEL_MAX_RETRIES", "model_max_retries"),
         description="Retries (with exponential backoff) on transport errors / 5xx from model runtimes",
     )
+    # --- Overload protection (runtime_guard) --------------------------------------------------------
+    # Concurrent calls per runtime kind and process. Keep llm_max_concurrent <= llama-server --parallel:
+    # more calls than slots only queue inside the runtime and hold memory on the host.
+    llm_max_concurrent: int = Field(
+        default=2, ge=1, validation_alias=AliasChoices("RAG_LLM_MAX_CONCURRENT", "llm_max_concurrent")
+    )
+    # Raise the llm / rerank limits above to the parallel slots the runtime reports (llama-server /props):
+    # a lower limit queues calls the runtime would have batched, and queued analysis calls time out.
+    concurrency_from_runtime_slots: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("RAG_CONCURRENCY_FROM_RUNTIME_SLOTS", "concurrency_from_runtime_slots"),
+    )
+    embedding_max_concurrent: int = Field(
+        default=4, ge=1, validation_alias=AliasChoices("RAG_EMBEDDING_MAX_CONCURRENT", "embedding_max_concurrent")
+    )
+    rerank_max_concurrent: int = Field(
+        default=2, ge=1, validation_alias=AliasChoices("RAG_RERANK_MAX_CONCURRENT", "rerank_max_concurrent")
+    )
+    # A call that finds no free slot within this time is refused ("busy, retry later").
+    runtime_queue_timeout_seconds: float = Field(
+        default=20.0, gt=0, validation_alias=AliasChoices("RAG_RUNTIME_QUEUE_TIMEOUT_SECONDS", "runtime_queue_timeout_seconds")
+    )
+    # Consecutive failures (timeouts, connection errors, 5xx) that open a runtime's circuit breaker,
+    # and how long calls then fail fast so the host can recover.
+    runtime_breaker_failures: int = Field(
+        default=3, ge=1, validation_alias=AliasChoices("RAG_RUNTIME_BREAKER_FAILURES", "runtime_breaker_failures")
+    )
+    runtime_breaker_cooldown_seconds: float = Field(
+        default=30.0, gt=0,
+        validation_alias=AliasChoices("RAG_RUNTIME_BREAKER_COOLDOWN_SECONDS", "runtime_breaker_cooldown_seconds"),
+    )
+    # Chat admission: turns in progress per process (each turn makes 2–4 model calls); more are refused.
+    chat_max_inflight: int = Field(
+        default=6, ge=1, validation_alias=AliasChoices("RAG_CHAT_MAX_INFLIGHT", "chat_max_inflight")
+    )
+    # Chat rate limits: per tenant + client IP, and for the whole service (all tenants together, sized
+    # to what the model host can answer: a 7B on one GPU answers ~7–10 turns a minute).
+    chat_rate_limit_per_minute: int = Field(
+        default=30, ge=1, validation_alias=AliasChoices("RAG_CHAT_RATE_LIMIT_PER_MINUTE", "chat_rate_limit_per_minute")
+    )
+    chat_global_rate_limit_per_minute: int = Field(
+        default=20, ge=0,
+        validation_alias=AliasChoices("RAG_CHAT_GLOBAL_RATE_LIMIT_PER_MINUTE", "chat_global_rate_limit_per_minute"),
+        description="0 disables the service-wide chat limit",
+    )
     reranker_backend: str = Field(
         default="remote",
         validation_alias=AliasChoices("RAG_RERANKER_BACKEND", "reranker_backend"),
@@ -153,6 +198,54 @@ class RagSolutionSettings(BaseSettings):
     minio_bucket: str = Field(
         default="aip-data",
         validation_alias=AliasChoices("MINIO_BUCKET", "minio_bucket"),
+    )
+    # --- Latency: retrieval + rerank of a first message run during the analysis LLM call ---
+    # Off by default: it only pays when the chat model and the reranker run on separate GPUs (or a
+    # batching runtime such as vLLM). Measured on a single shared GPU (TITAN Xp, chat + embed + rerank),
+    # the rerank saved ~0.9s but slowed the concurrent analysis call by about as much.
+    speculative_retrieval_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("RAG_SPECULATIVE_RETRIEVAL_ENABLED", "speculative_retrieval_enabled"),
+    )
+    # --- Inbox of unanswered questions: sessions of automated test runs are hidden by default ---
+    ticket_hidden_session_prefixes: str = Field(
+        default="eval_,probe_,img_,faq_,smoke_",
+        validation_alias=AliasChoices("RAG_TICKET_HIDDEN_SESSION_PREFIXES", "ticket_hidden_session_prefixes"),
+        description="Comma-separated session-id prefixes of benchmark / test conversations",
+    )
+    # --- Admin-curated Q&A pairs: a clearly matching question gets the approved answer verbatim ---
+    faq_direct_answer_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_FAQ_DIRECT_ANSWER_ENABLED", "faq_direct_answer_enabled")
+    )
+    faq_direct_min_score: float = Field(
+        default=0.8, ge=0.0, le=1.0, validation_alias=AliasChoices("RAG_FAQ_DIRECT_MIN_SCORE", "faq_direct_min_score"),
+        description="Cross-encoder score from which a Q&A pair answers the question as written by the admin",
+    )
+    # --- Document images (extracted at ingestion, stored in MinIO, served through the API) ---
+    media_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_MEDIA_ENABLED", "media_enabled")
+    )
+    media_bucket: str = Field(
+        default="", validation_alias=AliasChoices("RAG_MEDIA_BUCKET", "media_bucket"),
+        description="Bucket for document images; empty = minio_bucket",
+    )
+    media_path_prefix: str = Field(
+        default="/v1/rag/media", validation_alias=AliasChoices("RAG_MEDIA_PATH_PREFIX", "media_path_prefix"),
+        description="Path (same origin as the chat UI) under which document images are served",
+    )
+    media_signing_secret: str = Field(
+        default="", validation_alias=AliasChoices("RAG_MEDIA_SIGNING_SECRET", "media_signing_secret"),
+        description="HMAC key of image URLs; empty = derived from the MinIO secret (set it in production)",
+    )
+    media_url_ttl_seconds: int = Field(
+        default=0, ge=0, validation_alias=AliasChoices("RAG_MEDIA_URL_TTL_SECONDS", "media_url_ttl_seconds"),
+        description="Lifetime of signed image URLs; 0 = valid while the document exists (chat history keeps working)",
+    )
+    media_max_images_per_answer: int = Field(
+        default=4, ge=0, validation_alias=AliasChoices("RAG_MEDIA_MAX_IMAGES_PER_ANSWER", "media_max_images_per_answer")
+    )
+    media_max_image_bytes: int = Field(
+        default=15 * 1024 * 1024, validation_alias=AliasChoices("RAG_MEDIA_MAX_IMAGE_BYTES", "media_max_image_bytes")
     )
     chunk_size_chars: int = Field(
         default=900,
@@ -275,7 +368,7 @@ class RagSolutionSettings(BaseSettings):
         validation_alias=AliasChoices("RAG_QUERY_ANALYSIS_ENABLED", "query_analysis_enabled"),
     )
     query_analysis_timeout: float = Field(
-        default=4.0,
+        default=6.0,
         validation_alias=AliasChoices("RAG_QUERY_ANALYSIS_TIMEOUT", "query_analysis_timeout"),
         description="Seconds before falling back to history concatenation and treating the turn as a document question",
     )
@@ -343,6 +436,131 @@ class RagSolutionSettings(BaseSettings):
     llm_min_completion_tokens: int = Field(
         default=384,
         validation_alias=AliasChoices("RAG_LLM_MIN_COMPLETION_TOKENS", "llm_min_completion_tokens"),
+    )
+    # --- Answer stability -------------------------------------------------------------------------
+    # Upper bound on the sampling temperature of document answers, and a fixed seed (-1 = none): the
+    # same question over the same documents should give the same answer.
+    generation_temperature_max: float = Field(
+        default=0.0,
+        validation_alias=AliasChoices("RAG_GENERATION_TEMPERATURE_MAX", "generation_temperature_max"),
+    )
+    llm_seed: int = Field(default=42, validation_alias=AliasChoices("RAG_LLM_SEED", "llm_seed"))
+    # --- Post-generation verification ---------------------------------------------------------------
+    # Sentences written in another language than the answer language are dropped ("auto" = the
+    # language of the question, Vietnamese when it cannot be told).
+    language_guard_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_LANGUAGE_GUARD_ENABLED", "language_guard_enabled")
+    )
+    # Sentences citing identifiers or numbers that the retrieved passages do not contain are dropped.
+    identifier_grounding_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_IDENTIFIER_GROUNDING_ENABLED", "identifier_grounding_enabled")
+    )
+    # Items of the context relevant to the question but missing from the answer are appended.
+    completeness_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_COMPLETENESS_ENABLED", "completeness_enabled")
+    )
+    completeness_relative_score: float = Field(
+        default=0.6, validation_alias=AliasChoices("RAG_COMPLETENESS_RELATIVE_SCORE", "completeness_relative_score")
+    )
+    completeness_max_items: int = Field(
+        default=4, validation_alias=AliasChoices("RAG_COMPLETENESS_MAX_ITEMS", "completeness_max_items")
+    )
+    # A model refusal over passages that contain the asked-about terms is regenerated extractively.
+    refusal_verify_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_REFUSAL_VERIFY_ENABLED", "refusal_verify_enabled")
+    )
+    # Before refusing, ask whether the message falls into the tenant's out-of-scope policy.
+    policy_check_on_refusal: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_POLICY_CHECK_ON_REFUSAL", "policy_check_on_refusal")
+    )
+    # Re-accent a message typed without diacritics from the retrieved passages before the analyzer reads it.
+    reaccent_before_analysis: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_REACCENT_BEFORE_ANALYSIS", "reaccent_before_analysis")
+    )
+    # A message the analyzer labels out-of-scope is still searched; the tenant's documents answering it
+    # strongly (rerank >= gate_min_rerank_score) make it a document question.
+    out_of_scope_verify_with_retrieval: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("RAG_OUT_OF_SCOPE_VERIFY_WITH_RETRIEVAL", "out_of_scope_verify_with_retrieval"),
+    )
+    # ... or when the passages cover most of its keywords (the cross-encoder scores long listing questions low).
+    out_of_scope_override_min_lexical: float = Field(
+        default=0.6, ge=0.0, le=1.0,
+        validation_alias=AliasChoices("RAG_OUT_OF_SCOPE_OVERRIDE_MIN_LEXICAL", "out_of_scope_override_min_lexical"),
+    )
+    # --- Retrieval ----------------------------------------------------------------------------------
+    # Second retrieval with the asked-about terms only, so scope words of the question ("in section X")
+    # cannot hide the passages where the subject actually is (premise correction).
+    focus_retrieval_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_FOCUS_RETRIEVAL_ENABLED", "focus_retrieval_enabled")
+    )
+    focus_min_passages: int = Field(
+        default=2, validation_alias=AliasChoices("RAG_FOCUS_MIN_PASSAGES", "focus_min_passages")
+    )
+    # When the evidence is weak, retrieve again with LLM paraphrases in domain terms (multi-query).
+    multi_query_on_weak_evidence: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_MULTI_QUERY_ON_WEAK_EVIDENCE", "multi_query_on_weak_evidence")
+    )
+    multi_query_count: int = Field(default=3, validation_alias=AliasChoices("RAG_MULTI_QUERY_COUNT", "multi_query_count"))
+    # Context budget for point questions (lists use the structured path or context_char_budget).
+    context_char_budget_point: int = Field(
+        default=5000, validation_alias=AliasChoices("RAG_CONTEXT_CHAR_BUDGET_POINT", "context_char_budget_point")
+    )
+    # Header block of the best documents (title, opening lines, outline) is always part of the context.
+    document_card_always: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_DOCUMENT_CARD_ALWAYS", "document_card_always")
+    )
+    document_card_max_chars: int = Field(
+        default=900, validation_alias=AliasChoices("RAG_DOCUMENT_CARD_MAX_CHARS", "document_card_max_chars")
+    )
+    # Listing questions over tabular documents are answered from parsed table rows filtered by an LLM
+    # query plan (self-query) and rendered deterministically, so no row is dropped or invented.
+    # Highest / lowest / difference / total questions over tables are computed in code from parsed cells.
+    numeric_tables_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_NUMERIC_TABLES_ENABLED", "numeric_tables_enabled")
+    )
+    # A figure must appear with the same counting unit as in the passages ("5 posts" is not "5 topics").
+    unit_grounding_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_UNIT_GROUNDING_ENABLED", "unit_grounding_enabled")
+    )
+    # "questions": the answer model sees earlier questions only (earlier answers' figures leak into new
+    # answers); "full": earlier answers too.
+    generation_history_mode: str = Field(
+        default="questions", validation_alias=AliasChoices("RAG_GENERATION_HISTORY_MODE", "generation_history_mode")
+    )
+    # Per-turn pipeline traces (stage inputs/outputs) persisted for diagnosis, feedback linking and evaluation.
+    trace_enabled: bool = Field(default=True, validation_alias=AliasChoices("RAG_TRACE_ENABLED", "trace_enabled"))
+    # Share of ordinary turns kept; refusals, verification drops, corrections and errors are always kept.
+    trace_sample_rate: float = Field(
+        default=1.0, ge=0.0, le=1.0, validation_alias=AliasChoices("RAG_TRACE_SAMPLE_RATE", "trace_sample_rate")
+    )
+    trace_retention_days: int = Field(
+        default=14, ge=0, validation_alias=AliasChoices("RAG_TRACE_RETENTION_DAYS", "trace_retention_days")
+    )
+    # Text kept per reranked candidate (identifiers are always kept) and per context passage.
+    trace_pool_text_chars: int = Field(
+        default=600, ge=0, validation_alias=AliasChoices("RAG_TRACE_POOL_TEXT_CHARS", "trace_pool_text_chars")
+    )
+    trace_context_text_chars: int = Field(
+        default=4000, ge=0, validation_alias=AliasChoices("RAG_TRACE_CONTEXT_TEXT_CHARS", "trace_context_text_chars")
+    )
+    trace_redact_pii: bool = Field(default=True, validation_alias=AliasChoices("RAG_TRACE_REDACT_PII", "trace_redact_pii"))
+    structured_listing_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_STRUCTURED_LISTING_ENABLED", "structured_listing_enabled")
+    )
+    # Also plan a listing for questions the analyzer did not flag as lists. Off: on the acceptance suite
+    # (05/11/2026) auto-planned listings passed 4/16 turns against 45/97 for generation on the same
+    # kind of question, and the planner call adds ~1 s to most turns.
+    structured_listing_auto: bool = Field(
+        default=False, validation_alias=AliasChoices("RAG_STRUCTURED_LISTING_AUTO", "structured_listing_auto")
+    )
+    structured_max_items: int = Field(
+        default=80, validation_alias=AliasChoices("RAG_STRUCTURED_MAX_ITEMS", "structured_max_items")
+    )
+    # Shared knowledge-base tenants searched together with the caller's own documents (comma list,
+    # empty = tenant documents only).
+    shared_kb_tenants: str = Field(
+        default="global", validation_alias=AliasChoices("RAG_SHARED_KB_TENANTS", "shared_kb_tenants")
     )
     context_relative_cutoff: float = Field(
         default=0.6,

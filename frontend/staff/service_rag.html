@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="vi">
   <head>
+    <script src="/staff/project_routes.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AIP Platform - RAG Chatbot & Knowledge Hub</title>
@@ -9912,6 +9913,12 @@
                         }
                       }
                       accumulatedAnswer += parsed.token;
+                      scheduleStreamUpdate();
+                    }
+                    if (parsed.reset) {
+                      // The server is generating the answer again (the model runtime cut it off under load):
+                      // the partial text shown so far is replaced by the new answer.
+                      accumulatedAnswer = "";
                       scheduleStreamUpdate();
                     }
                     if (parsed.error && parsed.message) {

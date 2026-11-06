@@ -10,7 +10,7 @@ import time
 from typing import Any, Dict, List, Optional
 import httpx
 
-from .base import NormalizedResponse, RAGAdapter
+from .base import NormalizedResponse
 
 
 class FixedContextAdapter:

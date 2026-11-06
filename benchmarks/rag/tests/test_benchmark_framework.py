@@ -3,11 +3,9 @@ Unit Tests for AIP Enterprise RAG Benchmark Framework (Audited Ranx Edition).
 Verifies schemas, ranx retrieval metrics, generation evaluation, and citation precision.
 """
 
-import os
-import pytest
 from benchmarks.rag.src.rag_benchmark.schemas.dataset import GoldenCase, EvidenceChunk, QuestionType
 from benchmarks.rag.src.rag_benchmark.evaluators.retrieval import evaluate_retrieval
-from benchmarks.rag.src.rag_benchmark.evaluators.generation import evaluate_generation, compute_token_f1
+from benchmarks.rag.src.rag_benchmark.evaluators.generation import evaluate_generation
 from benchmarks.rag.src.rag_benchmark.evaluators.citation import evaluate_citations
 from benchmarks.rag.src.rag_benchmark.runner.orchestrator import load_dataset
 

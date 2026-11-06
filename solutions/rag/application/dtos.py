@@ -25,6 +25,8 @@ class RagCitationDTO(BaseModel):
     section: Optional[str] = None
     relevance_score: Optional[float] = None
     quote: Optional[str] = None
+    images: List[str] = Field(default_factory=list, description="Signed URLs of the images of this passage")
+    file_type: Optional[str] = Field(None, description="Format of the source document (docx, pdf, ...)")
 
 
 class RagChatRequestDTO(BaseModel):
@@ -124,6 +126,7 @@ class ChatMessageDTO(BaseModel):
 
 class ChatSessionDTO(BaseModel):
     session_id: str
+    public_id: Optional[str] = Field(None, description="Opaque id of the conversation in URLs (/c/{public_id})")
     user_id: str
     tenant_id: str
     title: str
@@ -135,6 +138,7 @@ class ChatSessionDTO(BaseModel):
 
 class SessionListItemDTO(BaseModel):
     session_id: str
+    public_id: Optional[str] = Field(None, description="Opaque id of the conversation in URLs (/c/{public_id})")
     title: str
     last_message: Optional[str] = None
     updated_at: float
@@ -213,6 +217,22 @@ class QACreateResponseDTO(BaseModel):
     qa_id: str
     indexing_latency_ms: float
     qdrant_point_id: str
+
+
+class QAEntryDTO(BaseModel):
+    qa_id: str
+    question: str
+    answer: str
+    question_variations: List[str] = Field(default_factory=list)
+    category: str = "general"
+    effective_status: Optional[str] = "ACTIVE"
+    created_at: int = 0
+    updated_at: int = 0
+
+
+class QAListResponseDTO(BaseModel):
+    items: List[QAEntryDTO]
+    total: int
 
 
 class QADeleteResponseDTO(BaseModel):

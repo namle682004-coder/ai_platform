@@ -270,12 +270,14 @@ class QdrantVectorStoreAdapter(VectorStorePort):
         effective_status: Optional[str] = "ACTIVE",
         as_of_date: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        # Tenancy isolation: match current workspace tenant + shared global knowledge base
+        # Tenancy isolation: the caller's own documents plus the configured shared knowledge base only.
+        # The default project is a tenant like any other: its documents must not leak into other projects.
         clean_tid = (tenant_id or "global").strip()
+        shared = [t.strip() for t in (rag_settings.shared_kb_tenants or "").split(",") if t.strip()]
         if clean_tid.lower() in ("global", "proj_default", "system", "*"):
-            tenant_variants = ["global", "proj_default"]
+            tenant_variants = list(dict.fromkeys(["global", "proj_default", *shared]))
         else:
-            tenant_variants = list(set([clean_tid, clean_tid.upper(), clean_tid.lower(), "global", "proj_default"]))
+            tenant_variants = list(dict.fromkeys([clean_tid, clean_tid.upper(), clean_tid.lower(), *shared]))
 
         must_conditions: List[Dict[str, Any]] = [
             {"key": "tenant_id", "match": {"any": tenant_variants}}
@@ -813,6 +815,69 @@ class QdrantVectorStoreAdapter(VectorStorePort):
         items = [{"id": p.get("id"), "score": 0.0, "payload": p.get("payload", {}) or {}} for p in points]
         items.sort(key=lambda c: int(c["payload"].get("chunk_index", 0) or 0))
         return items
+
+    async def list_faq_entries(self, tenant_id: str, limit: int = 1000) -> List[Dict[str, Any]]:
+        """
+        Admin-curated Q&A pairs of exactly this tenant (not the shared knowledge base): the library a
+        project administrator manages. Payloads only, newest first.
+        """
+        must = [
+            {"key": "tenant_id", "match": {"value": tenant_id}},
+            {"key": "file_type", "match": {"value": "faq"}},
+        ]
+        points: List[Dict[str, Any]] = []
+        offset: Any = None
+        try:
+            client = await self._get_client()
+            while len(points) < limit:
+                body: Dict[str, Any] = {"filter": {"must": must}, "limit": min(256, limit - len(points)),
+                                        "with_payload": True, "with_vector": False}
+                if offset is not None:
+                    body["offset"] = offset
+                res = await client.post(f"{self.base_url}/collections/{self.collection_name}/points/scroll", json=body)
+                if res.status_code != 200:
+                    break
+                result = res.json().get("result", {}) or {}
+                points.extend(result.get("points", []) or [])
+                offset = result.get("next_page_offset")
+                if offset is None:
+                    break
+        except httpx.HTTPError as exc:
+            logger.warning("FAQ scroll failed for tenant %s: %s", tenant_id, exc)
+        payloads = [p.get("payload") or {} for p in points]
+        payloads.sort(key=lambda p: int(p.get("updated_at") or p.get("created_at") or 0), reverse=True)
+        return payloads
+
+    async def list_document_ids(self, tenant_id: str, user_role: str = "user", limit: int = 200) -> List[str]:
+        """Distinct doc_ids visible to the caller (scrolls doc_id payloads only)."""
+        must_conditions = self._build_filter_conditions(tenant_id, user_role)
+        doc_ids: Dict[str, None] = {}
+        offset: Any = None
+        try:
+            client = await self._get_client()
+            while len(doc_ids) < limit:
+                body: Dict[str, Any] = {
+                    "filter": {"must": must_conditions},
+                    "limit": 256,
+                    "with_payload": ["doc_id"],
+                    "with_vector": False,
+                }
+                if offset is not None:
+                    body["offset"] = offset
+                res = await client.post(f"{self.base_url}/collections/{self.collection_name}/points/scroll", json=body)
+                if res.status_code != 200:
+                    break
+                result = res.json().get("result", {}) or {}
+                for p in result.get("points", []) or []:
+                    d = (p.get("payload") or {}).get("doc_id")
+                    if d:
+                        doc_ids.setdefault(str(d), None)
+                offset = result.get("next_page_offset")
+                if offset is None:
+                    break
+        except httpx.HTTPError as exc:
+            logger.warning("Document id scroll failed for tenant %s: %s", tenant_id, exc)
+        return list(doc_ids)[:limit]
 
     async def delete_stale_chunks(self, doc_id: str, tenant_id: str, keep_count: int) -> bool:
         """

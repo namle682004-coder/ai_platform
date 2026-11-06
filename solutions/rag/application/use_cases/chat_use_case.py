@@ -16,14 +16,23 @@ Pipeline per turn (Advanced / Modular RAG):
 
 import asyncio
 import json
+from contextlib import asynccontextmanager
+import hashlib
 import logging
 import re
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, AsyncIterator, Dict, List, Optional, Sequence, Set, Tuple
 
-from ...domain.exceptions import EmbeddingError, LLMGenerationError, RerankerError, VectorStoreError
+from ...domain.exceptions import (
+    EmbeddingError,
+    LLMGenerationError,
+    LLMStreamInterruptedError,
+    RerankerError,
+    ServiceOverloadedError,
+    VectorStoreError,
+)
 from ...domain.entities import (
     DEFAULT_TENANT_ID,
     normalize_tenant_id,
@@ -34,23 +43,39 @@ from ...domain.ports import (
     LLMPort,
     NullCacheAdapter,
     NullObservabilityAdapter,
+    NullTraceStore,
     ObservabilityPort,
     RerankerPort,
     SessionRepositoryPort,
+    TraceStorePort,
     VectorStorePort,
 )
+from ..components import media_assets
+from ..components.session_ids import new_session_id
 from ..components.answer_postprocessor import (
     AnswerStreamFilter,
     SanitizeContext,
     build_sources_footer,
     build_suggestions,
     collect_image_urls,
+    has_substantive_content,
     remap_citations,
     sanitize_answer,
+)
+from ..components.answer_verifier import (
+    build_grounding,
+    extractive_answer,
+    focus_locations,
+    focus_present,
+    format_missing,
+    is_english_text,
+    missing_items,
+    specific_focus_terms,
 )
 from ..components.context_selector import (
     build_document_card,
     candidate_key,
+    chunk_order_key,
     document_card_candidate,
     outline_from_candidates,
     payload_of,
@@ -65,23 +90,66 @@ from ..components.hyde_generator import HyDEResult, hyde_generator
 from ..components.intent_classifier import intent_classifier
 from ..components.lexical_evidence import (
     absent_numeric_details,
+    candidate_heading,
     candidate_text,
-    has_vietnamese_diacritics,
+    strip_diacritics,
+    extract_identifiers,
+    mostly_unaccented,
     nearest_existing_codes,
+    normalize_for_match,
     restore_diacritics_from_corpus,
     score_evidence,
     unique_in_order,
 )
 from ..components.prompt_builder import (
-    ANSWER_RULES,
-    PROCEDURE_RULES,
     REFUSAL_MESSAGE,
+    instruction_text,
     prompt_builder,
+    strip_breadcrumb,
 )
-from ..components.query_analyzer import Intent, QueryAnalysis, QueryAnalyzer
+from ..components.query_analyzer import ANALYZER_MARKER, Intent, QueryAnalysis, QueryAnalyzer
 from ..components.query_decomposer import DecomposedQuery, query_decomposer
 from ..components.query_rewriter import RewrittenQuery, query_rewriter
 from ..components.reranker import cross_encoder_reranker
+from ..components.run_trace import (
+    TurnTrace,
+    begin_turn,
+    chunk_refs,
+    current_trace_id,
+    dropped_sentences,
+    end_turn,
+    trace_stage,
+)
+from ..components.numeric_tables import (
+    compute_answer as compute_numeric_answer,
+)
+from ..components.numeric_tables import (
+    column_named,
+    expand_to_families,
+    label_named,
+    parse_numeric_tables,
+)
+from ..components.numeric_tables import (
+    parse_plan as parse_numeric_plan,
+)
+from ..components.numeric_tables import (
+    planner_messages as numeric_planner_messages,
+)
+from ..components.table_rows import (
+    build_schema,
+    TablePlan,
+    counts_column,
+    listing_summary,
+    names_value,
+    parse_plan,
+    parse_table_rows,
+    planner_messages,
+    question_filters,
+    reconcile_plan,
+    refine_plan,
+    render_items,
+    row_items,
+)
 from ..dtos import (
     ClarificationDTO,
     RagChatRequestDTO,
@@ -113,7 +181,17 @@ def _build_citation_dto(c: Dict[str, Any]) -> RagCitationDTO:
         section=section,
         relevance_score=score,
         quote=excerpt,
+        images=[str(u) for u in (c.get("images") or [])],
+        file_type=str(c.get("file_type") or "") or None,
     )
+
+
+def media_secret() -> str:
+    """HMAC key of document image URLs (configured, or derived from the deployment's storage secret)."""
+    if rag_settings.media_signing_secret:
+        return rag_settings.media_signing_secret
+    material = f"aip-media:{rag_settings.minio_root_password}:{rag_settings.mongo_uri}"
+    return hashlib.sha256(material.encode()).hexdigest()
 
 
 def _deduplicate_citations(citations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -288,21 +366,161 @@ class _TurnPlan:
     outline: List[str] = field(default_factory=list)
     context_chunks: List[Dict[str, Any]] = field(default_factory=list)
     suggestion_pool: List[Dict[str, Any]] = field(default_factory=list)
+    section_pool: List[Dict[str, Any]] = field(default_factory=list)  # passages of the answered documents (images by section)
+    speculative: Optional[Any] = None  # asyncio.Task: retrieval + rerank of a first message, run during analysis
+    speculative_query: str = ""
     wrapped: List[Any] = field(default_factory=list)
     raw_citations: List[Dict[str, Any]] = field(default_factory=list)
     system_prompt: str = ""
     user_content: str = ""
     max_tokens: Optional[int] = None  # completion budget left by the prompt in the model window
     unverified_feedback: bool = False  # labelled feedback on a session's first turn; retrieval decides
+    direct_citations: List[Dict[str, Any]] = field(default_factory=list)  # sources of a direct (structured) answer
+    answer_replaced: bool = False  # the generated answer was replaced (refusal, out-of-scope, feedback)
+    policy_category: str = ""  # labelled out-of-scope by the analyzer; answered only on strong evidence
     strategy: str = "stuff"
     sanitize_ctx: Optional[SanitizeContext] = None
 
 
-INFRASTRUCTURE_ERRORS = (EmbeddingError, RerankerError, VectorStoreError, LLMGenerationError)
+INFRASTRUCTURE_ERRORS = (EmbeddingError, RerankerError, VectorStoreError, LLMGenerationError, ServiceOverloadedError)
+BUSY_MESSAGE = "Hệ thống đang bận do nhiều người dùng cùng lúc, vui lòng thử lại sau ít phút."
+OUTAGE_MESSAGE = "Dịch vụ tạm thời gián đoạn, vui lòng thử lại sau."
+
+
+def overload_retry_after(exc: BaseException) -> Optional[int]:
+    """Retry-After of an overload anywhere in the exception chain (None when it is another failure)."""
+    seen = set()
+    cur: Optional[BaseException] = exc
+    while cur is not None and id(cur) not in seen:
+        if isinstance(cur, ServiceOverloadedError):
+            return cur.retry_after
+        seen.add(id(cur))
+        cur = cur.__cause__ or cur.__context__
+    return None
+
+
+def unavailable_reply(exc: BaseException) -> Tuple[str, int, bool]:
+    """(message, Retry-After seconds, busy) for a turn that could not be served."""
+    retry_after = overload_retry_after(exc)
+    return (BUSY_MESSAGE, retry_after, True) if retry_after is not None else (OUTAGE_MESSAGE, 5, False)
+
+
+class ChatAdmission:
+    """
+    Turns in progress in this process. Each turn makes several model calls, so a turn admitted beyond
+    what the runtimes can serve only waits, holds memory and delays everyone: it is refused at once.
+    """
+
+    def __init__(self, limit: Optional[int] = None) -> None:
+        self._limit = limit
+        self.in_flight = 0
+        self.rejected = 0
+
+    @property
+    def limit(self) -> int:
+        return max(1, self._limit or rag_settings.chat_max_inflight)
+
+    @asynccontextmanager
+    async def turn(self) -> AsyncIterator[None]:
+        if self.in_flight >= self.limit:
+            self.rejected += 1
+            raise ServiceOverloadedError(f"{self.in_flight} chat turns in progress (limit {self.limit})",
+                                         retry_after=int(rag_settings.runtime_queue_timeout_seconds))
+        self.in_flight += 1
+        try:
+            yield
+        finally:
+            self.in_flight -= 1
 # Combine strategies whose final answer is synthesised over several passes and cites by original index.
 SYNTHESIS_STRATEGIES = ("map_reduce", "refine")
 # A document is "related" to the question when its best passage scores at least this share of the best one.
 RELATED_DOCUMENT_RATIO = 0.5
+# Candidates kept after merging the question, focus and paraphrase retrievals (all are reranked).
+MERGED_CANDIDATE_LIMIT = 48
+# Fewer parsed table items than this: the document is not tabular enough for the structured path.
+STRUCTURED_MIN_ITEMS = 3
+# An automatically triggered (not explicitly requested) structured answer must list at least this many items.
+STRUCTURED_AUTO_MIN_SELECTED = 3
+# Rows of a computed figures table: a ranking shows the top ones, a "list them all" question all of them.
+PROMPT_TEMPLATE_TOKENS = 8  # per chat message, for the template's role markers
+FAQ_CANDIDATES = 3  # a Q&A pair among the best few passages is checked question-to-question
+# Word overlap (Jaccard) from which the analyzer's rewrite of a first message is that message.
+SPECULATIVE_MIN_OVERLAP = 0.75
+STREAM_RESTARTS = 2  # answers regenerated after the runtime cut them off before any text was shown
+CITATION_MAX_IMAGES = 8  # images listed on one cited passage (its own and its section's)
+NUMERIC_SORT_MAX_ROWS = 15
+NUMERIC_LIST_MAX_ROWS = 60
+# Weak reranking: documents whose share of the hybrid search results is below this fraction of the
+# leading document's are not what the question is about (rank smoothing constant of that share).
+DOCUMENT_FOCUS_MIN_SHARE = 0.5
+DOCUMENT_SHARE_RANK_OFFSET = 10
+
+
+def leading_documents(candidates: Sequence[Dict[str, Any]]) -> Set[str]:
+    """
+    Documents the hybrid search (dense + BM25 over the whole question) points to, by reciprocal-rank share
+    of its results. Empty when the results come from a single document.
+    """
+    share: Dict[str, float] = {}
+    for i, c in enumerate(candidates):
+        doc_id = str(payload_of(c).get("doc_id") or "")
+        if doc_id:
+            share[doc_id] = share.get(doc_id, 0.0) + 1.0 / (DOCUMENT_SHARE_RANK_OFFSET + i)
+    if len(share) < 2:
+        return set()
+    top = max(share.values())
+    return {d for d, s in share.items() if s >= DOCUMENT_FOCUS_MIN_SHARE * top}
+
+
+# Per-turn conversation memory stored with session messages and shown to the query analyzer.
+MEMORY_KEYS = ("focus", "scope", "identifiers", "asked_contact")
+# Support replies that end by inviting the user to leave a phone number.
+CONTACT_INVITING_INTENTS = ("REFUSAL", "ESCALATION")
+
+
+def _turn_memory_user(plan: Any) -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+    if plan.analysis.focus_terms:
+        out["focus"] = list(plan.analysis.focus_terms)
+    if plan.analysis.scope_terms:
+        out["scope"] = list(plan.analysis.scope_terms)
+    return out
+
+
+def _turn_memory_assistant(answer: str, intent: Optional[str]) -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+    ids = extract_identifiers((answer or "").split("**Nguồn:**")[0])
+    if ids:
+        out["identifiers"] = ids[:12]
+    if (intent or "").upper() in CONTACT_INVITING_INTENTS:
+        out["asked_contact"] = True
+    return out
+
+
+def _enrich_history(history: List[Dict[str, Any]], stored: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Copies stored per-turn metadata onto a client-sent transcript (matched by role and content)."""
+    index = {
+        (m.get("role"), (m.get("content") or "").strip()): m
+        for m in stored or []
+        if m.get("content")
+    }
+    for item in history:
+        meta = index.get((item.get("role"), (item.get("content") or "").strip()))
+        if not meta:
+            continue
+        for key in ("standalone", "intent", *MEMORY_KEYS):
+            if meta.get(key) and not item.get(key):
+                item[key] = meta[key]
+    return history
+
+
+def unique_in_order_objects(items: Any) -> List[Any]:
+    seen, out = set(), []
+    for it in items:
+        if id(it) not in seen:
+            seen.add(id(it))
+            out.append(it)
+    return out
 
 
 class RagChatUseCase:
@@ -319,6 +537,7 @@ class RagChatUseCase:
         observability_service: Optional[ObservabilityPort] = None,
         query_analyzer: Optional[QueryAnalyzer] = None,
         support_responder: Optional[SupportResponder] = None,
+        trace_store: Optional[TraceStorePort] = None,
     ) -> None:
         self.vector_store = vector_store
         self.embedding_service = embedding_service
@@ -327,6 +546,9 @@ class RagChatUseCase:
         self.cache_service = cache_service or NullCacheAdapter()
         self.reranker_service = reranker_service or cross_encoder_reranker
         self.obs = observability_service or NullObservabilityAdapter()
+        self.trace_store = trace_store or NullTraceStore()
+        self.admission = ChatAdmission()
+        self._trace_tasks: set = set()
         self.query_analyzer = query_analyzer or QueryAnalyzer(
             out_of_scope_policy=rag_settings.out_of_scope_policy,
             timeout=rag_settings.query_analysis_timeout,
@@ -591,7 +813,7 @@ class RagChatUseCase:
         answer, prompt_tokens, completion_tokens = await self.llm_service.generate(
             messages=messages,
             model=request.model,
-            temperature=request.temperature,
+            temperature=self._answer_temperature(request),
             max_tokens=max(request.max_tokens or 0, 768),
             authorization=authorization,
         )
@@ -734,7 +956,7 @@ class RagChatUseCase:
         async for token in self.llm_service.stream_generate(
             messages=messages,
             model=request.model,
-            temperature=request.temperature,
+            temperature=self._answer_temperature(request),
             max_tokens=request.max_tokens,
             authorization=authorization,
         ):
@@ -767,6 +989,7 @@ class RagChatUseCase:
                 "page_number": c["page_number"],
                 "score": c["score"],
                 "excerpt": c["excerpt"],
+                "file_type": c.get("file_type") or None,
             }
             for c in deduped_raw_citations
         ]
@@ -851,7 +1074,13 @@ class RagChatUseCase:
     ) -> List[Dict[str, str]]:
         window = max(2, int(rag_settings.history_window_messages))
         if explicit_history:
-            return list(explicit_history)[-window:]
+            history = [dict(m) for m in list(explicit_history)[-window:]]
+            try:
+                record = await self.session_repo.get_session(session_id, user_id, tenant_id)
+            except Exception as exc:  # noqa: BLE001 - enrichment only
+                logger.debug("Session lookup for history enrichment failed: %s", exc)
+                record = None
+            return _enrich_history(history, (record or {}).get("messages", []))
 
         session_record = await self.session_repo.get_session(session_id, user_id, tenant_id)
         if not session_record:
@@ -873,8 +1102,29 @@ class RagChatUseCase:
                     item["standalone"] = msg["standalone"]
                 if msg.get("intent"):
                     item["intent"] = msg["intent"]
+                for key in MEMORY_KEYS:
+                    if msg.get(key):
+                        item[key] = msg[key]
                 formatted.append(item)
         return formatted[-window:]
+
+    def _generation_history(self, history: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """
+        History shown to the answer model. In "questions" mode (default) earlier answers are replaced by
+        what they were about: a follow-up is resolved by the analyzer into a standalone question, and the
+        figures of a previous answer must not leak into the new one (a model asked "and the lowest?"
+        rewrites the previous numbers instead of reading the documents).
+        """
+        if rag_settings.generation_history_mode == "full":
+            return self._llm_history(history)
+        out: List[Dict[str, str]] = []
+        for m in history[-6:]:
+            if m.get("role") == "user":
+                out.append({"role": "user", "content": (m.get("standalone") or m.get("content") or "")[:400]})
+            else:
+                about = ", ".join(m.get("identifiers") or [])
+                out.append({"role": "assistant", "content": "(Đã trả lời từ tài liệu" + (f"; các mã đã nêu: {about}" if about else "") + ".)"})
+        return out
 
     @staticmethod
     def _llm_history(history: List[Dict[str, str]], turns: int = 4, max_chars: int = 800) -> List[Dict[str, str]]:
@@ -916,9 +1166,10 @@ class RagChatUseCase:
         sparse_query: str,
         tenant_id: str,
         user_role: str,
+        allow_hyde: bool = True,
     ) -> Tuple[List[Dict[str, Any]], HyDEResult]:
         """Hybrid dense + BM25 retrieval (optionally HyDE-fused) of a wide candidate pool for reranking."""
-        enable_hyde = getattr(request, "enable_hyde", None)
+        enable_hyde = getattr(request, "enable_hyde", None) if allow_hyde else False
         if enable_hyde is None and not rag_settings.hyde_auto_enabled:
             enable_hyde = False
         hyde_res: HyDEResult = await hyde_generator.generate_hypothetical_doc(
@@ -955,6 +1206,10 @@ class RagChatUseCase:
         )
         self.obs.record_stage_latency("retrieval_hybrid", time.perf_counter() - t0, tenant_id=tenant_id)
         self.obs.record_retrieval("hybrid", len(candidates), tenant_id=tenant_id)
+        trace_stage(
+            "retrieval", ms=(time.perf_counter() - t0) * 1000, query=query_text, sparse_query=sparse_query,
+            hyde=bool(hyde_res.is_active), fetch_k=fetch_k, candidates=chunk_refs(candidates, limit=fetch_k),
+        )
         return list(candidates or []), hyde_res
 
     async def _expand_documents(
@@ -1007,14 +1262,42 @@ class RagChatUseCase:
     ) -> "_TurnPlan":
         # 1. Query analysis: conversational rewriting + intent detection (one LLM call).
         t0 = time.perf_counter()
-        analysis = await self.query_analyzer.analyze(
-            request.query, history, self.llm_service, request.model, authorization=authorization
-        )
+        raw_query = await self._reaccented_query(request, tenant_id, user_role)
+        # A first message needs no conversational rewriting, so the search for it does not have to wait
+        # for the analyzer: retrieval + rerank of the message run during the analysis LLM call and are
+        # reused when the analyzer's question is (nearly) the message itself.
+        spec_task: Optional[asyncio.Task] = None
+        spec_query = ""
+        if rag_settings.speculative_retrieval_enabled and not history:
+            spec_rewrite = await query_rewriter.rewrite_advanced(raw_query, None, llm_port=None)
+            spec_query = spec_rewrite.text or raw_query
+            spec_task = asyncio.ensure_future(self._speculative_retrieval(
+                request, spec_query, spec_rewrite.sparse_query or spec_query, tenant_id, user_role))
+        try:
+            analysis = await self.query_analyzer.analyze(
+                raw_query, history, self.llm_service, request.model, authorization=authorization,
+            )
+        except BaseException:
+            if spec_task is not None:
+                spec_task.cancel()
+            raise
         self.obs.record_stage_latency("query_analysis", time.perf_counter() - t0, tenant_id=tenant_id)
-        standalone = analysis.standalone_query or request.query
+        # Without a rewrite from the analyzer, the re-accented message (not the raw one) is the question.
+        standalone = analysis.standalone_query or raw_query or request.query
         rewrite: RewrittenQuery = await query_rewriter.rewrite_advanced(standalone, None, llm_port=None)
         plan = _TurnPlan(analysis=analysis, rewrite=rewrite, standalone_query=rewrite.text or standalone)
-        plan.generation_history = [] if (analysis.new_topic or not history) else self._llm_history(history)
+        plan.speculative, plan.speculative_query = spec_task, spec_query
+        plan.generation_history = [] if (analysis.new_topic or not history) else self._generation_history(history)
+        trace_stage(
+            "query_analysis", ms=(time.perf_counter() - t0) * 1000, source=analysis.source,
+            intent=analysis.intent.value, standalone_query=plan.standalone_query,
+            sparse_query=rewrite.sparse_query, focus=list(analysis.focus_terms), scope=list(analysis.scope_terms),
+            flags={k: getattr(analysis, k) for k in (
+                "new_topic", "challenge", "about_document", "wants_list", "wants_brief", "wants_location",
+                "compare", "answer_format", "aggregate", "count_unit",
+            )},
+            history_messages=len(history), generation_history_messages=len(plan.generation_history),
+        )
 
         # 2. Non-document turns get deterministic support replies. "unclear" is a weak judgement of a
         # small model ("RAG học ở lớp mấy?" can look vague without the corpus), so it is verified
@@ -1026,11 +1309,22 @@ class RagChatUseCase:
             analysis.intent, plan.unverified_feedback = Intent.UNCLEAR, True
         if analysis.intent == Intent.CONTACT_INFO and not analysis.phone:
             analysis.intent = Intent.UNCLEAR  # asking FOR contact details is not giving one's own
+        if analysis.intent == Intent.OUT_OF_SCOPE and rag_settings.out_of_scope_verify_with_retrieval:
+            # The policy label comes from the question alone; a question the tenant's own documents
+            # clearly answer ("rights of data subjects" in a curriculum) is not a request for private data.
+            # Retrieval decides: strong evidence answers it, otherwise the policy reply is given.
+            plan.policy_category = analysis.out_of_scope_category or "ngoài phạm vi"
+            analysis.intent = Intent.DOCUMENT_QUESTION
         if not analysis.is_document_question and analysis.intent != Intent.UNCLEAR:
-            return await self._plan_support_turn(plan, request, history, tenant_id, user_id, user_role, session_id)
+            self._drop_speculative(plan)
+            await self._plan_support_turn(plan, request, history, tenant_id, user_id, user_role, session_id)
+            trace_stage("route", route="support", intent=plan.intent)
+            return plan
 
         if intent_classifier.is_ambiguous_symptom(plan.standalone_query):
+            self._drop_speculative(plan)
             plan.kind = "clarification"
+            trace_stage("route", route="clarification", intent="AMBIGUOUS_SYMPTOM")
             return plan
 
         multi_hop_flag = getattr(request, "multi_hop", None)
@@ -1039,12 +1333,63 @@ class RagChatUseCase:
                 plan.standalone_query, llm_port=self.llm_service, model=request.model, timeout=0.8
             )
             if decomp.is_multi_hop and len(decomp.sub_queries) >= 2:
+                self._drop_speculative(plan)
                 plan.kind = "multihop"
                 plan.decomp = decomp
+                trace_stage("route", route="multihop", sub_queries=list(decomp.sub_queries))
                 return plan
 
-        await self._plan_document_turn(plan, request, tenant_id, user_id, user_role, session_id)
+        try:
+            await self._plan_document_turn(plan, request, tenant_id, user_id, user_role, session_id, authorization)
+        finally:
+            self._drop_speculative(plan)
         return plan
+
+    @staticmethod
+    def _drop_speculative(plan: "_TurnPlan") -> None:
+        """A speculative search nobody will use (support turn, rewritten question) stops loading the runtimes."""
+        task, plan.speculative = plan.speculative, None
+        if task is not None and not task.done():
+            task.cancel()
+
+    async def _speculative_retrieval(
+        self, request: RagChatRequestDTO, query: str, sparse_query: str, tenant_id: str, user_role: str
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, float]]:
+        """(candidates, rerank scores) of the user's message, computed while the analyzer runs."""
+        candidates, _ = await self._search_candidates(request, query, sparse_query, tenant_id, user_role, allow_hyde=False)
+        if not candidates:
+            return [], {}
+        ranked = await self.reranker_service.arerank(
+            query=query, candidates=candidates, top_n=max(1, len(candidates)), min_threshold=0.0
+        )
+        return candidates, {candidate_key(c): float(c.get("score", 0.0) or 0.0) for c in ranked}
+
+    @staticmethod
+    def _same_question(a: str, b: str) -> bool:
+        """The analyzer's rewrite of a first message is the message (accents or a typo fixed at most)."""
+        ta, tb = set(normalize_for_match(a).split()), set(normalize_for_match(b).split())
+        if not ta or not tb:
+            return False
+        return len(ta & tb) / len(ta | tb) >= SPECULATIVE_MIN_OVERLAP
+
+    async def _reaccented_query(self, request: RagChatRequestDTO, tenant_id: str, user_role: str) -> str:
+        """
+        A message typed without diacritics, re-accented from the vocabulary of the passages it retrieves,
+        before the analyzer reads it: a small model rewrites "mang no ron nhan tao hoc lop may" into an
+        unrelated question, while the documents know the words are "mạng nơ-ron nhân tạo học lớp mấy".
+        """
+        query = request.query
+        if not (rag_settings.reaccent_before_analysis and mostly_unaccented(query)):
+            return query
+        try:
+            candidates, _ = await self._search_candidates(request, query, query, tenant_id, user_role, allow_hyde=False)
+        except Exception as exc:  # noqa: BLE001 - best effort: the analyzer still gets the raw message
+            logger.debug("Re-accenting search failed: %s", exc)
+            return query
+        restored = restore_diacritics_from_corpus(query, (candidate_text(c) for c in candidates))
+        if restored != query:
+            trace_stage("reaccent", query=query, restored=restored)
+        return restored
 
     async def _plan_support_turn(
         self,
@@ -1119,39 +1464,28 @@ class RagChatUseCase:
         titles = unique_in_order(str(payload_of(c).get("title") or "") for c in candidates[:8])[:2]
         return titles, outline_from_candidates(candidates[:16])
 
-    async def _plan_document_turn(
-        self,
-        plan: "_TurnPlan",
-        request: RagChatRequestDTO,
-        tenant_id: str,
-        user_id: str,
-        user_role: str,
-        session_id: str,
-    ) -> None:
-        analysis = plan.analysis
-        query = plan.standalone_query
-        candidates, plan.hyde = await self._search_candidates(
-            request, query, plan.rewrite.sparse_query or query, tenant_id, user_role
-        )
-
-        # Unaccented queries are re-accented from the vocabulary of the retrieved passages.
-        rerank_query = query
-        if candidates and not has_vietnamese_diacritics(query):
-            rerank_query = restore_diacritics_from_corpus(query, (candidate_text(c) for c in candidates))
-
+    async def _rerank_pool(
+        self, rerank_query: str, candidates: List[Dict[str, Any]], tenant_id: str, user_role: str,
+        known_scores: Optional[Dict[str, float]] = None,
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Dict[str, float], Dict[str, List[Dict[str, Any]]]]:
+        """
+        (reranked, pool incl. expanded documents, rerank scores, expanded chunks by document).
+        `known_scores`: cross-encoder scores already computed for this same query; only the others are scored.
+        """
         t_rerank = time.perf_counter()
-        reranked = await self.reranker_service.arerank(
-            query=rerank_query, candidates=candidates, top_n=max(1, len(candidates)), min_threshold=0.0
-        ) if candidates else []
+        known = known_scores or {}
+        fresh = [c for c in candidates if candidate_key(c) not in known]
+        scored = await self.reranker_service.arerank(
+            query=rerank_query, candidates=fresh, top_n=max(1, len(fresh)), min_threshold=0.0
+        ) if fresh else []
+        reused = [dict(c, score=known[candidate_key(c)]) for c in candidates if candidate_key(c) in known]
+        reranked = sorted([*scored, *reused], key=lambda c: float(c.get("score", 0.0) or 0.0), reverse=True)
         self.obs.record_stage_latency("rerank", time.perf_counter() - t_rerank, tenant_id=tenant_id)
         rerank_scores = {candidate_key(c): float(c.get("score", 0.0) or 0.0) for c in reranked}
-        plan.top_score = max(rerank_scores.values(), default=0.0)
 
-        # Whole-document expansion for the best documents (sections, headers).
+        # Whole-document expansion for the best documents (sections, headers, every table row).
         pool: List[Dict[str, Any]] = list(reranked)
-        # Evidence is measured on the user's own wording; acronym expansions only widen retrieval recall.
-        lexical_query = rerank_query
-        prelim = score_evidence(lexical_query, pool) if pool else None
+        prelim = score_evidence(rerank_query, pool) if pool else None
         prelim_scores = {
             candidate_key(c): max(rerank_scores.get(candidate_key(c), 0.0), prelim.coverage_of(i) if prelim else 0.0)
             for i, c in enumerate(pool)
@@ -1164,9 +1498,183 @@ class RagChatUseCase:
                 if k not in known:
                     known.add(k)
                     pool.append(c)
+        trace_stage(
+            "rerank", ms=(time.perf_counter() - t_rerank) * 1000, query=rerank_query,
+            ranked=chunk_refs(reranked, rerank_scores, text_chars=rag_settings.trace_pool_text_chars,
+                              limit=MERGED_CANDIDATE_LIMIT),
+            expanded_docs={d: len(chunks) for d, chunks in expanded.items()},
+        )
+        return reranked, pool, rerank_scores, expanded
+
+    def _llm_wait_allowance(self) -> float:
+        """Seconds to add to a model call's own timeout while every runtime slot is taken (queue wait)."""
+        allowance = getattr(self.llm_service, "queue_allowance", None)
+        try:
+            return float(allowance()) if callable(allowance) else 0.0
+        except Exception:  # noqa: BLE001
+            return 0.0
+
+    async def _paraphrases(self, query: str, request: RagChatRequestDTO, authorization: Optional[str]) -> List[str]:
+        """LLM rewrites of the question in formal / domain terms (multi-query retrieval)."""
+        n = max(1, rag_settings.multi_query_count)
+        messages = [
+            {"role": "system", "content": (
+                f"{ANALYZER_MARKER} Viết lại câu hỏi tra cứu thành {n} câu khác nhau, dùng thuật ngữ chính thức/chuyên môn "
+                "tương đương (giải nghĩa từ viết tắt, đổi cách nói đời thường sang thuật ngữ), cùng ngôn ngữ, không trả lời. "
+                'Trả về DUY NHẤT JSON {"queries": ["..."]}.'
+            )},
+            {"role": "user", "content": f"CÂU HỎI: {query}\n\nJSON:"},
+        ]
+        try:
+            raw, _, _ = await asyncio.wait_for(
+                self.llm_service.generate(messages=messages, model=request.model, temperature=0.0, max_tokens=200,
+                                          authorization=authorization),
+                timeout=rag_settings.query_analysis_timeout + self._llm_wait_allowance(),
+            )
+        except Exception as exc:  # noqa: BLE001 - recall booster only
+            logger.debug("Paraphrase generation failed: %s", exc)
+            return []
+        s = raw or ""
+        start, end = s.find("{"), s.rfind("}")
+        try:
+            data = json.loads(s[start:end + 1]) if start != -1 and end > start else {}
+        except ValueError:
+            data = {}
+        queries = data.get("queries") if isinstance(data, dict) else None
+        if not isinstance(queries, list):
+            return []
+        return [str(q).strip() for q in queries if str(q).strip() and str(q).strip() != query][:n]
+
+    @staticmethod
+    def _merge_candidates(*lists: List[Dict[str, Any]], limit: int) -> List[Dict[str, Any]]:
+        """Round-robin union of candidate lists (each list keeps its own ranking)."""
+        merged, seen = [], set()
+        for rank in range(max((len(x) for x in lists), default=0)):
+            for lst in lists:
+                if rank < len(lst):
+                    key = candidate_key(lst[rank])
+                    if key not in seen:
+                        seen.add(key)
+                        merged.append(lst[rank])
+        return merged[:limit]
+
+    async def _plan_document_turn(
+        self,
+        plan: "_TurnPlan",
+        request: RagChatRequestDTO,
+        tenant_id: str,
+        user_id: str,
+        user_role: str,
+        session_id: str,
+        authorization: Optional[str] = None,
+    ) -> None:
+        analysis = plan.analysis
+        query = plan.standalone_query
+        focus_terms = [t for t in analysis.focus_terms if normalize_for_match(t)]
+        focus_query = " ".join(focus_terms)
+
+        # 1. Retrieval: the full question and, in parallel, the asked-about terms alone, so that scope
+        #    words of the question cannot hide the passages where the subject actually is.
+        use_focus = bool(
+            rag_settings.focus_retrieval_enabled and focus_query
+            and normalize_for_match(focus_query) != normalize_for_match(query)
+        )
+        # The search already made for the first message during analysis is this search when the analyzer
+        # kept the question (accents or a typo fixed at most): its candidates and scores are reused.
+        spec_task, plan.speculative = plan.speculative, None
+        reuse = spec_task is not None and self._same_question(plan.speculative_query, query)
+        if spec_task is not None and not reuse:
+            spec_task.cancel()
+        searches = [] if reuse else [
+            self._search_candidates(request, query, plan.rewrite.sparse_query or query, tenant_id, user_role)]
+        if use_focus:
+            searches.append(self._search_candidates(request, focus_query, focus_query, tenant_id, user_role, allow_hyde=False))
+        known_scores: Optional[Dict[str, float]] = None
+        if reuse:
+            try:
+                spec_candidates, known_scores = await spec_task
+            except Exception as exc:  # noqa: BLE001 - fall back to the regular search
+                logger.debug("Speculative retrieval failed: %s", exc)
+                reuse, known_scores = False, None
+                searches.insert(0, self._search_candidates(
+                    request, query, plan.rewrite.sparse_query or query, tenant_id, user_role))
+        results = await asyncio.gather(*searches) if searches else []
+        if reuse:
+            candidates = spec_candidates
+            plan.hyde = HyDEResult(hypothetical_document="", original_query=query, is_active=False,
+                                   trigger_reason="speculative_reuse", latency_ms=0.0)
+            if use_focus:
+                candidates = self._merge_candidates(candidates, results[0][0], limit=MERGED_CANDIDATE_LIMIT)
+            trace_stage("speculative_retrieval", reused=True, query=plan.speculative_query)
+        else:
+            candidates, plan.hyde = results[0]
+            if use_focus:
+                candidates = self._merge_candidates(candidates, results[1][0], limit=MERGED_CANDIDATE_LIMIT)
+
+        # Unaccented queries are re-accented from the vocabulary of the retrieved passages.
+        rerank_query = plan.speculative_query if reuse else query
+        if candidates and mostly_unaccented(rerank_query):
+            rerank_query = restore_diacritics_from_corpus(rerank_query, (candidate_text(c) for c in candidates))
+        reranked, pool, rerank_scores, expanded = await self._rerank_pool(
+            rerank_query, candidates, tenant_id, user_role,
+            known_scores=known_scores if reuse and rerank_query == plan.speculative_query else None,
+        )
+        lexical_query = " ".join([rerank_query, *focus_terms]) if focus_terms else rerank_query
+        evidence = score_evidence(lexical_query, pool) if pool else None
+
+        # 2. Weak evidence: retrieve again with paraphrases in domain terms (synonyms, abbreviations).
+        threshold = self._effective_threshold(request)
+        weak = (
+            not pool
+            or (max(rerank_scores.values(), default=0.0) < min(threshold or 1.0, rag_settings.gate_min_rerank_score)
+                and (evidence.best_coverage if evidence else 0.0) < rag_settings.gate_min_lexical_coverage)
+        )
+        if weak and rag_settings.multi_query_on_weak_evidence:
+            paraphrases = await self._paraphrases(query, request, authorization)
+            trace_stage("multi_query", reason="weak_evidence", paraphrases=paraphrases)
+            if paraphrases:
+                extra = await asyncio.gather(*[
+                    self._search_candidates(request, p, p, tenant_id, user_role, allow_hyde=False) for p in paraphrases
+                ])
+                candidates = self._merge_candidates(candidates, *[e[0] for e in extra], limit=MERGED_CANDIDATE_LIMIT)
+                # The cross-encoder scores against the question plus its first domain-term rewrite.
+                reranked, pool, rerank_scores, expanded = await self._rerank_pool(
+                    f"{rerank_query} ({paraphrases[0]})", candidates, tenant_id, user_role
+                )
+                lexical_query = " ".join([lexical_query, *paraphrases])
+                evidence = score_evidence(lexical_query, pool) if pool else None
+        plan.top_score = max(rerank_scores.values(), default=0.0)
+
+        # 2b. An administrator's Q&A pair that clearly matches the question answers it as approved:
+        # rewording it through the model could only drift from what the admin wrote (and is slower).
+        if await self._plan_faq_answer(plan, reranked, rerank_scores):
+            return
+
+        # 2c. No passage is a clear match for the reranker: the lexical score then decides, and it rewards
+        # any document sharing common words of the question ("tài liệu", "văn bản"), which with several
+        # documents in the project fills the context with the wrong one. The hybrid search over the whole
+        # question still points to the right document: keep only the documents it leads to. Q&A pairs are
+        # one passage each, never "leading" by count: they always stay in competition.
+        if pool and plan.top_score < rag_settings.gate_min_rerank_score:
+            leading = leading_documents(candidates)
+
+            def keep(c: Dict[str, Any]) -> bool:
+                p = payload_of(c)
+                return str(p.get("doc_id")) in leading or str(p.get("file_type") or "") == "faq"
+
+            kept = [c for c in pool if keep(c)] if leading else []
+            if kept and len(kept) < len(pool):
+                dropped_docs = unique_in_order(
+                    str(payload_of(c).get("title") or "") for c in pool if c not in kept
+                )
+                pool = kept
+                reranked = [c for c in reranked if keep(c)]
+                expanded = {d: v for d, v in expanded.items() if d in leading}
+                evidence = score_evidence(lexical_query, pool)
+                # Not "dropped": that key holds verification's (problem, sentence) records in every trace.
+                trace_stage("document_focus", leading=sorted(leading), excluded_documents=dropped_docs[:8])
 
         t_gate = time.perf_counter()
-        evidence = score_evidence(lexical_query, pool) if pool else None
         blended: Dict[str, float] = {}
         for i, c in enumerate(pool):
             r = rerank_scores.get(candidate_key(c), 0.0)
@@ -1180,12 +1688,24 @@ class RagChatUseCase:
         best_blended = blended.get(candidate_key(ranked[0]), 0.0) if ranked else 0.0
         related = [c for c in ranked if blended.get(candidate_key(c), 0.0) >= RELATED_DOCUMENT_RATIO * best_blended]
         plan.titles = unique_in_order(str(payload_of(c).get("title") or "") for c in related[:6])[:2]
-        titled_docs = {str(payload_of(c).get("doc_id")) for c in related if str(payload_of(c).get("title") or "") in plan.titles}
+        titled_docs = [d for d in unique_in_order(str(payload_of(c).get("doc_id")) for c in related)
+                       if any(str(payload_of(c).get("title") or "") in plan.titles for c in related
+                              if str(payload_of(c).get("doc_id")) == d)]
         plan.outline = outline_from_candidates([
             c for c in pool
             if str(payload_of(c).get("doc_id")) in titled_docs
             and (str(payload_of(c).get("doc_id")) in set(expanded) or c in reranked[:16])
         ])
+        document_chunks = [c for d in titled_docs for c in expanded.get(d, [])]
+        plan.section_pool = document_chunks or list(pool)
+
+        gate_trace = {
+            "top_rerank": round(plan.top_score, 4), "best_lexical": round(best_lexical, 4), "threshold": threshold,
+            "min_rerank": rag_settings.gate_min_rerank_score, "min_lexical": rag_settings.gate_min_lexical_coverage,
+            "query_identifiers": list(evidence.query_identifiers) if evidence else [],
+            "missing_identifiers": list(evidence.missing_identifiers) if evidence else [],
+            "pool": len(pool), "titles": plan.titles,
+        }
 
         # 3. Evidence gate. Identifiers the documents do not contain are answered deterministically.
         if evidence and evidence.query_identifiers and len(evidence.missing_identifiers) == len(evidence.query_identifiers):
@@ -1194,11 +1714,12 @@ class RagChatUseCase:
             plan.kind, plan.intent = "direct", "IDENTIFIER_NOT_FOUND"
             plan.answer = self.support.identifier_not_found(code, scope, codes)
             plan.gate_latency_ms = (time.perf_counter() - t_gate) * 1000
+            trace_stage("gate", decision="identifier_not_found", nearest_codes=codes[:10], **gate_trace)
+            trace_stage("route", route="identifier_not_found", intent=plan.intent)
             return
 
         # A question naming an identifier the documents contain is about that item, not about the document.
         about_document = analysis.about_document and not (evidence and evidence.query_identifiers)
-        threshold = self._effective_threshold(request)
         no_evidence = (
             not pool
             or (
@@ -1208,46 +1729,102 @@ class RagChatUseCase:
                 and not about_document
             )
         )
+        if no_evidence and pool and rag_settings.numeric_tables_enabled:
+            # A question naming a figure column of the document's tables ("lượt xem/like") is about those
+            # figures, even when no single row scores well against it (rankings span many small tables).
+            question = f"{request.query} {query}"
+            named = [t.columns[i] for t in parse_numeric_tables(document_chunks or pool) for i in t.numeric_columns
+                     if column_named(t.columns[i], question)]
+            if named:
+                no_evidence = False
+                gate_trace["named_columns"] = unique_in_order(named)[:5]
         plan.gate_latency_ms = (time.perf_counter() - t_gate) * 1000
         self.obs.record_stage_latency("gatekeeper", plan.gate_latency_ms / 1000, tenant_id=tenant_id)
+        if (plan.policy_category and plan.top_score < rag_settings.gate_min_rerank_score
+                and best_lexical < rag_settings.out_of_scope_override_min_lexical):
+            plan.kind, plan.intent = "direct", "OUT_OF_SCOPE"
+            plan.answer = self.support.out_of_scope(plan.policy_category)
+            trace_stage("gate", ms=plan.gate_latency_ms, decision="out_of_scope", policy=plan.policy_category,
+                        **gate_trace)
+            trace_stage("route", route="support", intent=plan.intent)
+            return
+        trace_stage("gate", ms=plan.gate_latency_ms, decision="no_evidence" if no_evidence else "pass",
+                    about_document=about_document, policy=plan.policy_category, **gate_trace)
         if no_evidence:
             logger.info(
                 "Evidence gate: no support (rerank %.3f, lexical %.3f); refusing without generation.",
                 plan.top_score, best_lexical,
             )
-            if plan.unverified_feedback:
-                ticket_id, plan.escalation = await self._record_ticket(
-                    session_id, tenant_id, user_id, request.query, reason="user_feedback"
-                )
-                plan.kind, plan.intent = "direct", "FEEDBACK"
-                plan.answer = self.support.feedback(ticket_id, plan.titles, plan.outline)
-                return
-            if analysis.intent == Intent.UNCLEAR:
+            if analysis.intent == Intent.UNCLEAR and not plan.unverified_feedback:
                 plan.kind, plan.intent = "direct", "CLARIFICATION"
                 plan.answer = self.support.clarify(plan.titles, plan.outline)
+                trace_stage("route", route="gate_clarification", intent=plan.intent)
                 return
-            await self._make_refusal_plan(plan, request, tenant_id, user_id, session_id)
+            await self._make_refusal_plan(plan, request, tenant_id, user_id, session_id, authorization)
+            trace_stage("route", route="gate_refusal", intent=plan.intent)
             return
 
-        # 4. Adaptive context: every passage close to the best one, in document order.
+        # 4. Figures over tables (highest, lowest, difference, total…) are computed in code, not estimated.
+        if await self._plan_numeric_query(plan, request, document_chunks or pool, authorization):
+            trace_stage("route", route="numeric", intent=plan.intent,
+                        context=chunk_refs(plan.context_chunks, text_chars=rag_settings.trace_context_text_chars))
+            return
+
+        # 5. Listing / comparison over tabular documents: parsed rows + LLM filter + deterministic rendering.
+        top_passage = reranked[0] if reranked and plan.top_score >= rag_settings.gate_min_rerank_score else None
+        if await self._plan_structured_listing(plan, request, document_chunks, authorization, top_passage):
+            trace_stage("route", route="structured", intent=plan.intent,
+                        context=chunk_refs(plan.context_chunks, text_chars=rag_settings.trace_context_text_chars))
+            return
+
+        # 5. Adaptive context: every passage close to the best one, in document order.
+        list_like = analysis.wants_list or analysis.compare
         selection = select_adaptive_context(
             pool,
             blended,
             relative_cutoff=(
-                rag_settings.context_list_relative_cutoff if analysis.wants_list else rag_settings.context_relative_cutoff
+                rag_settings.context_list_relative_cutoff if list_like else rag_settings.context_relative_cutoff
             ),
-            char_budget=rag_settings.context_char_budget,
+            char_budget=rag_settings.context_char_budget if list_like else rag_settings.context_char_budget_point,
             min_k=max(1, request.top_k or 4),
             max_k=rag_settings.context_max_chunks,
         )
         chosen = list(selection.chunks)
-        if about_document:
-            card_docs = [d for d in unique_in_order(str(payload_of(c).get("doc_id") or "") for c in chosen) if d in titled_docs]
+        # The passages where the asked-about subject actually appears are always part of the context.
+        focus_hits = [c for c in ranked if focus_terms and focus_present(focus_terms, [c])]
+        for c in focus_hits[: max(0, rag_settings.focus_min_passages)]:
+            if c not in chosen:
+                chosen.append(c)
+        if list_like and expanded:
+            matched_sections = {candidate_heading(c).strip() for c in chosen if candidate_heading(c)}
+            chosen_keys = {candidate_key(c) for c in chosen}
+            for doc_chunks in expanded.values():
+                for c in doc_chunks:
+                    k = candidate_key(c)
+                    if k not in chosen_keys:
+                        h = (candidate_heading(c) or "").strip()
+                        if h and any(m and (m in h or h in m) for m in matched_sections):
+                            chosen.append(c)
+                            chosen_keys.add(k)
+            # Document order inside each document; documents keep the (lost-in-the-middle) order of the selection.
+            doc_rank: Dict[str, int] = {}
+            for c in chosen:
+                doc_rank.setdefault(str(payload_of(c).get("doc_id")), len(doc_rank))
+            chosen = sorted(chosen, key=lambda c: (doc_rank[str(payload_of(c).get("doc_id"))], chunk_order_key(c)[1]))
+        if about_document or rag_settings.document_card_always:
+            card_docs = [d for d in titled_docs if d in {str(payload_of(c).get("doc_id")) for c in chosen}] or titled_docs[:1]
+            chosen_keys = {candidate_key(c) for c in chosen}
             for doc_id in card_docs[:2]:
                 doc_chunks = expanded.get(doc_id) or [c for c in pool if str(payload_of(c).get("doc_id")) == doc_id]
+                opening = min(doc_chunks, key=chunk_order_key) if doc_chunks else None
+                if not about_document and (opening is None or candidate_key(opening) in chosen_keys):
+                    continue  # the document's opening passage is already in the context
                 card = build_document_card(doc_chunks)
                 if card:
-                    chosen.insert(0, document_card_candidate(card))
+                    cand = document_card_candidate(card)
+                    if not about_document:
+                        payload_of(cand)["text"] = payload_of(cand)["text"][: rag_settings.document_card_max_chars]
+                    chosen.insert(0, cand)
 
         plan.kind = "generate"
         plan.context_chunks = chosen
@@ -1259,7 +1836,28 @@ class RagChatUseCase:
         if query.strip() != request.query.strip():
             user_content += f"\n(Câu hỏi đầy đủ theo ngữ cảnh hội thoại: {query})"
         if analysis.challenge:
-            user_content += "\n(Người dùng đang phản bác hoặc chỉ ra thiếu sót của câu trả lời trước: đối chiếu lại tài liệu.)"
+            user_content += (
+                "\n(Người dùng đang phản bác hoặc chỉ ra thiếu sót của câu trả lời trước: đối chiếu lại tài liệu. "
+                "Chỉ đổi câu trả lời khi tài liệu ủng hộ người dùng; nếu không, giữ nguyên và nêu lại căn cứ.)"
+            )
+            # The rewritten question drops the user's counter-claim, so state where the documents put
+            # the subject: the model then checks the claim against a fact instead of the user's word.
+            sections, _ = focus_locations(focus_terms, (), focus_hits[:6]) if focus_hits else ([], False)
+            if sections:
+                user_content += (
+                    f"\n(Sự thật trong tài liệu: «{', '.join(focus_terms)}» được đề cập ở mục "
+                    + ", ".join(f"«{s}»" for s in sections[:3])
+                    + ". Mục nào không có trong danh sách này thì tài liệu không nói «"
+                    + ", ".join(focus_terms) + "» ở đó.)"
+                )
+        if focus_hits and analysis.scope_terms:
+            sections, in_scope = focus_locations(focus_terms, analysis.scope_terms, focus_hits[:6])
+            if sections and not in_scope:
+                user_content += (
+                    f"\n(Kiểm tra tiền đề: «{', '.join(focus_terms)}» được tài liệu đề cập ở mục "
+                    + ", ".join(f"«{s}»" for s in sections[:3])
+                    + f", không thấy ở «{', '.join(analysis.scope_terms)}». Nói rõ điều đó và nêu nơi tài liệu thực sự đề cập kèm mã/mục.)"
+                )
         absent = absent_numeric_details(request.query, pool)
         if absent:
             user_content += (
@@ -1269,12 +1867,305 @@ class RagChatUseCase:
             )
         plan.user_content = user_content + "\n(Trả lời bằng tiếng Việt.)"
         await self._build_prompt_within_window(plan, request, query, chosen, blended)
+        trace_stage(
+            "context", selected=len(chosen), kept=len(plan.context_chunks), list_like=list_like,
+            focus_passages=len(focus_hits),
+            chunks=chunk_refs(plan.context_chunks, blended, text_chars=rag_settings.trace_context_text_chars),
+            system_prompt_chars=len(plan.system_prompt), user_content=plan.user_content,
+            max_tokens=plan.max_tokens,
+        )
+        trace_stage("route", route="generate", intent="QA")
+        grounding = None
+        if rag_settings.identifier_grounding_enabled or rag_settings.language_guard_enabled:
+            grounding = build_grounding(
+                plan.context_chunks, document_chunks or plan.context_chunks,
+                allow_examples=analysis.about_document,
+                language_guard=rag_settings.language_guard_enabled and not is_english_text(request.query),
+                question=f"{request.query} {query}",
+                check_units=rag_settings.unit_grounding_enabled,
+            )
+            if not rag_settings.identifier_grounding_enabled:
+                grounding.identifiers, grounding.example_identifiers = set(), set()
+                grounding.check_numbers = False
         plan.sanitize_ctx = SanitizeContext(
             titles=unique_in_order(str(c.get("title") or "") for c in plan.raw_citations),
             allowed_image_urls=collect_image_urls(c.get("text", "") for c in plan.raw_citations),
-            prompt_text=ANSWER_RULES + "\n" + PROCEDURE_RULES,
+            prompt_text=instruction_text(),
             valid_indices={int(c.get("index", 0)) for c in plan.raw_citations},
+            grounding=grounding,
+            evidence_text="\n".join(candidate_text(c) for c in plan.context_chunks),
+            image_url_mapper=self._media_mapper(plan.context_chunks, tenant_id),
         )
+
+    async def _faq_question_score(self, query: str, phrasings: List[str]) -> float:
+        """
+        How well the question matches one of the ways the pair is asked (question vs question). Scoring the
+        whole pair mixes in its answer, which for "it is not in the documents" style answers reads as a
+        mismatch even when the user asked exactly the stored question.
+        """
+        if not phrasings:
+            return 0.0
+        cands = [{"id": f"faq_q{i}", "score": 0.0, "payload": {"text": p, "doc_id": f"faq_q{i}", "chunk_index": i}}
+                 for i, p in enumerate(phrasings)]
+        try:
+            ranked = await self.reranker_service.arerank(query=query, candidates=cands, top_n=len(cands), min_threshold=0.0)
+        except Exception as exc:  # noqa: BLE001 - the pair can still answer through the documents path
+            logger.debug("FAQ question rerank failed: %s", exc)
+            return 0.0
+        return max((float(c.get("score", 0.0) or 0.0) for c in ranked), default=0.0)
+
+    async def _plan_faq_answer(
+        self, plan: "_TurnPlan", reranked: List[Dict[str, Any]], rerank_scores: Dict[str, float]
+    ) -> bool:
+        """The approved answer of the best-ranked Q&A pair, when the cross-encoder is confident it is the question."""
+        if not (rag_settings.faq_direct_answer_enabled and reranked) or plan.analysis.challenge:
+            return False
+        top = next((c for c in reranked[:FAQ_CANDIDATES]
+                    if str(payload_of(c).get("file_type") or "") == "faq" and payload_of(c).get("approved_answer")), None)
+        if top is None:
+            return False
+        payload = payload_of(top)
+        answer = str(payload.get("approved_answer") or "").strip()
+        question = str(payload.get("question") or "").strip()
+        variations = [str(v) for v in (payload.get("question_variations") or []) if str(v).strip()]
+        phrasings = list(dict.fromkeys(p for p in [question, *variations, *(strip_diacritics(x) for x in [question, *variations])] if p))
+        pair_score = float(rerank_scores.get(candidate_key(top), 0.0))
+        question_score = await self._faq_question_score(plan.standalone_query, phrasings)
+        score = max(pair_score, question_score)
+        trace_stage("faq_match", qa_id=payload.get("qa_id") or payload.get("doc_id"), pair_score=round(pair_score, 4),
+                    question_score=round(question_score, 4), used=score >= rag_settings.faq_direct_min_score)
+        if score < rag_settings.faq_direct_min_score:
+            return False
+        plan.kind, plan.intent = "direct", "QA_FAQ"
+        # The answer is the administrator's own: there is no document to cite, so no source is shown
+        # (the trace keeps which pair answered, for review).
+        plan.answer = answer
+        plan.direct_citations = []
+        plan.context_chunks = [top]
+        trace_stage("route", route="faq", intent=plan.intent, qa_id=payload.get("qa_id") or payload.get("doc_id"),
+                    score=round(score, 4))
+        return True
+
+    async def _plan_numeric_query(
+        self,
+        plan: "_TurnPlan",
+        request: RagChatRequestDTO,
+        chunks: List[Dict[str, Any]],
+        authorization: Optional[str],
+    ) -> bool:
+        """Answers extremum / difference / total questions from parsed numeric tables; False when not applicable."""
+        analysis = plan.analysis
+        flagged = bool(analysis.aggregate and analysis.aggregate != "count")
+        question = f"{request.query} {plan.standalone_query}"
+        # The analyzer's aggregate flag is a small model's guess and is often missing ("nhiều bình luận
+        # nhất"). Over a document with figure tables, a question naming one of their numeric columns or
+        # asking for a list is planned too; the plan is then accepted only on those grounds (below).
+        if not (rag_settings.numeric_tables_enabled and chunks) or analysis.aggregate == "count":
+            return False
+        if not flagged and (extract_identifiers(request.query) or analysis.about_document):
+            return False
+        tables = parse_numeric_tables(chunks)
+        if not tables:
+            if flagged:
+                logger.info("Numeric query: no numeric table in %d chunks", len(chunks))
+            return False
+        if not flagged and not analysis.wants_list and not any(
+            column_named(t.columns[i], question) for t in tables for i in t.numeric_columns
+        ):
+            return False
+        try:
+            raw, _, _ = await asyncio.wait_for(
+                self.llm_service.generate(
+                    messages=numeric_planner_messages(plan.standalone_query, tables, analysis.aggregate),
+                    model=request.model, temperature=0.0, max_tokens=220, authorization=authorization,
+                ),
+                timeout=rag_settings.query_analysis_timeout + 4 + self._llm_wait_allowance(),
+            )
+        except Exception as exc:  # noqa: BLE001 - fall back to generation
+            logger.info("Numeric planner failed (%s); using generation", exc)
+            return False
+        nplan = parse_numeric_plan(raw, tables)
+        if nplan is None:
+            logger.info("Numeric planner not applicable: %s", (raw or "")[:300].replace("\n", " "))
+            trace_stage("numeric", applied=False, reason="planner_not_applicable", tables=len(tables), planner=(raw or "")[:500])
+            return False
+        if not flagged:
+            # Unflagged: a computation (ranking, extremum, total) or a list of a column the question names.
+            grounded = column_named(nplan.column, question)
+            if not (grounded or (analysis.wants_list and nplan.operation != "lookup")):
+                trace_stage("numeric", applied=False, reason="not_grounded", operation=nplan.operation,
+                            column=nplan.column, planner=(raw or "")[:500])
+                return False
+        nplan.tables = expand_to_families(nplan.tables, tables, question)
+        nplan.tables = [t for t in nplan.tables if t.column_index(nplan.column) is not None]
+        # Row labels the question does not name are the planner's recollection, not a filter: "list every
+        # source" must not stop at the thirteen it remembered.
+        nplan.rows = [r for r in nplan.rows if label_named(r, question)]
+        listing = nplan.operation == "lookup" or (analysis.wants_list and nplan.operation in ("sort_desc", "sort_asc"))
+        result = compute_numeric_answer(nplan, max_rows=NUMERIC_LIST_MAX_ROWS if listing else NUMERIC_SORT_MAX_ROWS)
+        trace_stage("numeric", applied=result is not None, operation=nplan.operation, column=nplan.column,
+                    tables=len(nplan.tables), planner=(raw or "")[:500])
+        if result is None:
+            return False
+        body, sources = result
+        sources = unique_in_order_objects(sources)
+        raw_citations, _ = prompt_builder.build_context_and_citations(
+            [CandidateWrapper(c) for c in sources], query=plan.standalone_query
+        )
+        cited = _deduplicate_citations(raw_citations)
+        plan.kind, plan.intent = "direct", "QA_NUMERIC"
+        plan.answer = body + self._attach_images(cited, raw_citations, sources, "", body, plan.section_pool) + build_sources_footer(cited)
+        plan.direct_citations = cited
+        plan.context_chunks = list(sources)
+        logger.info("Numeric query: %s %s over %d table(s)", nplan.operation, nplan.column, len(nplan.tables))
+        return True
+
+    async def _plan_structured_listing(
+        self,
+        plan: "_TurnPlan",
+        request: RagChatRequestDTO,
+        document_chunks: List[Dict[str, Any]],
+        authorization: Optional[str],
+        top_passage: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """
+        Answers a listing/comparison question from parsed table rows; False when not applicable.
+        `top_passage`: the clearly best passage of the search, which a listing must not leave out.
+        """
+        analysis = plan.analysis
+        # Counting the items of a table is listing them and stating how many (never estimated by the model).
+        counting = bool(analysis.aggregate == "count" or analysis.count_unit)
+        explicit = (analysis.wants_list or analysis.compare or counting
+                    or analysis.answer_format in ("table", "checklist"))
+        # The analyzer's list flag is unreliable on small models: over tabular documents the planner also
+        # decides for open questions (no identifier typed, no brevity asked), but then only a real list
+        # (several items) is answered this way.
+        auto = (rag_settings.structured_listing_auto and not analysis.wants_brief
+                and not extract_identifiers(request.query))
+        if not (rag_settings.structured_listing_enabled and document_chunks and (explicit or auto)):
+            return False
+        items = row_items(parse_table_rows(document_chunks))
+        schema = build_schema(items)
+        if schema is None or len(items) < STRUCTURED_MIN_ITEMS:
+            logger.info("Structured listing skipped: %d table items in %d chunks", len(items), len(document_chunks))
+            return False
+        listing_asked = analysis.wants_list or analysis.compare or analysis.answer_format in ("table", "checklist")
+        if counting and not listing_asked:
+            # Only a count of what the table enumerates (its items or its groups) is counted here:
+            # "how many periods a week" is not answered by counting requirements.
+            item_column = items[0].row.columns[items[0].column] if items[0].column < len(items[0].row.columns) else ""
+            unit = analysis.count_unit or ""
+            if not unit or not any(counts_column(unit, col) for col in (item_column, schema.group_column) if col):
+                logger.info("Structured count skipped: unit %r is not what the table lists", unit)
+                return False
+        first_table = min((it.row.order[0] for it in items), default=0)
+        convention = "\n".join(
+            strip_breadcrumb(candidate_text(c)) for c in sorted(document_chunks, key=chunk_order_key)
+            if int(payload_of(c).get("chunk_index", 0) or 0) < first_table
+        )
+        question = f"{request.query} {plan.standalone_query}"
+        wanted = question_filters(question, items, schema)
+        raw = ""
+        try:
+            raw, _, _ = await asyncio.wait_for(
+                self.llm_service.generate(
+                    messages=planner_messages(plan.standalone_query, schema, convention),
+                    model=request.model, temperature=0.0, max_tokens=260, authorization=authorization,
+                ),
+                timeout=rag_settings.query_analysis_timeout + 4 + self._llm_wait_allowance(),
+            )
+        except Exception as exc:  # noqa: BLE001 - fall back to the filters named in the question
+            logger.info("Structured listing planner failed (%s)", exc)
+        tplan = parse_plan(raw, schema) if raw else None
+        if tplan is None or not tplan.applicable:
+            if not (explicit and wanted.any):
+                logger.info("Structured listing not applicable: %s", (raw or "")[:300].replace("\n", " "))
+                return False
+            # A list / count question naming a section, group or item kind of the table is a listing
+            # whatever the small planner said.
+            item_column = items[0].row.columns[items[0].column] if items[0].column < len(items[0].row.columns) else ""
+            asks_groups = names_value(schema.group_column, question) and not names_value(item_column, question)
+            tplan = TablePlan(applicable=True, sections=[], groups=[], terms=[], identifier_regex=None,
+                              group_by="group", level="groups" if asks_groups and not wanted.segment else "items")
+        tplan = refine_plan(tplan, question, schema)
+        tplan, selected = reconcile_plan(tplan, wanted, items, schema, rag_settings.structured_max_items)
+        reject = self._structured_reject_reason(tplan, selected, explicit, top_passage, schema, question)
+        trace_stage("structured_listing", items=len(items), selected=len(selected), explicit=explicit,
+                    level=tplan.level, planner=(raw or "")[:500], used=not reject, reject=reject)
+        if reject:
+            logger.info("Structured listing not used (%s): %s", reject, (raw or "")[:300].replace("\n", " "))
+            return False
+        body = render_items(selected, schema, tplan.group_by, analysis.answer_format, level=tplan.level)
+        sources = unique_in_order_objects(it.row.source for it in selected)
+        raw_citations, _ = prompt_builder.build_context_and_citations([CandidateWrapper(c) for c in sources], query=plan.standalone_query)
+        cited = _deduplicate_citations(raw_citations)
+        title = selected[0].row.title
+        # A count is stated only for whole sections / groups: items found by a term are not "all of" anything.
+        summary_line = "" if (tplan.terms and not counting) else listing_summary(
+            selected, schema, tplan.level, truncated=len(selected) >= rag_settings.structured_max_items)
+        intro = " ".join(p for p in (f"Theo tài liệu «{title}»:" if title else "", summary_line) if p)
+        if analysis.compare:
+            summary = await self._compare_summary(plan, request, body, document_chunks, authorization)
+            intro = summary or intro
+        plan.kind, plan.intent = "direct", "QA_STRUCTURED"
+        plan.answer = ((f"{intro}\n\n" if intro else "") + body
+                       + self._attach_images(cited, raw_citations, sources, "", body, plan.section_pool) + build_sources_footer(cited))
+        plan.direct_citations = cited
+        plan.context_chunks = list(sources)
+        logger.info("Structured listing: %d items (%s level) from %d rows", len(selected), tplan.level, len(items))
+        return True
+
+    @staticmethod
+    def _structured_reject_reason(
+        tplan: Any, selected: List[Any], explicit: bool, top_passage: Optional[Dict[str, Any]],
+        schema: Any = None, question: str = "",
+    ) -> str:
+        """Why a planned listing must not answer the question ('' when it may)."""
+        if not selected:
+            return "nothing selected"
+        if not tplan.has_filter and tplan.level != "groups":
+            # Every item of the document is not an answer; it is a planner that found no filter.
+            return "no filter"
+        if (tplan.level == "groups" and not tplan.has_filter and schema is not None and schema.group_column
+                and not names_value(schema.group_column, question)):
+            # The names of every group of the document answer "which <groups> are there", which the
+            # question would say; a question about something else ("the steps to write a prompt") is not
+            # answered by the document's table of contents.
+            return "groups not asked"
+        if not explicit and len(selected) < STRUCTURED_AUTO_MIN_SELECTED:
+            return f"{len(selected)} item(s) for an open question"
+        if tplan.terms and not (tplan.sections or tplan.groups) and len(selected) < STRUCTURED_AUTO_MIN_SELECTED:
+            # A term found in one or two items is a lookup of those items, which generation answers better.
+            return "term lookup"
+        if top_passage is not None:
+            top_ids = {i.upper() for i in extract_identifiers(candidate_text(top_passage))}
+            if top_ids and not top_ids & {it.identifier.upper() for it in selected}:
+                # The best passage of the search is not in the listing: the planner picked other groups.
+                return "disagrees with the best passage"
+        return ""
+
+    async def _compare_summary(
+        self, plan: "_TurnPlan", request: RagChatRequestDTO, body: str, document_chunks: List[Dict[str, Any]],
+        authorization: Optional[str],
+    ) -> str:
+        """Two or three sentences comparing the listed sections, verified against the passages."""
+        messages = [
+            {"role": "system", "content": (
+                "Dựa DUY NHẤT vào danh sách mục dưới đây, viết 2–3 câu tiếng Việt nêu điểm khác nhau / sự phát triển giữa "
+                "các phần theo câu hỏi. Không thêm thông tin ngoài danh sách, không liệt kê lại toàn bộ."
+            )},
+            {"role": "user", "content": f"CÂU HỎI: {plan.standalone_query}\n\nDANH SÁCH:\n{body[:6000]}"},
+        ]
+        try:
+            raw, _, _ = await self.llm_service.generate(
+                messages=messages, model=request.model, temperature=0.0, max_tokens=220, authorization=authorization
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Comparison summary failed: %s", exc)
+            return ""
+        ctx = SanitizeContext(grounding=build_grounding(document_chunks, document_chunks, False, True))
+        text, _, refused = sanitize_answer(raw, ctx)
+        return "" if refused else text.strip()
 
     async def _build_prompt_within_window(
         self,
@@ -1295,16 +2186,26 @@ class RagChatUseCase:
             logger.debug("Context window lookup failed: %s", exc)
             window = None
         cpt = max(rag_settings.llm_chars_per_token, 1.0)
-        history_chars = sum(len(m.get("content") or "") for m in plan.generation_history)
+        history_text = "\n".join(m.get("content") or "" for m in plan.generation_history)
         wanted = request.max_tokens or 1024
         floor = min(wanted, rag_settings.llm_min_completion_tokens)
         chosen, selected = list(chosen), len(chosen)
+        count_tokens = getattr(self.llm_service, "count_tokens", None)
         while True:
             plan.wrapped = [CandidateWrapper(c) for c in chosen]
             plan.raw_citations, plan.system_prompt = prompt_builder.build_context_and_citations(plan.wrapped, query=query)
             if not window:
                 break
-            prompt_tokens = int((len(plan.system_prompt) + history_chars + len(plan.user_content)) / cpt)
+            full = f"{plan.system_prompt}\n{history_text}\n{plan.user_content}"
+            exact = None
+            if count_tokens is not None:
+                try:
+                    exact = await count_tokens(full, request.model)
+                except Exception as exc:  # noqa: BLE001 - sizing is best effort
+                    logger.debug("Token count failed: %s", exc)
+            # Chat template markup adds a few tokens per message on top of the contents.
+            prompt_tokens = (exact + PROMPT_TEMPLATE_TOKENS * (2 + len(plan.generation_history))
+                             if isinstance(exact, int) else int(len(full) / cpt))
             if prompt_tokens + floor + rag_settings.llm_prompt_safety_tokens <= window or len(chosen) <= 1:
                 break
             droppable = [i for i, c in enumerate(chosen) if candidate_key(c) in scores]
@@ -1329,7 +2230,23 @@ class RagChatUseCase:
         tenant_id: str,
         user_id: str,
         session_id: str,
+        authorization: Optional[str] = None,
     ) -> None:
+        """No answer from the documents: record feedback, decline by policy, or escalate with a ticket."""
+        if plan.unverified_feedback:
+            ticket_id, plan.escalation = await self._record_ticket(
+                session_id, tenant_id, user_id, request.query, reason="user_feedback"
+            )
+            plan.kind, plan.intent, plan.status, plan.is_refusal = "direct", "FEEDBACK", "success", False
+            plan.answer = self.support.feedback(ticket_id, plan.titles, plan.outline)
+            return
+        if rag_settings.policy_check_on_refusal:
+            category = await self.query_analyzer.policy_category(request.query, self.llm_service, request.model, authorization)
+            if category:
+                plan.kind, plan.intent, plan.status = "direct", "OUT_OF_SCOPE", "success"
+                plan.is_refusal, plan.escalation = False, None
+                plan.answer = self.support.out_of_scope(category)
+                return
         ticket_id, escalation = await self._record_ticket(
             session_id, tenant_id, user_id, request.query,
             reason="out_of_domain_or_insufficient_evidence", top1_score=plan.top_score,
@@ -1358,6 +2275,11 @@ class RagChatUseCase:
             return "stuff"
         total_chars = sum(len(getattr(c, "text", "") or "") for c in wrapped_chunks)
         return "map_reduce" if total_chars > 2 * rag_settings.context_char_budget else "stuff"
+
+    @staticmethod
+    def _answer_temperature(request: RagChatRequestDTO) -> float:
+        t = float(request.temperature if request.temperature is not None else 0.0)
+        return min(t, rag_settings.generation_temperature_max) if rag_settings.generation_temperature_max >= 0 else t
 
     def _stuff_messages(self, plan: "_TurnPlan") -> List[Dict[str, str]]:
         return [
@@ -1391,7 +2313,7 @@ class RagChatUseCase:
             chunk=plan.wrapped[0], query=plan.standalone_query, chunk_index=1, history=plan.generation_history
         )
         current, p_tok, c_tok = await self.llm_service.generate(
-            messages=init_msgs, model=request.model, temperature=request.temperature,
+            messages=init_msgs, model=request.model, temperature=self._answer_temperature(request),
             max_tokens=request.max_tokens, authorization=authorization,
         )
         last = len(plan.wrapped) if include_last else len(plan.wrapped) - 1
@@ -1400,7 +2322,7 @@ class RagChatUseCase:
                 existing_answer=current, next_chunk=plan.wrapped[idx], query=plan.standalone_query, chunk_index=idx + 1
             )
             refined, p, c = await self.llm_service.generate(
-                messages=step_msgs, model=request.model, temperature=request.temperature,
+                messages=step_msgs, model=request.model, temperature=self._answer_temperature(request),
                 max_tokens=request.max_tokens, authorization=authorization,
             )
             if refined.strip() and "KHÔNG_CÓ_THÔNG_TIN_LIÊN_QUAN" not in refined:
@@ -1447,7 +2369,7 @@ class RagChatUseCase:
                     query=plan.standalone_query, map_summaries=summaries, history=plan.generation_history
                 )
                 return await self.llm_service.generate(
-                    messages=msgs, model=request.model, temperature=request.temperature,
+                    messages=msgs, model=request.model, temperature=self._answer_temperature(request),
                     max_tokens=request.max_tokens, authorization=authorization,
                 )
             plan.strategy = "stuff"
@@ -1460,7 +2382,7 @@ class RagChatUseCase:
         else:
             plan.strategy = "stuff"
         return await self.llm_service.generate(
-            messages=self._stuff_messages(plan), model=request.model, temperature=request.temperature,
+            messages=self._stuff_messages(plan), model=request.model, temperature=self._answer_temperature(request),
             max_tokens=plan.max_tokens or request.max_tokens, authorization=authorization,
         )
 
@@ -1497,7 +2419,7 @@ class RagChatUseCase:
             messages = self._stuff_messages(plan)
             max_tokens = plan.max_tokens or request.max_tokens
         async for token in self.llm_service.stream_generate(
-            messages=messages, model=request.model, temperature=request.temperature,
+            messages=messages, model=request.model, temperature=self._answer_temperature(request),
             max_tokens=max_tokens, authorization=authorization,
         ):
             yield token
@@ -1512,11 +2434,33 @@ class RagChatUseCase:
         tenant_id: str,
         user_id: str,
         session_id: str,
+        authorization: Optional[str] = None,
     ) -> Tuple[str, List[Dict[str, Any]], str]:
-        """Returns (tail to append, cited sources, intent). A model refusal becomes an escalation reply."""
-        if refused or not clean_text.strip():
-            await self._make_refusal_plan(plan, request, tenant_id, user_id, session_id)
-            return plan.answer, [], "REFUSAL"
+        """
+        Returns (text still to deliver, cited sources, intent). A model refusal over passages that contain
+        the asked-about terms is regenerated extractively; otherwise it becomes a support reply and
+        plan.answer_replaced is set. Items as relevant as the cited ones but missing are appended.
+        """
+        undelivered = ""
+        if plan.sanitize_ctx is not None and plan.sanitize_ctx.leaked:
+            # The model was talked into reproducing its instructions: withhold the answer entirely.
+            # Not a missing-information refusal, so no regeneration and no support ticket.
+            plan.kind, plan.intent, plan.status, plan.is_refusal = "direct", "OUT_OF_SCOPE", "success", False
+            plan.answer = self.support.out_of_scope("cấu hình nội bộ của hệ thống")
+            plan.answer_replaced = True
+            trace_stage("route", route="prompt_disclosure_blocked", intent=plan.intent)
+            return plan.answer, [], plan.intent
+        # Verification can cut every sentence that said something, leaving only a no-information opening
+        # or a bare citation marker: that is a refusal (support reply, ticket), not an answer.
+        if refused or not has_substantive_content(clean_text):
+            recovered = await self._recover_refusal(plan, request, authorization)
+            if recovered is None:
+                await self._make_refusal_plan(plan, request, tenant_id, user_id, session_id, authorization)
+                plan.answer_replaced = True
+                trace_stage("route", route="generation_refusal", intent=plan.intent)
+                return plan.answer, [], plan.intent
+            clean_text, marker_map = recovered
+            undelivered = clean_text  # nothing of a refused stream has reached the client
         if plan.strategy in SYNTHESIS_STRATEGIES:
             # Multi-pass synthesis keeps the original markers; every passage it read is a source.
             cited = _deduplicate_citations(plan.raw_citations)
@@ -1524,14 +2468,250 @@ class RagChatUseCase:
             cited = remap_citations(plan.raw_citations, marker_map)
         else:
             cited = _filter_attributed_citations(_deduplicate_citations(plan.raw_citations), clean_text, strategy=plan.strategy)
-        tail = build_sources_footer(cited)
+        tail = undelivered
+        if rag_settings.completeness_enabled and plan.context_chunks:
+            grounding = plan.sanitize_ctx.grounding if plan.sanitize_ctx is not None else None
+            extra = missing_items(
+                plan.standalone_query, plan.analysis.focus_terms, clean_text, plan.context_chunks,
+                rag_settings.completeness_relative_score, rag_settings.completeness_max_items,
+                require_anchor=not plan.analysis.wants_location,
+                exclude=grounding.example_identifiers if grounding is not None and not grounding.allow_examples else (),
+            )
+            tail += format_missing(extra)
+        tail += self._attach_images(cited, cited, plan.context_chunks, tenant_id, clean_text, plan.section_pool)
+        tail += build_sources_footer(cited)
         if rag_settings.suggestions_enabled and not plan.analysis.wants_brief:
             tail += build_suggestions(clean_text, plan.suggestion_pool)
         return tail, cited, f"QA_{plan.strategy.upper()}"
 
+    @staticmethod
+    def _media_mapper(passages: Sequence[Dict[str, Any]], tenant_id: str) -> Optional[Any]:
+        """Image URL of a passage -> signed URL the browser can load (None when images are disabled)."""
+        if not rag_settings.media_enabled:
+            return None
+        return media_assets.url_mapper(
+            passages, media_secret(), rag_settings.media_path_prefix, rag_settings.media_url_ttl_seconds,
+            default_tenant=normalize_tenant_id(tenant_id) if tenant_id else "",
+        )
+
+    def _attach_images(
+        self,
+        cited: List[Dict[str, Any]],
+        image_sources: Sequence[Dict[str, Any]],
+        passages: Sequence[Dict[str, Any]],
+        tenant_id: str,
+        shown_text: str,
+        section_pool: Sequence[Dict[str, Any]] = (),
+    ) -> str:
+        """
+        The images of the passages an answer is based on: each cited passage carries its own (signed) image
+        URLs, and the answer gets a block with those it does not already show, so a document's figure always
+        comes with the text it illustrates, whichever path (generation, listing, figures) answered.
+        A figure belongs to its section: a cited passage brings the images of the other passages of the same
+        section of its document (a table of figures and the photo below it are one news item).
+        """
+        mapper = self._media_mapper(list(passages) + list(image_sources) + list(section_pool), tenant_id)
+        if mapper is None:
+            return ""
+        prefix = rag_settings.media_path_prefix
+
+        def section_mates(c: Dict[str, Any]) -> List[Dict[str, Any]]:
+            heading = str(c.get("heading") or "").strip()
+            doc_id = str(c.get("doc_id") or "")
+            if not heading:
+                return [c]
+            def names_of(p: Dict[str, Any]) -> set:
+                pl = payload_of(p)
+                return {str(pl.get("heading") or "").strip(), str(pl.get("heading_path") or "").strip(),
+                        (candidate_heading(p) or "").strip()} - {""}
+
+            mates = [p for p in section_pool if str(payload_of(p).get("doc_id") or "") == doc_id
+                     and heading in names_of(p)]
+            return [c] + mates
+
+        for c in cited:
+            c["images"] = [mapper(media_assets.media_path(prefix, i.doc_id, i.filename))
+                           for i in media_assets.passage_images(section_mates(c), prefix)][:CITATION_MAX_IMAGES]
+        shown = media_assets.shown_files(shown_text, prefix)
+        picked: List[Any] = []
+        source_of: Dict[str, int] = {}
+        index_of_doc = {str(c.get("doc_id")): int(c.get("index", 0) or 0) for c in cited}
+        for src in image_sources:
+            for img in media_assets.passage_images(section_mates(src), prefix):
+                if img.filename in shown or img.filename in source_of:
+                    continue
+                source_of[img.filename] = int(src.get("index", 0) or 0) or index_of_doc.get(img.doc_id, 0)
+                picked.append(img)
+        picked = picked[: rag_settings.media_max_images_per_answer]
+        return media_assets.images_section(picked, mapper, prefix, {k: v for k, v in source_of.items() if v})
+
+    def _correction_hints(self, plan: "_TurnPlan") -> List[str]:
+        ctx = plan.sanitize_ctx
+        if ctx is None or ctx.grounding is None:
+            return []
+        return unique_in_order(ctx.grounding.hint(problem) for problem, _ in ctx.dropped)
+
+    async def _corrected_answer(
+        self, plan: "_TurnPlan", request: RagChatRequestDTO, authorization: Optional[str]
+    ) -> Optional[Tuple[str, Dict[int, int]]]:
+        """
+        Verification removed sentences (unsupported figures, wrong counting unit, unknown identifiers):
+        regenerate once, telling the model exactly what was wrong and what the document says instead.
+        """
+        hints = self._correction_hints(plan)
+        if not hints or plan.kind != "generate":
+            return None
+        messages = self._stuff_messages(plan)
+        messages[-1] = {"role": "user", "content": messages[-1]["content"] + (
+            "\n(KIỂM TRA LẠI – câu trả lời trước có chi tiết sai so với tài liệu:\n- " + "\n- ".join(hints)
+            + "\nViết lại câu trả lời: chép đúng con số kèm đúng đơn vị như câu tài liệu gốc, không ước lượng, "
+            "không dùng số không có trong tài liệu.)"
+        )}
+        plan.sanitize_ctx.dropped.clear()
+        t0 = time.perf_counter()
+        try:
+            raw, _, _ = await self.llm_service.generate(
+                messages=messages, model=request.model, temperature=0.0,
+                max_tokens=plan.max_tokens or request.max_tokens, authorization=authorization,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Corrective regeneration failed: %s", exc)
+            trace_stage("correction", ms=(time.perf_counter() - t0) * 1000, hints=hints, accepted=False,
+                        error=type(exc).__name__)
+            return None
+        text, marker_map, refused = sanitize_answer(raw, plan.sanitize_ctx)
+        # A rewrite that verification still has to cut is not a correction: the model is guessing
+        # (told a code is wrong, it invents a neighbouring one).
+        accepted = bool(text.strip()) and not refused and not plan.sanitize_ctx.dropped
+        trace_stage("correction", ms=(time.perf_counter() - t0) * 1000, hints=hints, accepted=accepted,
+                    raw_answer=raw, dropped=dropped_sentences(plan.sanitize_ctx.dropped))
+        if accepted:
+            logger.info("Answer corrected after verification (%d hint(s))", len(hints))
+            return text, marker_map
+        return None
+
+    async def _recover_refusal(
+        self, plan: "_TurnPlan", request: RagChatRequestDTO, authorization: Optional[str]
+    ) -> Optional[Tuple[str, Dict[int, int]]]:
+        """Self-RAG style check of a refusal: the passages contain the asked-about terms, so answer from them."""
+        corrected = await self._corrected_answer(plan, request, authorization)
+        if corrected is not None:
+            return corrected
+        # Only a specific asked-about term found in the passages suggests the refusal is wrong; every
+        # specific term must be there (a question about "certificates for teachers" is not answered by
+        # passages that only mention teachers).
+        focus = specific_focus_terms(plan.analysis.focus_terms, plan.analysis.scope_terms, plan.titles,
+                                     plan.context_chunks)
+        if not (rag_settings.refusal_verify_enabled and plan.kind == "generate" and focus
+                and all(focus_present([t], plan.context_chunks) for t in focus)):
+            trace_stage("refusal_recovery", method="not_applicable", focus=list(focus),
+                        asked=list(plan.analysis.focus_terms))
+            return None
+        shown = ", ".join(f"«{t}»" for t in focus)
+        messages = self._stuff_messages(plan)
+        messages[-1] = {"role": "user", "content": messages[-1]["content"] + (
+            f"\n(Các đoạn tài liệu CÓ nhắc tới {shown}. Trước hết chép nguyên văn dòng chứa nội dung đó kèm mã và mục, "
+            "sau đó trả lời câu hỏi trong 1–2 câu. Không dùng câu từ chối.)"
+        )}
+        try:
+            raw, _, _ = await self.llm_service.generate(
+                messages=messages, model=request.model, temperature=0.0,
+                max_tokens=plan.max_tokens or request.max_tokens, authorization=authorization,
+            )
+            text, marker_map, refused = sanitize_answer(raw, plan.sanitize_ctx)
+            if text.strip() and not refused:
+                logger.info("Refusal recovered by extractive regeneration")
+                trace_stage("refusal_recovery", method="extractive_regeneration", raw_answer=raw)
+                return text, marker_map
+        except Exception as exc:  # noqa: BLE001 - fall back to the deterministic extract
+            logger.warning("Extractive regeneration failed: %s", exc)
+        extract = extractive_answer(focus, plan.context_chunks)
+        if extract:
+            logger.info("Refusal replaced by deterministic extract")
+            trace_stage("refusal_recovery", method="deterministic_extract")
+            return extract, {}
+        trace_stage("refusal_recovery", method="none")
+        return None
+
     # ------------------------------------------------------------------
     # Public entry points
     # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # Turn tracing (stage inputs/outputs persisted per turn)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _config_snapshot() -> Dict[str, Any]:
+        """Settings that change answers, stored with each trace so runs are comparable."""
+        keys = (
+            "gate_min_rerank_score", "gate_min_lexical_coverage", "context_max_chunks", "context_char_budget",
+            "context_char_budget_point", "context_relative_cutoff", "context_list_relative_cutoff",
+            "numeric_tables_enabled", "structured_listing_enabled", "identifier_grounding_enabled",
+            "unit_grounding_enabled", "generation_history_mode", "multi_query_on_weak_evidence",
+            "hyde_auto_enabled", "generation_temperature_max",
+        )
+        return {k: getattr(rag_settings, k, None) for k in keys}
+
+    def _begin_trace(
+        self, request: RagChatRequestDTO, tenant_id: str, user_id: str, trace_id: Optional[str], endpoint: str
+    ) -> TurnTrace:
+        return begin_turn(
+            tenant_id=normalize_tenant_id(tenant_id), session_id=request.conversation_id or "", user_id=user_id,
+            query=request.query, trace_id=trace_id, endpoint=endpoint, model=request.model,
+            sample_rate=rag_settings.trace_sample_rate, config=self._config_snapshot(),
+        )
+
+    def _finish_trace(self, trace: TurnTrace) -> None:
+        """Records quality metrics from the trace and persists it in the background (never fails the turn)."""
+        end_turn()
+        routes = [s for s in trace.stages if s["stage"] == "route"]
+        route = routes[-1]["route"] if routes else ("cache" if trace.stage("cache") else "unknown")
+        trace.outcome.setdefault("route", route)
+        self.obs.record_answer_outcome(
+            route, str(trace.outcome.get("intent") or ""), bool(trace.outcome.get("is_refusal")), tenant_id=trace.tenant_id
+        )
+        problems = [d["problem"] for s in trace.stages if s["stage"] in ("verification", "correction")
+                    for d in s.get("dropped") or []]
+        corrections = [s for s in trace.stages if s["stage"] == "correction"]
+        if problems or corrections:
+            self.obs.record_verification(
+                problems, corrections[-1].get("accepted") if corrections else None, tenant_id=trace.tenant_id
+            )
+        if not (rag_settings.trace_enabled and trace.should_keep()):
+            return
+        record = trace.to_record(redact=rag_settings.trace_redact_pii)
+        task = asyncio.ensure_future(self._save_trace(record))
+        self._trace_tasks.add(task)
+        task.add_done_callback(self._trace_tasks.discard)
+
+    async def _save_trace(self, record: Dict[str, Any]) -> None:
+        try:
+            await self.trace_store.save(record)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Saving trace %s failed: %s", record.get("trace_id"), exc)
+
+    async def flush_traces(self) -> None:
+        """Waits for pending trace writes (tests, graceful shutdown)."""
+        if self._trace_tasks:
+            await asyncio.gather(*list(self._trace_tasks), return_exceptions=True)
+
+    @staticmethod
+    def _response_outcome(resp: RagChatResponseDTO) -> Dict[str, Any]:
+        return {
+            "answer": resp.answer,
+            "intent": resp.intent,
+            "status": resp.status,
+            "is_refusal": bool(resp.is_refusal),
+            "escalated": bool(resp.escalation),
+            "citations": [
+                {"index": c.index, "doc_id": c.doc_id, "title": c.title, "section": c.section, "score": c.score}
+                for c in resp.citations or []
+            ],
+            "latency_ms": resp.latency_ms,
+            "prompt_tokens": resp.prompt_tokens,
+            "completion_tokens": resp.completion_tokens,
+        }
 
     async def execute(
         self,
@@ -1540,19 +2720,45 @@ class RagChatUseCase:
         user_id: str = "default_user",
         user_role: str = "user",
         authorization: Optional[str] = None,
+        trace_id: Optional[str] = None,
+    ) -> RagChatResponseDTO:
+        trace = self._begin_trace(request, tenant_id, user_id, trace_id, endpoint="chat")
+        try:
+            async with self.admission.turn():
+                resp = await self._execute_impl(request, tenant_id, user_id, user_role, authorization)
+        except Exception as exc:
+            trace.outcome = {"error": type(exc).__name__, "message": str(exc)[:300]}
+            self._finish_trace(trace)
+            raise
+        resp.telemetry = dict(resp.telemetry or {}, trace_id=trace.trace_id)
+        trace.session_id = resp.session_id or trace.session_id
+        trace.outcome = self._response_outcome(resp)
+        self._finish_trace(trace)
+        return resp
+
+    async def _execute_impl(
+        self,
+        request: RagChatRequestDTO,
+        tenant_id: str,
+        user_id: str,
+        user_role: str,
+        authorization: Optional[str],
     ) -> RagChatResponseDTO:
         start_t = time.time()
         tenant_id = normalize_tenant_id(tenant_id)
-        session_id = request.conversation_id or f"sess_{uuid.uuid4().hex[:12]}"
+        session_id = request.conversation_id or new_session_id()
         self._truncate_query(request)
 
         history = await self._resolve_history(session_id, user_id, tenant_id, request.history)
         if not history:
             cached_res = await self._cache_lookup(request, request.query, tenant_id, user_role, session_id, start_t)
             if cached_res:
+                trace_stage("cache", hit=True, key="query")
+                trace_stage("route", route="cache", intent=cached_res.intent)
                 return cached_res
 
         if request.adhoc_context and request.adhoc_context.strip():
+            trace_stage("route", route="adhoc", intent="ADHOC_QA")
             return await self._execute_adhoc(request, history, session_id, tenant_id, user_id, authorization, start_t)
 
         plan = await self._plan_turn(request, history, tenant_id, user_id, user_role, session_id, authorization)
@@ -1560,6 +2766,8 @@ class RagChatUseCase:
         if history and plan.kind == "generate":
             cached_res = await self._cache_lookup(request, plan.standalone_query, tenant_id, user_role, session_id, start_t)
             if cached_res:
+                trace_stage("cache", hit=True, key="standalone_query")
+                trace_stage("route", route="cache", intent=cached_res.intent)
                 return cached_res
 
         if plan.kind == "multihop":
@@ -1577,13 +2785,13 @@ class RagChatUseCase:
             latency_ms = (time.time() - start_t) * 1000
             await self._save_session_turn(
                 session_id=session_id, user_id=user_id, tenant_id=tenant_id, query=request.query,
-                answer=plan.answer, citations=[], model=request.model, intent=plan.intent, latency_ms=latency_ms,
-                standalone_query=plan.standalone_query,
+                answer=plan.answer, citations=plan.direct_citations, model=request.model, intent=plan.intent,
+                latency_ms=latency_ms, standalone_query=plan.standalone_query, plan=plan,
             )
             return RagChatResponseDTO(
                 answer=plan.answer,
                 model=request.model,
-                citations=[],
+                citations=[_build_citation_dto(c) for c in plan.direct_citations],
                 latency_ms=round(latency_ms, 2),
                 intent=plan.intent,
                 session_id=session_id,
@@ -1605,12 +2813,22 @@ class RagChatUseCase:
         self.obs.record_stage_latency("llm_generate", time.perf_counter() - t_gen_0, tenant_id=tenant_id)
         self.obs.record_tokens(request.model, "prompt", prompt_tokens, tenant_id=tenant_id)
         self.obs.record_tokens(request.model, "completion", completion_tokens, tenant_id=tenant_id)
+        trace_stage("generation", ms=(time.perf_counter() - t_gen_0) * 1000, strategy=plan.strategy,
+                    prompt_tokens=prompt_tokens, completion_tokens=completion_tokens, raw_answer=raw_answer)
 
+        plan.sanitize_ctx.dropped.clear()
         clean_text, marker_map, refused = sanitize_answer(raw_answer, plan.sanitize_ctx)
+        trace_stage("verification", refused=refused, dropped=dropped_sentences(plan.sanitize_ctx.dropped))
+        if not refused and clean_text.strip() and any(
+            p.startswith(("unit:", "number:", "identifier:")) for p, _ in plan.sanitize_ctx.dropped
+        ):
+            corrected = await self._corrected_answer(plan, request, authorization)
+            if corrected is not None:
+                clean_text, marker_map = corrected
         tail, cited, intent = await self._finalize_answer(
-            plan, request, clean_text, marker_map, refused, tenant_id, user_id, session_id
+            plan, request, clean_text, marker_map, refused, tenant_id, user_id, session_id, authorization
         )
-        answer = plan.answer if intent == "REFUSAL" else clean_text + tail
+        answer = plan.answer if plan.answer_replaced else clean_text + tail
         citation_dtos = [_build_citation_dto(c) for c in cited]
         if citation_dtos and plan.context_chunks:
             self.obs.record_groundedness(min(1.0, len(citation_dtos) / len(plan.context_chunks)), tenant_id=tenant_id)
@@ -1620,6 +2838,7 @@ class RagChatUseCase:
             session_id=session_id, user_id=user_id, tenant_id=tenant_id, query=request.query, answer=answer,
             citations=cited, model=request.model, intent=intent, prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens, latency_ms=latency_ms, standalone_query=plan.standalone_query,
+            plan=plan,
         )
         resp_dto = RagChatResponseDTO(
             answer=answer,
@@ -1629,9 +2848,9 @@ class RagChatUseCase:
             intent=intent,
             combine_strategy=plan.strategy,
             session_id=session_id,
-            status=plan.status if intent == "REFUSAL" else "success",
-            escalation=plan.escalation if intent == "REFUSAL" else None,
-            is_refusal=intent == "REFUSAL",
+            status=plan.status if plan.answer_replaced else "success",
+            escalation=plan.escalation if plan.answer_replaced else None,
+            is_refusal=plan.is_refusal if plan.answer_replaced else False,
             circuit_breaker_triggered=False,
             telemetry=self._telemetry(plan, latency_ms),
             prompt_tokens=prompt_tokens,
@@ -1653,7 +2872,7 @@ class RagChatUseCase:
     @staticmethod
     def _telemetry(plan: "_TurnPlan", latency_ms: float) -> Dict[str, Any]:
         return {
-            "trace_id": f"tr_rag_{uuid.uuid4().hex[:8]}",
+            "trace_id": current_trace_id(),
             "latency_ms": round(latency_ms, 2),
             "gate_latency_ms": round(plan.gate_latency_ms, 2),
             "rerank_top1_score": round(plan.top_score, 4),
@@ -1670,18 +2889,66 @@ class RagChatUseCase:
         user_id: str = "default_user",
         user_role: str = "user",
         authorization: Optional[str] = None,
+        trace_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """SSE variant of execute(). Infrastructure failures end the stream with an explicit error event."""
-        session_id = request.conversation_id or f"sess_{uuid.uuid4().hex[:12]}"
+        session_id = request.conversation_id or new_session_id()
         request.conversation_id = session_id
+        trace = self._begin_trace(request, tenant_id, user_id, trace_id, endpoint="stream")
+        answer_parts: List[str] = []
+        done: Dict[str, Any] = {}
+        ttft_ms: Optional[float] = None
         try:
-            async for event in self._stream_execute_impl(request, tenant_id, user_id, user_role, authorization):
-                yield event
+            async with self.admission.turn():
+                async for event in self._stream_execute_impl(request, tenant_id, user_id, user_role, authorization):
+                    payload = self._sse_payload(event)
+                    if "token" in payload:
+                        if ttft_ms is None:
+                            ttft_ms = round((time.perf_counter() - trace.started) * 1000, 1)
+                        answer_parts.append(str(payload["token"]))
+                    elif payload.get("done"):
+                        done = payload
+                    yield event
         except INFRASTRUCTURE_ERRORS as exc:
-            logger.error("RAG stream aborted by infrastructure failure: %s", exc)
-            error_payload = {"error": type(exc).__name__, "message": "Dịch vụ tạm thời gián đoạn, vui lòng thử lại sau.", "session_id": session_id}
+            message, retry_after, busy = unavailable_reply(exc)
+            (logger.warning if busy else logger.error)("RAG stream not served (%s): %s", "busy" if busy else "outage", exc)
+            status_value = "busy" if busy else "service_unavailable"
+            done = {"status": status_value, "error": type(exc).__name__}
+            error_payload = {"error": type(exc).__name__, "message": message, "retry_after": retry_after,
+                             "session_id": session_id}
             yield f"event: error\ndata: {json.dumps(error_payload, ensure_ascii=False)}\n\n"
-            yield f"data: {json.dumps({'done': True, 'session_id': session_id, 'status': 'service_unavailable'})}\n\n"
+            yield (f"data: {json.dumps({'done': True, 'session_id': session_id, 'status': status_value, 'retry_after': retry_after, 'trace_id': trace.trace_id})}\n\n")
+        except BaseException as exc:
+            done = done or {"status": "aborted", "error": type(exc).__name__}
+            raise
+        finally:
+            trace.session_id = session_id
+            trace.outcome = {
+                "answer": "".join(answer_parts),
+                "intent": done.get("intent"),
+                "status": done.get("status"),
+                "is_refusal": bool(done.get("is_refusal")),
+                "escalated": bool(done.get("escalation")),
+                "citations": [
+                    {k: c.get(k) for k in ("index", "doc_id", "title", "section", "score")}
+                    for c in done.get("citations") or [] if isinstance(c, dict)
+                ],
+                "latency_ms": done.get("total_latency_ms"),
+                "ttft_ms": ttft_ms,
+                **({"error": done["error"]} if done.get("error") else {}),
+            }
+            self._finish_trace(trace)
+
+    @staticmethod
+    def _sse_payload(event: str) -> Dict[str, Any]:
+        for line in event.splitlines():
+            if line.startswith("data: "):
+                try:
+                    data = json.loads(line[6:])
+                except ValueError:
+                    return {}
+                return data if isinstance(data, dict) else {}
+        return {}
 
     @staticmethod
     def _sse_token(token: str, session_id: str) -> str:
@@ -1697,12 +2964,13 @@ class RagChatUseCase:
     ) -> AsyncGenerator[str, None]:
         start_t = time.time()
         tenant_id = normalize_tenant_id(tenant_id)
-        session_id = request.conversation_id or f"sess_{uuid.uuid4().hex[:12]}"
+        session_id = request.conversation_id or new_session_id()
         self._truncate_query(request)
 
         history = await self._resolve_history(session_id, user_id, tenant_id, request.history)
 
         if request.adhoc_context and request.adhoc_context.strip():
+            trace_stage("route", route="adhoc", intent="ADHOC_QA")
             async for event in self._stream_adhoc(request, history, session_id, tenant_id, user_id, authorization, start_t):
                 yield event
             return
@@ -1729,7 +2997,7 @@ class RagChatUseCase:
                 answer=AMBIGUOUS_CLARIFICATION_TEXT, citations=[], model=request.model, intent="AMBIGUOUS_SYMPTOM",
                 latency_ms=latency_ms, standalone_query=plan.standalone_query,
             )
-            yield f"data: {json.dumps({'done': True, 'session_id': session_id, 'status': 'clarification_needed', 'clarification': clarification_payload, 'citations': [], 'total_latency_ms': round(latency_ms, 2)})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'session_id': session_id, 'status': 'clarification_needed', 'intent': 'AMBIGUOUS_SYMPTOM', 'clarification': clarification_payload, 'citations': [], 'total_latency_ms': round(latency_ms, 2), 'trace_id': current_trace_id()})}\n\n"
             return
 
         if plan.kind == "direct":
@@ -1737,15 +3005,17 @@ class RagChatUseCase:
             yield self._sse_token(plan.answer, session_id)
             await self._save_session_turn(
                 session_id=session_id, user_id=user_id, tenant_id=tenant_id, query=request.query,
-                answer=plan.answer, citations=[], model=request.model, intent=plan.intent, latency_ms=latency_ms,
-                standalone_query=plan.standalone_query,
+                answer=plan.answer, citations=plan.direct_citations, model=request.model, intent=plan.intent,
+                latency_ms=latency_ms, standalone_query=plan.standalone_query, plan=plan,
             )
             done = {
                 "done": True, "session_id": session_id, "status": plan.status, "intent": plan.intent,
-                "escalation": plan.escalation, "citations": [], "circuit_breaker_triggered": plan.is_refusal,
+                "escalation": plan.escalation,
+                "citations": [_build_citation_dto(c).model_dump() for c in plan.direct_citations],
+                "circuit_breaker_triggered": plan.is_refusal,
                 "is_refusal": plan.is_refusal, "pre_retrieval_tier": rewrite_decision.tier,
                 "ttft_ms": round(latency_ms, 2), "total_latency_ms": round(latency_ms, 2),
-                "trace_id": f"tr_rag_{uuid.uuid4().hex[:8]}",
+                "trace_id": current_trace_id(),
                 "hyde_active": plan.hyde.is_active if plan.hyde else False,
                 "rerank_top1_score": round(plan.top_score, 4),
                 "standalone_query": plan.standalone_query,
@@ -1755,23 +3025,47 @@ class RagChatUseCase:
 
         plan.strategy = self._resolve_combine_strategy(getattr(request, "combine_strategy", None), plan.standalone_query, plan.wrapped)
         plan.sanitize_ctx.renumber = plan.strategy not in SYNTHESIS_STRATEGIES
-        stream_filter = AnswerStreamFilter(plan.sanitize_ctx)
         first_token_time: Optional[float] = None
-        token_stream = self._generate_stream(plan, request, authorization)
-        try:
-            async for token in token_stream:
-                for piece in stream_filter.feed(token):
-                    if first_token_time is None:
-                        first_token_time = time.time()
-                    yield self._sse_token(piece, session_id)
-                if stream_filter.refused:
-                    break  # the model declined: stop generating and escalate instead
-        finally:
-            await token_stream.aclose()
+        t_gen_0 = time.perf_counter()
+        restarts = 0
+        while True:
+            stream_filter = AnswerStreamFilter(plan.sanitize_ctx)
+            raw_tokens: List[str] = []
+            token_stream = self._generate_stream(plan, request, authorization)
+            try:
+                async for token in token_stream:
+                    raw_tokens.append(token)
+                    for piece in stream_filter.feed(token):
+                        if first_token_time is None:
+                            first_token_time = time.time()
+                        yield self._sse_token(piece, session_id)
+                    if stream_filter.refused:
+                        break  # the model declined: stop generating and escalate instead
+            except LLMStreamInterruptedError as exc:
+                # The runtime cut the answer off for lack of room under load (busy, not broken): it is
+                # generated again, and the runtime guard now lets one call through at a time so the new
+                # attempt runs alone. Text already shown is withdrawn with a reset event first.
+                if restarts >= STREAM_RESTARTS:
+                    raise
+                restarts += 1
+                logger.warning("Answer stream cut off (%s); generating again%s", exc,
+                               " after withdrawing the partial text" if first_token_time else "")
+                if first_token_time is not None:
+                    yield f"data: {json.dumps({'reset': True, 'session_id': session_id})}\n\n"
+                plan.sanitize_ctx.dropped.clear()
+                plan.sanitize_ctx.leaked = False
+                continue
+            finally:
+                await token_stream.aclose()
+            break
         for piece in stream_filter.finish():
             if first_token_time is None:
                 first_token_time = time.time()
             yield self._sse_token(piece, session_id)
+        trace_stage("generation", ms=(time.perf_counter() - t_gen_0) * 1000, strategy=plan.strategy,
+                    raw_answer="".join(raw_tokens), streamed=True)
+        trace_stage("verification", refused=stream_filter.refused,
+                    dropped=dropped_sentences(plan.sanitize_ctx.dropped))
 
         tail, cited, intent = await self._finalize_answer(
             plan, request, stream_filter.text, dict(stream_filter.marker_map), stream_filter.refused,
@@ -1781,29 +3075,29 @@ class RagChatUseCase:
             if first_token_time is None:
                 first_token_time = time.time()
             yield self._sse_token(tail, session_id)
-        answer = plan.answer if intent == "REFUSAL" else stream_filter.text + tail
+        answer = plan.answer if plan.answer_replaced else stream_filter.text + tail
         latency_ms = (time.time() - start_t) * 1000
         await self._save_session_turn(
             session_id=session_id, user_id=user_id, tenant_id=tenant_id, query=request.query, answer=answer,
             citations=cited, model=request.model, intent=intent, latency_ms=latency_ms,
-            standalone_query=plan.standalone_query,
+            standalone_query=plan.standalone_query, plan=plan,
         )
         ttft_ms = round((first_token_time - start_t) * 1000, 2) if first_token_time else None
         done = {
             "done": True,
             "session_id": session_id,
-            "status": plan.status if intent == "REFUSAL" else "success",
+            "status": plan.status if plan.answer_replaced else "success",
             "intent": intent,
-            "escalation": plan.escalation if intent == "REFUSAL" else None,
+            "escalation": plan.escalation if plan.answer_replaced else None,
             "citations": [_build_citation_dto(c).model_dump() for c in cited],
             "combine_strategy": plan.strategy,
-            "is_refusal": intent == "REFUSAL",
+            "is_refusal": plan.is_refusal if plan.answer_replaced else False,
             "circuit_breaker_triggered": False,
             "pre_retrieval_tier": rewrite_decision.tier,
             "pre_retrieval_latency_ms": round(plan.analysis.latency_ms, 2),
             "ttft_ms": ttft_ms,
             "total_latency_ms": round(latency_ms, 2),
-            "trace_id": f"tr_rag_{uuid.uuid4().hex[:8]}",
+            "trace_id": current_trace_id(),
             "hyde_active": plan.hyde.is_active if plan.hyde else False,
             "hypothetical_doc": plan.hyde.hypothetical_document if plan.hyde and plan.hyde.is_active else None,
             "rerank_top1_score": round(plan.top_score, 4),
@@ -1844,7 +3138,7 @@ class RagChatUseCase:
     ) -> RagChatResponseDTO:
         messages, adhoc_citations = self._adhoc_messages(request, history)
         answer, prompt_tokens, completion_tokens = await self.llm_service.generate(
-            messages=messages, model=request.model, temperature=request.temperature,
+            messages=messages, model=request.model, temperature=self._answer_temperature(request),
             max_tokens=request.max_tokens, authorization=authorization,
         )
         latency_ms = (time.time() - start_t) * 1000
@@ -1867,7 +3161,7 @@ class RagChatUseCase:
         accumulated: List[str] = []
         first_token_time: Optional[float] = None
         async for token in self.llm_service.stream_generate(
-            messages=messages, model=request.model, temperature=request.temperature,
+            messages=messages, model=request.model, temperature=self._answer_temperature(request),
             max_tokens=request.max_tokens, authorization=authorization,
         ):
             if first_token_time is None:
@@ -1897,6 +3191,7 @@ class RagChatUseCase:
         completion_tokens: int = 0,
         latency_ms: float = 0.0,
         standalone_query: Optional[str] = None,
+        plan: Optional["_TurnPlan"] = None,
     ) -> None:
         try:
             now = time.time()
@@ -1914,6 +3209,8 @@ class RagChatUseCase:
             }
             if standalone_query and standalone_query.strip() != (query or "").strip():
                 user_msg["standalone"] = standalone_query
+            if plan is not None:
+                user_msg.update(_turn_memory_user(plan))
             assistant_msg = {
                 "message_id": f"msg_{uuid.uuid4().hex[:12]}",
                 "role": "assistant",
@@ -1925,6 +3222,7 @@ class RagChatUseCase:
                 "prompt_tokens": 0,
                 "completion_tokens": completion_tokens,
                 "latency_ms": round(latency_ms, 2),
+                **_turn_memory_assistant(answer, intent),
             }
 
             if hasattr(self.session_repo, "append_turn"):

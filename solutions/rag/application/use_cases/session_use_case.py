@@ -7,6 +7,7 @@ import logging
 from typing import Optional
 
 from ...domain.ports import SessionRepositoryPort
+from ..components.session_ids import as_uuid, match_public_id, public_session_id
 from ..dtos import (
     ChatMessageDTO,
     ChatSessionDTO,
@@ -16,6 +17,8 @@ from ..dtos import (
 )
 
 logger = logging.getLogger("aip-rag.session_use_case")
+
+LEGACY_LOOKUP_LIMIT = 500  # older conversations searched for the one a hashed public id names
 
 
 class RagSessionUseCase:
@@ -36,6 +39,7 @@ class RagSessionUseCase:
             items.append(
                 SessionListItemDTO(
                     session_id=item["session_id"],
+                    public_id=public_session_id(item["session_id"]),
                     title=item.get("title", "New Conversation"),
                     last_message=item.get("last_message"),
                     updated_at=float(item.get("updated_at", 0.0)),
@@ -51,6 +55,12 @@ class RagSessionUseCase:
         tenant_id: str,
     ) -> Optional[ChatSessionDTO]:
         record = await self.session_repo.get_session(session_id, user_id, tenant_id)
+        if not record and as_uuid(session_id):
+            # A URL names an older conversation by the hash of its id (see session_ids).
+            recent = await self.session_repo.list_sessions(user_id, tenant_id, limit=LEGACY_LOOKUP_LIMIT)
+            legacy = match_public_id(session_id, [r.get("session_id", "") for r in recent])
+            if legacy:
+                record = await self.session_repo.get_session(legacy, user_id, tenant_id)
         if not record:
             return None
 
@@ -64,6 +74,7 @@ class RagSessionUseCase:
                     page_number=c.get("page_number", 1),
                     score=float(c.get("score", 0.0)),
                     excerpt=c.get("excerpt", ""),
+                    file_type=c.get("file_type") or None,
                 )
                 for idx, c in enumerate(m.get("citations", []))
             ]
@@ -84,6 +95,7 @@ class RagSessionUseCase:
 
         return ChatSessionDTO(
             session_id=record["session_id"],
+            public_id=public_session_id(record["session_id"]),
             user_id=record.get("user_id", user_id),
             tenant_id=record.get("tenant_id", tenant_id),
             title=record.get("title", "Conversation"),

@@ -31,6 +31,7 @@ import httpx
 import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from solutions.rag.application.components.answer_verifier import is_english_text, split_sentences  # noqa: E402
 from solutions.rag.application.components.lexical_evidence import extract_identifiers  # noqa: E402
 from solutions.rag.application.components.prompt_builder import REFUSAL_MESSAGE  # noqa: E402
 
@@ -39,7 +40,13 @@ ARTEFACT_PATTERNS = {
     "placeholder_image": re.compile(r"!\[[^\]]*\]\((?!https?://)[^)]*\)"),
     "breadcrumb": re.compile(r"\[Ngữ cảnh:"),
     "foreign_script": re.compile(r"[Ѐ-ӿ぀-ヿ一-鿿]"),
+    "context_header": re.compile(r"\((?:Tài liệu|Nguồn)\s*:[^)]*Trang"),
+    "broken_identifier": re.compile(r"\[\d{1,3}\]\.[A-Z0-9]"),
 }
+
+
+def has_english_sentence(answer: str) -> bool:
+    return any(is_english_text(s) for s in split_sentences(answer or ""))
 TURN_RE = re.compile(r"Lượt\s*\d+\s*:\s*(.+)")
 VARIANT_RE = re.compile(r"\(\d+\)\s*(.+)")
 
@@ -98,6 +105,8 @@ def auto_checks(answer: str, expected_ref: str, response: Dict[str, Any]) -> Dic
     required = extract_identifiers(expected_ref or "")
     missing = [code for code in required if code not in (answer or "").upper()]
     artefacts = [name for name, rx in ARTEFACT_PATTERNS.items() if rx.search(answer or "")]
+    if has_english_sentence(answer):
+        artefacts.append("english_sentence")
     refused = bool(response.get("is_refusal")) or (answer or "").startswith(REFUSAL_MESSAGE[:40])
     return {
         "refused": refused,

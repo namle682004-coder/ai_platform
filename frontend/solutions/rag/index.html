@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="vi">
   <head>
+    <script src="/staff/project_routes.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AIP Platform - RAG Chatbot & Knowledge Hub</title>
@@ -20,6 +21,9 @@
     />
     <link rel="stylesheet" href="/assets/css/highlight-dark.min.css" />
     <script src="/assets/js/marked.min.js"></script>
+    <!-- Original-layout preview of Word documents (vendored: the LAN deployment may have no internet) -->
+    <script src="/assets/js/jszip-3.10.1.min.js"></script>
+    <script src="/assets/js/docx-preview-0.3.5.min.js"></script>
     <script src="/assets/js/purify.min.js"></script>
     <script src="/assets/js/highlight.min.js"></script>
     <script type="module" src="/staff/staff_layout.js"></script>
@@ -1311,6 +1315,11 @@
         text-decoration: underline dotted #94a3b8;
         text-underline-offset: 3px;
       }
+      .cite-loc {
+        color: #64748b;
+        font-size: 0.92em;
+        margin-left: 2px;
+      }
       .citation-ref-link:hover .cite-title-dotted {
         text-decoration: underline solid #0284c7;
       }
@@ -1431,6 +1440,484 @@
         overflow: visible;
         flex: 1;
         min-height: 0;
+      }
+
+      /* ---- Q&A tab: admin-approved answers ---- */
+      .qa-note {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        font-size: 12.5px;
+        line-height: 1.5;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+      }
+      .qa-note i {
+        margin-top: 3px;
+      }
+      .qa-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 14px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .qa-card.editing {
+        border-color: #00684a;
+        box-shadow: 0 0 0 3px rgba(0, 104, 74, 0.08);
+      }
+      .qa-form-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        font-size: 13px;
+        color: #0f172a;
+        margin-bottom: 4px;
+      }
+      .qa-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        margin-top: 6px;
+      }
+      .qa-hint {
+        font-weight: 400;
+        color: #94a3b8;
+      }
+      .qa-req {
+        color: #dc2626;
+      }
+      .qa-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 7px 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+      }
+      .qa-input:focus {
+        outline: none;
+        border-color: #00684a;
+        box-shadow: 0 0 0 3px rgba(0, 104, 74, 0.1);
+      }
+      .qa-row {
+        display: flex;
+        gap: 12px;
+        align-items: stretch;
+      }
+      .qa-link {
+        background: none;
+        border: none;
+        color: #64748b;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+      .qa-list-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 0 10px;
+        font-size: 12.5px;
+        color: #475569;
+        font-weight: 600;
+      }
+      .qa-filter {
+        max-width: 280px;
+      }
+      .qa-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        /* Only the list scrolls (the modal body must not: the scope dropdown overflows it). */
+        max-height: calc(100vh - 380px);
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+      .qa-title-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .qa-view-all {
+        background: none;
+        border: none;
+        color: #00684a;
+        font-weight: 700;
+        font-size: 12.5px;
+        cursor: pointer;
+        padding: 2px 0;
+      }
+      .qa-view-all:hover {
+        text-decoration: underline;
+      }
+      .qa-sub {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 2px;
+      }
+      .qa-sub i {
+        color: #16a34a;
+      }
+      .qa-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+      .qa-back {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .qa-back:hover {
+        border-color: #00684a;
+        color: #00684a;
+      }
+      #qa-list-summary {
+        flex: 1;
+      }
+      .qa-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: flex;
+        gap: 10px;
+        background: #ffffff;
+      }
+      .qa-item:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+      }
+      .qa-item-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .qa-item-q {
+        font-weight: 700;
+        font-size: 13px;
+        color: #0f172a;
+      }
+      .qa-item-a {
+        font-size: 12.5px;
+        color: #475569;
+        margin-top: 3px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        white-space: pre-line;
+      }
+      .qa-item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+        font-size: 11px;
+        color: #94a3b8;
+        align-items: center;
+      }
+      .qa-chip {
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 999px;
+        padding: 1px 8px;
+        font-weight: 600;
+      }
+      .qa-item-actions {
+        display: flex;
+        gap: 4px;
+        align-items: flex-start;
+      }
+      .qa-empty {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 12.5px;
+        padding: 18px 8px;
+        border: 1px dashed #e2e8f0;
+        border-radius: 8px;
+      }
+
+      /* ---- Inbox of unanswered questions ---- */
+      .inbox-badge {
+        display: inline-block;
+        min-width: 18px;
+        padding: 0 6px;
+        margin-left: 4px;
+        border-radius: 999px;
+        background: #dc2626;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+      }
+      .inbox-toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      .inbox-seg {
+        display: inline-flex;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .inbox-seg button {
+        background: #ffffff;
+        border: none;
+        padding: 6px 10px;
+        font-size: 12.5px;
+        color: #475569;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .inbox-seg button + button {
+        border-left: 1px solid #e2e8f0;
+      }
+      .inbox-seg button.active {
+        background: #00684a;
+        color: #ffffff;
+      }
+      .inbox-select {
+        width: auto;
+        flex: 0 1 210px;
+      }
+      .inbox-search {
+        flex: 1 1 160px;
+        width: auto;
+      }
+      .inbox-list {
+        max-height: calc(100vh - 400px);
+        min-height: 120px;
+      }
+      .inbox-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: flex;
+        gap: 10px;
+        background: #ffffff;
+        align-items: flex-start;
+      }
+      .inbox-item.resolved {
+        background: #f8fafc;
+      }
+      .inbox-item.resolved .inbox-q {
+        color: #64748b;
+      }
+      .inbox-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 13px;
+      }
+      .inbox-icon.unanswered { background: #fef3c7; color: #b45309; }
+      .inbox-icon.handoff { background: #e0f2fe; color: #0369a1; }
+      .inbox-icon.callback { background: #dcfce7; color: #15803d; }
+      .inbox-icon.feedback { background: #fce7f3; color: #be185d; }
+      .inbox-q {
+        font-weight: 700;
+        font-size: 13px;
+        color: #0f172a;
+        word-break: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .inbox-phone {
+        color: #15803d;
+        font-weight: 700;
+      }
+      .inbox-note {
+        font-size: 12px;
+        color: #475569;
+        margin-top: 4px;
+        font-style: italic;
+      }
+      .inbox-actions {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .inbox-add-qa {
+        border: 1px solid #00684a;
+        color: #00684a;
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .inbox-add-qa:hover {
+        background: #00684a;
+        color: #ffffff;
+      }
+      .inbox-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+      }
+      .inbox-tests {
+        font-size: 12px;
+        color: #64748b;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .qa-from-ticket {
+        font-size: 12px;
+        color: #0369a1;
+        background: #e0f2fe;
+        border-radius: 6px;
+        padding: 4px 8px;
+        margin-bottom: 2px;
+      }
+
+      /* ---- Document reading mode: the document gets the space, the chrome collapses to one toolbar ---- */
+      .staff-modal-box.viewing-doc {
+        width: min(1200px, 94vw) !important;
+        height: calc(100vh - 60px);
+        max-height: calc(100vh - 60px);
+      }
+      .staff-modal-box.viewing-doc.viewer-max {
+        width: 98vw !important;
+        max-width: 98vw;
+        height: 96vh;
+        max-height: 96vh;
+      }
+      .staff-modal-box.viewing-doc .staff-modal-header,
+      .staff-modal-box.viewing-doc #staff-ingest-scope-bar,
+      .staff-modal-box.viewing-doc #staff-ingest-tabs {
+        display: none !important;
+      }
+      .staff-modal-box.viewing-doc .staff-modal-body {
+        padding: 10px 14px 14px 14px;
+        display: flex;
+        flex-direction: column;
+      }
+      .staff-modal-box.viewing-doc #s-tab-upload,
+      .staff-modal-box.viewing-doc #s-tab-qa,
+      .staff-modal-box.viewing-doc #s-tab-inbox {
+        display: none !important;
+      }
+      .staff-modal-box.viewing-doc #s-tab-list {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+      .staff-modal-box.viewing-doc #staff-doc-viewer-view {
+        flex: 1;
+        min-height: 0;
+        gap: 8px !important;
+      }
+      .staff-modal-box.viewing-doc #staff-viewer-body {
+        flex: 1;
+        height: auto !important;
+        min-height: 0;
+      }
+      .staff-viewer-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e2e8f0;
+        min-width: 0;
+      }
+      .staff-viewer-heading {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      #staff-viewer-title {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+        flex: 0 1 auto;
+      }
+      #staff-viewer-meta {
+        font-size: 11.5px;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 0 1 auto;
+        min-width: 60px;
+      }
+      .staff-viewer-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .staff-viewer-icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #475569;
+        font-size: 13.5px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+      .staff-viewer-icon-btn:hover {
+        background: #f1f5f9;
+        color: #00684a;
+        border-color: #cbd5e1;
+      }
+      .staff-viewer-icon-btn.primary {
+        color: #00684a;
+        border-color: #00684a;
+      }
+      .staff-viewer-icon-btn.primary:hover {
+        background: #00684a;
+        color: #ffffff;
+      }
+      .staff-viewer-actions .sep {
+        width: 1px;
+        height: 20px;
+        background: #e2e8f0;
+        margin: 0 4px;
       }
       .dropzone-area {
         border: 2px dashed #93c5fd;
@@ -3257,6 +3744,7 @@
           </div>
 
           <div
+            id="staff-ingest-tabs"
             style="
               display: flex;
               border-bottom: 2px solid #e2e8f0;
@@ -3287,6 +3775,28 @@
                 id="s-doc-count"
                 >0</span
               >)
+            </button>
+            <button
+              id="s-tab-qa-btn"
+              class="btn-staff-secondary"
+              style="border-radius: 0; border: none; color: #64748b"
+              onclick="switchStaffTab('qa')"
+              title="Cặp câu hỏi – câu trả lời do admin duyệt; bot trả nguyên văn khi người dùng hỏi đúng ý"
+            >
+              <i class="fa-solid fa-comments"></i> Hỏi – Đáp (<span
+                id="s-qa-count"
+                >0</span
+              >)
+            </button>
+            <button
+              id="s-tab-inbox-btn"
+              class="btn-staff-secondary"
+              style="border-radius: 0; border: none; color: #64748b"
+              onclick="switchStaffTab('inbox')"
+              title="Câu hỏi bot chưa trả lời được, yêu cầu gặp người, số điện thoại khách để lại, góp ý"
+            >
+              <i class="fa-solid fa-inbox"></i> Chưa trả lời
+              <span id="s-inbox-count" class="inbox-badge" style="display: none">0</span>
             </button>
           </div>
 
@@ -3486,6 +3996,101 @@
           </div>
 
           <!-- Tab 2: Document List & Viewer -->
+          <!-- Tab: admin-curated Q&A pairs (answered verbatim when a user asks the same thing) -->
+          <div id="s-tab-qa" style="display: none">
+            <!-- View 1: add / edit form (fits the modal without scrolling) -->
+            <div id="qa-view-form">
+              <form id="qa-form" class="qa-card" onsubmit="saveStaffQa(event)">
+                <div class="qa-form-title">
+                  <span id="qa-form-mode"><i class="fa-solid fa-plus"></i> Thêm Hỏi – Đáp</span>
+                  <div class="qa-title-actions">
+                    <button type="button" id="qa-cancel-edit" class="qa-link" onclick="resetStaffQaForm()" style="display: none">
+                      Hủy sửa
+                    </button>
+                    <button type="button" class="qa-view-all" onclick="showStaffQaView('list')">
+                      Xem tất cả (<span id="qa-count-inline">0</span>) <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="qa-sub">
+                  <i class="fa-solid fa-circle-info"></i> Hỏi đúng ý câu này, bot trả <b>nguyên văn</b> câu trả lời. Kho:
+                  <b id="qa-scope-name">--</b>
+                </div>
+                <div id="qa-from-ticket" class="qa-from-ticket" style="display: none"></div>
+                <input type="hidden" id="qa-edit-id" />
+                <div class="qa-row">
+                  <div style="flex: 2; min-width: 0">
+                    <label class="qa-label" for="qa-question">Câu hỏi <span class="qa-req">*</span></label>
+                    <input id="qa-question" class="qa-input" maxlength="500" required
+                      placeholder="VD: Hướng dẫn cài đặt Plugin ký số" />
+                  </div>
+                  <div style="flex: 1; min-width: 0">
+                    <label class="qa-label" for="qa-category">Nhóm</label>
+                    <input id="qa-category" class="qa-input" maxlength="80" placeholder="VD: Hóa đơn điện tử" />
+                  </div>
+                </div>
+                <label class="qa-label" for="qa-variations">Các cách hỏi khác
+                  <span class="qa-hint">— mỗi dòng một cách, nên có câu không dấu / viết tắt</span></label>
+                <textarea id="qa-variations" class="qa-input" rows="2"
+                  placeholder="cai plugin ky so&#10;Plugin ký số cài thế nào"></textarea>
+                <label class="qa-label" for="qa-answer">Câu trả lời <span class="qa-req">*</span>
+                  <span class="qa-hint">— hỗ trợ **in đậm**, danh sách 1. 2. 3., ảnh ![mô tả](link)</span></label>
+                <textarea id="qa-answer" class="qa-input" rows="4" required
+                  placeholder="Bước 1: …&#10;Bước 2: …&#10;Cần hỗ trợ: gọi hotline 1900-xxxx"></textarea>
+                <div class="qa-actions">
+                  <button type="submit" id="qa-save-btn" class="btn-staff-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> <span>Lưu Hỏi – Đáp</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- View 2: every pair of the library -->
+            <div id="qa-view-list" style="display: none">
+              <div class="qa-list-head">
+                <button type="button" class="qa-back" onclick="showStaffQaView('form')">
+                  <i class="fa-solid fa-arrow-left"></i> Thêm mới
+                </button>
+                <span id="qa-list-summary">0 cặp Hỏi – Đáp</span>
+                <input id="qa-filter" class="qa-input qa-filter" placeholder="Lọc theo câu hỏi, câu trả lời, nhóm…"
+                  oninput="renderStaffQaList()" />
+              </div>
+              <div id="qa-list" class="qa-list slim-scrollbar"></div>
+            </div>
+          </div>
+
+          <!-- Tab: inbox of what the bot could not answer (tickets), so admins add the missing answer -->
+          <div id="s-tab-inbox" style="display: none">
+            <div class="inbox-toolbar">
+              <div class="inbox-seg" role="tablist">
+                <button type="button" data-status="open" class="active" onclick="setStaffInboxStatus('open')">
+                  Chưa xử lý (<span id="inbox-open-count">0</span>)
+                </button>
+                <button type="button" data-status="resolved" onclick="setStaffInboxStatus('resolved')">
+                  Đã xử lý (<span id="inbox-resolved-count">0</span>)
+                </button>
+                <button type="button" data-status="all" onclick="setStaffInboxStatus('all')">Tất cả</button>
+              </div>
+              <select id="inbox-reason" class="qa-input inbox-select" onchange="loadStaffInbox(true)">
+                <option value="">Mọi loại</option>
+                <option value="out_of_domain_or_insufficient_evidence">Bot chưa trả lời được</option>
+                <option value="handoff_request">Khách cần gặp người hỗ trợ</option>
+                <option value="callback_request">Khách để lại số điện thoại</option>
+                <option value="user_feedback">Góp ý / báo lỗi</option>
+              </select>
+              <input id="inbox-q" class="qa-input inbox-search" placeholder="Tìm trong câu hỏi…"
+                oninput="debounceStaffInbox()" />
+            </div>
+            <div id="inbox-list" class="qa-list inbox-list slim-scrollbar"></div>
+            <div class="inbox-foot">
+              <label class="inbox-tests"><input type="checkbox" id="inbox-include-tests" onchange="loadStaffInbox(true)" />
+                Hiện cả phiên kiểm thử tự động</label>
+              <button type="button" id="inbox-more" class="qa-back" onclick="loadStaffInbox(false)" style="display: none">
+                Tải thêm
+              </button>
+            </div>
+          </div>
+
           <div id="s-tab-list" style="display: none">
             <!-- View A: Document Table -->
             <div id="staff-docs-table-view" style="margin-bottom: 10px">
@@ -3693,114 +4298,76 @@
               </div>
             </div>
 
-            <!-- View B: Document Viewer -->
+            <!-- View B: Document Viewer (reading mode: one compact toolbar, the document takes the rest) -->
             <div
               id="staff-doc-viewer-view"
               style="display: none; flex-direction: column; gap: 10px"
             >
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: space-between;
-                  padding-bottom: 8px;
-                  border-bottom: 1px solid #e2e8f0;
-                "
-              >
-                <div style="display: flex; align-items: center; gap: 10px">
-                  <button
-                    type="button"
-                    class="btn-staff-secondary"
-                    onclick="closeStaffDocViewer()"
-                    style="
-                      padding: 6px 12px;
-                      font-size: 12px;
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 6px;
-                      font-weight: 600;
-                    "
-                  >
-                    <i class="fa-solid fa-arrow-left"></i> Danh sách
-                  </button>
-                  <div>
-                    <div
-                      style="
-                        font-weight: 700;
-                        color: #0f172a;
-                        font-size: 13.5px;
-                        max-width: 460px;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        white-space: nowrap;
-                      "
-                      id="staff-viewer-title"
-                    >
-                      Tên tài liệu
-                    </div>
-                    <div
-                      style="font-size: 11px; color: #64748b"
-                      id="staff-viewer-meta"
-                    >
-                      --
-                    </div>
-                  </div>
+              <div class="staff-viewer-toolbar">
+                <button
+                  type="button"
+                  class="staff-viewer-icon-btn"
+                  onclick="closeStaffDocViewer()"
+                  title="Quay lại danh sách tài liệu"
+                  aria-label="Quay lại danh sách tài liệu"
+                >
+                  <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="staff-viewer-heading">
+                  <div id="staff-viewer-title" title="">Tên tài liệu</div>
+                  <div id="staff-viewer-meta">--</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px">
+                <div class="staff-viewer-actions">
                   <button
                     type="button"
                     id="staff-viewer-copy-btn"
-                    class="btn-staff-secondary"
+                    class="staff-viewer-icon-btn"
                     onclick="copyStaffDocContent(this)"
-                    style="
-                      padding: 6px 12px;
-                      font-size: 12px;
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 6px;
-                      cursor: pointer;
-                    "
-                    title="Sao chép toàn bộ nội dung tài liệu"
+                    title="Sao chép toàn bộ nội dung"
+                    aria-label="Sao chép toàn bộ nội dung"
                   >
-                    <i class="fa-regular fa-copy"></i> Sao chép
+                    <i class="fa-regular fa-copy"></i>
                   </button>
                   <a
                     id="staff-viewer-download-btn"
                     href="#"
                     target="_blank"
                     download
-                    class="btn-staff-secondary"
-                    style="
-                      padding: 6px 12px;
-                      font-size: 12px;
-                      text-decoration: none;
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 6px;
-                      color: #00684a;
-                      border-color: #00684a;
-                      font-weight: 600;
-                    "
+                    class="staff-viewer-icon-btn primary"
+                    title="Tải file gốc về máy"
+                    aria-label="Tải file gốc về máy"
                   >
-                    <i class="fa-solid fa-download"></i> Tải về máy
+                    <i class="fa-solid fa-download"></i>
                   </a>
                   <button
                     type="button"
                     id="staff-viewer-newtab-btn"
-                    class="btn-staff-secondary"
+                    class="staff-viewer-icon-btn"
                     onclick="openStaffDocInNewTab()"
-                    style="
-                      padding: 6px 12px;
-                      font-size: 12px;
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 6px;
-                      cursor: pointer;
-                    "
-                    title="Mở tài liệu trong tab trình duyệt mới"
+                    title="Mở trong tab mới"
+                    aria-label="Mở trong tab mới"
                   >
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Tab
-                    mới
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                  </button>
+                  <span class="sep"></span>
+                  <button
+                    type="button"
+                    id="staff-viewer-max-btn"
+                    class="staff-viewer-icon-btn"
+                    onclick="toggleStaffViewerMax()"
+                    title="Phóng to toàn màn hình"
+                    aria-label="Phóng to toàn màn hình"
+                  >
+                    <i class="fa-solid fa-expand"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="staff-viewer-icon-btn"
+                    onclick="closeStaffIngestModal()"
+                    title="Đóng"
+                    aria-label="Đóng"
+                  >
+                    <i class="fa-solid fa-xmark"></i>
                   </button>
                 </div>
               </div>
@@ -3845,6 +4412,18 @@
                   id="staff-viewer-iframe"
                   style="width: 100%; height: 100%; border: none; display: none"
                 ></iframe>
+                <div
+                  id="staff-viewer-docx"
+                  class="slim-scrollbar"
+                  style="
+                    display: none;
+                    width: 100%;
+                    height: 100%;
+                    overflow: auto;
+                    background: #eef1f5;
+                    box-sizing: border-box;
+                  "
+                ></div>
                 <div
                   id="staff-viewer-text"
                   class="slim-scrollbar"
@@ -5559,6 +6138,7 @@
             const sessions =
               resData.items || (Array.isArray(resData) ? resData : []);
             allStaffRecentSessionsCache = sessions;
+            sessions.forEach((x) => { if (x.public_id) staffPublicIds.set(x.session_id, x.public_id); });
             if (!list) return;
             list.innerHTML = "";
             if (!sessions || sessions.length === 0) {
@@ -5570,6 +6150,7 @@
               const isAct = s.session_id === staffConversationId;
               item.className = `chatgpt-recent-item ${isAct ? "active" : ""}`;
               item.setAttribute("data-session-id", s.session_id);
+              if (s.public_id) item.setAttribute("data-public-id", s.public_id);
 
               const titleText = escapeHtml(s.title || "Cuộc trò chuyện");
 
@@ -5700,12 +6281,10 @@
       function startNewStaffChat() {
         closeAllSessionActionMenus();
         staffConversationId =
-          "sess_" +
-          Date.now().toString(36) +
-          "_" +
-          Math.random().toString(36).substring(2, 6);
+          staffNewSessionId();
         staffChatHistory = [];
         localStorage.removeItem("aip_active_rag_session");
+        staffSetView([]);
         clearStaffChat(false);
 
         // Cập nhật danh sách "Gần đây": Hiển thị ngay mục "Cuộc trò chuyện mới"
@@ -5813,6 +6392,7 @@
         if (convId) {
           staffConversationId = convId;
           localStorage.setItem("aip_active_rag_session", convId);
+          staffSetChatView(convId);
         }
         staffChatHistory = [];
 
@@ -7316,26 +7896,140 @@
         }
       }
 
+      // ---------------------------------------------------------------- page URL (project_routes.js)
+      // /projects/{project}/services/rag-chatbot                 new conversation
+      //   .../c/{conversation id}                                a conversation (opaque UUID)
+      //   .../knowledge[/documents|/qa|/inbox]                   knowledge panel (upload tab by default)
+      const STAFF_TAB_SEGMENTS = { upload: "", list: "documents", qa: "qa", inbox: "inbox" };
+      let staffApplyingUrl = false; // the page is following the URL: it must not push it again
+
+      function staffSetView(segments, options) {
+        if (staffApplyingUrl || !window.AipRoutes) return;
+        window.AipRoutes.setView(segments, options);
+      }
+
+      // Conversation ids are random UUIDs (staffNewSessionId) and URLs show them as /c/{id}. Older
+      // conversations have readable ids ("sess_<time>_<rand>"): their URL shows the hash the server
+      // computes for them (public_id), never the id itself.
+      const STAFF_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const staffPublicIds = new Map(); // session id -> public id
+
+      function staffNewSessionId() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+        // Pages served over plain http (LAN) have no randomUUID; getRandomValues is available everywhere.
+        const b = window.crypto.getRandomValues(new Uint8Array(16));
+        b[6] = (b[6] & 0x0f) | 0x40;
+        b[8] = (b[8] & 0x3f) | 0x80;
+        const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+        return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+      }
+
+      function staffPublicId(sessionId) {
+        if (!sessionId) return null;
+        if (STAFF_UUID_RE.test(sessionId)) return sessionId.toLowerCase();
+        return staffPublicIds.get(sessionId) ||
+          document.querySelector(`.chatgpt-recent-item[data-session-id="${CSS.escape(sessionId)}"]`)?.getAttribute("data-public-id") ||
+          null;
+      }
+
+      function staffSetChatView(sessionId, options) {
+        const publicId = staffPublicId(sessionId);
+        staffSetView(publicId ? ["c", publicId] : [], options);
+      }
+
+      function staffChatView() {
+        const sid = localStorage.getItem("aip_active_rag_session");
+        const saved = sid && document.querySelector(`.chatgpt-recent-item[data-session-id="${CSS.escape(sid)}"]:not([data-is-draft="true"])`);
+        const publicId = saved ? staffPublicId(sid) : null;
+        return publicId ? ["c", publicId] : [];
+      }
+
+      async function openStaffConversationFromUrl(publicId) {
+        const key = CSS.escape(publicId);
+        const itemEl = document.querySelector(`.chatgpt-recent-item[data-public-id="${key}"]`) ||
+          document.querySelector(`.chatgpt-recent-item[data-session-id="${key}"]`);
+        if (itemEl) {
+          await switchStaffConversation(itemEl, itemEl.getAttribute("data-session-id"));
+          return true;
+        }
+        try {
+          // Not among the recent ones: the server resolves the public id (or hash) to the conversation.
+          const tenantId = getStaffActiveTenantId();
+          const res = await fetch(`${API_BASE}/v1/rag/sessions/${encodeURIComponent(publicId)}`, {
+            headers: { Authorization: DEFAULT_TOKEN, "X-Tenant-Id": tenantId, "X-Tenant-ID": tenantId, "X-User-Id": getStaffCurrentUserId() },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.public_id) staffPublicIds.set(data.session_id, data.public_id);
+            await switchStaffConversation(null, data.session_id);
+            return true;
+          }
+        } catch (e) { /* treated as not found */ }
+        showStaffToast("Không tìm thấy cuộc trò chuyện này trong dự án hiện tại.", "error");
+        return false;
+      }
+
+      /** Shows what the URL names: a conversation, a new chat or a tab of the knowledge panel. */
+      async function applyStaffUrlView(initial) {
+        const view = window.AipRoutes ? window.AipRoutes.currentView() : [];
+        staffApplyingUrl = true;
+        try {
+          if (view[0] === "knowledge") {
+            const tab = Object.keys(STAFF_TAB_SEGMENTS).find((k) => STAFF_TAB_SEGMENTS[k] === (view[1] || "")) || "upload";
+            if (initial) startNewStaffChat();
+            if (!document.getElementById("staff-ingest-modal")?.classList.contains("active")) {
+              await openStaffIngestModal();
+            }
+            switchStaffTab(tab);
+            return;
+          }
+          if (document.getElementById("staff-ingest-modal")?.classList.contains("active")) {
+            closeStaffIngestModal();
+          }
+          if ((view[0] === "c" || view[0] === "chat") && view[1]) {
+            if (initial || view[1] !== staffPublicId(staffConversationId)) {
+              if (!(await openStaffConversationFromUrl(view[1]))) {
+                staffApplyingUrl = false;
+                startNewStaffChat();
+              }
+            }
+            return;
+          }
+          if (initial) {
+            // No conversation in the URL: reopen the last one of this project, else a new chat.
+            const savedSessionId = localStorage.getItem("aip_active_rag_session");
+            const itemEl = savedSessionId &&
+              document.querySelector(`.chatgpt-recent-item[data-session-id="${savedSessionId}"]`);
+            staffApplyingUrl = false;
+            if (itemEl) {
+              await switchStaffConversation(itemEl, savedSessionId);
+            } else {
+              localStorage.removeItem("aip_active_rag_session");
+              startNewStaffChat();
+            }
+            return;
+          }
+          if (staffChatHistory.length || document.querySelector('.chatgpt-recent-item.active:not([data-is-draft="true"])')) {
+            startNewStaffChat();
+          }
+        } finally {
+          staffApplyingUrl = false;
+        }
+      }
+
+      window.addEventListener("popstate", () => {
+        if (window.AipRoutes && window.AipRoutes.isSamePage(new URL(window.location.href))) {
+          applyStaffUrlView(false);
+        }
+      });
+
       document.addEventListener("DOMContentLoaded", async () => {
         loadStaffDocCount();
         setupStaffDropzone();
         await loadStaffRecentSessions();
 
-        // Khôi phục phiên làm việc đang chat gần nhất nếu có
-        const savedSessionId = localStorage.getItem("aip_active_rag_session");
-        if (savedSessionId) {
-          const itemEl = document.querySelector(
-            `.chatgpt-recent-item[data-session-id="${savedSessionId}"]`,
-          );
-          if (itemEl) {
-            switchStaffConversation(itemEl, savedSessionId);
-          } else {
-            localStorage.removeItem("aip_active_rag_session");
-            startNewStaffChat();
-          }
-        } else {
-          startNewStaffChat();
-        }
+        // The URL names the conversation or panel to show; without one the last conversation is reopened.
+        await applyStaffUrlView(true);
         if (window.innerWidth >= 1200 && !isHistorySidebarOpen) {
           toggleStaffHistorySidebar();
         }
@@ -7516,6 +8210,10 @@
         populateStaffIngestScopeOptions();
         staffDocPage = 1;
         loadStaffDocList();
+        resetStaffQaForm();
+        loadStaffQaList(); // the Q&A pairs belong to the selected library too
+        if (document.getElementById("s-tab-inbox")?.style.display === "block") loadStaffInbox(true);
+        else refreshStaffInboxCount();
       }
 
       function updateStaffIngestScopeUI() {
@@ -7576,6 +8274,8 @@
         document.getElementById("staff-ingest-modal").classList.add("active");
         switchStaffTab("upload");
         loadStaffDocList();
+        loadStaffQaList();
+        refreshStaffInboxCount();
       }
 
       function closeStaffIngestModal() {
@@ -7583,30 +8283,386 @@
         document
           .getElementById("staff-ingest-modal")
           .classList.remove("active");
+        staffSetView(staffChatView());
       }
 
       function switchStaffTab(tab) {
         closeStaffDocViewer();
-        const u = document.getElementById("s-tab-upload");
-        const l = document.getElementById("s-tab-list");
-        const bu = document.getElementById("s-tab-upload-btn");
-        const bl = document.getElementById("s-tab-list-btn");
-        if (tab === "upload") {
-          u.style.display = "block";
-          l.style.display = "none";
-          bu.style.borderBottom = "2px solid #00684a";
-          bu.style.color = "#00684a";
-          bl.style.borderBottom = "none";
-          bl.style.color = "#64748b";
-        } else {
-          u.style.display = "none";
-          l.style.display = "block";
-          bl.style.borderBottom = "2px solid #00684a";
-          bl.style.color = "#00684a";
-          bu.style.borderBottom = "none";
-          bu.style.color = "#64748b";
-          loadStaffDocList();
+        if (document.getElementById("staff-ingest-modal")?.classList.contains("active")) {
+          staffSetView(["knowledge", STAFF_TAB_SEGMENTS[tab]]);
         }
+        const tabs = { upload: "s-tab-upload", list: "s-tab-list", qa: "s-tab-qa", inbox: "s-tab-inbox" };
+        Object.entries(tabs).forEach(([name, panelId]) => {
+          const panel = document.getElementById(panelId);
+          const btn = document.getElementById(`${panelId}-btn`);
+          const on = name === tab;
+          if (panel) panel.style.display = on ? "block" : "none";
+          if (btn) {
+            btn.style.borderBottom = on ? "2px solid #00684a" : "none";
+            btn.style.color = on ? "#00684a" : "#64748b";
+            btn.style.fontWeight = on ? "700" : "";
+          }
+        });
+        if (tab === "list") loadStaffDocList();
+        if (tab === "qa") {
+          showStaffQaView("form");
+          loadStaffQaList();
+        }
+        if (tab === "inbox") loadStaffInbox(true);
+      }
+
+      // ---------------------------------------------------------------- Inbox: what the bot could not answer
+      const STAFF_TICKET_KINDS = {
+        out_of_domain_or_insufficient_evidence: { label: "Bot chưa trả lời được", icon: "fa-circle-question", cls: "unanswered" },
+        handoff_request: { label: "Cần gặp người hỗ trợ", icon: "fa-headset", cls: "handoff" },
+        callback_request: { label: "Để lại số điện thoại", icon: "fa-phone", cls: "callback" },
+        user_feedback: { label: "Góp ý / báo lỗi", icon: "fa-comment-dots", cls: "feedback" },
+      };
+      let staffInboxStatus = "open";
+      let staffInboxItems = [];
+      let staffInboxPage = 1;
+      let staffInboxTimer = null;
+      let staffQaPendingTicket = null; // ticket answered by the Q&A pair being written
+
+      function setStaffInboxStatus(status) {
+        staffInboxStatus = status;
+        document.querySelectorAll(".inbox-seg button").forEach((b) => b.classList.toggle("active", b.dataset.status === status));
+        loadStaffInbox(true);
+      }
+
+      function debounceStaffInbox() {
+        clearTimeout(staffInboxTimer);
+        staffInboxTimer = setTimeout(() => loadStaffInbox(true), 300);
+      }
+
+      function setStaffInboxCounts(counts) {
+        const open = (counts && counts.open) || 0;
+        document.getElementById("inbox-open-count").innerText = open;
+        document.getElementById("inbox-resolved-count").innerText = (counts && counts.resolved) || 0;
+        const badge = document.getElementById("s-inbox-count");
+        badge.innerText = open > 99 ? "99+" : open;
+        badge.style.display = open ? "inline-block" : "none";
+      }
+
+      async function loadStaffInbox(reset = true) {
+        if (reset) {
+          staffInboxPage = 1;
+          staffInboxItems = [];
+        }
+        const params = new URLSearchParams({ status: staffInboxStatus, page: staffInboxPage, page_size: 20 });
+        const reason = document.getElementById("inbox-reason")?.value;
+        const q = document.getElementById("inbox-q")?.value.trim();
+        if (reason) params.set("reason", reason);
+        if (q) params.set("q", q);
+        if (document.getElementById("inbox-include-tests")?.checked) params.set("include_tests", "true");
+        let data = { items: [], total: 0, counts: {} };
+        try {
+          const res = await fetch(`${API_BASE}/v1/rag/tickets?${params}`, { headers: staffScopeHeaders() });
+          if (res.ok) data = await res.json();
+        } catch (err) {
+          console.warn("Inbox unavailable:", err);
+        }
+        staffInboxItems = staffInboxItems.concat(data.items || []);
+        setStaffInboxCounts(data.counts);
+        const more = document.getElementById("inbox-more");
+        more.style.display = staffInboxItems.length < (data.total || 0) ? "inline-block" : "none";
+        staffInboxPage += 1;
+        renderStaffInbox();
+      }
+
+      async function refreshStaffInboxCount() {
+        // Badge on the tab even before it is opened (open tickets of the selected library).
+        try {
+          const res = await fetch(`${API_BASE}/v1/rag/tickets?status=open&page_size=1`, { headers: staffScopeHeaders() });
+          if (res.ok) setStaffInboxCounts((await res.json()).counts);
+        } catch (err) {}
+      }
+
+      function renderStaffInbox() {
+        const box = document.getElementById("inbox-list");
+        if (!box) return;
+        if (!staffInboxItems.length) {
+          box.innerHTML = `<div class="qa-empty">${
+            staffInboxStatus === "open" ? "Không còn câu nào chờ xử lý 🎉" : "Không có mục nào."
+          }</div>`;
+          return;
+        }
+        box.innerHTML = staffInboxItems
+          .map((t) => {
+            const kind = STAFF_TICKET_KINDS[t.reason] || STAFF_TICKET_KINDS.out_of_domain_or_insufficient_evidence;
+            const when = t.created_at ? new Date(t.created_at * 1000).toLocaleString("vi-VN") : "";
+            const resolved = t.status === "resolved";
+            const phone = t.contact_phone ? `<span class="inbox-phone"><i class="fa-solid fa-phone"></i> ${escapeHtml(t.contact_phone)}</span>` : "";
+            const id = escapeHtml(t.ticket_id);
+            return `<div class="inbox-item ${resolved ? "resolved" : ""}">
+              <span class="inbox-icon ${kind.cls}" title="${escapeHtml(kind.label)}"><i class="fa-solid ${kind.icon}"></i></span>
+              <div class="qa-item-main">
+                <div class="inbox-q" title="${escapeHtml(t.query || t.previous_question || "")}">${escapeHtml(t.query || t.previous_question || "(không có nội dung)")}</div>
+                <div class="qa-item-meta">
+                  <span class="qa-chip">${escapeHtml(kind.label)}</span>
+                  ${phone}
+                  ${when ? `<span>· ${escapeHtml(when)}</span>` : ""}
+                  <span title="Mã ticket">· ${id}</span>
+                  ${resolved ? `<span>· <i class="fa-solid fa-check" style="color:#16a34a"></i> Đã xử lý</span>` : ""}
+                </div>
+                ${t.note ? `<div class="inbox-note">${escapeHtml(t.note)}</div>` : ""}
+              </div>
+              <div class="inbox-actions">
+                ${resolved ? "" : `<button type="button" class="inbox-add-qa" onclick="answerStaffTicket('${id}')"
+                    title="Viết câu trả lời chuẩn cho câu này; bot sẽ trả lời được từ lần sau">
+                    <i class="fa-solid fa-plus"></i> Thêm Hỏi – Đáp</button>`}
+                <button type="button" class="staff-viewer-icon-btn" onclick="setStaffTicketStatus('${id}', '${resolved ? "open" : "resolved"}')"
+                  title="${resolved ? "Mở lại" : "Đánh dấu đã xử lý"}" aria-label="${resolved ? "Mở lại" : "Đánh dấu đã xử lý"}">
+                  <i class="fa-solid ${resolved ? "fa-rotate-left" : "fa-check"}"></i></button>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+
+      async function setStaffTicketStatus(ticketId, status, extra = {}) {
+        try {
+          const res = await fetch(`${API_BASE}/v1/rag/tickets/${encodeURIComponent(ticketId)}`, {
+            method: "PATCH",
+            headers: staffScopeHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ status, ...extra }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch (err) {
+          showStaffToast("Cập nhật thất bại: " + err.message, "error");
+          return false;
+        }
+        if (document.getElementById("s-tab-inbox").style.display !== "none") {
+          showStaffToast(status === "resolved" ? "Đã đánh dấu đã xử lý." : "Đã mở lại.", "success");
+          await loadStaffInbox(true);
+        } else {
+          refreshStaffInboxCount();
+        }
+        return true;
+      }
+
+      function answerStaffTicket(ticketId) {
+        // Write the missing answer as a Q&A pair; saving it closes the ticket.
+        const t = staffInboxItems.find((x) => x.ticket_id === ticketId);
+        if (!t) return;
+        switchStaffTab("qa");
+        resetStaffQaForm();
+        staffQaPendingTicket = t.ticket_id;
+        document.getElementById("qa-question").value = t.query || t.previous_question || "";
+        const banner = document.getElementById("qa-from-ticket");
+        banner.innerHTML = `<i class="fa-solid fa-inbox"></i> Trả lời cho câu khách hỏi (${escapeHtml(t.ticket_id)}). Lưu xong, câu này tự chuyển sang "Đã xử lý".`;
+        banner.style.display = "block";
+        document.getElementById("qa-answer").focus();
+      }
+
+      // ---------------------------------------------------------------- Q&A pairs (admin-approved answers)
+      let staffQaItems = [];
+
+      function staffScopeHeaders(extra = {}) {
+        const headers = { Authorization: DEFAULT_TOKEN, ...extra };
+        if (currentStaffIngestScope !== "global") {
+          headers["X-Tenant-Id"] = currentStaffIngestScope;
+          headers["X-Tenant-ID"] = currentStaffIngestScope;
+        }
+        return headers;
+      }
+
+      async function loadStaffQaList() {
+        const scopeEl = document.getElementById("qa-scope-name");
+        if (scopeEl) scopeEl.innerText = currentStaffIngestScopeName || currentStaffIngestScope;
+        try {
+          const res = await fetch(`${API_BASE}/v1/knowledge/qa`, { headers: staffScopeHeaders() });
+          staffQaItems = res.ok ? (await res.json()).items || [] : [];
+        } catch (err) {
+          console.warn("Q&A list unavailable:", err);
+          staffQaItems = [];
+        }
+        document.getElementById("s-qa-count").innerText = staffQaItems.length;
+        const inline = document.getElementById("qa-count-inline");
+        if (inline) inline.innerText = staffQaItems.length;
+        try {
+          renderStaffQaList();
+        } catch (err) {
+          console.error("Q&A list render failed:", err);
+          const box = document.getElementById("qa-list");
+          if (box) box.innerHTML = '<div class="qa-empty">Không hiển thị được danh sách. Hãy tải lại trang (Ctrl+F5).</div>';
+        }
+      }
+
+      function renderStaffQaList() {
+        const box = document.getElementById("qa-list");
+        if (!box) return;
+        const q = (document.getElementById("qa-filter")?.value || "").trim().toLowerCase();
+        const shown = staffQaItems.filter(
+          (it) =>
+            !q ||
+            [it.question, it.answer, it.category, ...(it.question_variations || [])]
+              .join(" ")
+              .toLowerCase()
+              .includes(q),
+        );
+        document.getElementById("qa-list-summary").innerText = q
+          ? `${shown.length}/${staffQaItems.length} cặp Hỏi – Đáp`
+          : `${staffQaItems.length} cặp Hỏi – Đáp`;
+        if (!shown.length) {
+          box.innerHTML = `<div class="qa-empty">${
+            staffQaItems.length ? "Không có cặp nào khớp bộ lọc." : "Chưa có cặp Hỏi – Đáp nào. Thêm câu đầu tiên ở form phía trên."
+          }</div>`;
+          return;
+        }
+        box.innerHTML = shown
+          .map((it) => {
+            const variations = (it.question_variations || []).length;
+            const when = it.updated_at ? new Date(it.updated_at * 1000).toLocaleString("vi-VN") : "";
+            return `<div class="qa-item">
+              <div class="qa-item-main">
+                <div class="qa-item-q">${escapeHtml(it.question)}</div>
+                <div class="qa-item-a">${escapeHtml(staffQaPreview(it.answer))}</div>
+                <div class="qa-item-meta">
+                  <span class="qa-chip">${escapeHtml(it.category || "general")}</span>
+                  ${variations ? `<span>+${variations} cách hỏi khác</span>` : ""}
+                  ${when ? `<span>· Cập nhật ${escapeHtml(when)}</span>` : ""}
+                </div>
+              </div>
+              <div class="qa-item-actions">
+                <button type="button" class="staff-viewer-icon-btn" title="Sửa" aria-label="Sửa"
+                  onclick="editStaffQa('${escapeHtml(it.qa_id)}')"><i class="fa-solid fa-pen"></i></button>
+                <button type="button" class="staff-viewer-icon-btn" title="Xóa" aria-label="Xóa"
+                  onclick="deleteStaffQa('${escapeHtml(it.qa_id)}')"><i class="fa-regular fa-trash-can"></i></button>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+
+      function staffQaPreview(md) {
+        // Plain-text preview of a markdown answer: no **, #, image tags or link syntax in the list.
+        return String(md || "")
+          .replace(/!\[([^\]]*)\]\([^)]*\)/g, "[ảnh: $1]")
+          .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+          .replace(/(\*\*|__|`|^#+\s*)/gm, "")
+          .replace(/\n{2,}/g, "\n")
+          .trim();
+      }
+
+      function resetStaffQaForm() {
+        document.getElementById("qa-form").reset();
+        document.getElementById("qa-edit-id").value = "";
+        document.getElementById("qa-form").classList.remove("editing");
+        document.getElementById("qa-form-mode").innerHTML = '<i class="fa-solid fa-plus"></i> Thêm Hỏi – Đáp';
+        document.getElementById("qa-cancel-edit").style.display = "none";
+        document.querySelector("#qa-save-btn span").innerText = "Lưu Hỏi – Đáp";
+        staffQaPendingTicket = null;
+        const banner = document.getElementById("qa-from-ticket");
+        if (banner) banner.style.display = "none";
+      }
+
+      function editStaffQa(qaId) {
+        const it = staffQaItems.find((x) => x.qa_id === qaId);
+        if (!it) return;
+        document.getElementById("qa-edit-id").value = it.qa_id;
+        document.getElementById("qa-question").value = it.question;
+        document.getElementById("qa-variations").value = (it.question_variations || []).join("\n");
+        document.getElementById("qa-answer").value = it.answer;
+        document.getElementById("qa-category").value = it.category === "general" ? "" : it.category;
+        const form = document.getElementById("qa-form");
+        form.classList.add("editing");
+        document.getElementById("qa-form-mode").innerHTML = '<i class="fa-solid fa-pen"></i> Sửa Hỏi – Đáp';
+        document.getElementById("qa-cancel-edit").style.display = "inline";
+        document.querySelector("#qa-save-btn span").innerText = "Cập nhật";
+        showStaffQaView("form");
+        document.getElementById("qa-question").focus();
+      }
+
+      function showStaffQaView(view) {
+        // The Q&A tab is either the add/edit form or the list of every pair, never both stacked.
+        const form = document.getElementById("qa-view-form");
+        const list = document.getElementById("qa-view-list");
+        if (!form || !list) return;
+        form.style.display = view === "list" ? "none" : "block";
+        list.style.display = view === "list" ? "block" : "none";
+        if (view === "list") {
+          renderStaffQaList();
+          document.getElementById("qa-filter")?.focus();
+        }
+      }
+
+      async function saveStaffQa(event) {
+        event.preventDefault();
+        const question = document.getElementById("qa-question").value.trim();
+        const answer = document.getElementById("qa-answer").value.trim();
+        if (question.length < 2 || answer.length < 2) {
+          showStaffToast("Cần nhập câu hỏi và câu trả lời.", "error");
+          return;
+        }
+        const editId = document.getElementById("qa-edit-id").value;
+        const body = {
+          question,
+          answer,
+          question_variations: document
+            .getElementById("qa-variations")
+            .value.split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          category: document.getElementById("qa-category").value.trim() || "general",
+        };
+        const btn = document.getElementById("qa-save-btn");
+        btn.disabled = true;
+        let saved = {};
+        try {
+          const res = await fetch(
+            editId ? `${API_BASE}/v1/knowledge/qa/${encodeURIComponent(editId)}` : `${API_BASE}/v1/knowledge/qa`,
+            {
+              method: editId ? "PUT" : "POST",
+              headers: staffScopeHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify(body),
+            },
+          );
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          saved = await res.json().catch(() => ({}));
+        } catch (err) {
+          showStaffToast("Lưu Hỏi – Đáp thất bại: " + err.message, "error");
+          btn.disabled = false;
+          return;
+        }
+        btn.disabled = false;
+        // Saved: from here on a problem is in refreshing the list, never reported as a failed save.
+        const ticketId = staffQaPendingTicket;
+        if (ticketId) {
+          // The question the bot could not answer now has an approved answer: close it in the inbox.
+          await setStaffTicketStatus(ticketId, "resolved", {
+            qa_id: (saved && saved.qa_id) || editId || undefined,
+            note: "Đã thêm Hỏi – Đáp để bot trả lời được.",
+          });
+        }
+        showStaffToast(
+          ticketId
+            ? "Đã thêm Hỏi – Đáp và đóng câu hỏi trong hộp thư."
+            : editId
+              ? "Đã cập nhật Hỏi – Đáp, bot dùng ngay."
+              : "Đã thêm Hỏi – Đáp, bot dùng ngay.",
+          "success",
+        );
+        resetStaffQaForm();
+        await loadStaffQaList();
+      }
+
+      async function deleteStaffQa(qaId) {
+        const it = staffQaItems.find((x) => x.qa_id === qaId);
+        if (!it || !confirm(`Xóa cặp Hỏi – Đáp:\n"${it.question}"?`)) return;
+        try {
+          const res = await fetch(`${API_BASE}/v1/knowledge/qa/${encodeURIComponent(qaId)}`, {
+            method: "DELETE",
+            headers: staffScopeHeaders(),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } catch (err) {
+          showStaffToast("Xóa thất bại: " + err.message, "error");
+          return;
+        }
+        if (document.getElementById("qa-edit-id").value === qaId) resetStaffQaForm();
+        showStaffToast("Đã xóa Hỏi – Đáp.", "success");
+        await loadStaffQaList();
       }
 
       async function loadStaffDocCount() {
@@ -7849,8 +8905,10 @@
 
         const updateBtn = () => {
           const origHtml = btn.innerHTML;
-          btn.innerHTML =
-            '<i class="fa-solid fa-check" style="color: #10b981;"></i> Đã chép';
+          // Icon-only toolbar button: the check mark (and the toast) say it was copied.
+          btn.innerHTML = btn.classList.contains("staff-viewer-icon-btn")
+            ? '<i class="fa-solid fa-check" style="color: #10b981;"></i>'
+            : '<i class="fa-solid fa-check" style="color: #10b981;"></i> Đã chép';
           btn.style.color = "#10b981";
           btn.style.borderColor = "#10b981";
           showStaffToast(
@@ -7876,6 +8934,18 @@
         }
       }
 
+      function releaseStaffDocBlob() {
+        const url =
+          typeof currentStaffDocViewerState !== "undefined" &&
+          currentStaffDocViewerState
+            ? currentStaffDocViewerState.rawUrl
+            : "";
+        if (url && url.startsWith("blob:")) {
+          // Kept briefly: a tab opened from it may still be reading it.
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
+      }
+
       function openStaffDocInNewTab() {
         const ft = (currentStaffDocViewerState.fileType || "").toLowerCase();
         const rawUrl = currentStaffDocViewerState.rawUrl;
@@ -7883,6 +8953,35 @@
         // If PDF file, open native browser PDF viewer tab
         if (ft === "pdf" && rawUrl) {
           window.open(rawUrl, "_blank");
+          return;
+        }
+
+        // Word document: the same original-layout preview, full page.
+        if (ft === "docx" && rawUrl && rawUrl.startsWith("blob:")) {
+          const docTab = window.open("", "_blank");
+          if (!docTab) {
+            showStaffToast(
+              "Trình duyệt đã chặn tab mới. Vui lòng bật cho phép popup.",
+              "error",
+            );
+            return;
+          }
+          const docTitle = escapeHtml(currentStaffDocViewerState.title || "Tài liệu");
+          const origin = window.location.origin;
+          docTab.document.open();
+          docTab.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${docTitle}</title>
+<style>body{margin:0;background:#eef1f5;font-family:system-ui,sans-serif}#msg{padding:24px;color:#475569}</style>
+<script src="${origin}/assets/js/jszip-3.10.1.min.js"><\/script>
+<script src="${origin}/assets/js/docx-preview-0.3.5.min.js"><\/script></head>
+<body><div id="msg">Đang mở tài liệu...</div><div id="doc"></div>
+<script>
+fetch(${JSON.stringify(rawUrl)}).then(r => r.blob()).then(b => docx.renderAsync(b, document.getElementById("doc"), null,
+  {inWrapper: true, breakPages: true, ignoreLastRenderedPageBreak: true, useBase64URL: true}))
+  .then(() => document.getElementById("msg").remove())
+  .catch(e => { document.getElementById("msg").textContent = "Không mở được tài liệu: " + e.message; });
+<\/script></body></html>`);
+          docTab.document.close();
           return;
         }
 
@@ -8048,33 +9147,92 @@
         newTab.document.close();
       }
 
+      function staffViewerMeta(fileType, docId) {
+        // "DOCX · doc_93962819ba60 · 📁 dự án vans": format, id and the library it belongs to on one line.
+        const scope =
+          currentStaffIngestScope === "global"
+            ? "🌐 Kho dùng chung"
+            : `📁 ${String(currentStaffIngestScopeName || "").replace(/^📁\s*|^Kho riêng:\s*/g, "")}`;
+        return [(fileType || "").toUpperCase(), docId, scope].filter(Boolean).join(" · ");
+      }
+
+      function toggleStaffViewerMax(force) {
+        const modalBox = document.getElementById("staff-ingest-modal-box");
+        if (!modalBox) return;
+        const on = typeof force === "boolean" ? force : !modalBox.classList.contains("viewer-max");
+        modalBox.classList.toggle("viewer-max", on);
+        const btn = document.getElementById("staff-viewer-max-btn");
+        if (btn) {
+          btn.innerHTML = on ? '<i class="fa-solid fa-compress"></i>' : '<i class="fa-solid fa-expand"></i>';
+          btn.title = on ? "Thu nhỏ" : "Phóng to toàn màn hình";
+          btn.setAttribute("aria-label", btn.title);
+        }
+      }
+
+      const STAFF_MIME_FILE_TYPES = {
+        "application/pdf": "pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+        "application/msword": "doc",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+        "text/html": "html",
+        "text/markdown": "md",
+        "text/csv": "csv",
+        "text/plain": "txt",
+      };
+
+      /** The library not selected now: the shared one, or the current project's own (headers to read it). */
+      function staffOtherLibrary() {
+        if (currentStaffIngestScope !== "global") {
+          return { scope: "global", name: "Kho tri thức dùng chung (Toàn hệ thống)", headers: { Authorization: DEFAULT_TOKEN } };
+        }
+        const tenant = getStaffActiveTenantId();
+        if (!tenant || tenant === "global" || tenant === "proj_default") return null;
+        return {
+          scope: tenant, name: getStaffActiveProject(),
+          headers: { Authorization: DEFAULT_TOKEN, "X-Tenant-Id": tenant, "X-Tenant-ID": tenant },
+        };
+      }
+
       async function openStaffDocViewer(docId, title, fileType) {
         const modalBox = document.getElementById("staff-ingest-modal-box");
-        if (modalBox) modalBox.style.width = "980px";
+        if (modalBox) {
+          // Reading mode: scope bar, tabs and header collapse into the viewer's single toolbar.
+          modalBox.style.width = "";
+          modalBox.classList.add("viewing-doc");
+        }
 
         document.getElementById("staff-docs-table-view").style.display = "none";
         const viewerView = document.getElementById("staff-doc-viewer-view");
         viewerView.style.display = "flex";
 
-        const metaText = `Định dạng: ${(fileType || "unknown").toUpperCase()} | Mã ID: ${docId}`;
-        document.getElementById("staff-viewer-title").innerText =
-          title || "Tài liệu gốc";
+        const metaText = staffViewerMeta(fileType, docId);
+        const titleEl = document.getElementById("staff-viewer-title");
+        titleEl.innerText = title || "Tài liệu gốc";
+        titleEl.title = title || "";
         document.getElementById("staff-viewer-meta").innerText = metaText;
 
-        const tokenParam = "aip_live_valid_test_key_12345";
-        const rawUrl = `${API_BASE}/v1/knowledge/documents/${docId}/raw?token=${tokenParam}`;
+        // The original file is fetched with the caller's identity headers (an <iframe src> or a plain
+        // link sends none, so a document of a private project answered 404) and shown from a blob URL.
+        const isGlobal = currentStaffIngestScope === "global";
+        const reqHeaders = { Authorization: DEFAULT_TOKEN };
+        if (!isGlobal) {
+          reqHeaders["X-Tenant-Id"] = currentStaffIngestScope;
+          reqHeaders["X-Tenant-ID"] = currentStaffIngestScope;
+        }
+        releaseStaffDocBlob();
         const downloadBtn = document.getElementById(
           "staff-viewer-download-btn",
         );
-        downloadBtn.href = rawUrl;
+        downloadBtn.removeAttribute("href");
 
-        const ft = (fileType || "").toLowerCase();
+        let ft = (fileType || "").toLowerCase();
         currentStaffDocViewerState = {
           docId,
           title: title || "Tài liệu gốc",
           fileType: ft,
           content: "",
-          rawUrl,
+          rawUrl: "",
           meta: metaText,
         };
 
@@ -8086,29 +9244,95 @@
         const loadingEl = document.getElementById("staff-viewer-loading");
         const iframeEl = document.getElementById("staff-viewer-iframe");
         const textEl = document.getElementById("staff-viewer-text");
+        const docxEl = document.getElementById("staff-viewer-docx");
 
         loadingEl.style.display = "flex";
         iframeEl.style.display = "none";
         textEl.style.display = "none";
+        docxEl.style.display = "none";
+        docxEl.innerHTML = "";
 
-        if (ft === "pdf") {
+        let rawBlob = null;
+        try {
+          let rawRes = await fetch(
+            `${API_BASE}/v1/knowledge/documents/${docId}/raw`,
+            { headers: reqHeaders },
+          );
+          if (rawRes.status === 404) {
+            // A cited document can live in the other library (shared knowledge cited inside a project,
+            // or the project's own document while the shared library is selected): look there too.
+            const other = staffOtherLibrary();
+            if (other) {
+              const retry = await fetch(`${API_BASE}/v1/knowledge/documents/${docId}/raw`, { headers: other.headers });
+              if (retry.ok) {
+                rawRes = retry;
+                Object.keys(reqHeaders).forEach((k) => delete reqHeaders[k]);
+                Object.assign(reqHeaders, other.headers);
+                currentStaffIngestScope = other.scope;
+                currentStaffIngestScopeName = other.name;
+                if (typeof updateStaffIngestScopeUI === "function") updateStaffIngestScopeUI();
+                currentStaffDocViewerState.meta = staffViewerMeta(ft, docId);
+                document.getElementById("staff-viewer-meta").innerText = currentStaffDocViewerState.meta;
+              }
+            }
+          }
+          if (rawRes.ok) {
+            rawBlob = await rawRes.blob();
+            // The stored file says what it is: a caller that did not know the format (a citation of a
+            // document titled without extension) still gets the Word / PDF rendering, not plain text.
+            const served = STAFF_MIME_FILE_TYPES[(rawBlob.type || "").split(";")[0].trim().toLowerCase()];
+            if (served && served !== ft && (!ft || ["pdf", "docx", "doc", "xlsx", "pptx"].includes(served))) {
+              ft = served;
+              currentStaffDocViewerState.fileType = ft;
+              currentStaffDocViewerState.meta = staffViewerMeta(ft, docId);
+              document.getElementById("staff-viewer-meta").innerText = currentStaffDocViewerState.meta;
+            }
+            const blobUrl = URL.createObjectURL(rawBlob);
+            currentStaffDocViewerState.rawUrl = blobUrl;
+            downloadBtn.href = blobUrl;
+            const ext = ft ? `.${ft}` : "";
+            const base = (title || docId).replace(/[\\/:*?"<>|]+/g, "_");
+            downloadBtn.setAttribute(
+              "download",
+              base.toLowerCase().endsWith(ext) ? base : `${base}${ext}`,
+            );
+          }
+        } catch (err) {
+          console.warn("Original file unavailable:", err);
+        }
+
+        if (ft === "pdf" && rawBlob) {
           currentStaffDocViewerState.content = `[Tài liệu PDF: ${title || docId}]`;
           iframeEl.style.display = "block";
-          iframeEl.src = rawUrl;
-          iframeEl.onload = () => {
-            loadingEl.style.display = "none";
-          };
-          setTimeout(() => {
-            loadingEl.style.display = "none";
-          }, 1500);
-        } else {
+          iframeEl.src = currentStaffDocViewerState.rawUrl;
+          loadingEl.style.display = "none";
+        } else if (
+          ft === "docx" &&
+          rawBlob &&
+          typeof docx !== "undefined" &&
+          typeof docx.renderAsync === "function"
+        ) {
           try {
-            const isGlobal = currentStaffIngestScope === "global";
-            const reqHeaders = { Authorization: DEFAULT_TOKEN };
-            if (!isGlobal) {
-              reqHeaders["X-Tenant-Id"] = currentStaffIngestScope;
-              reqHeaders["X-Tenant-ID"] = currentStaffIngestScope;
-            }
+            // The Word layout as the author made it (styles, tables, images, page breaks).
+            await docx.renderAsync(rawBlob, docxEl, null, {
+              className: "docx",
+              inWrapper: true,
+              breakPages: true,
+              ignoreLastRenderedPageBreak: true,
+              renderHeaders: true,
+              renderFooters: true,
+              useBase64URL: true,
+            });
+            docxEl.style.display = "block";
+            currentStaffDocViewerState.content = docxEl.innerText || "";
+            loadingEl.style.display = "none";
+          } catch (err) {
+            console.warn("DOCX preview failed, showing extracted text:", err);
+            rawBlob = null;
+          }
+        }
+        if (!(ft === "pdf" || ft === "docx") || !rawBlob) {
+          try {
             const res = await fetch(
               `${API_BASE}/v1/knowledge/documents/${docId}/content`,
               {
@@ -8124,7 +9348,7 @@
               currentStaffDocViewerState.content = fetchedContent;
 
               if (data.file_type) {
-                const updatedMeta = `Định dạng: ${(data.file_type || ft || "unknown").toUpperCase()} | Mã ID: ${docId}`;
+                const updatedMeta = staffViewerMeta(data.file_type || ft, docId);
                 document.getElementById("staff-viewer-meta").innerText =
                   updatedMeta;
                 currentStaffDocViewerState.meta = updatedMeta;
@@ -8152,10 +9376,20 @@
 
       function closeStaffDocViewer() {
         const modalBox = document.getElementById("staff-ingest-modal-box");
-        if (modalBox) modalBox.style.width = "720px";
+        if (modalBox) {
+          modalBox.classList.remove("viewing-doc");
+          toggleStaffViewerMax(false);
+          modalBox.style.width = "720px";
+        }
 
         const iframeEl = document.getElementById("staff-viewer-iframe");
         if (iframeEl) iframeEl.src = "about:blank";
+        const docxEl = document.getElementById("staff-viewer-docx");
+        if (docxEl) {
+          docxEl.innerHTML = "";
+          docxEl.style.display = "none";
+        }
+        releaseStaffDocBlob();
 
         const viewerView = document.getElementById("staff-doc-viewer-view");
         if (viewerView) viewerView.style.display = "none";
@@ -8309,10 +9543,7 @@
       function clearStaffChat(generateNewId = true) {
         if (generateNewId) {
           staffConversationId =
-            "sess_" +
-            Date.now().toString(36) +
-            "_" +
-            Math.random().toString(36).substring(2, 6);
+            staffNewSessionId();
         }
         staffChatHistory = [];
         const container =
@@ -8430,6 +9661,16 @@
         return overlap >= 2;
       }
 
+      function stripStaffSourcesFooter(text) {
+        // The answer carries a text source list for channels without a citation UI (Zalo, API clients);
+        // the web shows the same sources once, in the "Nguồn tham khảo" list below the answer.
+        return String(text || "").replace(/\n*\*\*Nguồn:\*\*[^\n]*(?:\n+- \[\d+\][^\n]*)*/g, "");
+      }
+
+      function isStaffFaqCitation(c) {
+        return String((c && c.doc_id) || "").startsWith("qa_");
+      }
+
       function formatStaffCitations(citations, query, answer) {
         if (!citations || citations.length === 0) return "";
 
@@ -8476,8 +9717,19 @@
           .map((c, idx) => {
             let sourceName = "Tài liệu hệ thống";
             let titleName = c.title || c.doc_id || "Đoạn trích";
+            // Where in the document: page and section (what the text source list used to say above).
+            const page = c.page_number || c.page;
+            const section = String(c.section || "").trim();
+            const loc = isStaffFaqCitation(c)
+              ? ""
+              : [page ? `Trang ${page}` : "", section && section !== "Thông tin văn bản" ? section : ""]
+                  .filter(Boolean)
+                  .join(" · ");
 
-            if (titleName.includes("–")) {
+            if (isStaffFaqCitation(c)) {
+              sourceName = "Hỏi – Đáp đã duyệt";
+              titleName = titleName.replace(/^Hỏi – Đáp đã duyệt\s*/, "").replace(/^«|»$/g, "") || "Câu hỏi";
+            } else if (titleName.includes("–")) {
               const p = titleName.split("–");
               sourceName = p[0].trim();
               titleName = p.slice(1).join("–").trim();
@@ -8516,7 +9768,8 @@
                     <li class="citation-ref-item">
                         <a href="javascript:void(0)" class="citation-ref-link" onclick="openStaffCitationPreview('${storeKey}', ${idx})" title="Nhấn để mở và xem toàn văn tài liệu gốc">
                             <span class="cite-source-name">${escapeHtml(sourceName)}</span> – 
-                            <span class="cite-title-dotted">${escapeHtml(titleName)}</span> 
+                            <span class="cite-title-dotted">${escapeHtml(titleName)}</span>
+                            ${loc ? `<span class="cite-loc">· ${escapeHtml(loc)}</span>` : ""}
                             <span class="cite-external-arrow">↗</span>
                         </a>
                     </li>
@@ -8636,8 +9889,10 @@
         const c = data.citations[idx];
         const docId = c.doc_id;
         const title = c.title || docId;
-        let fileType = (c.content_type || "").toLowerCase();
-        if (title && title.includes(".")) {
+        // The document's format (docx, pdf, ...); c.content_type is the passage kind (text, table), not a
+        // format. Without either, the viewer reads the format from the stored file itself.
+        let fileType = (c.file_type || "").toLowerCase();
+        if (!fileType && title && /\.[a-z0-9]{2,5}$/i.test(title)) {
           fileType = title.split(".").pop().toLowerCase();
         }
 
@@ -8645,31 +9900,26 @@
         const oldModal = document.getElementById("modal-citation-viewer");
         if (oldModal) oldModal.classList.remove("active");
 
-        // Mở modal Quản lý & Nạp Tài Liệu Tri Thức và đồng bộ Scope UI
-        if (typeof populateStaffIngestScopeOptions === "function") {
-          await populateStaffIngestScopeOptions();
-        }
-        if (typeof updateStaffIngestScopeUI === "function") {
-          updateStaffIngestScopeUI();
-        }
-        const ingestModal = document.getElementById("staff-ingest-modal");
-        if (ingestModal) {
-          ingestModal.classList.add("active");
+        // The knowledge panel opens on the library of the current project, as when it is opened by hand
+        // (a citation clicked before the panel was ever opened used to look in the shared library).
+        if (!document.getElementById("staff-ingest-modal")?.classList.contains("active")) {
+          await openStaffIngestModal();
         }
 
-        // Chuyển sang Tab Kho tài liệu
-        const u = document.getElementById("s-tab-upload");
-        const l = document.getElementById("s-tab-list");
-        const bu = document.getElementById("s-tab-upload-btn");
-        const bl = document.getElementById("s-tab-list-btn");
-        if (u && l && bu && bl) {
-          u.style.display = "none";
-          l.style.display = "block";
-          bl.style.borderBottom = "2px solid #00684a";
-          bl.style.color = "#00684a";
-          bu.style.borderBottom = "none";
-          bu.style.color = "#64748b";
+        // An approved Q&A pair is not a document: open it where it is managed, ready to edit.
+        if (isStaffFaqCitation(c)) {
+          switchStaffTab("qa");
+          await loadStaffQaList();
+          if (staffQaItems.some((x) => x.qa_id === docId)) {
+            editStaffQa(docId);
+          } else {
+            showStaffToast("Cặp Hỏi – Đáp này không thuộc kho đang chọn hoặc đã bị xóa.", "error");
+          }
+          return;
         }
+
+        // Chuyển sang Tab Kho tài liệu (đúng cách cho cả 3 tab, không để panel khác hiện chồng)
+        switchStaffTab("list");
         if (typeof loadStaffDocCount === "function") {
           loadStaffDocCount();
         }
@@ -8814,7 +10064,7 @@
           typeof marked.parse === "function"
         ) {
           try {
-            rawHtml = marked.parse(text);
+            rawHtml = marked.parse(stripStaffSourcesFooter(text));
           } catch (e) {
             console.warn("Markdown parse error:", e);
             rawHtml = escapeHtml(text).replace(/\n/g, "<br>");
@@ -9141,12 +10391,10 @@
         if (branched.length === 0) return;
 
         const newConvId =
-          "sess_" +
-          Date.now().toString(36) +
-          "_" +
-          Math.random().toString(36).substring(2, 6);
+          staffNewSessionId();
         staffConversationId = newConvId;
         localStorage.setItem("aip_active_rag_session", newConvId);
+        staffSetView([]);
 
         staffChatHistory = JSON.parse(JSON.stringify(branched));
 
@@ -9795,7 +11043,7 @@
                 typeof marked.parse === "function"
               ) {
                 try {
-                  html = marked.parse(text);
+                  html = marked.parse(stripStaffSourcesFooter(text));
                 } catch (e) {
                   html = escapeHtml(text).replace(/\n/g, "<br>");
                 }
@@ -9883,6 +11131,12 @@
                       accumulatedAnswer += parsed.token;
                       scheduleStreamUpdate();
                     }
+                    if (parsed.reset) {
+                      // The server is generating the answer again (the model runtime cut it off under load):
+                      // the partial text shown so far is replaced by the new answer.
+                      accumulatedAnswer = "";
+                      scheduleStreamUpdate();
+                    }
                     if (parsed.error && parsed.message) {
                       // Upstream failure (e.g. LLM runtime down): show it instead of an empty bubble.
                       firstChunkReceived = true;
@@ -9948,6 +11202,7 @@
             if (serverSessionId) {
               staffConversationId = serverSessionId;
               localStorage.setItem("aip_active_rag_session", serverSessionId);
+              staffSetChatView(serverSessionId, { replace: true });
             }
 
             // Format citations & render action buttons

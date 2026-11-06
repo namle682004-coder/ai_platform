@@ -6,6 +6,7 @@
 		prepare-translation-model \
         dev-dispatcher dev-callback worker-image \
         dev-ui ui frontend-dev frontend-build \
+        rag-eval-import rag-eval-checklist rag-eval-calibrate rag-eval rag-gate rag-eval-test \
         test lint fmt export clean help
 
 COMPOSE_FILE ?= deploy/docker-compose/docker-compose.yml
@@ -248,6 +249,52 @@ lint:
 fmt:
 	@echo "▶ Auto-fixing Ruff lint issues..."
 	$(RUFF) check --fix platform/ solutions/ packages/ tests/
+
+# ─── RAG evaluation & go-live gate (benchmarks/rag) ───────────────
+# make rag-eval RAG_EVAL_TENANT=<project> RAG_EVAL_HEADERS='--header "X-AIP-Runtime-Token: …"' [RAG_EVAL_BASELINE=benchmarks/rag/runs/<prev>]
+RAG_EVAL_XLSX ?= Bo_test_Chatbot_KhungAI_v2_KetQua.xlsx
+RAG_EVAL_DATASET_CONFIG ?= benchmarks/rag/configs/datasets/khung_ai.yaml
+RAG_EVAL_DATASET ?= benchmarks/rag/datasets/acceptance/khung_ai_v2.jsonl
+RAG_EVAL_CALIBRATION ?= benchmarks/rag/runs/calibration_khung_ai_checklist.json
+RAG_EVAL_GRADES_FROM ?= $(basename $(RAG_EVAL_DATASET)).calibration.jsonl
+RAG_EVAL_GATE ?= benchmarks/rag/configs/gate.yaml
+RAG_EVAL_API ?= http://localhost:8010
+RAG_EVAL_TENANT ?=
+RAG_EVAL_HEADERS ?=
+RAG_EVAL_BASELINE ?=
+RAG_EVAL_RUN ?=
+RAG_BENCH = cd benchmarks/rag/src && PYTHONPATH=../../..:../../../packages/common $(abspath $(PYTHON)) -m rag_benchmark.cli
+
+rag-eval-import:
+	@echo "▶ Workbook -> golden JSONL + judge calibration examples..."
+	$(RAG_BENCH) import-xlsx $(abspath $(RAG_EVAL_XLSX)) --config $(abspath $(RAG_EVAL_DATASET_CONFIG)) --out $(abspath $(RAG_EVAL_DATASET))
+
+rag-eval-checklist:
+	@echo "▶ Drafting core points per case (review the .checklist.xlsx, then import it with --import-xlsx)..."
+	$(RAG_BENCH) checklist --dataset $(abspath $(RAG_EVAL_DATASET))
+
+rag-eval-calibrate:
+	@echo "▶ Measuring grader agreement with human grades..."
+	$(RAG_BENCH) calibrate --dataset $(abspath $(RAG_EVAL_DATASET)) \
+		--examples $(abspath $(basename $(RAG_EVAL_DATASET)).calibration.jsonl) --out $(abspath $(RAG_EVAL_CALIBRATION))
+
+rag-eval:
+	@test -n "$(RAG_EVAL_TENANT)" || (echo "RAG_EVAL_TENANT is required" && exit 2)
+	@echo "▶ Running acceptance suite + go-live gate (exit 1 = NO-GO)..."
+	$(RAG_BENCH) suite --dataset $(abspath $(RAG_EVAL_DATASET)) --api $(RAG_EVAL_API) --tenant $(RAG_EVAL_TENANT) \
+		$(RAG_EVAL_HEADERS) --gate $(abspath $(RAG_EVAL_GATE)) --calibration $(abspath $(RAG_EVAL_CALIBRATION)) \
+		--out-dir $(abspath benchmarks/rag/runs) $(if $(RAG_EVAL_BASELINE),--baseline $(abspath $(RAG_EVAL_BASELINE))) \
+		$(foreach g,$(RAG_EVAL_GRADES_FROM),--grades-from $(abspath $(g)))
+
+rag-gate:
+	@test -n "$(RAG_EVAL_RUN)" || (echo "RAG_EVAL_RUN=<run dir> is required" && exit 2)
+	$(RAG_BENCH) gate --run $(abspath $(RAG_EVAL_RUN)) --gate $(abspath $(RAG_EVAL_GATE)) \
+		--calibration $(abspath $(RAG_EVAL_CALIBRATION)) $(if $(RAG_EVAL_BASELINE),--baseline $(abspath $(RAG_EVAL_BASELINE)))
+
+rag-eval-test:
+	@echo "▶ Offline tests of tracing, verification and the evaluation harness..."
+	$(PYTEST) -q tests/test_rag_tracing.py tests/test_rag_acceptance_suite.py tests/test_numeric_and_units.py \
+		tests/test_answer_verification.py tests/test_rag_answer_pipeline.py
 
 # ─── Utilities ────────────────────────────────────────────────────
 export:

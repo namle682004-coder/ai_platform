@@ -80,6 +80,19 @@ def has_vietnamese_diacritics(text: str) -> bool:
     return strip_diacritics(text) != text
 
 
+UNACCENTED_MAX_ACCENTED_SHARE = 0.34
+
+
+def mostly_unaccented(text: str) -> bool:
+    """
+    Typed (mostly) without diacritics: one accented word in "quyen của nguoi dung du lieu" does not make the
+    rest readable for search, rerank or a small model.
+    """
+    words = [w for w in re.findall(r"[^\W\d_]+", text or "") if len(w) > 1 and not w.isupper()]
+    plain = [w for w in words if not has_vietnamese_diacritics(w)]
+    return len(plain) >= 2 and (len(words) - len(plain)) / len(words) <= UNACCENTED_MAX_ACCENTED_SHARE
+
+
 def extract_identifiers(text: str) -> List[str]:
     """Identifiers in `text`, upper-cased and de-duplicated in order."""
     seen: Dict[str, None] = {}

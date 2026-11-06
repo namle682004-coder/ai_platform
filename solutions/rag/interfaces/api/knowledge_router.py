@@ -31,6 +31,8 @@ from ...application.dtos import (
     QACreateRequestDTO,
     QACreateResponseDTO,
     QADeleteResponseDTO,
+    QAEntryDTO,
+    QAListResponseDTO,
 )
 from ...application.use_cases.knowledge_use_case import KnowledgeManagementUseCase
 from ...domain.entities import DEFAULT_TENANT_ID, normalize_iso_date, normalize_tenant_id
@@ -331,6 +333,36 @@ async def create_qa_entry(
         expiry_date=payload.expiry_date,
         question_variations=payload.question_variations,
     )
+
+
+@router.get("/qa", response_model=QAListResponseDTO, dependencies=[Depends(_read_limiter)])
+async def list_qa_entries(request: Request) -> QAListResponseDTO:
+    """Q&A pairs administrators added to the caller's knowledge base (the one being managed), newest first."""
+    items = await knowledge_use_case.list_qa(tenant_id=_extract_tenant(request))
+    return QAListResponseDTO(items=[QAEntryDTO(**i) for i in items], total=len(items))
+
+
+@router.put("/qa/{qa_id}", response_model=QACreateResponseDTO, status_code=status.HTTP_200_OK)
+async def update_qa_entry(qa_id: str, payload: QACreateRequestDTO, request: Request) -> QACreateResponseDTO:
+    """Edit a Q&A pair in place: re-embedded and indexed immediately under the same id."""
+    tenant_id = _extract_tenant(request)
+    _require_write_access(request, tenant_id)
+    try:
+        return await knowledge_use_case.update_qa(
+            qa_id,
+            tenant_id=tenant_id,
+            question=payload.question,
+            answer=payload.answer,
+            category=payload.category or "general",
+            tags=payload.tags,
+            allowed_roles=payload.allowed_roles,
+            effective_status=payload.effective_status,
+            effective_date=payload.effective_date,
+            expiry_date=payload.expiry_date,
+            question_variations=payload.question_variations,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Q&A '{qa_id}' not found") from exc
 
 
 @router.delete("/qa/{qa_id}", response_model=QADeleteResponseDTO, status_code=status.HTTP_200_OK)

@@ -7,6 +7,9 @@
 # Only the gateway is published (:8000, LAN). Teams call /v1/rag/* and /v1/knowledge/* there
 # with their own API key; the RAG API (:8010) is reachable only from this Docker network.
 #
+# Every container has a memory cap: on the 8 GB host an uncapped container can starve the model
+# runtimes and the host itself (incident 2026-11-05). Model runtimes: deploy/server/install.sh.
+#
 # Deploy with scripts/deploy_server.sh. Secrets live on the server in $AIP_ENV_FILE
 # (see deploy/docker-compose/server.env.example), never in this repo.
 
@@ -24,6 +27,8 @@ services:
       dockerfile: platform/gateway/Dockerfile
     image: aip/gateway:${AIP_VERSION:-latest}
     container_name: aip-gateway
+    mem_limit: 512m
+    memswap_limit: 512m
     ports:
       - "8000:8000"
     environment:
@@ -46,6 +51,8 @@ services:
       dockerfile: solutions/rag/Dockerfile
     image: aip/rag:${AIP_VERSION:-latest}
     container_name: aip-rag-api
+    mem_limit: 1g
+    memswap_limit: 1g
     ports:
       - "8010:8010"
     command: ["python", "-m", "solutions.rag.main", "--mode", "api", "--host", "0.0.0.0", "--port", "8010"]
@@ -53,6 +60,10 @@ services:
       # Identity headers are trusted only together with AIP_RUNTIME_TOKEN (sent by the gateway).
       - RAG_TRUST_IDENTITY_HEADERS=false
       - RAG_ENFORCE_SHARED_KB_WRITE_ACL=true
+      # Overload protection sized for the model host (one 7B llama-server with --parallel 2).
+      - RAG_LLM_MAX_CONCURRENT=2
+      - RAG_CHAT_MAX_INFLIGHT=6
+      - RAG_CHAT_GLOBAL_RATE_LIMIT_PER_MINUTE=20
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8010/health"]
       interval: 15s
@@ -65,6 +76,8 @@ services:
     <<: *aip-env
     image: aip/rag:${AIP_VERSION:-latest}
     container_name: aip-rag-worker
+    mem_limit: 768m
+    memswap_limit: 768m
     command: ["python", "solutions/rag/worker.py"]
     depends_on:
       rag-api:

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <script src="/staff/project_routes.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIP Platform - Tính Năng Đang Trong Lộ Trình Phát Triển</title>
@@ -668,7 +669,8 @@
             };
 
             const params = new URLSearchParams(window.location.search);
-            const serviceKey = (params.get('service') || '').toLowerCase();
+            // /projects/{project}/services/{service} names the service in the path (former links in ?service=).
+            const serviceKey = (params.get('service') || (window.AipRoutes && window.AipRoutes.currentServiceLegacyId()) || '').toLowerCase();
             const serviceNameParam = params.get('name') || '';
 
             let matchedMeta = null;

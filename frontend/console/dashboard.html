@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script src="/staff/project_routes.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AIP Platform - Dashboard</title>
@@ -2447,9 +2448,11 @@
         }
 
         const projects = await getProjects();
-        if (projects.length > 0) {
-          document.getElementById("current-project-label").innerText =
-            projects[0].project_name;
+        // The project named by the URL (project_routes.js), not simply the first one listed.
+        const activeProject = window.AipRoutes ? window.AipRoutes.activeProject() : null;
+        const activeName = activeProject ? activeProject.project_name : projects[0]?.project_name;
+        if (activeName) {
+          document.getElementById("current-project-label").innerText = activeName;
         }
 
         try {

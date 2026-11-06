@@ -232,6 +232,12 @@ class KnowledgeManagementUseCase:
         s3_object_name = doc.get("s3_object_name")
         if s3_object_name:
             self.storage.delete_object(s3_bucket, s3_object_name)
+        # 2b. Its images: their signed URLs (in chat history too) stop resolving with the document.
+        from ...config import rag_settings
+        from ..components.media_assets import doc_prefix
+        delete_prefix = getattr(self.storage, "delete_prefix", None)
+        if delete_prefix is not None:
+            delete_prefix(rag_settings.media_bucket or rag_settings.minio_bucket, doc_prefix(tenant_id, doc_id))
 
         # 3. Delete document record in MongoDB
         deleted = await self.doc_repo.delete_document(doc_id, tenant_id)
@@ -254,6 +260,7 @@ class KnowledgeManagementUseCase:
         effective_date: Optional[str] = None,
         expiry_date: Optional[str] = None,
         question_variations: Optional[List[str]] = None,
+        created_at: Optional[int] = None,
     ) -> QACreateResponseDTO:
         """
         ING-RAG-06: Fast Q&A Ingestion & Instant Vector Indexing.
@@ -268,9 +275,16 @@ class KnowledgeManagementUseCase:
         roles = allowed_roles or ["*"]
         variations = question_variations or []
 
+        # People type without diacritics on phones ("gia ve xe buyt"): the unaccented form of every phrasing
+        # is indexed too, so a pair matches however it is typed without the admin having to add it.
+        from ..components.lexical_evidence import strip_diacritics
+
+        phrasings = list(dict.fromkeys([question, *variations]))
+        unaccented = [u for u in (strip_diacritics(p) for p in phrasings) if u and u not in phrasings]
+        indexed_variations = list(dict.fromkeys([*variations, *unaccented]))
         variations_block = ""
-        if variations:
-            variations_block = "\nCác biến thể câu hỏi: " + " | ".join(variations)
+        if indexed_variations:
+            variations_block = "\nCác biến thể câu hỏi: " + " | ".join(indexed_variations)
         formatted_text = f"[Hỏi - Đáp FAQ: {category}]\nCâu hỏi: {question}{variations_block}\nTrả lời: {answer}"
 
         if not self.embedding_service:
@@ -304,6 +318,9 @@ class KnowledgeManagementUseCase:
                 "effective_status": effective_status or "ACTIVE",
                 "effective_date": effective_date,
                 "expiry_date": expiry_date,
+                # An edit rewrites the point: the first creation time is carried over.
+                "qa_created_at": int(created_at or start_time),
+                "updated_at": int(start_time),
             },
         )
 
@@ -330,6 +347,37 @@ class KnowledgeManagementUseCase:
             indexing_latency_ms=latency_ms,
             qdrant_point_id=point_id,
         )
+
+    async def list_qa(self, tenant_id: str = DEFAULT_TENANT_ID) -> List[Dict[str, Any]]:
+        """The Q&A pairs administrators added to this tenant, newest first."""
+        tenant_id = normalize_tenant_id(tenant_id)
+        lister = getattr(self.vector_store, "list_faq_entries", None)
+        if lister is None:
+            return []
+        out = []
+        for p in await lister(tenant_id):
+            qa_id = str(p.get("qa_id") or p.get("doc_id") or "")
+            if not qa_id:
+                continue
+            out.append({
+                "qa_id": qa_id,
+                "question": str(p.get("question") or ""),
+                "answer": str(p.get("approved_answer") or ""),
+                "question_variations": list(p.get("question_variations") or []),
+                "category": str(p.get("category") or "general"),
+                "effective_status": p.get("effective_status") or "ACTIVE",
+                "created_at": int(p.get("qa_created_at") or p.get("created_at") or 0),
+                "updated_at": int(p.get("updated_at") or p.get("created_at") or 0),
+            })
+        return out
+
+    async def update_qa(self, qa_id: str, tenant_id: str = DEFAULT_TENANT_ID, **fields: Any) -> QACreateResponseDTO:
+        """Rewrites a Q&A pair in place (same point id), keeping when it was first created."""
+        tenant_id = normalize_tenant_id(tenant_id)
+        existing = next((e for e in await self.list_qa(tenant_id) if e["qa_id"] == qa_id), None)
+        if existing is None:
+            raise KeyError(qa_id)
+        return await self.ingest_qa(qa_id=qa_id, tenant_id=tenant_id, created_at=existing["created_at"] or None, **fields)
 
     async def delete_qa(self, qa_id: str, tenant_id: str = DEFAULT_TENANT_ID) -> QADeleteResponseDTO:
         """Deletes a Q&A pair from Vector DB by qa_id and invalidates tenant cache."""

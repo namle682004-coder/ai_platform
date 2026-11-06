@@ -155,3 +155,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+
+
+
+# --- Benchmark Artifacts ---
+# Run outputs are large and reproducible; datasets, configs and code stay versioned.
+benchmarks/rag/runs/
+
+# --- Deployment ---
+# deploy/ is versioned: scripts/deploy_server.sh ships only committed files. Model runtime settings
+# (deploy/server/models/*.env) hold no credentials; real secrets stay in untracked env files.
+!deploy/server/models/*.env

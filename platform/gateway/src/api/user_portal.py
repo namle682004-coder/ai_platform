@@ -13,6 +13,8 @@ from common.repositories.endpoint_repository import endpoint_repository
 from common.repositories.api_subscription_repository import api_subscription_repository
 from common.security.argon2_hasher import generate_api_key
 
+from src.api.project_slugs import assign_slugs, new_project_slug
+
 router = APIRouter(prefix="/v1/user", tags=["User Portal & Console API"])
 
 
@@ -83,10 +85,11 @@ async def list_user_projects(request: Request):
             "type": "prepaid",
             "user_id": user_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
+            "slug": new_project_slug("Default Project", []),
         }
         await project_repository.create_project(default_proj)
         return [default_proj]
-    return projects
+    return assign_slugs(projects)
 
 
 @router.post("/projects", status_code=status.HTTP_201_CREATED)
@@ -94,9 +97,11 @@ async def create_user_project(req: ProjectCreateRequest, request: Request):
     """Create a new project in MongoDB Atlas."""
     user_id = get_current_user_id(request)
     proj_id = str(uuid.uuid4())
+    existing = await project_repository.list_user_projects(user_id=user_id)
     proj_doc = {
         "project_id": proj_id,
         "project_name": req.project_name,
+        "slug": new_project_slug(req.project_name, existing),
         "type": req.billing_type,
         "user_id": user_id,
         "created_at": datetime.now(timezone.utc).isoformat(),

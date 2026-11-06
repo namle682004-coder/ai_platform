@@ -5,6 +5,7 @@ on:
     branches: [main, master, dev]
     paths:
       - 'solutions/rag/**'
+      - 'benchmarks/rag/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/rag-worker.yml'
@@ -12,6 +13,7 @@ on:
   pull_request:
     paths:
       - 'solutions/rag/**'
+      - 'benchmarks/rag/**'
       - 'packages/common/**'
       - 'packages/contracts/**'
       - '.github/workflows/rag-worker.yml'
@@ -40,7 +42,7 @@ jobs:
           uv pip install -e packages/common \
                          -e packages/contracts \
                          -e solutions/rag \
-                         pytest httpx ruff pypdf python-docx
+                         pytest httpx ruff pypdf python-docx openpyxl pyyaml
 
       - name: Lint with Ruff
         shell: bash
@@ -51,6 +53,12 @@ jobs:
         run: |
           uv run pytest tests/test_rag_pipeline.py -k "not test_swimlane_async_ingestion_and_rag_chat_e2e" --collect-only -q > /dev/null
           uv run pytest tests/test_rag_pipeline.py -k "not test_swimlane_async_ingestion_and_rag_chat_e2e" --tb=short
+
+      - name: Answer Quality & Evaluation Harness (tracing, verification, go-live gate)
+        shell: bash
+        run: |
+          uv run pytest -q tests/test_rag_tracing.py tests/test_rag_acceptance_suite.py tests/test_numeric_and_units.py \
+            tests/test_answer_verification.py tests/test_rag_answer_pipeline.py --tb=short
 
   build-image:
     name: Docker Image (RAG Worker)

@@ -2,20 +2,8 @@ import fs from 'fs';
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
-// Plugin to support extensionless URLs, new Solutions/Console routes, and legacy staff aliases
-const UNFINISHED_API_IDS = new Set([
-  'a5b8e6f7-9154-4c65-d816-e42705f43678', // Moderation
-  'd8eb19ca-2487-4f98-0b49-175038c76901', // Embeddings
-  'fa0d3bec-46a9-41ba-2d6b-39725ae98123', // Summarization
-  'e9fc2adb-3598-40a9-1c5a-286149d87012', // Translation
-  '8b51ef94-912a-4367-bf16-36701a09cb12', // TTS
-  'f4a7d5e6-8043-4b54-c705-d31694e32567', // Image Gen
-  'd285b3c4-6821-4932-a583-b19472c10345', // Driver License
-  'e396c4d5-7932-4a43-b694-c20583d21456', // Passport
-  'b6c9f7a8-0265-4d76-e927-f53816a54789', // FaceMatch
-  'c7da08b9-1376-4e87-fa38-064927b65890', // Liveness
-]);
-
+// Plugin to support extensionless URLs, project console routes, and legacy staff aliases.
+// Which services are live is part of the route table (shared/api_detail_routes.json).
 const DEV_URL_MAPPING = {
   '/staff/service-moderation': 'a5b8e6f7-9154-4c65-d816-e42705f43678',
   '/staff/service_moderation': 'a5b8e6f7-9154-4c65-d816-e42705f43678',
@@ -92,23 +80,43 @@ function cleanUrlsPlugin() {
         const pathname = urlParts[0];
         const search = urlParts[1] ? `?${urlParts[1]}` : '';
 
-        // Dynamic project API routing: /project/:id/apis/:apiId
-        const projectApiMatch = pathname.match(/^\/(?:staff\/)?project\/[^/]+\/apis\/([^/]+)\/?$/i);
-        if (projectApiMatch) {
-          const apiId = projectApiMatch[1].toLowerCase();
-          if (apiId.includes('rag') || apiId === 'rag-chat-enterprise-kb') {
-            req.url = `/solutions/rag/index.html${search}`;
-            return next();
+        // Project console (same table as the gateway: shared/api_detail_routes.json)
+        //   /projects/{project}[/dashboard] | /projects/{project}/services | /projects/{project}/services/{service}/...
+        //   /services/{service}/... (current project) ; former /project/{id}/apis/{id} links answer 301.
+        const servicesOf = apiRouteConfig.services;
+        const legacyService = Object.fromEntries(Object.entries(servicesOf)
+          .flatMap(([slug, s]) => (s.legacyIds || []).map(id => [id.toLowerCase(), slug])));
+        const shared = apiRouteConfig.sharedProject;
+        const projectSegment = (p) => (p.toLowerCase() === shared.id ? shared.slug : p);
+        const redirect = (location) => { res.statusCode = 301; res.setHeader('Location', location); res.end(); };
+        const servePage = (relative) => { req.url = `/${relative}${search}`; return next(); };
+
+        const legacyApi = pathname.match(/^\/(?:staff\/)?project\/([^/]+)\/apis\/([^/]+)\/?$/i);
+        if (legacyApi) {
+          const slug = servicesOf[legacyApi[2].toLowerCase()] ? legacyApi[2].toLowerCase() : legacyService[legacyApi[2].toLowerCase()];
+          if (slug) return redirect(`/projects/${projectSegment(legacyApi[1])}/services/${slug}${search}`);
+        }
+        const legacyCatalog = pathname.match(/^\/(?:staff\/)?project\/([^/]+)\/apis\/?$/i);
+        if (legacyCatalog) return redirect(`/projects/${projectSegment(legacyCatalog[1])}/services${search}`);
+        const legacyDashboard = pathname.match(/^\/(?:staff\/)?project\/([^/]+)(?:\/dashboard)?\/?$/i);
+        if (legacyDashboard) return redirect(`/projects/${projectSegment(legacyDashboard[1])}${search}`);
+
+        const serviceRoute = pathname.match(/^\/(?:projects\/([^/]+)\/)?services\/([^/]+)(\/.*)?$/);
+        if (serviceRoute && (serviceRoute[1] || pathname.startsWith('/services/'))) {
+          const [, project, service, view = ''] = serviceRoute;
+          const slug = servicesOf[service] ? service : legacyService[service.toLowerCase()];
+          if (slug && slug !== service) {
+            return redirect(`${project ? `/projects/${projectSegment(project)}` : ''}/services/${slug}${view}${search}`);
           }
-          if (UNFINISHED_API_IDS.has(apiId)) {
-            req.url = `/shared/under_development.html?service=${apiId}${search ? '&' + search.slice(1) : ''}`;
-            return next();
-          }
-          const page = apiRouteConfig.apiPages[apiId];
-          if (page) {
-            req.url = `/staff/${page}${search}`;
-            return next();
-          }
+          if (slug) return servePage(servicesOf[slug].live ? servicesOf[slug].page : apiRouteConfig.pages.underDevelopment);
+        }
+        if (/^\/projects\/[^/]+\/services\/?$/.test(pathname)) return servePage(apiRouteConfig.pages.services);
+        if (/^\/projects(?:\/[^/]+(?:\/dashboard)?)?\/?$/.test(pathname)) return servePage(apiRouteConfig.pages.dashboard);
+        // Former page names (/staff/service-llm, /staff/service_rag.html): one URL per page, as on the gateway.
+        const legacyName = pathname.match(/^\/staff\/([^/]+?)(?:\.html)?\/?$/i);
+        const legacyId = legacyName && apiRouteConfig.legacyAliases[legacyName[1].toLowerCase()];
+        if (legacyId && legacyService[legacyId.toLowerCase()]) {
+          return redirect(`/services/${legacyService[legacyId.toLowerCase()]}${search}`);
         }
 
         // Dedicated Under Development route
@@ -134,18 +142,12 @@ function cleanUrlsPlugin() {
         // Short-cut clean URLs:
         if (pathname === '/login') { req.url = `/auth/login.html${search}`; return next(); }
         if (pathname === '/signup') { req.url = `/auth/signup.html${search}`; return next(); }
-        if (pathname === '/rag' || pathname === '/chat') { req.url = `/solutions/rag/index.html${search}`; return next(); }
+        if (pathname === '/rag' || pathname === '/chat') { res.statusCode = 301; res.setHeader('Location', '/services/rag-chatbot'); return res.end(); }
         if (pathname === '/dashboard') { req.url = `/console/dashboard.html${search}`; return next(); }
         if (pathname === '/keys') { req.url = `/console/keys.html${search}`; return next(); }
         if (pathname === '/payment') { req.url = `/console/payment.html${search}`; return next(); }
         if (pathname === '/report') { req.url = `/console/report.html${search}`; return next(); }
         if (pathname === '/profile' || pathname === '/staff/profile') { req.url = `/console/profile.html${search}`; return next(); }
-
-        // Dynamic project dashboard: /project/:id/dashboard
-        if (pathname.match(/^\/(?:staff\/)?project\/[^/]+(?:\/dashboard)?\/?$/)) {
-          req.url = `/console/dashboard.html${search}`;
-          return next();
-        }
 
         // Legacy /staff rewrites
         if (pathname === '/staff' || pathname === '/staff/') {

@@ -171,6 +171,38 @@ class DocxDocumentParser(BaseDocumentParser):
 
         return image_tags
 
+    def _extract_txbx_blocks(self, elem, doc) -> List[str]:
+        """Extract paragraphs and tables from textboxes (w:txbxContent), skipping mc:Fallback to prevent duplicates."""
+        blocks: List[str] = []
+        try:
+            import docx
+            all_txbx = elem.xpath(".//*[local-name()='txbxContent']")
+            valid_txbx = [tb for tb in all_txbx if not tb.xpath("ancestor::*[local-name()='Fallback']")]
+            for tb in valid_txbx:
+                for child in tb.iterchildren():
+                    tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                    if tag == "p":
+                        try:
+                            p_obj = docx.text.paragraph.Paragraph(child, doc)
+                            formatted = self._format_paragraph(p_obj)
+                            if formatted:
+                                blocks.append(formatted)
+                        except Exception:
+                            t = "".join(child.itertext()).strip()
+                            if t:
+                                blocks.append(t)
+                    elif tag == "tbl":
+                        try:
+                            t_obj = docx.table.Table(child, doc)
+                            tbl_md = self._table_to_markdown(t_obj)
+                            if tbl_md:
+                                blocks.append(tbl_md)
+                        except Exception:
+                            pass
+        except Exception as exc:
+            logger.debug("Non-fatal error extracting textboxes: %s", exc)
+        return blocks
+
     def parse(self, file_bytes: bytes, filename: str) -> ParsedDocument:
         try:
             import docx
@@ -183,7 +215,37 @@ class DocxDocumentParser(BaseDocumentParser):
             all_extracted_images: List[Dict[str, Any]] = []
             seen_image_hashes: Set[str] = set()
 
-            # 1. Iterate document body children in natural order (Paragraphs + Tables)
+            # 0. Extract section headers (issuing agencies, bulletin dates, publication frequency)
+            seen_headers: Set[str] = set()
+            try:
+                for sec in getattr(doc, "sections", []):
+                    for hp in getattr(sec.header, "paragraphs", []):
+                        txt = hp.text.strip()
+                        if txt and txt not in seen_headers and len(txt) > 2:
+                            seen_headers.add(txt)
+                            blocks.append(txt)
+                    for ht in getattr(sec.header, "tables", []):
+                        tbl_md = self._table_to_markdown(ht)
+                        if tbl_md and tbl_md not in seen_headers:
+                            seen_headers.add(tbl_md)
+                            blocks.append(tbl_md)
+                    if getattr(sec, "different_first_page_header_footer", False):
+                        first_hdr = getattr(sec, "first_page_header", None)
+                        if first_hdr:
+                            for hp in getattr(first_hdr, "paragraphs", []):
+                                txt = hp.text.strip()
+                                if txt and txt not in seen_headers and len(txt) > 2:
+                                    seen_headers.add(txt)
+                                    blocks.append(txt)
+                            for ht in getattr(first_hdr, "tables", []):
+                                tbl_md = self._table_to_markdown(ht)
+                                if tbl_md and tbl_md not in seen_headers:
+                                    seen_headers.add(tbl_md)
+                                    blocks.append(tbl_md)
+            except Exception as hdr_exc:
+                logger.debug("Non-fatal error reading section headers: %s", hdr_exc)
+
+            # 1. Iterate document body children in natural order (Paragraphs + Tables + Textboxes)
             try:
                 body = doc.element.body
                 for child in body.iterchildren():
@@ -206,6 +268,11 @@ class DocxDocumentParser(BaseDocumentParser):
                         if formatted_p:
                             blocks.append(formatted_p)
 
+                        # Extract text boxes inside paragraph / drawing
+                        for tb_block in self._extract_txbx_blocks(child, doc):
+                            if tb_block and tb_block not in blocks:
+                                blocks.append(tb_block)
+
                         # Anchor image tags immediately following paragraph text
                         for tag in img_tags:
                             blocks.append(tag)
@@ -224,6 +291,9 @@ class DocxDocumentParser(BaseDocumentParser):
                     )
                     if formatted_p:
                         blocks.append(formatted_p)
+                    for tb_block in self._extract_txbx_blocks(p._element, doc):
+                        if tb_block and tb_block not in blocks:
+                            blocks.append(tb_block)
                     for tag in img_tags:
                         blocks.append(tag)
 

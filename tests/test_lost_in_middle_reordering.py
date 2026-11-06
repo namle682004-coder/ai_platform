@@ -180,13 +180,22 @@ def test_use_case_applies_lost_in_middle_to_llm_prompt(monkeypatch):
         from solutions.rag.application.components.reranker import cross_encoder_reranker
         monkeypatch.setattr(cross_encoder_reranker, "rerank", lambda **kwargs: candidates)
 
+        async def _arerank(query, candidates, top_n=5, min_threshold=0.0):  # the use case awaits arerank
+            # Clearly separated scores so keyword overlap of the passages cannot change the ranking.
+            scores = {1: 0.98, 2: 0.80, 3: 0.60}
+            return [dict(c, score=scores[c["id"]]) for c in candidates]
+
+        monkeypatch.setattr(cross_encoder_reranker, "arerank", _arerank)
+
         vs = MockVectorStore(candidates)
         emb = MockEmbeddingService()
         repo = MockSessionRepo()
         use_case = RagChatUseCase(vs, emb, llm, repo)
 
         req = RagChatRequestDTO(
-            query="Thông tin về các thành phố lớn tại Việt Nam",
+            # No word shared with the passages: the ranking is the reranker's alone (lexical evidence is
+            # blended into the ranking and would otherwise reorder Rank 2 / Rank 3).
+            query="Giới thiệu đô thị tiêu biểu",
             enable_hyde=False,
             combine_strategy="stuff",
         )

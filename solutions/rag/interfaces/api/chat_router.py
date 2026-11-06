@@ -3,17 +3,19 @@ FastAPI REST Router for Enterprise RAG Chat & Session Persistence.
 Thin interface controller delegating directly to Application Use Cases.
 """
 
+import asyncio
 import hmac
 import logging
 import os
+import time
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, Response, UploadFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from .identity import extract_role, extract_tenant, extract_user, is_admin
-from .rate_limiter import RateLimitDependency
+from .rate_limiter import ChatRateLimitDependency, RateLimitDependency
 
 from ...application.dtos import (
     ChatSessionDTO,
@@ -23,7 +25,9 @@ from ...application.dtos import (
     RagChatResponseDTO,
     SessionListResponseDTO,
 )
-from ...application.use_cases.chat_use_case import INFRASTRUCTURE_ERRORS, RagChatUseCase
+from ...application.components import media_assets
+from ...application.use_cases.chat_use_case import INFRASTRUCTURE_ERRORS, RagChatUseCase, media_secret, unavailable_reply
+from ...infrastructure.adapters.storage_adapter import MinioStorageAdapter
 from ...application.use_cases.session_use_case import RagSessionUseCase
 from ...infrastructure.adapters.embedding_adapter import HttpEmbeddingAdapter
 from ...infrastructure.adapters.llm_adapter import HttpLlmAdapter
@@ -31,12 +35,14 @@ from ...infrastructure.adapters.qdrant_adapter import QdrantVectorStoreAdapter
 from ...infrastructure.parsers.factory import parser_factory
 from ...infrastructure.repositories.mongo_session_repo import MongoSessionRepositoryAdapter
 from ...application.components.error_attribution import error_attribution_service
+from ...application.components.run_trace import chunk_ref
+from ...application.components.trace_diagnosis import diagnose, final_route
 
 logger = logging.getLogger("aip-rag.api.chat")
 
 router = APIRouter(prefix="/v1/rag", tags=["Knowledge & RAG"])
 
-_chat_limiter = RateLimitDependency(requests_per_minute=3000)
+_chat_limiter = ChatRateLimitDependency()
 _adhoc_limiter = RateLimitDependency(requests_per_minute=600)
 
 from ...config import rag_settings
@@ -44,7 +50,8 @@ from ...config import rag_settings
 # Dependency injection for default container
 from ...infrastructure.adapters.redis_cache_adapter import redis_cache
 from ...infrastructure.adapters.reranker_adapter import build_reranker
-from ...infrastructure.observability import rag_observability
+from ...infrastructure.observability import RagTracer, rag_observability
+from ...infrastructure.repositories.mongo_trace_store import MongoTraceStore
 
 # Model endpoints (embed-standard / rerank-standard / chat aliases) resolve through the alias registry.
 _vector_store = QdrantVectorStoreAdapter(base_url=rag_settings.qdrant_url, collection_name=rag_settings.collection_name)
@@ -52,6 +59,7 @@ _embedding_service = HttpEmbeddingAdapter(dim=rag_settings.embedding_dim)
 _llm_service = HttpLlmAdapter()
 _reranker_service = build_reranker()
 _session_repo = MongoSessionRepositoryAdapter(mongo_uri=rag_settings.mongo_uri)
+_trace_store = MongoTraceStore(mongo_uri=rag_settings.mongo_uri, retention_days=rag_settings.trace_retention_days)
 
 chat_use_case = RagChatUseCase(
     vector_store=_vector_store,
@@ -61,7 +69,54 @@ chat_use_case = RagChatUseCase(
     cache_service=redis_cache,
     reranker_service=_reranker_service,
     observability_service=rag_observability,
+    trace_store=_trace_store,
 )
+
+
+_media_limiter = RateLimitDependency(requests_per_minute=3000)
+_media_storage = MinioStorageAdapter(
+    endpoint=rag_settings.minio_endpoint,
+    access_key=rag_settings.minio_root_user,
+    secret_key=rag_settings.minio_root_password,
+)
+
+
+@router.get("/media/{doc_id}/{filename}", dependencies=[Depends(_media_limiter)], include_in_schema=False)
+async def get_document_image(
+    doc_id: str,
+    filename: str,
+    t: str = Query("", description="tenant of the document"),
+    s: str = Query("", description="signature"),
+    e: int = Query(0, description="expiry (unix seconds, 0 = none)"),
+) -> Response:
+    """
+    An image of an indexed document, by signed URL (the answers carry them). A browser <img> request has
+    no identity headers, so the signature is the authorization: it binds tenant, document and file.
+    """
+    if not (rag_settings.media_enabled and media_assets.valid_ref(doc_id, filename)):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if not media_assets.verify(media_secret(), t, doc_id, filename, s, e):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or expired image link")
+    bucket = rag_settings.media_bucket or rag_settings.minio_bucket
+    data = await asyncio.to_thread(_media_storage.download_bytes, bucket, media_assets.object_key(t, doc_id, filename))
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    return Response(
+        content=data,
+        media_type=media_assets.content_type(filename),
+        headers={
+            # Files are named by content hash: the bytes behind a URL never change.
+            "Cache-Control": "private, max-age=86400, immutable",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": f"inline; filename={filename}",
+        },
+    )
+
+
+def _request_trace_id() -> Optional[str]:
+    """The trace id the observability middleware returns in X-Trace-ID, so headers, body and store agree."""
+    ctx = RagTracer.get_current_trace()
+    return ctx.trace_id if ctx else None
 
 session_use_case = RagSessionUseCase(session_repo=_session_repo)
 
@@ -120,6 +175,7 @@ async def chat_rag(
                 user_id=user_id,
                 user_role=user_role,
                 authorization=authorization,
+                trace_id=_request_trace_id(),
             ),
             media_type="text/event-stream",
             headers={
@@ -136,14 +192,17 @@ async def chat_rag(
             user_id=user_id,
             user_role=user_role,
             authorization=authorization,
+            trace_id=_request_trace_id(),
         )
     except INFRASTRUCTURE_ERRORS as exc:
-        # An outage must not be reported as "no relevant documents" (and must not open an escalation ticket).
-        logger.error("RAG chat failed on infrastructure dependency: %s", exc)
+        # An outage must not be reported as "no relevant documents" (and must not open an escalation ticket);
+        # an overload is refused with the time after which the client may retry.
+        message, retry_after, busy = unavailable_reply(exc)
+        (logger.warning if busy else logger.error)("RAG chat not served (%s): %s", "busy" if busy else "outage", exc)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"error": type(exc).__name__, "message": "Dịch vụ tạm thời gián đoạn, vui lòng thử lại sau."},
-            headers={"Retry-After": "5"},
+            detail={"error": type(exc).__name__, "message": message, "retry_after": retry_after},
+            headers={"Retry-After": str(retry_after)},
         ) from exc
 
 
@@ -166,6 +225,7 @@ async def chat_rag_stream(
             user_id=user_id,
             user_role=user_role,
             authorization=authorization,
+            trace_id=_request_trace_id(),
         ),
         media_type="text/event-stream",
         headers={
@@ -290,6 +350,21 @@ async def record_rag_feedback(
         "attribution_details": attribution_result.model_dump() if attribution_result else None,
     }
 
+    # The stored trace tells which stage produced the rated answer; rated traces feed the golden set.
+    if payload.trace_id:
+        trace = await _trace_store.get(payload.trace_id, tenant_id)
+        if trace is not None:
+            diagnosis = diagnose(trace, answer_correct=False if is_negative else True)
+            feedback_record["trace_diagnosis"] = diagnosis.to_dict()
+            await _trace_store.attach_feedback(payload.trace_id, tenant_id, {
+                "feedback_id": feedback_id,
+                "polarity": "negative" if is_negative else "positive",
+                "rating": payload.rating,
+                "text": payload.feedback_text or payload.comments,
+                "error_category": payload.error_category,
+                "diagnosed_stage": diagnosis.stage,
+            })
+
     await _session_repo.record_feedback(feedback_record)
     logger.info(
         "Recorded feedback %s for trace_id=%s rating=%s (attributed_stage=%s)",
@@ -307,6 +382,72 @@ async def record_rag_feedback(
     )
 
 
+def _require_admin(request: Request) -> None:
+    """Traces and index snapshots expose passages and prompts: admins or the admin API key only."""
+    api_key = request.headers.get("X-API-Key") or request.headers.get("Authorization", "")
+    api_key = api_key[7:] if api_key.startswith("Bearer ") else api_key
+    admin_key = getattr(rag_settings, "admin_api_key", None) or os.getenv("AIP_ADMIN_API_KEY", "")
+    if is_admin(request) or (admin_key and hmac.compare_digest(api_key, admin_key)):
+        return
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required.")
+
+
+@router.get("/traces/{trace_id}")
+async def get_trace(trace_id: str, request: Request) -> Dict[str, Any]:
+    """Full pipeline trace of one turn (stage inputs/outputs) with its stage diagnosis."""
+    _require_admin(request)
+    trace = await _trace_store.get(trace_id, _extract_tenant(request))
+    if trace is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trace not found or expired")
+    feedback = trace.get("feedback") or {}
+    if feedback.get("polarity"):
+        trace["diagnosis"] = diagnose(trace, answer_correct=feedback["polarity"] != "negative").to_dict()
+    return trace
+
+
+@router.get("/traces")
+async def list_traces(
+    request: Request,
+    session_id: Optional[str] = Query(default=None),
+    feedback: Optional[str] = Query(default=None, pattern="^(negative|positive|any)$"),
+    limit: int = Query(default=50, ge=1, le=500),
+) -> Dict[str, Any]:
+    """Recent traces of the tenant: per session, or rated turns (e.g. feedback=negative to review)."""
+    _require_admin(request)
+    traces = await _trace_store.list(_extract_tenant(request), session_id=session_id, feedback=feedback, limit=limit)
+    items = [
+        {
+            "trace_id": t.get("trace_id"), "session_id": t.get("session_id"), "created_at": t.get("created_at"),
+            "query": t.get("query"), "intent": (t.get("outcome") or {}).get("intent"),
+            "route": final_route(t), "is_refusal": (t.get("outcome") or {}).get("is_refusal"),
+            "total_ms": t.get("total_ms"), "feedback": t.get("feedback"),
+        }
+        for t in traces
+    ]
+    return {"items": items, "count": len(items)}
+
+
+@router.get("/eval/index-snapshot")
+async def eval_index_snapshot(
+    request: Request,
+    doc_id: Optional[str] = Query(default=None),
+    max_docs: int = Query(default=200, ge=1, le=1000),
+) -> Dict[str, Any]:
+    """
+    Every indexed chunk (text + identifiers) of the tenant's documents, for offline evaluation: tells
+    whether gold evidence survived parsing/chunking before blaming retrieval.
+    """
+    _require_admin(request)
+    tenant_id = _extract_tenant(request)
+    role = _extract_role(request)
+    doc_ids = [doc_id] if doc_id else await _vector_store.list_document_ids(tenant_id=tenant_id, user_role=role, limit=max_docs)
+    docs = []
+    for d in doc_ids[:max_docs]:
+        chunks = await _vector_store.fetch_document_chunks(doc_id=d, tenant_id=tenant_id, user_role=role, limit=5000)
+        docs.append({"doc_id": d, "chunks": [chunk_ref(c, text_chars=100_000) for c in chunks]})
+    return {"tenant_id": tenant_id, "documents": docs, "chunk_count": sum(len(d["chunks"]) for d in docs)}
+
+
 @router.get("/feedback/dashboard")
 async def get_feedback_dashboard(
     request: Request,
@@ -316,6 +457,61 @@ async def get_feedback_dashboard(
     tenant_id = _extract_tenant(request)
     records = await _session_repo.get_feedbacks(tenant_id=tenant_id, limit=limit)
     return error_attribution_service.generate_executive_dashboard(records)
+
+
+class TicketUpdateDTO(BaseModel):
+    status: Optional[str] = Field(default=None, pattern="^(open|resolved)$")
+    note: Optional[str] = Field(default=None, max_length=2000)
+    qa_id: Optional[str] = Field(default=None, max_length=64, description="Q&A pair added to answer it")
+
+
+TICKET_REASONS = ("out_of_domain_or_insufficient_evidence", "handoff_request", "callback_request", "user_feedback")
+
+
+@router.get("/tickets")
+async def list_tickets(
+    request: Request,
+    status_filter: str = Query(default="open", alias="status", pattern="^(open|resolved|all)$"),
+    reason: Optional[str] = Query(default=None, description="One of the ticket reasons; empty = all"),
+    q: Optional[str] = Query(default=None, max_length=200),
+    include_tests: bool = Query(default=False, description="Also show tickets of automated test sessions"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+) -> Dict[str, Any]:
+    """
+    Inbox of what the bot could not answer (and handoff / callback / feedback requests) for the caller's
+    knowledge base, newest first, so administrators can add the missing answer.
+    """
+    tenant_id = _extract_tenant(request)
+    hidden = [] if include_tests else [p.strip() for p in rag_settings.ticket_hidden_session_prefixes.split(",")]
+    result = await _session_repo.list_escalation_tickets(
+        tenant_id,
+        status=None if status_filter == "all" else status_filter,
+        reasons=[reason] if reason in TICKET_REASONS else None,
+        query=(q or "").strip() or None,
+        hidden_session_prefixes=hidden,
+        offset=(page - 1) * page_size,
+        limit=page_size,
+    )
+    for t in result["items"]:
+        t["status"] = t.get("status") or "open"
+    return {**result, "page": page, "page_size": page_size}
+
+
+@router.patch("/tickets/{ticket_id}")
+async def update_ticket(ticket_id: str, payload: TicketUpdateDTO, request: Request) -> Dict[str, Any]:
+    """Mark a ticket handled (or reopen it), optionally with a note and the Q&A pair that now answers it."""
+    tenant_id = _extract_tenant(request)
+    fields: Dict[str, Any] = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if payload.status == "resolved":
+        fields["resolved_at"] = time.time()
+        fields["resolved_by"] = extract_user(request)
+    elif payload.status == "open":
+        fields["resolved_at"] = None
+    ticket = await _session_repo.update_escalation_ticket(ticket_id, tenant_id, fields)
+    if ticket is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ticket '{ticket_id}' not found")
+    return ticket
 
 
 @router.post("/cache/clear", status_code=status.HTTP_200_OK)

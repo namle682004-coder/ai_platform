@@ -1,3 +1,4 @@
+import '/staff/project_routes.js';
 import '/staff/applications_nav.js';
 
 /**
@@ -1020,6 +1021,7 @@ import '/staff/applications_nav.js';
             project_id: 'global',
             project_name: 'Dự án Dùng Chung',
             type: 'global',
+            slug: 'shared',
             created_at: '2026-01-01T00:00:00'
         };
 
@@ -1458,6 +1460,23 @@ import '/staff/applications_nav.js';
         return section;
     }
 
+    const LEGACY_SERVICE_PAGES = {
+        'rag-chatbot': ['service_rag', 'solutions/rag'],
+        'llm-chat': ['service_llm'],
+        'speech-to-text': ['service_stt'],
+        'text-to-speech': ['service_tts'],
+        'ocr-cccd': ['service_ocr_id'],
+        'ocr-driver-license': ['service_ocr_dl'],
+        'ocr-passport': ['service_ocr_passport'],
+        'image-generation': ['service_image'],
+        'moderation': ['service_moderation'],
+        'face-match': ['service_vision_facematch'],
+        'liveness': ['service_vision_liveness'],
+        'embeddings': ['service_nlp_embeddings'],
+        'summarization': ['service_nlp_summarization'],
+        'translation': ['service_nlp_translation'],
+    };
+
     function syncApplicationsNavigation(path) {
         const applicationsSection = ensureApplicationsNavigationSection();
         const navList = applicationsSection?.querySelector('.nav-list');
@@ -1466,23 +1485,11 @@ import '/staff/applications_nav.js';
         const activeItem = APPLICATION_NAV_GROUPS
             .flatMap(group => group.items.map(item => ({ group, item })))
             .find(({ item }) => {
-                const apiId = item[2].toLowerCase();
-                if (path.endsWith(`/apis/${apiId}`)) return true;
-                if (apiId === 'rag-chat-enterprise-kb' && (path.includes('service_rag') || path.includes('rag-chat'))) return true;
-                if (apiId.includes('efb24a03') && path.includes('service_llm')) return true;
-                if (apiId.includes('3a72d1f9') && path.includes('service_stt')) return true;
-                if (apiId.includes('8b51ef94') && path.includes('service_tts')) return true;
-                if (apiId.includes('c194a2b3') && path.includes('service_ocr_id')) return true;
-                if (apiId.includes('d285b3c4') && path.includes('service_ocr_dl')) return true;
-                if (apiId.includes('e396c4d5') && path.includes('service_ocr_passport')) return true;
-                if (apiId.includes('f4a7d5e6') && path.includes('service_image')) return true;
-                if (apiId.includes('a5b8e6f7') && path.includes('service_moderation')) return true;
-                if (apiId.includes('b6c9f7a8') && path.includes('service_vision_facematch')) return true;
-                if (apiId.includes('c7da08b9') && path.includes('service_vision_liveness')) return true;
-                if (apiId.includes('d8eb19ca') && path.includes('service_nlp_embeddings')) return true;
-                if (apiId.includes('fa0d3bec') && path.includes('service_nlp_summarization')) return true;
-                if (apiId.includes('e9fc2adb') && path.includes('service_nlp_translation')) return true;
-                return false;
+                // Items are service slugs; pages opened through their former file names still match.
+                const slug = item[2].toLowerCase();
+                const route = window.AipRoutes ? window.AipRoutes.parse(path) : null;
+                if (route && route.section === 'service') return window.AipRoutes.serviceSlug(route.service) === slug;
+                return (LEGACY_SERVICE_PAGES[slug] || []).some(page => path.includes(page));
             });
         const storedCategory = sessionStorage.getItem('aip_staff_application_category');
         const selectedCategory = activeItem?.group.id ||
@@ -1962,7 +1969,8 @@ import '/staff/applications_nav.js';
 
     function isStaffPageUrl(url) {
         return url.origin === window.location.origin &&
-            (/^\/staff(?:\/|$)/i.test(url.pathname) || /^\/project\//i.test(url.pathname) || /^\/profile(?:\/|\.html|$)/i.test(url.pathname));
+            (/^\/staff(?:\/|$)/i.test(url.pathname) || /^\/projects?(?:\/|$)/i.test(url.pathname) ||
+             /^\/services\//i.test(url.pathname) || /^\/profile(?:\/|\.html|$)/i.test(url.pathname));
     }
 
     async function runPageScripts(parsedPage, pageUrl) {
@@ -2063,6 +2071,19 @@ import '/staff/applications_nav.js';
         }
     }
 
+    /** Checks the project named by the URL against the viewer's projects (see project_routes.js). */
+    async function verifyProjectInUrl() {
+        if (!window.AipRoutes || !window.AipRoutes.parse(window.location.pathname)) return;
+        try {
+            const res = await fetch('/v1/user/projects', { headers: getAuthHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (Array.isArray(data)) window.AipRoutes.onProjects(data);
+        } catch (err) {
+            console.warn('Cannot verify the project of this URL:', err);
+        }
+    }
+
     function handleStaffNavigation(event) {
         const anchor = event.target instanceof Element
             ? event.target.closest('.sidebar a, .top-header .brand-logo')
@@ -2109,6 +2130,9 @@ import '/staff/applications_nav.js';
         logoutUser,
         setSidebarCollapsed,
         init() {
+            // The project in the URL is the active one (also after an in-place page navigation).
+            if (window.AipRoutes) window.AipRoutes.syncFromUrl();
+            verifyProjectInUrl();
             injectSharedStyles();
             ensureModalsInDOM();
             ensureHeaderControls();
@@ -2141,6 +2165,8 @@ import '/staff/applications_nav.js';
                 }, { capture: true });
                 window.addEventListener('popstate', () => {
                     const url = new URL(window.location.href);
+                    // Only the view of this page changed (e.g. another conversation): the page handles it.
+                    if (window.AipRoutes && window.AipRoutes.isSamePage(url)) return;
                     if (isStaffPageUrl(url)) loadStaffPage(url);
                 });
                 window.__aipStaffNavigationBound = true;

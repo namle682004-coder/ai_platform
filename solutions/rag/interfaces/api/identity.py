@@ -73,6 +73,10 @@ class InternalCallerMiddleware(BaseHTTPMiddleware):
         token = rag_settings.runtime_token
         if request.url.path in _PUBLIC_PATHS or os.getenv("TEST_MODE") == "true":
             return await call_next(request)
+        if request.method == "GET" and request.url.path.startswith(rag_settings.media_path_prefix.rstrip("/") + "/"):
+            # Document images are loaded by <img> tags: the HMAC signature of the URL is the authorization
+            # (verified by the endpoint), there are no headers to check.
+            return await call_next(request)
         if token:
             supplied = request.headers.get("X-AIP-Runtime-Token", "")
             if not hmac.compare_digest(supplied, token):

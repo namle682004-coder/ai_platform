@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 import uuid
 from typing import Any, Dict, List, Optional
@@ -410,6 +411,68 @@ class MongoSessionRepositoryAdapter(SessionRepositoryPort):
         except Exception as exc:
             logger.warning("Failed to persist escalation ticket %s to MongoDB: %s", ticket_id, exc)
             return ticket_id
+
+    @staticmethod
+    def _ticket_filter(
+        tenant_id: str,
+        status: Optional[str] = None,
+        reasons: Optional[List[str]] = None,
+        query: Optional[str] = None,
+        hidden_session_prefixes: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Tickets of one tenant; a ticket without status is open (recorded before statuses existed)."""
+        clauses: List[Dict[str, Any]] = [{"tenant_id": tenant_id}]
+        if status == "resolved":
+            clauses.append({"status": "resolved"})
+        elif status == "open":
+            clauses.append({"status": {"$ne": "resolved"}})
+        if reasons:
+            clauses.append({"reason": {"$in": list(reasons)}})
+        if query:
+            clauses.append({"query": {"$regex": re.escape(query), "$options": "i"}})
+        prefixes = [p for p in (hidden_session_prefixes or []) if p]
+        if prefixes:
+            pattern = "^(" + "|".join(re.escape(p) for p in prefixes) + ")"
+            clauses.append({"session_id": {"$not": re.compile(pattern)}})
+        return {"$and": clauses}
+
+    async def list_escalation_tickets(
+        self,
+        tenant_id: str,
+        status: Optional[str] = None,
+        reasons: Optional[List[str]] = None,
+        query: Optional[str] = None,
+        hidden_session_prefixes: Optional[List[str]] = None,
+        offset: int = 0,
+        limit: int = 20,
+    ) -> Dict[str, Any]:
+        coll = self._get_escalations_collection()
+        flt = self._ticket_filter(tenant_id, status, reasons, query, hidden_session_prefixes)
+        base = self._ticket_filter(tenant_id, None, reasons, query, hidden_session_prefixes)
+        try:
+            total = await coll.count_documents(flt)
+            resolved = await coll.count_documents({"$and": [base, {"status": "resolved"}]})
+            open_count = await coll.count_documents({"$and": [base, {"status": {"$ne": "resolved"}}]})
+            cursor = coll.find(flt, {"_id": 0}).sort("created_at", -1).skip(max(0, offset)).limit(max(1, min(limit, 100)))
+            items = [d async for d in cursor]
+        except Exception as exc:  # noqa: BLE001 - the inbox degrades to empty, chat is unaffected
+            logger.warning("Listing escalation tickets failed: %s", exc)
+            return {"items": [], "total": 0, "counts": {"open": 0, "resolved": 0}}
+        return {"items": items, "total": total, "counts": {"open": open_count, "resolved": resolved}}
+
+    async def update_escalation_ticket(
+        self, ticket_id: str, tenant_id: str, fields: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        coll = self._get_escalations_collection()
+        allowed = {k: v for k, v in fields.items() if k in ("status", "note", "resolved_by", "resolved_at", "qa_id")}
+        try:
+            res = await coll.update_one({"ticket_id": ticket_id, "tenant_id": tenant_id}, {"$set": allowed})
+            if not res.matched_count:
+                return None
+            return await coll.find_one({"ticket_id": ticket_id, "tenant_id": tenant_id}, {"_id": 0})
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Updating escalation ticket %s failed: %s", ticket_id, exc)
+            return None
 
     async def record_feedback(self, feedback_data: Dict[str, Any]) -> str:
         """Persist user feedback and 5-stage error attribution to MongoDB collection rag_feedbacks (EXEC-RAG-04)."""
