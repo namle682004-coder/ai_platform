@@ -18,7 +18,7 @@ import hmac
 import re
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 from urllib.parse import parse_qs, quote, urlsplit
 
 # A stored image file: content hash (16 hex) + extension, as the parsers name them.
@@ -178,3 +178,137 @@ def images_section(images: Sequence[PassageImage], mapper: Callable[[str], str],
         lines.append(f"![{img.alt}]({url})" + (f"\n*({img.alt} – nguồn [{src}])*" if src else ""))
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
+
+
+def find_image_step_anchor(passage_text: str, filename: str) -> Optional[int]:
+    """Finds which numbered step (1, 2, 3...) an image tag is positioned after in passage text."""
+    pattern = re.compile(rf"!\[([^\]]*)\]\([^)]*{re.escape(filename)}[^)]*\)")
+    m = pattern.search(passage_text)
+    if not m:
+        return None
+    preceding = passage_text[: m.start()]
+    step_matches = list(re.finditer(r"(?i)\b(?:bước|step|thao tác)\s*(\d+)\b", preceding))
+    if step_matches:
+        return int(step_matches[-1].group(1))
+    numbered_matches = list(re.finditer(r"(?m)^\s*(?:[*\-]\s*)?(?:[#]+\s*)?(\d+)[\.\)]\s+", preceding))
+    if numbered_matches:
+        return int(numbered_matches[-1].group(1))
+    return None
+
+
+_WORD_RE = re.compile(r"\w{2,}", re.UNICODE)
+_NOISE_RE = re.compile(r"https?://\S+|\[\d+\]")
+_LIST_ITEM_RE = re.compile(r"^(\s*(?:[-*+•]|\d{1,3}[.)])\s+)")
+ANCHOR_MIN_WORDS = 3  # an anchor shorter than this ("Hình 1") says too little to find its line
+ANCHOR_MIN_OVERLAP = 0.5  # share of the anchor's words the answer line must repeat
+
+
+def _words(text: str) -> Set[str]:
+    return {w.lower() for w in _WORD_RE.findall(_NOISE_RE.sub(" ", _IMAGE_TAG_RE.sub(" ", text or "")))}
+
+
+def image_anchor_text(passage_text: str, filename: str) -> str:
+    """The paragraph an image follows in its passage (the parsers anchor images right after their paragraph)."""
+    pattern = re.compile(rf"!\[([^\]]*)\]\([^)]*{re.escape(filename)}[^)]*\)")
+    m = pattern.search(passage_text or "")
+    if not m:
+        return ""
+    before = [ln for ln in _IMAGE_TAG_RE.sub("", passage_text[: m.start()]).split("\n") if _words(ln)]
+    return before[-1].strip() if before else ""
+
+
+def _step_line(lines: Sequence[str], step: int) -> Optional[int]:
+    """Line of the answer that starts step `step` ("1.", "* **Bước 1:**", "Step 1)")."""
+    step_re = re.compile(
+        rf"(?i)^\s*(?:[-*+•]\s*)?(?:\*\*)?(?:(?:bước|step|thao tác)\s*)?{step}\s*[.):](?!\d)"
+    )
+    return next((i for i, ln in enumerate(lines) if step_re.match(ln)), None)
+
+
+def _anchor_line(line_words: Sequence[Set[str]], anchor: str) -> Optional[int]:
+    """Line of the answer repeating most of the anchor's words (None below ANCHOR_MIN_OVERLAP)."""
+    aw = _words(anchor)
+    if len(aw) < ANCHOR_MIN_WORDS:
+        return None
+    best, best_score = None, 0.0
+    for i, lw in enumerate(line_words):
+        if lw:
+            score = len(aw & lw) / len(aw)
+            if score > best_score:
+                best, best_score = i, score
+    return best if best_score >= ANCHOR_MIN_OVERLAP else None
+
+
+def _item_end(lines: Sequence[str], start: int) -> int:
+    """Last line of the list item / paragraph that starts at `start` (its continuation lines)."""
+    end = start
+    while (end + 1 < len(lines) and lines[end + 1].strip() and not _LIST_ITEM_RE.match(lines[end + 1])
+           and not lines[end + 1].lstrip().startswith(("#", "|", "![", ">"))):
+        end += 1
+    return end
+
+
+def interleave_inline_images(
+    body: str,
+    images: Sequence[PassageImage],
+    passages: Sequence[Dict[str, Any]],
+    mapper: Callable[[str], str],
+    prefix: str,
+    source_of: Optional[Dict[str, int]] = None,
+) -> Tuple[str, List[PassageImage]]:
+    """
+    Places each image the answer does not show under the step it illustrates, so a step and its screenshot stay
+    together instead of every picture landing in a block after the answer. Where an image belongs comes from its
+    document: the numbered step it follows, else the paragraph it follows (the answer line repeating most of its
+    words). Inside a list item the image is indented to stay in that item. Returns (body, images not placed).
+    """
+    if not images or not (body or "").strip():
+        return body, list(images)
+    shown = shown_files(body, prefix)
+    to_place = [img for img in images if img.filename not in shown]
+    if not to_place:
+        return body, []
+
+    passage_of: Dict[str, str] = {}  # image file -> text of the passage it appears in
+    for p in passages:
+        payload = p.get("payload") if isinstance(p.get("payload"), dict) else p
+        text = str(payload.get("text") or "")
+        for m in _IMAGE_TAG_RE.finditer(text):
+            ref = _ref_of(m.group(2), prefix)
+            if ref and ref[1]:
+                passage_of.setdefault(ref[1], text)
+
+    lines = body.split("\n")
+    line_words = [_words(ln) for ln in lines]
+    inserts: Dict[int, List[str]] = {}
+    placed: Set[str] = set()
+    for img in to_place:
+        text = passage_of.get(img.filename, "")
+        if not text:
+            continue
+        step = find_image_step_anchor(text, img.filename)
+        target = _step_line(lines, step) if step is not None else None
+        if target is None:
+            target = _anchor_line(line_words, image_anchor_text(text, img.filename))
+        if target is None:
+            continue
+        marker = _LIST_ITEM_RE.match(lines[target])
+        pad = " " * (len(marker.group(1)) if marker else 0)
+        url = mapper(media_path(prefix, img.doc_id, img.filename))
+        src = (source_of or {}).get(img.filename)
+        block = f"{pad}![{img.alt}]({url})" + (f"\n{pad}*({img.alt} – nguồn [{src}])*" if src else "")
+        inserts.setdefault(_item_end(lines, target), []).append(block)
+        placed.add(img.filename)
+
+    if not inserts:
+        return body, to_place
+    out: List[str] = []
+    for i, line in enumerate(lines):
+        out.append(line)
+        if i in inserts:
+            for block in inserts[i]:
+                out.extend(["", block])
+            if i + 1 < len(lines) and lines[i + 1].strip():
+                out.append("")  # the next item / paragraph starts after a blank line
+    return "\n".join(out), [img for img in to_place if img.filename not in placed]
+

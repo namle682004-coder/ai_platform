@@ -7,15 +7,19 @@ document listing with pagination, and complete cascading deletion.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import os
+import re
 import time
+import unicodedata
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from ...domain.entities import (
     DEFAULT_TENANT_ID,
+    SHARED_DEPARTMENT,
     DocumentChunk,
     DocumentStatus,
     normalize_tenant_id,
@@ -26,8 +30,10 @@ from ...domain.ports import (
     EmbeddingPort,
     NullCacheAdapter,
     NullObservabilityAdapter,
+    NullTableStore,
     ObservabilityPort,
     StoragePort,
+    TableStorePort,
     VectorStorePort,
 )
 from ..dtos import (
@@ -39,9 +45,10 @@ from ..dtos import (
 
 logger = logging.getLogger("aip-rag.knowledge_use_case")
 
-ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md", ".json", ".csv"}
+# .xlsx is read by ExcelDocumentParser (openpyxl); legacy binary .xls is not supported by openpyxl.
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".html", ".htm", ".txt", ".md", ".json", ".csv"}
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
-DEFAULT_DEPARTMENT = "GENERAL"
+DEFAULT_DEPARTMENT = SHARED_DEPARTMENT
 TERMINAL_STATUSES = frozenset({DocumentStatus.INDEXED.value, DocumentStatus.FAILED.value})
 
 
@@ -61,6 +68,43 @@ def _iso_timestamp(value: Any) -> str:
     else:
         dt = datetime.now(timezone.utc)
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+_QA_COLUMN_NAMES = {
+    # Checked in this order: "câu hỏi tương tự" is a variations column before it is a question column.
+    "variations": ("cach hoi khac", "cau hoi tuong tu", "tuong tu", "bien the", "variations", "variants"),
+    "category": ("danh muc", "chu de", "nhom", "phan loai", "category", "group", "topic"),
+    "answer": ("cau tra loi", "tra loi", "dap an", "noi dung tra loi", "answer", "a"),
+    "question": ("cau hoi", "hoi", "question", "q"),
+}
+
+
+def _plain(text: Any) -> str:
+    """Lower case, no accents, words separated by single spaces ("Câu trả lời:" -> "cau tra loi")."""
+    s = unicodedata.normalize("NFD", str(text or "")).replace("đ", "d").replace("Đ", "d")
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn").lower()
+    return re.sub(r"[^a-z0-9]+", " ", s).strip()
+
+
+def qa_sheet_columns(header_row: Sequence[Any]) -> Tuple[Optional[int], Optional[int], Optional[int], Optional[int]]:
+    """
+    (question, answer, category, variations) column indexes of a Q&A sheet from its header row. A name matches
+    as whole words ("Câu trả lời (bắt buộc)"); a one-letter name ("Q", "A") only as the whole header.
+    """
+    headers = [_plain(h) for h in header_row]
+    found: Dict[str, int] = {}
+    for role, names in _QA_COLUMN_NAMES.items():
+        for i, h in enumerate(headers):
+            if i in found.values() or not h:
+                continue
+            if any(h == n or (len(n) > 1 and f" {n} " in f" {h} ") for n in names):
+                found[role] = i
+                break
+    return found.get("question"), found.get("answer"), found.get("category"), found.get("variations")
+
+
+def _question_key(question: str) -> str:
+    return _plain(question)
 
 
 def _title_from_filename(filename: str) -> str:
@@ -86,6 +130,10 @@ def _to_document_dto(d: Dict[str, Any], fallback_tenant: str = "") -> DocumentRe
         effective_status=d.get("effective_status", "ACTIVE"),
         effective_date=d.get("effective_date"),
         expiry_date=d.get("expiry_date"),
+        version=int(d.get("version") or 1),
+        replaces_doc_id=d.get("replaces_doc_id"),
+        superseded_by=d.get("superseded_by"),
+        deduplicated=bool(d.get("deduplicated", False)),
     )
 
 
@@ -100,10 +148,12 @@ class KnowledgeManagementUseCase:
         embedding_service: Optional[EmbeddingPort] = None,
         cache_service: Optional[CachePort] = None,
         observability_service: Optional[ObservabilityPort] = None,
+        table_store: Optional[TableStorePort] = None,
     ) -> None:
         self.doc_repo = doc_repo
         self.storage = storage
         self.vector_store = vector_store
+        self.table_store = table_store or NullTableStore()
         self.embedding_service = embedding_service
         self.cache_service = cache_service or NullCacheAdapter()
         self.obs = observability_service or NullObservabilityAdapter()
@@ -128,6 +178,7 @@ class KnowledgeManagementUseCase:
         effective_status: Optional[str] = "ACTIVE",
         effective_date: Optional[str] = None,
         expiry_date: Optional[str] = None,
+        replaces_doc_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Validate, upload raw file to MinIO, and record PENDING status."""
         tenant_id = normalize_tenant_id(tenant_id)
@@ -138,7 +189,36 @@ class KnowledgeManagementUseCase:
         if len(file_bytes) > MAX_FILE_SIZE_BYTES:
             raise ValueError(f"File size exceeds maximum allowed 50MB ({len(file_bytes)} bytes)")
 
+        roles = allowed_roles or ["*"]
+        content_sha256 = hashlib.sha256(file_bytes).hexdigest()
+        existing = await self.find_duplicate(tenant_id, content_sha256, roles)
+        if existing is not None:
+            # The same file is already in this knowledge base for the same audience: indexing it again would
+            # put every passage twice in retrieval (duplicate sources, crowded context).
+            logger.info(
+                "Upload of '%s' to tenant=%s matches existing doc_id=%s (sha256=%s…); not re-indexed",
+                filename, tenant_id, existing["doc_id"], content_sha256[:12],
+            )
+            return {**existing, "deduplicated": True}
+
         doc_id = f"doc_{uuid.uuid4().hex[:12]}"
+        now = int(time.time())
+        version = 1
+
+        if replaces_doc_id:
+            old_doc = await self.doc_repo.get_document(replaces_doc_id)
+            if not old_doc or normalize_tenant_id(old_doc.get("tenant_id")) != tenant_id:
+                raise ValueError(f"Document to replace '{replaces_doc_id}' not found in this tenant")
+            version = int(old_doc.get("version") or 1) + 1
+            if not title or title.strip() in ("", "string"):
+                title = old_doc.get("title")
+            if not department or department.strip() in ("", "string"):
+                department = old_doc.get("department")
+            # The old version stays searchable until this one is indexed (ingestion retires it then): a new
+            # version still being parsed, or failing to, never leaves the knowledge base without the document.
+            logger.info("Document %s will be replaced by new version %s (v%d) once indexed",
+                        replaces_doc_id, doc_id, version)
+
         s3_object_name = f"documents/{tenant_id}/{doc_id}_{filename}"
 
         s3_uri = self.storage.upload_bytes(
@@ -149,9 +229,7 @@ class KnowledgeManagementUseCase:
 
         resolved_title = title.strip() if title and title.strip() not in ("", "string") else _title_from_filename(filename)
         resolved_dept = department.strip() if department and department.strip() not in ("", "string") else DEFAULT_DEPARTMENT
-        roles = allowed_roles or ["*"]
 
-        now = int(time.time())
         doc_record = {
             "doc_id": doc_id,
             "tenant_id": tenant_id,
@@ -159,6 +237,7 @@ class KnowledgeManagementUseCase:
             "filename": filename,
             "file_type": ext.lstrip("."),
             "file_size_bytes": len(file_bytes),
+            "content_sha256": content_sha256,
             "status": DocumentStatus.PENDING.value,
             "total_chunks": 0,
             "total_pages": 0,
@@ -170,12 +249,35 @@ class KnowledgeManagementUseCase:
             "effective_status": effective_status or "ACTIVE",
             "effective_date": effective_date,
             "expiry_date": expiry_date,
+            "version": version,
+            "replaces_doc_id": replaces_doc_id,
+            "superseded_by": None,
             "created_at": now,
             "updated_at": now,
         }
 
         await self.doc_repo.create_document(doc_record)
         return doc_record
+
+    async def find_duplicate(
+        self, tenant_id: str, content_sha256: str, allowed_roles: List[str]
+    ) -> Optional[Dict[str, Any]]:
+        """
+        A live record of the same file in the same tenant, visible to the same roles.
+
+        Scope is the tenant only: another project's (or the shared base's) copy is a separate knowledge base.
+        A copy restricted to other roles is kept apart too, otherwise users the new upload targets would not
+        see it. A failed earlier attempt is not a duplicate: uploading again is how it is retried.
+        """
+        wanted = sorted(set(allowed_roles or ["*"]))
+        for doc in await self.doc_repo.find_by_content_hash(tenant_id, content_sha256):
+            if doc.get("status") == DocumentStatus.FAILED.value:
+                continue
+            if normalize_tenant_id(doc.get("tenant_id")) != normalize_tenant_id(tenant_id):
+                continue
+            if sorted(set(doc.get("allowed_roles") or ["*"])) == wanted:
+                return doc
+        return None
 
     async def list_documents(
         self,
@@ -224,8 +326,12 @@ class KnowledgeManagementUseCase:
         if not doc or normalize_tenant_id(doc.get("tenant_id")) != tenant_id:
             return False
 
-        # 1. Delete points in Vector DB
+        # 1. Delete points in Vector DB, and the document's stored tables
         await self.vector_store.delete_by_doc_id(doc_id, tenant_id)
+        try:
+            await self.table_store.delete_document(tenant_id, doc_id)
+        except Exception as exc:  # noqa: BLE001 - logged; a later re-upload replaces them anyway
+            logger.warning("Tables of doc=%s not deleted: %s", doc_id, exc)
 
         # 2. Delete raw file in MinIO
         s3_bucket = doc.get("s3_bucket", "aip-data")
@@ -385,4 +491,87 @@ class KnowledgeManagementUseCase:
         await self.vector_store.delete_by_doc_id(qa_id, tenant_id)
         await self._invalidate_tenant_cache(tenant_id, f"deleting QA={qa_id}")
         return QADeleteResponseDTO(status="deleted", qa_id=qa_id)
+
+    async def import_qa_from_excel(
+        self,
+        file_bytes: bytes,
+        filename: str = "qa.xlsx",
+        tenant_id: str = DEFAULT_TENANT_ID,
+    ) -> Dict[str, Any]:
+        """
+        Bulk import Q&A pairs from an Excel workbook (.xlsx) (Requirement #19).
+        Embeds and indexes each pair into the tenant's Vector DB.
+        """
+        import io
+        import openpyxl
+
+        tenant_id = normalize_tenant_id(tenant_id)
+        wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+        ws = wb.active
+
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows or len(rows) < 2:
+            raise ValueError("Tệp Excel không có dữ liệu hoặc thiếu dòng tiêu đề.")
+
+        q_idx, a_idx, cat_idx, var_idx = qa_sheet_columns(rows[0])
+        if q_idx is None or a_idx is None:
+            raise ValueError("Không nhận ra cột câu hỏi và cột câu trả lời: dòng đầu cần có tiêu đề "
+                             "\"Câu hỏi\" và \"Câu trả lời\" (hoặc \"Question\", \"Answer\").")
+
+        # A pair whose question is already in this knowledge base is not added twice (re-importing a file).
+        known = {_question_key(q.get("question", "")) for q in await self.list_qa(tenant_id)}
+
+        imported = 0
+        failed = 0
+        skipped = 0
+        errors = []
+        created_items = []
+
+        for row_idx, row in enumerate(rows[1:], start=2):
+            if not row or all(v is None or str(v).strip() == "" for v in row):
+                continue
+            q_val = str(row[q_idx] or "").strip() if q_idx < len(row) and row[q_idx] is not None else ""
+            a_val = str(row[a_idx] or "").strip() if a_idx < len(row) and row[a_idx] is not None else ""
+
+            if not q_val or not a_val:
+                failed += 1
+                errors.append(f"Dòng {row_idx}: Thiếu câu hỏi hoặc câu trả lời")
+                continue
+            if _question_key(q_val) in known:
+                skipped += 1
+                continue
+            known.add(_question_key(q_val))
+
+            category = "general"
+            if cat_idx is not None and cat_idx < len(row) and row[cat_idx]:
+                category = str(row[cat_idx]).strip() or "general"
+
+            variations = []
+            if var_idx is not None and var_idx < len(row) and row[var_idx]:
+                raw_vars = str(row[var_idx]).replace("\n", "|").split("|")
+                variations = [v.strip() for v in raw_vars if v.strip()]
+
+            try:
+                qa_res = await self.ingest_qa(
+                    question=q_val,
+                    answer=a_val,
+                    category=category,
+                    tenant_id=tenant_id,
+                    question_variations=variations,
+                )
+                imported += 1
+                created_items.append({"qa_id": qa_res.qa_id, "question": q_val, "category": category})
+            except Exception as exc:
+                failed += 1
+                errors.append(f"Dòng {row_idx}: Lỗi nạp ({exc})")
+
+        return {
+            "total_rows": len(rows) - 1,
+            "imported": imported,
+            "skipped_existing": skipped,
+            "failed": failed,
+            "errors": errors,
+            "items": created_items,
+        }
+
 

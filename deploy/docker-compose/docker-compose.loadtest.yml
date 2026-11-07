@@ -1,0 +1,107 @@
+# Isolated rehearsal of the server stack, without a GPU (scripts/loadtest_local.sh).
+#
+# Same RAG image, same memory caps and the same overload settings as docker-compose.server.yml, with fresh
+# infrastructure (nothing shared with real data) and stub model runtimes that have llama-server's slot
+# behaviour and the measured latencies of the model host. It exercises the system's protections (admission,
+# runtime bulkheads, rate limits, memory caps, ingestion + OCR under chat load); it says nothing about
+# answer quality.
+#
+#   AIP_RAG_IMAGE=aip-rag:ocr-test docker compose -f deploy/docker-compose/docker-compose.loadtest.yml -p aip-loadtest up -d
+#   ... scripts/load_test_rag.py --api http://localhost:18010 ...
+#   docker compose -f deploy/docker-compose/docker-compose.loadtest.yml -p aip-loadtest down -v
+
+name: aip-loadtest
+
+x-rag-env: &rag-env
+  ENVIRONMENT: loadtest
+  MONGO_URI: mongodb://mongo:27017/aip_loadtest
+  QDRANT_URL: http://qdrant:6333
+  QDRANT_COLLECTION_NAME: aip_loadtest
+  REDIS_URL: redis://redis:6379/0
+  RABBITMQ_URL: amqp://aip:aip@rabbitmq:5672/
+  MINIO_ENDPOINT: minio:9000
+  AIP_MINIO_USER: aipminio
+  AIP_MINIO_PASSWORD: aipminio-secret
+  RAG_LLM_URL: http://stub:8011/v1
+  RAG_EMBEDDING_URL: http://stub:8012/v1
+  RAG_RERANKER_URL: http://stub:8013/v1
+  RAG_RERANKER_BACKEND: remote
+  EMBEDDING_DIM: "1024"
+  RAG_TRUST_IDENTITY_HEADERS: "true"
+  # Overload settings of docker-compose.server.yml (one llama-server with --parallel 2).
+  RAG_LLM_MAX_CONCURRENT: ${RAG_LLM_MAX_CONCURRENT:-2}
+  RAG_CHAT_MAX_INFLIGHT: ${RAG_CHAT_MAX_INFLIGHT:-6}
+  RAG_CHAT_GLOBAL_RATE_LIMIT_PER_MINUTE: ${RAG_CHAT_GLOBAL_RATE_LIMIT_PER_MINUTE:-20}
+  RAG_QUERY_ANALYSIS_TIMEOUT: ${RAG_QUERY_ANALYSIS_TIMEOUT:-6}
+
+services:
+  mongo:
+    image: mongo:7.0
+    mem_limit: 512m
+  qdrant:
+    image: qdrant/qdrant:v1.12.0
+    mem_limit: 1g
+  redis:
+    image: redis:7.2-alpine
+    mem_limit: 256m
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    mem_limit: 512m
+    environment:
+      RABBITMQ_DEFAULT_USER: aip
+      RABBITMQ_DEFAULT_PASS: aip
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    mem_limit: 512m
+    environment:
+      MINIO_ROOT_USER: aipminio
+      MINIO_ROOT_PASSWORD: aipminio-secret
+
+  stub:
+    image: ${AIP_RAG_IMAGE:-aip/rag:latest}
+    command: ["python", "/scripts/stub_runtimes.py", "--chat-slots", "${STUB_CHAT_SLOTS:-2}",
+              "--prefill", "${STUB_PREFILL:-1.2}", "--tokens-per-s", "${STUB_TOKENS_PER_S:-25}",
+              "--fail-rate", "${STUB_FAIL_RATE:-0}"]
+    volumes:
+      - ../../scripts:/scripts:ro
+
+  rag-api:
+    image: ${AIP_RAG_IMAGE:-aip/rag:latest}
+    container_name: aip-loadtest-rag-api
+    mem_limit: 1g
+    memswap_limit: 1g
+    ports:
+      - "18010:8010"
+    command: ["python", "-m", "solutions.rag.main", "--mode", "api", "--host", "0.0.0.0", "--port", "8010"]
+    restart: unless-stopped
+    environment: *rag-env
+    volumes:
+      - ../../solutions/rag:/app/solutions/rag:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8010/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  rag-worker:
+    image: ${AIP_RAG_IMAGE:-aip/rag:latest}
+    container_name: aip-loadtest-rag-worker
+    mem_limit: 768m
+    memswap_limit: 768m
+    command: ["python", "solutions/rag/worker.py"]
+    restart: unless-stopped  # as on the server: the worker exits when RabbitMQ refuses the first connection
+    environment: *rag-env
+    volumes:
+      - ../../solutions/rag:/app/solutions/rag:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy

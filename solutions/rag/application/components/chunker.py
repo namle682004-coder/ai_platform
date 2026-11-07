@@ -26,6 +26,8 @@ _TOC_LINE_RE = re.compile(r"^\S.{1,200}?\t+\s*\d{1,4}\s*$")
 _FIELD_CODE_RE = re.compile(r"(?:\bPAGEREF\s+_Toc|\bTOC\s+\\[a-z]|\bHYPERLINK\s+\\l)")
 # A line ending with one of these closes its sentence; anything else may continue on the next line.
 _CLOSING_CHARS = tuple(".!?:;…\"”’)]»|*")
+# A numbered line longer than this is a list item of running text, not a section title.
+MAX_HEADING_WORDS = 20
 _LIST_START_RE = re.compile(r"^\s*(?:[-*+•]\s|\d{1,3}[.)]\s|[a-zđ][.)]\s|\|)")
 # Day-of-week words (language resource): a line made only of them is a date label, not a heading.
 CALENDAR_WORDS = frozenset({
@@ -422,10 +424,11 @@ class DocumentChunker:
         if multi_dec_match:
             prefix = multi_dec_match.group(1).strip()
             rest = multi_dec_match.group(2).strip()
-            # Must not be financial amounts, percentages, or full narrative sentences
+            # Must not be financial amounts, percentages, or full narrative sentences (a numbered item of
+            # running text is content: as a heading its words would only survive in the breadcrumb)
             if not re.match(r"^(?:VNĐ|VND|USD|EUR|đ|triệu|tỷ|%)\b", rest, re.IGNORECASE) and (
                 not stripped.endswith((".", "!", "?", ";")) or len(rest.split()) <= 6
-            ):
+            ) and len(rest.split()) <= MAX_HEADING_WORDS:
                 dots = prefix.count(".")
                 level = min(6, 1 + dots)
                 title = f"{prefix}: {rest}" if rest else prefix
@@ -758,6 +761,12 @@ class DocumentChunker:
         breadcrumb_stack: List[Tuple[int, str]] = []
         current_breadcrumb: List[str] = []
         current_heading_level = 0
+        # A heading followed directly by a sibling heading has no chunk of its own and is in no breadcrumb
+        # once replaced: it is kept as a chunk so its words stay retrievable.
+        heading_line: Optional[str] = None
+        chunks_at_heading = 0
+        declared_level = 0  # level of the last heading the document itself declares (0 = none so far)
+        clean_text, page_number, page_parent_windows, page_cursor = "", 1, None, 0
 
         for page in parsed_doc.pages:
             clean_text = self._mask_pii(page.text.strip())
@@ -834,6 +843,30 @@ class DocumentChunker:
                             curr_buffer_len = 0
 
                         level, heading_title = heading_info
+                        if lines[0].lstrip().startswith("#"):
+                            declared_level = level  # a heading the document declares (Word outline / Markdown)
+                        elif declared_level:
+                            # A heading guessed from its look ("2. Trình tự", an ALL CAPS line) inside a document
+                            # with declared headings belongs under the current declared section; ranked at its
+                            # guessed level it would replace the document / chapter in the breadcrumb. Guessed
+                            # levels are shifted (not clamped) so "2." keeps "2.1" as its child.
+                            level = min(6, level + declared_level)
+                        if heading_line is not None and len(chunks) == chunks_at_heading and level <= current_heading_level:
+                            chunk, page_cursor = self._create_chunk(
+                                raw_text=heading_line,
+                                clean_page_text=clean_text,
+                                doc_id=doc_id,
+                                page_number=page.page_number,
+                                chunk_index=chunk_index,
+                                breadcrumb=current_breadcrumb,
+                                heading_level=current_heading_level,
+                                doc_title=doc_title,
+                                parent_windows=page_parent_windows,
+                                start_hint=page_cursor,
+                            )
+                            chunks.append(chunk)
+                            chunk_index += 1
+                        heading_line, chunks_at_heading = lines[0], len(chunks)
                         current_heading_level = level
                         while breadcrumb_stack and breadcrumb_stack[-1][0] >= level:
                             breadcrumb_stack.pop()
@@ -1012,5 +1045,20 @@ class DocumentChunker:
                 )
                 chunks.append(chunk)
                 chunk_index += 1
+            page_number = page.page_number
 
+        if heading_line is not None and len(chunks) == chunks_at_heading and self.hierarchical:
+            chunk, page_cursor = self._create_chunk(
+                raw_text=heading_line,
+                clean_page_text=clean_text,
+                doc_id=doc_id,
+                page_number=page_number,
+                chunk_index=chunk_index,
+                breadcrumb=current_breadcrumb,
+                heading_level=current_heading_level,
+                doc_title=doc_title,
+                parent_windows=page_parent_windows,
+                start_hint=page_cursor,
+            )
+            chunks.append(chunk)
         return chunks

@@ -2,8 +2,15 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (Tesseract OCRs scanned PDF pages during ingestion; no OCR server needed)
+RUN apt-get update && apt-get install -y --no-install-recommends     curl tesseract-ocr     && rm -rf /var/lib/apt/lists/*
+
+# Vietnamese OCR models: tessdata_best (LSTM) language + script models; the distribution's "fast" models misread
+# Vietnamese diacritics (measured on dg233, see benchmarks/rag/configs/data_gate.yaml).
+ENV TESSDATA_PREFIX=/usr/share/tessdata_best
+RUN mkdir -p $TESSDATA_PREFIX/script \
+    && for m in vie osd; do curl -fsSL -o $TESSDATA_PREFIX/$m.traineddata https://github.com/tesseract-ocr/tessdata_best/raw/main/$m.traineddata; done \
+    && curl -fsSL -o $TESSDATA_PREFIX/script/Vietnamese.traineddata https://github.com/tesseract-ocr/tessdata_best/raw/main/script/Vietnamese.traineddata
 
 COPY packages/contracts /app/packages/contracts
 COPY packages/common /app/packages/common
@@ -28,7 +35,9 @@ RUN pip install --no-cache-dir \
     protobuf \
     python-multipart \
     prometheus-client \
-    redis
+    redis \
+    pytesseract \
+    pillow
 
 ENV PYTHONPATH="/app:/app/solutions/rag:/app/packages/common:/app/packages/contracts"
 

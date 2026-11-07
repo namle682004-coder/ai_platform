@@ -259,19 +259,22 @@ def test_ing_rag_01_all_five_heading_formats():
     # 2. Verify Roman numeral detection
     c_roman = next(c for c in chunks if "Nguyên tắc vận hành" in c.text)
     assert "I. QUY CHẾ VẬN HÀNH" in c_roman.metadata.get("heading_path", "")
-    assert c_roman.metadata.get("heading_level") == 2
+    # Headings guessed from their look sit under the document's declared (Markdown) heading: level 2 + 1.
+    assert c_roman.metadata.get("heading_level") == 3
 
     # 3. Verify Decimal hierarchy detection (2.1 under 2.)
     c_dec = next(c for c in chunks if "Định nghĩa chi tiết" in c.text)
     assert "2. QUY TRÌNH XỬ LÝ SỰ CỐ" in c_dec.metadata.get("heading_path", "")
     assert "2.1: Phân loại sự cố P1" in c_dec.metadata.get("heading_path", "")
+    # The numbered section no longer replaces the document title in the breadcrumb.
+    assert c_dec.metadata.get("heading_path", "").startswith("HỆ THỐNG VẬN HÀNH DOANH NGHIỆP")
 
     # 4. Verify Alphabetic outline (A. and a))
     c_sub = next(c for c in chunks if "Yêu cầu tiếp nhận trong vòng 5 phút" in c.text)
     heading_path = c_sub.metadata.get("heading_path", "")
     assert "A. Tiêu chí kỹ thuật" in heading_path
     assert "a) Điều kiện tiếp nhận khẩn cấp" in heading_path
-    assert c_sub.metadata.get("heading_level") == 3
+    assert c_sub.metadata.get("heading_level") == 4  # a) is level 3 under the declared level-1 heading
     assert "[Ngữ cảnh: " in c_sub.text
 
 

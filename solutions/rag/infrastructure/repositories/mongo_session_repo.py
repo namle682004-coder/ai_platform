@@ -460,11 +460,31 @@ class MongoSessionRepositoryAdapter(SessionRepositoryPort):
             return {"items": [], "total": 0, "counts": {"open": 0, "resolved": 0}}
         return {"items": items, "total": total, "counts": {"open": open_count, "resolved": resolved}}
 
+    async def count_open_tickets(self, tenant_id: str, session_id: str) -> int:
+        """Tickets of one conversation still waiting for customer service."""
+        try:
+            return await self._get_escalations_collection().count_documents(
+                {"tenant_id": tenant_id, "session_id": session_id, "status": {"$ne": "resolved"}}
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Counting open tickets of %s failed: %s", session_id, exc)
+            return 0
+
+    async def get_escalation_ticket(self, ticket_id: str, tenant_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            return await self._get_escalations_collection().find_one(
+                {"ticket_id": ticket_id, "tenant_id": tenant_id}, {"_id": 0}
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Reading escalation ticket %s failed: %s", ticket_id, exc)
+            return None
+
     async def update_escalation_ticket(
         self, ticket_id: str, tenant_id: str, fields: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         coll = self._get_escalations_collection()
-        allowed = {k: v for k, v in fields.items() if k in ("status", "note", "resolved_by", "resolved_at", "qa_id")}
+        allowed = {k: v for k, v in fields.items()
+                   if k in ("status", "note", "resolved_by", "resolved_at", "qa_id", "reply", "replied_at", "replied_by")}
         try:
             res = await coll.update_one({"ticket_id": ticket_id, "tenant_id": tenant_id}, {"$set": allowed})
             if not res.matched_count:

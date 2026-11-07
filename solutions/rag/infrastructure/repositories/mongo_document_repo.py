@@ -36,6 +36,7 @@ class MongoDocumentRepositoryAdapter(DocumentRepositoryPort):
         self.mongo_uri = mongo_uri or os.getenv("MONGO_URI") or os.getenv("MONGODB_URI") or ""
         self._client: Optional[AsyncIOMotorClient] = None
         self._memory_docs: Dict[str, Dict[str, Any]] = {}
+        self._hash_index_ready = False
 
     def _get_collection(self) -> Any:
         if self._client is None:
@@ -128,6 +129,68 @@ class MongoDocumentRepositoryAdapter(DocumentRepositoryPort):
         total = len(matched)
         items = matched[skip : skip + page_size]
         return items, total
+
+    async def find_by_content_hash(self, tenant_id: str, content_sha256: str) -> List[Dict[str, Any]]:
+        if not content_sha256:
+            return []
+        try:
+            coll = self._get_collection()
+            if not self._hash_index_ready:
+                await coll.create_index([("tenant_id", 1), ("content_sha256", 1)], name="tenant_content_sha256")
+                self._hash_index_ready = True
+            cursor = coll.find(
+                {"tenant_id": _tenant_filter(tenant_id), "content_sha256": content_sha256}
+            ).sort("created_at", 1)
+            out: List[Dict[str, Any]] = []
+            async for doc in cursor:
+                doc.pop("_id", None)
+                out.append(doc)
+            return out
+        except Exception as exc:
+            logger.debug("Mongo find_by_content_hash fallback (%s)", exc)
+        tenant_id = normalize_tenant_id(tenant_id)
+        return sorted(
+            (
+                dict(d) for d in self._memory_docs.values()
+                if normalize_tenant_id(d.get("tenant_id")) == tenant_id and d.get("content_sha256") == content_sha256
+            ),
+            key=lambda d: d.get("created_at", 0),
+        )
+
+    async def find_by_source(self, tenant_id: str, source_id: str) -> List[Dict[str, Any]]:
+        try:
+            cursor = self._get_collection().find({"tenant_id": _tenant_filter(tenant_id), "source_id": source_id})
+            return [{k: v for k, v in d.items() if k != "_id"} async for d in cursor]
+        except Exception as exc:
+            logger.debug("Mongo find_by_source fallback (%s)", exc)
+        return [dict(d) for d in self._memory_docs.values()
+                if d.get("source_id") == source_id and normalize_tenant_id(d.get("tenant_id")) == normalize_tenant_id(tenant_id)]
+
+    async def list_departments(self, tenant_id: str) -> List[str]:
+        """Departments of the tenant's documents (those still in use, not superseded or failed)."""
+        query = {"tenant_id": _tenant_filter(tenant_id), "status": {"$nin": ["SUPERSEDED", "FAILED"]}}
+        try:
+            values = await self._get_collection().distinct("department", query)
+        except Exception as exc:
+            logger.debug("Mongo list_departments fallback (%s)", exc)
+            values = [d.get("department") for d in self._memory_docs.values()
+                      if normalize_tenant_id(d.get("tenant_id")) == normalize_tenant_id(tenant_id)
+                      and d.get("status") not in ("SUPERSEDED", "FAILED")]
+        return sorted({str(v).strip() for v in values if v and str(v).strip()})
+
+    async def count_by_source(self, tenant_id: str) -> Dict[str, int]:
+        """Number of documents of each connector source of a tenant."""
+        try:
+            pipeline = [{"$match": {"tenant_id": _tenant_filter(tenant_id), "source_id": {"$exists": True}}},
+                        {"$group": {"_id": "$source_id", "n": {"$sum": 1}}}]
+            return {d["_id"]: d["n"] async for d in self._get_collection().aggregate(pipeline)}
+        except Exception as exc:
+            logger.debug("Mongo count_by_source fallback (%s)", exc)
+        counts: Dict[str, int] = {}
+        for d in self._memory_docs.values():
+            if d.get("source_id") and normalize_tenant_id(d.get("tenant_id")) == normalize_tenant_id(tenant_id):
+                counts[d["source_id"]] = counts.get(d["source_id"], 0) + 1
+        return counts
 
     async def delete_document(self, doc_id: str, tenant_id: str) -> bool:
         self._memory_docs.pop(doc_id, None)

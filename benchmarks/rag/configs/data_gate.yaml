@@ -1,0 +1,7 @@
+# Step-1 data-quality gate (rag_benchmark.data_audit). Algorithm work (step 2) starts only after PASS.
+# See .claude/skills/rag-quality-protocol/data-quality-standard.md
+dq1_min_coverage: 0.99        # word recall of the source text in the chunks, every document with a text layer
+dq2_min_table_rows_ok: 0.99   # table rows whose every non-empty cell has a real column name
+dq3_min_scanned_ocr: 1.0      # scanned pages that carry OCR text
+dq4_min_ocr_accuracy: 0.95    # reference lines (read from page images) found in the chunks
+dq5_min_gold: 0.95            # benchmark facts in ONE chunk with their label

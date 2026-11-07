@@ -167,6 +167,11 @@ class RuntimeGuard:
             yield self
         except RuntimeOverloadedError:
             raise
+        except asyncio.CancelledError:
+            # The caller gave up (its own deadline, a client that went away), not the runtime: under a burst
+            # callers time out on a busy but healthy runtime, and counting that would open the breaker and
+            # refuse everyone after the burst. A runtime that really hangs fails on the HTTP client's timeout.
+            raise
         except BaseException as exc:
             if getattr(exc, "capacity_refusal", False):
                 raise  # the runtime was busy, not failing: the breaker is left as it is

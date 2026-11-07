@@ -284,16 +284,96 @@ class RagSolutionSettings(BaseSettings):
         default=os.getenv("AIP_INTERNAL_API_KEY", ""),
         validation_alias=AliasChoices("AIP_INTERNAL_API_KEY", "internal_api_key"),
     )
+    # Support channels shown when a question is handed over. Empty by default: a placeholder number reads as a
+    # real one to users (and as a fabricated code to evaluation), and the bot must never ask users for
+    # remote-access credentials. Each deployment sets its real channels.
+    # --- Connectors (data sources read directly; see solutions/rag/CONNECTORS.md) ---
+    connectors_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_CONNECTORS_ENABLED", "connectors_enabled"),
+    )
+    connector_scheduler_interval_seconds: float = Field(
+        default=60.0, gt=0,
+        validation_alias=AliasChoices("RAG_CONNECTOR_SCHEDULER_INTERVAL_SECONDS", "connector_scheduler_interval_seconds"),
+    )
+    connector_lease_seconds: float = Field(
+        default=3600.0, gt=0, validation_alias=AliasChoices("RAG_CONNECTOR_LEASE_SECONDS", "connector_lease_seconds"),
+        description="A sync holding a source longer than this is presumed dead and the source can be synced again",
+    )
+    connector_secret_env_prefix: str = Field(
+        default="AIP_SOURCE_SECRET_",
+        validation_alias=AliasChoices("RAG_CONNECTOR_SECRET_ENV_PREFIX", "connector_secret_env_prefix"),
+        description="Credentials of a source are read only from environment variables with this prefix",
+    )
+    connector_timeout_seconds: float = Field(
+        default=30.0, gt=0, validation_alias=AliasChoices("RAG_CONNECTOR_TIMEOUT_SECONDS", "connector_timeout_seconds"),
+    )
+    connector_max_response_bytes: int = Field(
+        default=20 * 1024 * 1024, gt=0,
+        validation_alias=AliasChoices("RAG_CONNECTOR_MAX_RESPONSE_BYTES", "connector_max_response_bytes"),
+    )
+    connector_max_pages: int = Field(
+        default=500, ge=1, validation_alias=AliasChoices("RAG_CONNECTOR_MAX_PAGES", "connector_max_pages"),
+        description="Upper bound of web pages / API pages read in one sync (a source may set a lower one)",
+    )
+    connector_max_records: int = Field(
+        default=100_000, ge=1, validation_alias=AliasChoices("RAG_CONNECTOR_MAX_RECORDS", "connector_max_records"),
+    )
+    connector_min_delay_seconds: float = Field(
+        default=0.2, ge=0, validation_alias=AliasChoices("RAG_CONNECTOR_MIN_DELAY_SECONDS", "connector_min_delay_seconds"),
+        description="Minimum pause between two requests to a source (a source may set a longer one)",
+    )
+    connector_timezone: str = Field(
+        default="+07:00", validation_alias=AliasChoices("RAG_CONNECTOR_TIMEZONE", "connector_timezone"),
+        description="Time zone of the users ('+07:00' or an IANA name): date partitions and times shown in "
+                    "documents built from records are in it (a source may set config.timezone)",
+    )
+    reference_clarification_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("RAG_REFERENCE_CLARIFICATION_ENABLED", "reference_clarification_enabled"),
+        description="Ask which sub-document is meant when a named part (\"Điều 7\") exists in several",
+    )
+    # --- Questions over whole tables (filter / count / list / sum), answered in code from the table store ---
+    table_query_enabled: bool = Field(
+        default=True, validation_alias=AliasChoices("RAG_TABLE_QUERY_ENABLED", "table_query_enabled"),
+    )
+    table_query_max_docs: int = Field(
+        default=20, ge=1, validation_alias=AliasChoices("RAG_TABLE_QUERY_MAX_DOCS", "table_query_max_docs"),
+        description="Retrieved documents whose tables are offered to the planner",
+    )
+    table_query_max_tables: int = Field(
+        default=400, ge=1, validation_alias=AliasChoices("RAG_TABLE_QUERY_MAX_TABLES", "table_query_max_tables"),
+        description="Tables of the same templates read across the tenant (one template in many documents)",
+    )
+    # --- OCR of scanned PDF pages (Tesseract, in the ingestion worker image) ---
+    ocr_dpi: int = Field(
+        default=300, ge=72, le=600,
+        validation_alias=AliasChoices("RAG_OCR_DPI", "ocr_dpi"),
+        description="Render resolution of scanned pages for OCR; Vietnamese diacritics need ~300",
+    )
+    ocr_max_pages: int = Field(
+        default=300, ge=1, validation_alias=AliasChoices("RAG_OCR_MAX_PAGES", "ocr_max_pages"),
+        description="Scanned pages OCRed per document; beyond, pages are indexed without text (logged on the document)",
+    )
+    ocr_page_timeout_seconds: float = Field(
+        default=60.0, gt=0, validation_alias=AliasChoices("RAG_OCR_PAGE_TIMEOUT_SECONDS", "ocr_page_timeout_seconds"),
+        description="A page Tesseract cannot read within this time is skipped instead of holding the worker",
+    )
+    ocr_languages: str = Field(
+        # Measured on a 200-DPI scanned decree (dg233): 'vie+eng' lets English read Vietnamese syllables without
+        # diacritics ("T6 chức", "chat lượng"); the Vietnamese language + script models together are best.
+        default="vie+script/Vietnamese",
+        validation_alias=AliasChoices("RAG_OCR_LANGUAGES", "ocr_languages"),
+    )
     escalation_hotline: str = Field(
-        default="1900-xxxx (Nhánh 2)",
+        default="",
         validation_alias=AliasChoices("RAG_ESCALATION_HOTLINE", "escalation_hotline"),
     )
     escalation_support_method: str = Field(
-        default="UltraViewer",
+        default="",
         validation_alias=AliasChoices("RAG_ESCALATION_SUPPORT_METHOD", "escalation_support_method"),
     )
     escalation_instructions: str = Field(
-        default="Vui lòng cung cấp ID và Mật khẩu UltraViewer để kỹ thuật viên kết nối hỗ trợ trực tiếp.",
+        default="",
         validation_alias=AliasChoices("RAG_ESCALATION_INSTRUCTIONS", "escalation_instructions"),
     )
     redis_url: str = Field(

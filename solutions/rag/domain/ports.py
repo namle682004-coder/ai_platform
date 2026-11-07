@@ -181,6 +181,56 @@ class DocumentRepositoryPort(ABC):
         """Permanently delete document record."""
         ...
 
+    async def find_by_content_hash(self, tenant_id: str, content_sha256: str) -> List[Dict[str, Any]]:
+        """Records of the tenant holding the same file bytes (oldest first); none if unsupported."""
+        return []
+
+    async def find_by_source(self, tenant_id: str, source_id: str) -> List[Dict[str, Any]]:
+        """Documents created by a connector source; none if unsupported."""
+        return []
+
+    async def list_departments(self, tenant_id: str) -> List[str]:
+        """Departments the tenant's documents are assigned to; none if unsupported."""
+        return []
+
+
+class TableStorePort(ABC):
+    """Whole tables of indexed documents (rows + column names), for questions answered in code over rows."""
+
+    @abstractmethod
+    async def replace_document(
+        self, tenant_id: str, doc_id: str, allowed_roles: List[str], tables: List[Dict[str, Any]]
+    ) -> int:
+        """Store the tables of a document, replacing any earlier version; returns how many were stored."""
+        ...
+
+    @abstractmethod
+    async def delete_document(self, tenant_id: str, doc_id: str) -> int:
+        ...
+
+    @abstractmethod
+    async def list_tables(
+        self,
+        tenant_id: str,
+        user_role: str = "user",
+        doc_ids: Optional[List[str]] = None,
+        signatures: Optional[List[str]] = None,
+        limit: int = 500,
+    ) -> List[Dict[str, Any]]:
+        """Tables readable by the caller (tenant + shared knowledge base, role ACL), by document or by kind."""
+        ...
+
+
+class NullTableStore(TableStorePort):
+    async def replace_document(self, tenant_id, doc_id, allowed_roles, tables) -> int:
+        return 0
+
+    async def delete_document(self, tenant_id, doc_id) -> int:
+        return 0
+
+    async def list_tables(self, tenant_id, user_role="user", doc_ids=None, signatures=None, limit=500):
+        return []
+
 
 class SessionRepositoryPort(ABC):
     """Port for Chat Session & History persistence."""

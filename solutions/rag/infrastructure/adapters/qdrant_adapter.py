@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from ...config import rag_settings
-from ...domain.entities import DocumentChunk, normalize_iso_date
+from ...domain.entities import SHARED_DEPARTMENT, DocumentChunk, normalize_iso_date
 from ...domain.exceptions import VectorStoreError
 from ...domain.ports import VectorStorePort
 
@@ -284,7 +284,8 @@ class QdrantVectorStoreAdapter(VectorStorePort):
         ]
 
         if department:
-            must_conditions.append({"key": "department", "match": {"value": department}})
+            # A department sees its own documents and those for everyone (uploaded without a department).
+            must_conditions.append({"key": "department", "match": {"any": sorted({department, SHARED_DEPARTMENT})}})
 
         if doc_ids:
             must_conditions.append({"key": "doc_id", "match": {"any": doc_ids}})

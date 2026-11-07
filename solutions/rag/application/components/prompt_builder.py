@@ -64,9 +64,15 @@ ANSWER_RULES = (
 )
 
 PROCEDURE_RULES = (
-    "15. Tài liệu có mô tả quy trình/thao tác: trình bày ĐỦ TẤT CẢ các bước theo đúng thứ tự của tài liệu ngay trong câu trả lời "
-    "(* **Bước 1: …**, * **Bước 2: …**), không chờ người dùng xác nhận. Nếu tài liệu có thẻ ảnh dạng ![...](url), giữ nguyên thẻ ảnh "
-    "và đặt ngay dưới câu mô tả bước tương ứng; không tự tạo thẻ ảnh."
+    "15. QUY TRÌNH THAO TÁC VÀ HÌNH ẢNH MINH HỌA:\n"
+    "- Khi tài liệu mô tả quy trình/thao tác/hướng dẫn sử dụng: trình bày ĐẦY ĐỦ TẤT CẢ các bước theo đúng thứ tự tài liệu "
+    "(* **Bước 1: …**, * **Bước 2: …**), không chờ người dùng xác nhận, không được bỏ bớt bước.\n"
+    "- BẮT BUỘC CHÈN ẢNH ĐI LIỀN BƯỚC: Nếu đoạn tài liệu có thẻ ảnh (dạng `![mô tả](img:...)` hoặc `![mô tả](...)`), "
+    "BẮT BUỘC sao chép nguyên vẹn thẻ ảnh đó và đặt NGAY DƯỚI câu mô tả bước tương ứng. "
+    "Chữ và hình ảnh phải đi liền nhau theo từng bước, TUYỆT ĐỐI KHÔNG gom dồn toàn bộ ảnh xuống cuối câu trả lời.\n"
+    "16. ĐỊNH DẠNG THEO LOẠI CÂU HỎI:\n"
+    "- Câu hỏi báo lỗi hoặc hướng dẫn thao tác (HDSD): định dạng theo dạng checklist từng bước rõ ràng; nếu có hotline hoặc kênh hỗ trợ kỹ thuật thì hiển thị nổi bật ở cuối để người dùng tiện liên hệ khi cần.\n"
+    "- Câu hỏi nâng cấp phần mềm, cập nhật phiên bản, chính sách quy định: tập trung giải thích rõ các điểm thay đổi, nêu chính xác căn cứ văn bản/số hiệu/ngày hiệu lực và trích dẫn [1], [2]."
 )
 
 SYSTEM_PREAMBLE = (
@@ -109,6 +115,8 @@ def strip_breadcrumb(text: str) -> str:
 
 
 def context_has_procedure(texts: List[str]) -> bool:
+    # An image alone is not a procedure (news photos, charts): only step wording is. Images are placed under
+    # their steps in code (media_assets.interleave_inline_images), whether or not the model copies the tags.
     return any(_PROCEDURE_HINT_RE.search(t or "") for t in texts)
 
 

@@ -911,7 +911,9 @@
                 progressBar.style.width = "100%";
                 if (res.ok) {
                     const data = await res.json();
-                    statusText.innerText = `Nạp thành công! Đã tách ${data.total_chunks || 0} chunks.`;
+                    statusText.innerText = data.deduplicated
+                        ? `Tài liệu này đã có trong kho (${data.total_chunks || 0} chunks) nên không nạp lại.`
+                        : `Nạp thành công! Đã tách ${data.total_chunks || 0} chunks.`;
                     setTimeout(() => {
                         progress.style.display = "none";
                         selectedFile = null;

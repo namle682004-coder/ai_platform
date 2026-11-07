@@ -6,7 +6,7 @@
 		prepare-translation-model \
         dev-dispatcher dev-callback worker-image \
         dev-ui ui frontend-dev frontend-build \
-        rag-eval-import rag-eval-checklist rag-eval-calibrate rag-eval rag-gate rag-eval-test \
+        rag-eval-import rag-eval-checklist rag-eval-calibrate rag-eval rag-gate rag-eval-test rag-connectors-e2e \
         test lint fmt export clean help
 
 COMPOSE_FILE ?= deploy/docker-compose/docker-compose.yml
@@ -290,6 +290,25 @@ rag-gate:
 	@test -n "$(RAG_EVAL_RUN)" || (echo "RAG_EVAL_RUN=<run dir> is required" && exit 2)
 	$(RAG_BENCH) gate --run $(abspath $(RAG_EVAL_RUN)) --gate $(abspath $(RAG_EVAL_GATE)) \
 		--calibration $(abspath $(RAG_EVAL_CALIBRATION)) $(if $(RAG_EVAL_BASELINE),--baseline $(abspath $(RAG_EVAL_BASELINE)))
+
+# Step-1 data-quality gate: AIP parser+chunker vs independent extraction (no LLM). Exit 1 = do not start step 2.
+# make rag-data-gate RAG_DATA_DOCS=/path/to/docs [RAG_DATA_CHECKS=benchmarks/rag/datasets/acceptance/<set>.index_checks.json]
+RAG_DATA_DOCS ?=
+RAG_DATA_CHECKS ?=
+rag-data-gate:
+	@test -n "$(RAG_DATA_DOCS)" || (echo "RAG_DATA_DOCS=<folder of source documents> is required" && exit 2)
+	cd benchmarks/rag/src && PYTHONPATH=../../..:../../../packages/common:../../../packages/contracts \
+		$(abspath $(PYTHON)) -m rag_benchmark.data_audit --docs "$(RAG_DATA_DOCS)" \
+		$(if $(RAG_DATA_CHECKS),--checks $(abspath $(RAG_DATA_CHECKS))) --gate $(abspath benchmarks/rag/configs/data_gate.yaml)
+
+# Connector rehearsal: isolated stack + fake customer source (JSON API + intranet), real API/worker/Mongo/Qdrant.
+# make rag-connectors-e2e [AIP_RAG_IMAGE=aip-rag:ocr-test]   (exit 1 = a check failed; the stack is removed either way)
+RAG_E2E_COMPOSE = -f deploy/docker-compose/docker-compose.loadtest.yml \
+	-f deploy/docker-compose/docker-compose.connectors-e2e.yml -p aip-loadtest
+rag-connectors-e2e:
+	docker compose $(RAG_E2E_COMPOSE) up -d --wait
+	docker exec -i aip-loadtest-rag-api python - < scripts/e2e_connectors.py; rc=$$?; \
+		docker compose $(RAG_E2E_COMPOSE) down -v; exit $$rc
 
 rag-eval-test:
 	@echo "▶ Offline tests of tracing, verification and the evaluation harness..."

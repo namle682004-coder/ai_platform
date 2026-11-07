@@ -35,7 +35,9 @@ from ...application.dtos import (
     QAListResponseDTO,
 )
 from ...application.use_cases.knowledge_use_case import KnowledgeManagementUseCase
-from ...domain.entities import DEFAULT_TENANT_ID, normalize_iso_date, normalize_tenant_id
+from ...domain.entities import DEFAULT_TENANT_ID, SHARED_DEPARTMENT, normalize_iso_date, normalize_tenant_id
+from ...domain.support_config import SupportConfigDTO, SupportConfigUpdateRequest
+from ...infrastructure.repositories.mongo_support_repo import MongoSupportRepository
 from .chat_router import record_rag_feedback
 from .identity import can_write_tenant, extract_role, extract_tenant, is_admin
 from ...infrastructure.adapters.embedding_adapter import HttpEmbeddingAdapter
@@ -43,6 +45,7 @@ from ...infrastructure.adapters.qdrant_adapter import QdrantVectorStoreAdapter
 from ...infrastructure.adapters.redis_cache_adapter import redis_cache
 from ...infrastructure.adapters.storage_adapter import MinioStorageAdapter
 from ...infrastructure.repositories.mongo_document_repo import MongoDocumentRepositoryAdapter
+from ...infrastructure.repositories.mongo_table_repo import MongoTableStore
 
 logger = logging.getLogger("aip-rag.api.knowledge")
 
@@ -70,6 +73,7 @@ knowledge_use_case = KnowledgeManagementUseCase(
     embedding_service=_embedding_service,
     cache_service=redis_cache,
     observability_service=rag_observability,
+    table_store=MongoTableStore(rag_settings.mongo_uri),
 )
 
 
@@ -123,6 +127,7 @@ async def _dispatch_to_rabbitmq(task_payload: Dict[str, Any]) -> bool:
 @router.post("/documents/upload", response_model=DocumentResponseDTO, status_code=status.HTTP_201_CREATED, dependencies=[Depends(_upload_limiter)])
 async def upload_document(
     request: Request,
+    response: Response,
     file: UploadFile = File(...),
     title: Optional[str] = Form(None),
     department: Optional[str] = Form(None),
@@ -130,6 +135,7 @@ async def upload_document(
     effective_status: Optional[str] = Form("ACTIVE"),
     effective_date: Optional[str] = Form(None),
     expiry_date: Optional[str] = Form(None),
+    replaces_doc_id: Optional[str] = Form(None),
     wait_for_completion: bool = Query(
         True,
         description="Wait (up to RAG_UPLOAD_WAIT_TIMEOUT_SECONDS) for the worker to finish indexing before responding",
@@ -159,9 +165,18 @@ async def upload_document(
             effective_status=effective_status,
             effective_date=effective_date,
             expiry_date=expiry_date,
+            replaces_doc_id=replaces_doc_id,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if doc_record.get("deduplicated"):
+        # Same file already in this knowledge base: return that record (200, not 201) without re-indexing.
+        response.status_code = status.HTTP_200_OK
+        existing = await knowledge_use_case.get_document(doc_record["doc_id"])
+        if existing is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve existing document")
+        return existing.model_copy(update={"deduplicated": True})
 
     # Dispatch ingestion task to RabbitMQ worker
     dispatched = await _dispatch_to_rabbitmq(doc_record)
@@ -173,6 +188,36 @@ async def upload_document(
     if not doc_dto:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve created document")
     return doc_dto
+
+
+@router.post("/documents/{doc_id}/replace", response_model=DocumentResponseDTO, status_code=status.HTTP_201_CREATED, dependencies=[Depends(_upload_limiter)])
+async def replace_document(
+    doc_id: str,
+    request: Request,
+    response: Response,
+    file: UploadFile = File(...),
+    title: Optional[str] = Form(None),
+    department: Optional[str] = Form(None),
+    allowed_roles: Optional[str] = Form(None),
+    effective_status: Optional[str] = Form("ACTIVE"),
+    effective_date: Optional[str] = Form(None),
+    expiry_date: Optional[str] = Form(None),
+    wait_for_completion: bool = Query(True),
+) -> DocumentResponseDTO:
+    """Upload a new version of an existing document, marking the old document SUPERSEDED and purging its vectors."""
+    return await upload_document(
+        request=request,
+        response=response,
+        file=file,
+        title=title,
+        department=department,
+        allowed_roles=allowed_roles,
+        effective_status=effective_status,
+        effective_date=effective_date,
+        expiry_date=expiry_date,
+        replaces_doc_id=doc_id,
+        wait_for_completion=wait_for_completion,
+    )
 
 
 @router.get("/documents", response_model=DocumentListResponseDTO, dependencies=[Depends(_read_limiter)])
@@ -192,6 +237,18 @@ async def list_documents(
         page_size=page_size,
         status=status_filter,
     )
+
+
+@router.get("/departments", dependencies=[Depends(_read_limiter)])
+async def list_departments(request: Request) -> Dict[str, Any]:
+    """
+    Departments the tenant's documents are assigned to, taken from the documents themselves (nothing is
+    configured per customer). A chat question can be scoped to one: it then sees that department's documents
+    and the shared ones.
+    """
+    tenant_id = _extract_tenant(request)
+    departments = await knowledge_use_case.doc_repo.list_departments(tenant_id)
+    return {"departments": departments, "shared": SHARED_DEPARTMENT}
 
 
 @router.get("/documents/{doc_id}", response_model=DocumentResponseDTO)
@@ -374,4 +431,140 @@ async def delete_qa_entry(
     tenant_id = _extract_tenant(request)
     _require_write_access(request, tenant_id)
     return await knowledge_use_case.delete_qa(qa_id=qa_id, tenant_id=tenant_id)
+
+
+def _generate_qa_template_workbook() -> bytes:
+    import io
+    import openpyxl
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Hỏi - Đáp FAQ"
+
+    headers = [
+        "Câu hỏi (bắt buộc)",
+        "Câu trả lời (bắt buộc)",
+        "Danh mục (tùy chọn)",
+        "Biến thể câu hỏi (cách nhau bởi dấu |)",
+    ]
+    ws.append(headers)
+
+    sample_rows = [
+        [
+            "Làm thế nào để cài đặt Plugin ký số?",
+            "Để cài đặt Plugin ký số, bạn thực hiện theo các bước sau:\n1. Tải bộ cài đặt từ mục Cài đặt trên hệ thống.\n2. Chạy tệp cài đặt và làm theo hướng dẫn.\n3. Khởi động lại trình duyệt để kích hoạt plugin.",
+            "Kỹ thuật",
+            "Cài đặt plugin ký số như thế nào? | Hướng dẫn cài plugin ký số | Lỗi chưa cài plugin ký số",
+        ],
+        [
+            "Cách xuất hóa đơn điện tử điều chỉnh?",
+            "Vào menu Quản lý hóa đơn > Chọn hóa đơn cần điều chỉnh > Bấm 'Lập hóa đơn điều chỉnh' > Điền lý do và số tiền điều chỉnh > Ký số và phát hành.",
+            "Nghiệp vụ Hóa đơn",
+            "Lập hóa đơn điều chỉnh | Xuất hóa đơn điều chỉnh | Sửa hóa đơn sai sót",
+        ],
+        [
+            "Số điện thoại hotline hỗ trợ kỹ thuật là gì?",
+            "Hotline hỗ trợ kỹ thuật là 1900 xxxx (nhánh 1) hoặc liên hệ qua UltraViewer để được hỗ trợ trực tiếp.",
+            "Chăm sóc khách hàng",
+            "Hotline CSKH | Số điện thoại kỹ thuật | Tổng đài hỗ trợ",
+        ],
+    ]
+    for row in sample_rows:
+        ws.append(row)
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or "")) for cell in col)
+        col_letter = openpyxl.utils.get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = min(max(max_len + 3, 15), 50)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+@router.get("/qa/template-excel")
+async def download_qa_template():
+    """Download a pre-formatted Excel template (.xlsx) for bulk Q&A importing (Requirement #19)."""
+    xlsx_bytes = _generate_qa_template_workbook()
+    return Response(
+        content=xlsx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="Mau_Nhap_Hoi_Dap_FAQ.xlsx"'},
+    )
+
+
+@router.post("/qa/import-excel", status_code=status.HTTP_200_OK)
+async def import_qa_excel(
+    request: Request,
+    file: UploadFile = File(...),
+) -> Dict[str, Any]:
+    """Bulk import Q&A pairs from an Excel (.xlsx) file (Requirement #19)."""
+    tenant_id = _extract_tenant(request)
+    _require_write_access(request, tenant_id)
+
+    filename = file.filename or "qa.xlsx"
+    if not (filename.endswith(".xlsx") or filename.endswith(".xls")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Định dạng tệp không hợp lệ. Vui lòng tải lên tệp Excel định dạng .xlsx",
+        )
+
+    file_bytes = await file.read()
+    try:
+        res = await knowledge_use_case.import_qa_from_excel(
+            file_bytes=file_bytes,
+            filename=filename,
+            tenant_id=tenant_id,
+        )
+        return res
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Lỗi nhập dữ liệu từ Excel: {exc}",
+        ) from exc
+
+
+support_repo = MongoSupportRepository()
+
+
+@router.get("/support-config", response_model=SupportConfigDTO, dependencies=[Depends(_read_limiter)])
+async def get_support_config(request: Request) -> SupportConfigDTO:
+    """Retrieve hotline and remote support channel configuration for current tenant (Requirement #17)."""
+    tenant_id = _extract_tenant(request)
+    cfg = await support_repo.get_support_config(tenant_id)
+    if cfg:
+        return SupportConfigDTO(**cfg)
+    return SupportConfigDTO(
+        tenant_id=tenant_id,
+        hotline=rag_settings.escalation_hotline,
+        support_method=rag_settings.escalation_support_method,
+        instructions=rag_settings.escalation_instructions,
+    )
+
+
+@router.put("/support-config", response_model=SupportConfigDTO)
+async def update_support_config(payload: SupportConfigUpdateRequest, request: Request) -> SupportConfigDTO:
+    """Update hotline and remote support configuration for current tenant (Requirement #17)."""
+    tenant_id = _extract_tenant(request)
+    _require_write_access(request, tenant_id)
+
+    instr = payload.instructions or ""
+    # Security requirement #17: Never instruct user to enter remote control passwords into chat
+    if ("mật khẩu" in instr.lower() or "password" in instr.lower()) and any(
+        w in instr.lower() for w in ("nhập", "gửi", "chat", "tin nhắn", "khung chat")
+    ):
+        if "điện thoại" not in instr.lower() and "phone" not in instr.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Quy định an toàn thông tin: Không được hướng dẫn người dùng gửi mật khẩu qua khung chat. Mật khẩu kết nối từ xa phải đọc trực tiếp qua điện thoại.",
+            )
+
+    saved = await support_repo.save_support_config(
+        tenant_id=tenant_id,
+        hotline=payload.hotline or "",
+        support_method=payload.support_method or "",
+        instructions=payload.instructions or "",
+    )
+    return SupportConfigDTO(**saved)
+
 

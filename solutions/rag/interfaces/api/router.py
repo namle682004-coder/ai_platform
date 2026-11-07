@@ -7,9 +7,11 @@ from fastapi import APIRouter, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from .chat_router import router as chat_router
 from .knowledge_router import router as knowledge_router
+from .sources_router import router as sources_router
 
 rag_api_router = APIRouter()
 rag_api_router.include_router(chat_router)
+rag_api_router.include_router(sources_router)  # before /v1/knowledge/{…} routes
 rag_api_router.include_router(knowledge_router)
 
 
@@ -19,4 +21,4 @@ def get_prometheus_metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-__all__ = ["rag_api_router", "chat_router", "knowledge_router"]
+__all__ = ["rag_api_router", "chat_router", "knowledge_router", "sources_router"]

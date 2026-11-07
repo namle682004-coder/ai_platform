@@ -43,8 +43,10 @@ from ...domain.ports import (
     LLMPort,
     NullCacheAdapter,
     NullObservabilityAdapter,
+    NullTableStore,
     NullTraceStore,
     ObservabilityPort,
+    TableStorePort,
     RerankerPort,
     SessionRepositoryPort,
     TraceStorePort,
@@ -120,6 +122,13 @@ from ..components.run_trace import (
     end_turn,
     trace_stage,
 )
+from ..components.reference_ambiguity import ambiguous_reference
+from ..components.reference_ambiguity import clarification_text as reference_clarification_text
+from ..components.table_query import parse_plan as parse_table_plan
+from ..components.table_query import planner_messages as table_planner_messages
+from ..components.table_query import render_result as render_table_result
+from ..components.table_query import run_query as run_table_query
+from ..components.table_store import TableRecord
 from ..components.numeric_tables import (
     compute_answer as compute_numeric_answer,
 )
@@ -366,6 +375,8 @@ class _TurnPlan:
     outline: List[str] = field(default_factory=list)
     context_chunks: List[Dict[str, Any]] = field(default_factory=list)
     suggestion_pool: List[Dict[str, Any]] = field(default_factory=list)
+    # Generated answer with the document's images placed under their steps (None: no image placed in it).
+    inline_body: Optional[str] = None
     section_pool: List[Dict[str, Any]] = field(default_factory=list)  # passages of the answered documents (images by section)
     speculative: Optional[Any] = None  # asyncio.Task: retrieval + rerank of a first message, run during analysis
     speculative_query: str = ""
@@ -379,6 +390,7 @@ class _TurnPlan:
     answer_replaced: bool = False  # the generated answer was replaced (refusal, out-of-scope, feedback)
     policy_category: str = ""  # labelled out-of-scope by the analyzer; answered only on strong evidence
     strategy: str = "stuff"
+    support: Optional[Any] = None
     sanitize_ctx: Optional[SanitizeContext] = None
 
 
@@ -538,7 +550,10 @@ class RagChatUseCase:
         query_analyzer: Optional[QueryAnalyzer] = None,
         support_responder: Optional[SupportResponder] = None,
         trace_store: Optional[TraceStorePort] = None,
+        table_store: Optional[TableStorePort] = None,
+        support_repo: Optional[Any] = None,
     ) -> None:
+        self.table_store = table_store or NullTableStore()
         self.vector_store = vector_store
         self.embedding_service = embedding_service
         self.llm_service = llm_service
@@ -560,6 +575,21 @@ class RagChatUseCase:
             support_method=rag_settings.escalation_support_method,
             instructions=rag_settings.escalation_instructions,
         )
+        self.support_repo = support_repo
+
+    async def _support_for_tenant(self, tenant_id: str) -> SupportResponder:
+        if self.support_repo is not None:
+            try:
+                cfg = await self.support_repo.get_support_config(tenant_id)
+                if cfg and (cfg.get("hotline") or cfg.get("support_method")):
+                    return SupportResponder(
+                        hotline=cfg.get("hotline") or "",
+                        support_method=cfg.get("support_method") or "",
+                        instructions=cfg.get("instructions") or "",
+                    )
+            except Exception as exc:
+                logger.debug("Support config lookup for tenant=%s failed: %s", tenant_id, exc)
+        return self.support
 
     async def _build_and_persist_escalation(
         self,
@@ -593,14 +623,15 @@ class RagChatUseCase:
             except Exception as exc:
                 logger.warning("Could not persist escalation ticket: %s", exc)
 
+        responder = await self._support_for_tenant(tenant_id)
         return {
             "status": "escalation_required",
             "reason": reason,
             "message": REFUSAL_MESSAGE,
             "escalation_data": {
-                "hotline": rag_settings.escalation_hotline,
-                "support_method": rag_settings.escalation_support_method,
-                "instructions": rag_settings.escalation_instructions,
+                "hotline": responder.hotline,
+                "support_method": responder.support_method,
+                "instructions": responder.instructions,
                 "auto_ticket_created": True,
                 "ticket_id": ticket_id,
             },
@@ -1094,6 +1125,8 @@ class RagChatUseCase:
 
         formatted: List[Dict[str, str]] = []
         for msg in session_record.get("messages", []):
+            if msg.get("author") == "agent":
+                continue  # written by customer service, not an answer of the bot from the documents
             role = msg.get("role", "user")
             content = msg.get("content", "")
             if role and content:
@@ -1282,15 +1315,18 @@ class RagChatUseCase:
                 spec_task.cancel()
             raise
         self.obs.record_stage_latency("query_analysis", time.perf_counter() - t0, tenant_id=tenant_id)
+        if analysis.source == "fallback" and history and analysis.is_document_question:
+            analysis = await self._check_fallback_carryover(analysis, raw_query or request.query, request, tenant_id, user_role)
         # Without a rewrite from the analyzer, the re-accented message (not the raw one) is the question.
         standalone = analysis.standalone_query or raw_query or request.query
         rewrite: RewrittenQuery = await query_rewriter.rewrite_advanced(standalone, None, llm_port=None)
         plan = _TurnPlan(analysis=analysis, rewrite=rewrite, standalone_query=rewrite.text or standalone)
+        plan.support = await self._support_for_tenant(tenant_id)
         plan.speculative, plan.speculative_query = spec_task, spec_query
         plan.generation_history = [] if (analysis.new_topic or not history) else self._generation_history(history)
         trace_stage(
             "query_analysis", ms=(time.perf_counter() - t0) * 1000, source=analysis.source,
-            intent=analysis.intent.value, standalone_query=plan.standalone_query,
+            intent=analysis.intent.value, message_kind=analysis.message_kind, standalone_query=plan.standalone_query,
             sparse_query=rewrite.sparse_query, focus=list(analysis.focus_terms), scope=list(analysis.scope_terms),
             flags={k: getattr(analysis, k) for k in (
                 "new_topic", "challenge", "about_document", "wants_list", "wants_brief", "wants_location",
@@ -1344,6 +1380,28 @@ class RagChatUseCase:
         finally:
             self._drop_speculative(plan)
         return plan
+
+    async def _check_fallback_carryover(
+        self, analysis: QueryAnalysis, message: str, request: RagChatRequestDTO, tenant_id: str, user_role: str
+    ) -> QueryAnalysis:
+        """
+        Without the analyzer (timeout, runtime down), a short message is joined to the previous question as a
+        follow-up. A message none of whose words the documents contain ("hi", a complaint about the answer)
+        is not a follow-up: carrying the previous question over would answer it again. It is treated as
+        unclear instead, so the user is asked what to look up.
+        """
+        message = (message or "").strip()
+        if not message or analysis.standalone_query.strip() == message:
+            return analysis
+        try:
+            candidates, _ = await self._search_candidates(request, message, message, tenant_id, user_role, allow_hyde=False)
+        except Exception as exc:  # noqa: BLE001 - keep the follow-up reading
+            logger.debug("Fallback carry-over check failed: %s", exc)
+            return analysis
+        if score_evidence(message, candidates).best_coverage < rag_settings.gate_min_lexical_coverage:
+            analysis.intent, analysis.standalone_query = Intent.UNCLEAR, message
+            trace_stage("fallback_carryover", carried=False, message=message)
+        return analysis
 
     @staticmethod
     def _drop_speculative(plan: "_TurnPlan") -> None:
@@ -1401,18 +1459,19 @@ class RagChatUseCase:
         user_role: str,
         session_id: str,
     ) -> "_TurnPlan":
+        support = plan.support or await self._support_for_tenant(tenant_id)
         analysis = plan.analysis
         plan.kind = "direct"
         if analysis.intent == Intent.GREETING:
-            plan.intent, plan.answer = "CHITCHAT", self.support.greeting()
+            plan.intent, plan.answer = "CHITCHAT", support.greeting()
         elif analysis.intent == Intent.OUT_OF_SCOPE:
-            plan.intent, plan.answer = "OUT_OF_SCOPE", self.support.out_of_scope(analysis.out_of_scope_category)
+            plan.intent, plan.answer = "OUT_OF_SCOPE", support.out_of_scope(analysis.out_of_scope_category)
         elif analysis.intent == Intent.SUPPORT_REQUEST:
             ticket_id, escalation = await self._record_ticket(
                 session_id, tenant_id, user_id, request.query, reason="handoff_request"
             )
             plan.intent, plan.status, plan.escalation = "ESCALATION", "escalation_required", escalation
-            plan.answer = self.support.handoff(ticket_id)
+            plan.answer = support.handoff(ticket_id)
         elif analysis.intent == Intent.CONTACT_INFO:
             question = last_unanswered_question(history)
             ticket_id, escalation = await self._record_ticket(
@@ -1420,12 +1479,12 @@ class RagChatUseCase:
                 extra={"contact_phone": analysis.phone, "related_ticket": last_ticket_in_history(history)},
             )
             plan.intent, plan.status, plan.escalation = "CONTACT_CAPTURED", "escalation_required", escalation
-            plan.answer = self.support.contact_saved(analysis.phone or request.query, ticket_id, question)
+            plan.answer = support.contact_saved(analysis.phone or request.query, ticket_id, question)
         elif analysis.intent == Intent.DECLINE_CONTACT:
-            plan.intent, plan.answer = "SUPPORT_INFO", self.support.contact_declined()
+            plan.intent, plan.answer = "SUPPORT_INFO", support.contact_declined()
         elif analysis.intent == Intent.TICKET_STATUS:
             plan.intent = "TICKET_STATUS"
-            plan.answer = self.support.ticket_status(last_ticket_in_history(history), last_unanswered_question(history))
+            plan.answer = support.ticket_status(last_ticket_in_history(history), last_unanswered_question(history))
         else:
             # FEEDBACK / UNCLEAR: show what the documents contain so the user can rephrase.
             titles, outline = await self._documents_overview(request, history, tenant_id, user_role)
@@ -1435,9 +1494,9 @@ class RagChatUseCase:
                     extra={"previous_question": last_unanswered_question(history) or self._last_user_question(history)},
                 )
                 plan.intent, plan.escalation = "FEEDBACK", escalation
-                plan.answer = self.support.feedback(ticket_id, titles, outline)
+                plan.answer = support.feedback(ticket_id, titles, outline)
             else:
-                plan.intent, plan.answer = "CLARIFICATION", self.support.clarify(titles, outline)
+                plan.intent, plan.answer = "CLARIFICATION", support.clarify(titles, outline)
         return plan
 
     @staticmethod
@@ -1712,7 +1771,7 @@ class RagChatUseCase:
             code = evidence.missing_identifiers[0]
             scope, codes = nearest_existing_codes(code, texts)
             plan.kind, plan.intent = "direct", "IDENTIFIER_NOT_FOUND"
-            plan.answer = self.support.identifier_not_found(code, scope, codes)
+            plan.answer = (plan.support or self.support).identifier_not_found(code, scope, codes)
             plan.gate_latency_ms = (time.perf_counter() - t_gate) * 1000
             trace_stage("gate", decision="identifier_not_found", nearest_codes=codes[:10], **gate_trace)
             trace_stage("route", route="identifier_not_found", intent=plan.intent)
@@ -1743,7 +1802,7 @@ class RagChatUseCase:
         if (plan.policy_category and plan.top_score < rag_settings.gate_min_rerank_score
                 and best_lexical < rag_settings.out_of_scope_override_min_lexical):
             plan.kind, plan.intent = "direct", "OUT_OF_SCOPE"
-            plan.answer = self.support.out_of_scope(plan.policy_category)
+            plan.answer = (plan.support or self.support).out_of_scope(plan.policy_category)
             trace_stage("gate", ms=plan.gate_latency_ms, decision="out_of_scope", policy=plan.policy_category,
                         **gate_trace)
             trace_stage("route", route="support", intent=plan.intent)
@@ -1757,14 +1816,30 @@ class RagChatUseCase:
             )
             if analysis.intent == Intent.UNCLEAR and not plan.unverified_feedback:
                 plan.kind, plan.intent = "direct", "CLARIFICATION"
-                plan.answer = self.support.clarify(plan.titles, plan.outline)
+                plan.answer = (plan.support or self.support).clarify(plan.titles, plan.outline)
                 trace_stage("route", route="gate_clarification", intent=plan.intent)
                 return
             await self._make_refusal_plan(plan, request, tenant_id, user_id, session_id, authorization)
             trace_stage("route", route="gate_refusal", intent=plan.intent)
             return
 
-        # 4. Figures over tables (highest, lowest, difference, total…) are computed in code, not estimated.
+        # 3b. A numbered part ("Điều 7") named by the question that exists in several sub-documents: ask which.
+        if rag_settings.reference_clarification_enabled:
+            options = ambiguous_reference(plan.standalone_query or request.query, reranked[:20] or pool)
+            if options:
+                plan.kind, plan.intent = "direct", "CLARIFICATION"
+                plan.answer = reference_clarification_text(options)
+                trace_stage("route", route="reference_clarification", options=[o.path for o in options])
+                return
+
+        # 4. Filtering / counting / listing / summing rows of whole tables: computed in code over the stored
+        #    tables of every retrieved document and of the same table in other documents.
+        if await self._plan_table_query(plan, request, pool, tenant_id, user_role, authorization):
+            trace_stage("route", route="table_query", intent=plan.intent,
+                        context=chunk_refs(plan.context_chunks, text_chars=rag_settings.trace_context_text_chars))
+            return
+
+        # 4b. Figures over tables (highest, lowest, difference, total…) are computed in code, not estimated.
         if await self._plan_numeric_query(plan, request, document_chunks or pool, authorization):
             trace_stage("route", route="numeric", intent=plan.intent,
                         context=chunk_refs(plan.context_chunks, text_chars=rag_settings.trace_context_text_chars))
@@ -1946,6 +2021,87 @@ class RagChatUseCase:
                     score=round(score, 4))
         return True
 
+    async def _load_tables(self, pool: List[Dict[str, Any]], tenant_id: str, user_role: str) -> List[TableRecord]:
+        """Stored tables of the retrieved documents, then every table of the same kinds in the tenant."""
+        doc_ids = unique_in_order(str(payload_of(c).get("doc_id") or "") for c in pool)
+        doc_ids = [d for d in doc_ids if d][: rag_settings.table_query_max_docs]
+        if not doc_ids:
+            return []
+        own = [TableRecord.from_dict(d) for d in await self.table_store.list_tables(tenant_id, user_role, doc_ids=doc_ids)]
+        if not own:
+            return []
+        rank = {d: i for i, d in enumerate(doc_ids)}
+        own.sort(key=lambda t: (rank.get(t.doc_id, len(rank)), t.index))
+        signatures = list(dict.fromkeys(t.signature for t in own))
+        family = await self.table_store.list_tables(
+            tenant_id, user_role, signatures=signatures, limit=rag_settings.table_query_max_tables
+        )
+        seen = {(t.doc_id, t.index) for t in own}
+        return own + [TableRecord.from_dict(d) for d in family if (d.get("doc_id"), d.get("index")) not in seen]
+
+    async def _plan_table_query(
+        self,
+        plan: "_TurnPlan",
+        request: RagChatRequestDTO,
+        pool: List[Dict[str, Any]],
+        tenant_id: str,
+        user_role: str,
+        authorization: Optional[str],
+    ) -> bool:
+        """
+        Questions that filter, count, list or sum table rows, answered from whole stored tables (not from the
+        passages retrieval happened to return). The LLM only maps the question to a plan over the table
+        schema; rows and figures come from code. False when not applicable (the other routes then answer).
+        """
+        analysis = plan.analysis
+        asks_rows = (analysis.wants_list or analysis.compare or bool(analysis.aggregate) or bool(analysis.count_unit)
+                     or analysis.answer_format == "table")
+        if not (rag_settings.table_query_enabled and asks_rows and pool):
+            return False
+        tables = await self._load_tables(pool, tenant_id, user_role)
+        if not tables:
+            return False
+        question = plan.standalone_query or request.query
+        raw = ""
+        try:
+            raw, _, _ = await asyncio.wait_for(
+                self.llm_service.generate(
+                    messages=table_planner_messages(question, tables),
+                    model=request.model, temperature=0.0, max_tokens=300, authorization=authorization,
+                ),
+                timeout=rag_settings.query_analysis_timeout + 4 + self._llm_wait_allowance(),
+            )
+        except Exception as exc:  # noqa: BLE001 - the passage routes answer instead
+            logger.info("Table planner failed (%s)", exc)
+        query = parse_table_plan(raw) if raw else None
+        result = run_table_query(tables, query) if query else None
+        trace_stage("table_query", tables=len(tables), planner=(raw or "")[:500],
+                    applied=bool(result and result.matches), rows=len(result.matches) if result else 0)
+        if not result or not result.matches:
+            # No plan, or a plan selecting nothing: not taken as "nothing exists" (the planner may have
+            # misread a column); the passage routes answer instead.
+            return False
+        body = render_table_result(result)
+        sources = []
+        for t in unique_in_order_objects(m.table for m in result.matches)[:10]:
+            rows = [m.row for m in result.matches if m.table is t]
+            text = "\n".join(["| " + " | ".join(t.columns) + " |", "| " + " | ".join("---" for _ in t.columns) + " |",
+                              *("| " + " | ".join(r) + " |" for r in rows)])
+            sources.append({"score": 1.0, "payload": {
+                "doc_id": t.doc_id, "title": t.title, "page_number": t.page, "chunk_index": t.index,
+                "heading": t.caption or t.section, "heading_path": t.section, "text": text,
+            }})
+        raw_citations, _ = prompt_builder.build_context_and_citations(
+            [CandidateWrapper(c) for c in sources], query=question
+        )
+        cited = _deduplicate_citations(raw_citations)
+        plan.kind, plan.intent = "direct", "QA_TABLE"
+        plan.answer = body + build_sources_footer(cited)
+        plan.direct_citations = cited
+        plan.context_chunks = sources
+        logger.info("Table query: %s over %d table(s), %d row(s)", result.operation, len(result.tables), len(result.matches))
+        return True
+
     async def _plan_numeric_query(
         self,
         plan: "_TurnPlan",
@@ -2014,7 +2170,8 @@ class RagChatUseCase:
         )
         cited = _deduplicate_citations(raw_citations)
         plan.kind, plan.intent = "direct", "QA_NUMERIC"
-        plan.answer = body + self._attach_images(cited, raw_citations, sources, "", body, plan.section_pool) + build_sources_footer(cited)
+        body, img_tail = self._render_answer_images(body, cited, raw_citations, sources, "", plan.section_pool)
+        plan.answer = body + img_tail + build_sources_footer(cited)
         plan.direct_citations = cited
         plan.context_chunks = list(sources)
         logger.info("Numeric query: %s %s over %d table(s)", nplan.operation, nplan.column, len(nplan.tables))
@@ -2108,8 +2265,9 @@ class RagChatUseCase:
             summary = await self._compare_summary(plan, request, body, document_chunks, authorization)
             intro = summary or intro
         plan.kind, plan.intent = "direct", "QA_STRUCTURED"
+        body, img_tail = self._render_answer_images(body, cited, raw_citations, sources, "", plan.section_pool)
         plan.answer = ((f"{intro}\n\n" if intro else "") + body
-                       + self._attach_images(cited, raw_citations, sources, "", body, plan.section_pool) + build_sources_footer(cited))
+                       + img_tail + build_sources_footer(cited))
         plan.direct_citations = cited
         plan.context_chunks = list(sources)
         logger.info("Structured listing: %d items (%s level) from %d rows", len(selected), tplan.level, len(items))
@@ -2233,19 +2391,20 @@ class RagChatUseCase:
         authorization: Optional[str] = None,
     ) -> None:
         """No answer from the documents: record feedback, decline by policy, or escalate with a ticket."""
+        support = plan.support or await self._support_for_tenant(tenant_id)
         if plan.unverified_feedback:
             ticket_id, plan.escalation = await self._record_ticket(
                 session_id, tenant_id, user_id, request.query, reason="user_feedback"
             )
             plan.kind, plan.intent, plan.status, plan.is_refusal = "direct", "FEEDBACK", "success", False
-            plan.answer = self.support.feedback(ticket_id, plan.titles, plan.outline)
+            plan.answer = support.feedback(ticket_id, plan.titles, plan.outline)
             return
         if rag_settings.policy_check_on_refusal:
             category = await self.query_analyzer.policy_category(request.query, self.llm_service, request.model, authorization)
             if category:
                 plan.kind, plan.intent, plan.status = "direct", "OUT_OF_SCOPE", "success"
                 plan.is_refusal, plan.escalation = False, None
-                plan.answer = self.support.out_of_scope(category)
+                plan.answer = support.out_of_scope(category)
                 return
         ticket_id, escalation = await self._record_ticket(
             session_id, tenant_id, user_id, request.query,
@@ -2253,7 +2412,7 @@ class RagChatUseCase:
         )
         plan.kind, plan.intent, plan.status = "direct", "REFUSAL", "escalation_required"
         plan.is_refusal, plan.escalation = True, escalation
-        plan.answer = self.support.not_found(ticket_id, plan.titles, plan.outline)
+        plan.answer = support.not_found(ticket_id, plan.titles, plan.outline)
 
     # ------------------------------------------------------------------
     # Generation (stuff by default; explicit combine strategies kept)
@@ -2446,7 +2605,7 @@ class RagChatUseCase:
             # The model was talked into reproducing its instructions: withhold the answer entirely.
             # Not a missing-information refusal, so no regeneration and no support ticket.
             plan.kind, plan.intent, plan.status, plan.is_refusal = "direct", "OUT_OF_SCOPE", "success", False
-            plan.answer = self.support.out_of_scope("cấu hình nội bộ của hệ thống")
+            plan.answer = (plan.support or self.support).out_of_scope("cấu hình nội bộ của hệ thống")
             plan.answer_replaced = True
             trace_stage("route", route="prompt_disclosure_blocked", intent=plan.intent)
             return plan.answer, [], plan.intent
@@ -2478,7 +2637,16 @@ class RagChatUseCase:
                 exclude=grounding.example_identifiers if grounding is not None and not grounding.allow_examples else (),
             )
             tail += format_missing(extra)
-        tail += self._attach_images(cited, cited, plan.context_chunks, tenant_id, clean_text, plan.section_pool)
+        # Images go under the steps they illustrate; only those the answer gives no place follow it in a block.
+        body, img_tail = self._render_answer_images(
+            clean_text, cited, cited, plan.context_chunks, tenant_id, plan.section_pool
+        )
+        if body != clean_text:
+            if undelivered:
+                tail = body + tail[len(undelivered):]  # nothing was streamed yet: the placed text is sent
+            else:
+                plan.inline_body = body  # already streamed: the client re-renders it (reset), the tail follows
+        tail += img_tail
         tail += build_sources_footer(cited)
         if rag_settings.suggestions_enabled and not plan.analysis.wants_brief:
             tail += build_suggestions(clean_text, plan.suggestion_pool)
@@ -2494,25 +2662,24 @@ class RagChatUseCase:
             default_tenant=normalize_tenant_id(tenant_id) if tenant_id else "",
         )
 
-    def _attach_images(
+    def _render_answer_images(
         self,
+        body: str,
         cited: List[Dict[str, Any]],
         image_sources: Sequence[Dict[str, Any]],
         passages: Sequence[Dict[str, Any]],
         tenant_id: str,
-        shown_text: str,
         section_pool: Sequence[Dict[str, Any]] = (),
-    ) -> str:
+        interleave: bool = True,
+    ) -> Tuple[str, str]:
         """
-        The images of the passages an answer is based on: each cited passage carries its own (signed) image
-        URLs, and the answer gets a block with those it does not already show, so a document's figure always
-        comes with the text it illustrates, whichever path (generation, listing, figures) answered.
-        A figure belongs to its section: a cited passage brings the images of the other passages of the same
-        section of its document (a table of figures and the photo below it are one news item).
+        (body with the images of its sources placed under the steps they illustrate, block of the images left).
+        Cited passages also get their own (signed) image URLs. A figure belongs to its section: a cited passage
+        brings the images of the other passages of the same section of its document.
         """
         mapper = self._media_mapper(list(passages) + list(image_sources) + list(section_pool), tenant_id)
         if mapper is None:
-            return ""
+            return body, ""
         prefix = rag_settings.media_path_prefix
 
         def section_mates(c: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -2532,10 +2699,12 @@ class RagChatUseCase:
         for c in cited:
             c["images"] = [mapper(media_assets.media_path(prefix, i.doc_id, i.filename))
                            for i in media_assets.passage_images(section_mates(c), prefix)][:CITATION_MAX_IMAGES]
-        shown = media_assets.shown_files(shown_text, prefix)
+
+        shown = media_assets.shown_files(body, prefix)
         picked: List[Any] = []
         source_of: Dict[str, int] = {}
         index_of_doc = {str(c.get("doc_id")): int(c.get("index", 0) or 0) for c in cited}
+        all_pool = list(image_sources) + list(passages) + list(section_pool)
         for src in image_sources:
             for img in media_assets.passage_images(section_mates(src), prefix):
                 if img.filename in shown or img.filename in source_of:
@@ -2543,7 +2712,29 @@ class RagChatUseCase:
                 source_of[img.filename] = int(src.get("index", 0) or 0) or index_of_doc.get(img.doc_id, 0)
                 picked.append(img)
         picked = picked[: rag_settings.media_max_images_per_answer]
-        return media_assets.images_section(picked, mapper, prefix, {k: v for k, v in source_of.items() if v})
+
+        if not interleave:
+            return body, media_assets.images_section(picked, mapper, prefix, {k: v for k, v in source_of.items() if v})
+        augmented_body, unplaced = media_assets.interleave_inline_images(
+            body, picked, all_pool, mapper, prefix, source_of
+        )
+        tail = media_assets.images_section(unplaced, mapper, prefix, {k: v for k, v in source_of.items() if v})
+        return augmented_body, tail
+
+    def _attach_images(
+        self,
+        cited: List[Dict[str, Any]],
+        image_sources: Sequence[Dict[str, Any]],
+        passages: Sequence[Dict[str, Any]],
+        tenant_id: str,
+        shown_text: str,
+        section_pool: Sequence[Dict[str, Any]] = (),
+    ) -> str:
+        """The block of images after an answer whose text is final (none of them is placed in that text)."""
+        _body, tail = self._render_answer_images(
+            shown_text, cited, image_sources, passages, tenant_id, section_pool, interleave=False
+        )
+        return tail
 
     def _correction_hints(self, plan: "_TurnPlan") -> List[str]:
         ctx = plan.sanitize_ctx
@@ -2828,7 +3019,8 @@ class RagChatUseCase:
         tail, cited, intent = await self._finalize_answer(
             plan, request, clean_text, marker_map, refused, tenant_id, user_id, session_id, authorization
         )
-        answer = plan.answer if plan.answer_replaced else clean_text + tail
+        body = plan.inline_body if plan.inline_body is not None else clean_text
+        answer = plan.answer if plan.answer_replaced else body + tail
         citation_dtos = [_build_citation_dto(c) for c in cited]
         if citation_dtos and plan.context_chunks:
             self.obs.record_groundedness(min(1.0, len(citation_dtos) / len(plan.context_chunks)), tenant_id=tenant_id)
@@ -3071,11 +3263,19 @@ class RagChatUseCase:
             plan, request, stream_filter.text, dict(stream_filter.marker_map), stream_filter.refused,
             tenant_id, user_id, session_id,
         )
-        if tail:
+        if plan.answer_replaced and plan.answer:
+            yield f"data: {json.dumps({'reset': True, 'session_id': session_id})}\n\n"
+            yield self._sse_token(plan.answer, session_id)
+        elif plan.inline_body is not None:
+            # Images placed under their steps: the streamed text is shown again with them, then the tail.
+            yield f"data: {json.dumps({'reset': True, 'session_id': session_id})}\n\n"
+            yield self._sse_token(plan.inline_body + tail, session_id)
+        elif tail:
             if first_token_time is None:
                 first_token_time = time.time()
             yield self._sse_token(tail, session_id)
-        answer = plan.answer if plan.answer_replaced else stream_filter.text + tail
+        body = plan.inline_body if plan.inline_body is not None else stream_filter.text
+        answer = plan.answer if plan.answer_replaced else body + tail
         latency_ms = (time.time() - start_t) * 1000
         await self._save_session_turn(
             session_id=session_id, user_id=user_id, tenant_id=tenant_id, query=request.query, answer=answer,

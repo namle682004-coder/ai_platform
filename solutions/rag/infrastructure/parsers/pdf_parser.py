@@ -28,6 +28,81 @@ from ...config import rag_settings
 from ...domain.entities import ParsedDocument, ParsedPage
 from ...domain.exceptions import DocumentParsingError
 from .base import BaseDocumentParser
+from .ocr_text import clean_ocr_text, harmonize_diacritics
+from .table_grid import append_columns, grid_from_pdf, render_table
+
+# Rows of two tables on different pages within this distance (pt) are the same printed rows.
+ROW_ALIGN_TOLERANCE = 2.0
+MIN_STITCH_ROWS = 3
+
+
+SCAN_MAX_TEXT_LAYER = 500
+# Below this the embedded scan is too coarse to OCR as is and the page is rendered at `ocr_dpi` instead.
+MIN_NATIVE_OCR_DPI = 150
+
+
+def _ocr_token(page_idx: int) -> str:
+    return f"\x00OCR{page_idx}\x00"
+
+
+def _table_token(index: int) -> str:
+    return f"\x00TABLE{index}\x00"
+
+
+def stitch_column_pages(tables: List[Dict[str, Any]]) -> None:
+    """
+    A spreadsheet printed wider than the page puts the remaining columns of the same rows on later pages.
+    Such a table has the same number of rows at the same vertical positions as an earlier one, and a first
+    column that is not a repeat of the earlier table's (it continues it rather than repeating it). Its
+    columns are appended to the earlier table, which is the one rendered.
+    """
+    for j, b in enumerate(tables):
+        if len(b["tops"]) < MIN_STITCH_ROWS:
+            continue
+        for a in tables[:j]:
+            if a["merged_into"] is not None or a["page"] >= b["page"] or len(a["tops"]) != len(b["tops"]):
+                continue
+            if any(abs(x - y) > ROW_ALIGN_TOLERANCE for x, y in zip(a["tops"], b["tops"], strict=True)):
+                continue
+            first_a = {row[0].text for row in a["grid"] if row and row[0].text}
+            first_b = {row[0].text for row in b["grid"] if row and row[0].text}
+            if first_a & first_b:
+                continue
+            a["grid"] = append_columns(a["grid"], b["grid"], ("stitch", a["page"], j))
+            b["merged_into"] = a["page"]
+            break
+
+
+# A table ending in the last part of its page and one starting in the first part of the next page.
+PAGE_EDGE_FRACTION = 0.2
+
+
+def stitch_row_pages(tables: List[Dict[str, Any]]) -> None:
+    """
+    A table running past the bottom of a page continues at the top of the next page, usually without its
+    header. The continuation (same number of columns) is appended to the first part; a repeated header row
+    is dropped.
+    """
+    current: Optional[Dict[str, Any]] = None
+    for t in tables:
+        if t["merged_into"] is not None:
+            continue
+        continues = (
+            current is not None
+            and t["page"] == current["last_page"] + 1
+            and current["y1"] >= current["height"] * (1 - PAGE_EDGE_FRACTION)
+            and t["y0"] <= t["height"] * PAGE_EDGE_FRACTION
+            and t["grid"] and current["grid"] and len(t["grid"][0]) == len(current["grid"][0])
+        )
+        if not continues:
+            current = t
+            continue
+        rows = t["grid"]
+        if [c.text for c in rows[0]] == [c.text for c in current["grid"][0]]:
+            rows = rows[1:]  # header repeated on the new page
+        current["grid"] = current["grid"] + rows
+        current["last_page"], current["y1"] = t["page"], t["y1"]
+        t["merged_into"] = current["page"]
 
 logger = logging.getLogger("aip-rag.parser.pdf")
 
@@ -45,30 +120,68 @@ class PdfDocumentParser(BaseDocumentParser):
     ):
         self.base_storage_url = base_storage_url.rstrip("/")
 
-    def _try_ocr_fallback(self, page: Any) -> Optional[str]:
+    @staticmethod
+    def _scan_image(page: Any) -> Optional[Any]:
         """
-        Attempts OCR on a scanned PDF page using PyMuPDF get_textpage_ocr or external pytesseract.
+        The page's own scan image when one image covers the page: OCR of the original pixels reads diacritics
+        better than a re-rendered (resampled) page. None when the page is not a single scanned image.
         """
         try:
+            from PIL import Image
+            images = page.get_images(full=True)
+            if len(images) != 1:
+                return None
+            rects = page.get_image_rects(images[0][0])
+            area = page.rect.width * page.rect.height or 1.0
+            if not rects or (rects[0].width * rects[0].height) / area < 0.8:
+                return None
+            data = page.parent.extract_image(images[0][0])
+            img = Image.open(io.BytesIO(data["image"]))
+            # Scans stored at a very low resolution are upsampled to the configured OCR resolution.
+            native_dpi = img.width / (rects[0].width / 72.0)
+            if native_dpi < MIN_NATIVE_OCR_DPI:
+                return None
+            return img.convert("L")
+        except Exception as exc:  # noqa: BLE001 - the rendered page is the fallback
+            logger.debug("Scan image extraction failed: %s", exc)
+            return None
+
+    def _try_ocr_fallback(self, page: Any) -> Optional[str]:
+        """
+        OCR of a scanned page with Tesseract. Tesseract's own text output comes first: PyMuPDF's OCR text page
+        rebuilds words from glyph boxes and drops the space after Vietnamese syllables with stacked diacritics
+        ("vịsựnghiệp"), so it is only the fallback when pytesseract is missing.
+        """
+        dpi, languages = rag_settings.ocr_dpi, rag_settings.ocr_languages
+        try:
+            import pytesseract
+            from PIL import Image
+            img = self._scan_image(page)
+            if img is None:
+                img = Image.open(io.BytesIO(page.get_pixmap(dpi=dpi).tobytes("png")))
+            text = pytesseract.image_to_string(img, lang=languages, config="--oem 1 --psm 3",
+                                               timeout=rag_settings.ocr_page_timeout_seconds)
+            if text and len(text.strip()) > 20:
+                return text.strip()
+        except RuntimeError as exc:
+            # Tesseract ran but exceeded its time budget: the page is skipped. The fallback below has no
+            # time limit and would hold the worker on exactly the page that is too slow.
+            logger.warning("OCR of a scanned page timed out after %.0fs: page skipped (%s)",
+                           rag_settings.ocr_page_timeout_seconds, exc)
+            return None
+        except Exception as exc:
+            logger.debug("Pytesseract OCR unavailable: %s", exc)
+
+        try:
             if hasattr(page, "get_textpage_ocr"):
-                tp = page.get_textpage_ocr(language="vie+eng", dpi=150)
+                tp = page.get_textpage_ocr(language=languages, dpi=dpi, full=True)
                 text = tp.extractText()
                 if text and len(text.strip()) > 20:
                     return text.strip()
         except Exception as exc:
-            logger.debug("PyMuPDF built-in OCR fallback unavailable: %s", exc)
+            logger.debug("PyMuPDF OCR fallback unavailable: %s", exc)
 
-        try:
-            import pytesseract
-            from PIL import Image
-            pix = page.get_pixmap(dpi=150)
-            img = Image.open(io.BytesIO(pix.tobytes("png")))
-            text = pytesseract.image_to_string(img, lang="vie+eng")
-            if text and len(text.strip()) > 20:
-                return text.strip()
-        except Exception as exc:
-            logger.debug("Pytesseract OCR fallback unavailable: %s", exc)
-
+        logger.warning("Scanned page could not be OCRed (Tesseract with '%s' not available): its text is not indexed", languages)
         return None
 
     def parse(
@@ -124,6 +237,13 @@ class PdfDocumentParser(BaseDocumentParser):
             pages: List[ParsedPage] = []
             all_extracted_images: List[Dict[str, Any]] = []
             seen_image_hashes = set()
+            # Tables are rendered after every page is read: a table may continue on later pages (columns).
+            tables: List[Dict[str, Any]] = []
+            page_payloads: List[Tuple[int, str]] = []
+            ocr_pages: Dict[int, str] = {}  # OCR text is corrected across the whole document before use
+            ocr_attempted: List[int] = []
+            ocr_failed: List[int] = []
+            ocr_skipped: List[int] = []
 
             for page_idx, page in enumerate(doc, start=1):
                 page_items: List[Tuple[float, float, str, str]] = []  # (y0, x0, type, content)
@@ -135,11 +255,17 @@ class PdfDocumentParser(BaseDocumentParser):
                         tabs = page.find_tables()
                         for tab in tabs:
                             try:
-                                md = tab.to_markdown()
-                                if md and md.strip():
+                                grid = grid_from_pdf(tab.extract(), (page_idx, len(tables)))
+                                if any(c.text for row in grid for c in row):
                                     tb_x0, tb_y0, tb_x1, tb_y1 = tab.bbox
-                                    page_items.append((tb_y0, tb_x0, "table", md.strip()))
+                                    page_items.append((tb_y0, tb_x0, "table", _table_token(len(tables))))
                                     table_bboxes.append((tb_x0, tb_y0, tb_x1, tb_y1))
+                                    tables.append({
+                                        "page": page_idx, "last_page": page_idx, "grid": grid, "merged_into": None,
+                                        "tops": [row.bbox[1] for row in tab.rows],
+                                        "y0": tb_y0, "y1": tb_y1, "height": page.rect.height,
+                                        "chars": sum(len(c.text) for row in grid for c in row),
+                                    })
                             except Exception as tab_err:
                                 logger.debug("Failed to extract markdown table on page %d: %s", page_idx, tab_err)
                 except Exception as tabs_exc:
@@ -217,16 +343,26 @@ class PdfDocumentParser(BaseDocumentParser):
                     for r in page.get_image_rects(xref):
                         image_area_sum += (r.width * r.height)
 
-                raw_text_length = sum(len(content) for _, _, item_type, content in page_items if item_type in ("text", "table"))
-                is_scanned_page = (image_area_sum / page_area >= 0.8) and (raw_text_length < 50)
-                if is_scanned_page:
+                page_tables = [t for t in tables if t["page"] == page_idx]
+                raw_text_length = sum(len(content) for _, _, item_type, content in page_items if item_type == "text")
+                raw_text_length += sum(t["chars"] for t in page_tables)
+                # A page image covering the page with (almost) no text layer is a scan. Signed scans carry a
+                # small text overlay (the signature stamp), so "almost no text" is a few hundred characters.
+                is_scanned_page = (image_area_sum / page_area >= 0.8) and (raw_text_length < SCAN_MAX_TEXT_LAYER)
+                if is_scanned_page and len(ocr_attempted) >= rag_settings.ocr_max_pages:
+                    ocr_skipped.append(page_idx)  # budget per document: a huge scan must not hold the worker
+                elif is_scanned_page:
                     logger.info(
                         "Page %d of PDF '%s' identified as SCANNED document (Image Coverage: %.1f%%, Text Length: %d). Triggering OCR Fallback.",
                         page_idx, filename, (image_area_sum / page_area) * 100, raw_text_length
                     )
-                    ocr_text = self._try_ocr_fallback(page)
+                    ocr_attempted.append(page_idx)
+                    ocr_text = clean_ocr_text(self._try_ocr_fallback(page) or "")
+                    if not ocr_text:
+                        ocr_failed.append(page_idx)
                     if ocr_text:
-                        page_items.append((0.0, 0.0, "text", f"[Văn bản nhận dạng quang học OCR Trang {page_idx}]\n{ocr_text}"))
+                        ocr_pages[page_idx] = ocr_text
+                        page_items.append((0.0, 0.0, "text", f"[Văn bản nhận dạng quang học OCR Trang {page_idx}]\n{_ocr_token(page_idx)}"))
 
                 # 4. Sort text and images by spatial coordinates (y-axis reading order: top to bottom)
                 page_items.sort(key=lambda item: (item[0], item[1]))
@@ -237,6 +373,20 @@ class PdfDocumentParser(BaseDocumentParser):
                     assembled_blocks.append(content)
 
                 page_text = "\n\n".join(assembled_blocks).strip()
+                page_payloads.append((page_idx, page_text))
+
+            stitch_column_pages(tables)
+            stitch_row_pages(tables)
+            ocr_order = sorted(ocr_pages)
+            ocr_fixed = dict(zip(ocr_order, harmonize_diacritics([ocr_pages[p] for p in ocr_order]), strict=True))
+            for page_idx, page_text in page_payloads:
+                if page_idx in ocr_fixed:
+                    page_text = page_text.replace(_ocr_token(page_idx), ocr_fixed[page_idx])
+                for i, t in enumerate(tables):
+                    token = _table_token(i)
+                    if token in page_text:
+                        page_text = page_text.replace(token, "" if t["merged_into"] is not None else render_table(t["grid"]))
+                page_text = "\n\n".join(b for b in page_text.split("\n\n") if b.strip())
                 pages.append(ParsedPage(page_number=page_idx, text=page_text))
 
             # 5. Extract embedded files (PDF attachments) recursively if present (guarded by max_depth & size checks)
@@ -303,6 +453,11 @@ class PdfDocumentParser(BaseDocumentParser):
                 pages=pages,
                 metadata={
                     "total_pages": len(pages),
+                    # Scanned pages without indexed text (OCR failed / over the per-document budget): reported
+                    # on the document so a partially readable scan is visible, not silently incomplete.
+                    "ocr_pages": len(ocr_attempted) - len(ocr_failed),
+                    "ocr_failed_pages": ocr_failed,
+                    "ocr_skipped_pages": ocr_skipped,
                     "images_count": len(all_extracted_images),
                     "images": all_extracted_images,
                     "embedded_files_count": embedded_files_count,

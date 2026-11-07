@@ -82,6 +82,24 @@ def test_breaker_opens_after_failures_fails_fast_then_recovers():
     asyncio.run(scenario())
 
 
+def test_calls_cancelled_by_their_caller_do_not_open_the_breaker():
+    """A burst: callers give up on a busy but healthy runtime (their own deadline). Not runtime failures."""
+    guard = rg.runtime_guard("llm")
+
+    async def slow_call():
+        async with guard.slot():
+            await asyncio.sleep(1)  # the runtime is working; the caller's deadline is shorter
+            guard.record_success()
+
+    async def scenario():
+        for _ in range(3):
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(slow_call(), timeout=0.02)
+        return guard.state, guard.snapshot()["consecutive_failures"], guard.in_flight
+
+    assert asyncio.run(scenario()) == (rg.CLOSED, 0, 0)
+
+
 def test_failed_trial_reopens_and_unreported_exception_counts_as_failure():
     guard = rg.runtime_guard("llm")
 

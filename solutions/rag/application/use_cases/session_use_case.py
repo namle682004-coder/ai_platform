@@ -84,6 +84,7 @@ class RagSessionUseCase:
                     role=m.get("role", "user"),
                     content=m.get("content", ""),
                     timestamp=float(m.get("timestamp", 0.0)),
+                    author=m.get("author"),
                     citations=citations,
                     model=m.get("model"),
                     intent=m.get("intent"),

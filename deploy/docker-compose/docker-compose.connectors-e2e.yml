@@ -1,0 +1,25 @@
+# Connector rehearsal on top of the isolated loadtest stack (no real data, no network access outside it).
+#
+#   export AIP_RAG_IMAGE=aip-rag:ocr-test
+#   C="-f deploy/docker-compose/docker-compose.loadtest.yml -f deploy/docker-compose/docker-compose.connectors-e2e.yml -p aip-loadtest"
+#   docker compose $C up -d
+#   docker exec -i aip-loadtest-rag-api python - < scripts/e2e_connectors.py
+#   docker compose $C down -v
+
+services:
+  fakesource:
+    image: ${AIP_RAG_IMAGE:-aip/rag:latest}
+    command: ["python", "/scripts/fake_source.py", "--port", "8099"]
+    environment:
+      FAKE_SOURCE_TOKEN: demo-token
+    volumes:
+      - ../../scripts:/scripts:ro
+
+  rag-api:
+    environment:
+      AIP_SOURCE_SECRET_DEMO: demo-token  # only to report missing secrets; the API never reads it
+
+  rag-worker:
+    environment:
+      AIP_SOURCE_SECRET_DEMO: demo-token
+      RAG_CONNECTOR_SCHEDULER_INTERVAL_SECONDS: "5"

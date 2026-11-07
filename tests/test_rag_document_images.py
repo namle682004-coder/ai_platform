@@ -264,3 +264,165 @@ def test_a_cited_passage_brings_the_images_of_its_section():
     block = uc._attach_images(cited, cited, [table], "tenant_a", "Nam shipper trả lại tiền [1].", [table, photo, other])
     assert H1 in block and H2 not in block  # the photo of the same item, not of another section
     assert len(cited[0]["images"]) == 1 and H1 in cited[0]["images"][0]
+
+
+def test_step_by_step_images_are_interleaved_inline_not_at_end():
+    """
+    Requirement #3/#21: Chữ và hình ảnh đi liền nhau theo từng bước, không gom dồn vào khối cuối câu.
+    """
+    from solutions.rag.application.use_cases.chat_use_case import RagChatUseCase
+
+    uc = RagChatUseCase.__new__(RagChatUseCase)
+    passage = {
+        "payload": {
+            "doc_id": "doc_plugin",
+            "tenant_id": "tenant_a",
+            "heading": "Cài đặt Plugin ký số",
+            "chunk_index": 1,
+            "text": (
+                "Bước 1: Tải bộ cài plugin ký số từ cổng thông tin.\n"
+                f"![Giao diện tải]({PREFIX}/doc_plugin/{H1}.png)\n\n"
+                "Bước 2: Cài đặt và kích hoạt plugin trên máy tính.\n"
+                f"![Màn hình cài đặt]({PREFIX}/doc_plugin/{H2}.png)\n"
+            ),
+        }
+    }
+    cited = [{"index": 1, "doc_id": "doc_plugin", "heading": "Cài đặt Plugin ký số", "text": passage["payload"]["text"]}]
+
+    answer_body = (
+        "* **Bước 1: Tải bộ cài plugin ký số** [1]\n"
+        "  Truy cập cổng dịch vụ và tải tệp về máy tính.\n"
+        "* **Bước 2: Cài đặt và kích hoạt plugin** [1]\n"
+        "  Chạy tệp setup và nhấn Tiếp tục để hoàn tất."
+    )
+
+    augmented_body, tail = uc._render_answer_images(
+        answer_body, cited, cited, [passage], "tenant_a", [passage]
+    )
+
+    # 1. Image 1 must appear before Bước 2
+    pos_step1 = augmented_body.find("Bước 1")
+    pos_img1 = augmented_body.find(H1)
+    pos_step2 = augmented_body.find("Bước 2")
+    pos_img2 = augmented_body.find(H2)
+
+    assert pos_step1 < pos_img1 < pos_step2 < pos_img2
+    # 2. Both images are placed inline, so tail should NOT have them grouped under 'Hình ảnh trong tài liệu'
+    assert tail == ""
+
+
+# ---------------------------------------------------------------- an image goes under the text it illustrates
+H3 = "aaaabbbbccccdddd"
+
+
+def _place(answer, passage_text):
+    passage = _passage(passage_text, doc="doc_x")
+    mapper = m.url_mapper([passage], SECRET, PREFIX)
+    images = m.passage_images([passage], PREFIX)
+    return m.interleave_inline_images(answer, images, [passage], mapper, PREFIX)
+
+
+def test_an_image_follows_its_paragraph_when_the_document_does_not_number_steps():
+    doc = (
+        "Mở phần mềm và chọn mục Thiết lập hệ thống ở thanh công cụ.\n"
+        f"![Thanh công cụ]({PREFIX}/doc_x/{H1}.png)\n"
+        "Nhập mã số thuế của đơn vị rồi bấm Lưu thông tin.\n"
+        f"![Ô mã số thuế]({PREFIX}/doc_x/{H2}.png)\n"
+    )
+    answer = ("Anh/chị làm như sau:\n"
+              "- Mở phần mềm, chọn mục Thiết lập hệ thống trên thanh công cụ [1].\n"
+              "- Nhập mã số thuế của đơn vị và bấm Lưu thông tin [1].")
+    body, left = _place(answer, doc)
+    assert body.index("Thiết lập hệ thống") < body.index(H1) < body.index("mã số thuế của đơn vị") < body.index(H2)
+    assert left == []
+
+
+def test_an_image_stays_inside_its_list_item():
+    doc = f"1. Tải bộ cài từ cổng thông tin.\n![Tải]({PREFIX}/doc_x/{H1}.png)\n2. Chạy tệp cài đặt.\n"
+    answer = "1. Tải bộ cài từ cổng thông tin [1].\n   Lưu tệp vào máy.\n2. Chạy tệp cài đặt [1]."
+    body, _ = _place(answer, doc)
+    lines = body.split("\n")
+    img_line = next(i for i, ln in enumerate(lines) if H1 in ln)
+    assert lines[img_line].startswith("   ![")  # indented under item 1, after its continuation line
+    assert lines.index("   Lưu tệp vào máy.") < img_line < lines.index("2. Chạy tệp cài đặt [1].")
+
+
+def test_an_image_whose_text_the_answer_does_not_contain_is_not_placed_at_random():
+    doc = f"Biểu đồ doanh thu theo quý của toàn bộ hệ thống.\n![Biểu đồ]({PREFIX}/doc_x/{H3}.png)\n"
+    body, left = _place("Thủ tục hoàn thuế gồm tờ khai và hóa đơn [1].", doc)
+    assert H3 not in body and [i.filename for i in left] == [f"{H3}.png"]  # shown after the answer instead
+
+
+def test_placing_images_keeps_the_sources_and_suggestions_of_the_answer():
+    """A placed image used to mark the answer as replaced: the sources footer and suggestions were lost."""
+    from types import SimpleNamespace
+
+    from solutions.rag.application.use_cases.chat_use_case import RagChatUseCase, _TurnPlan
+
+    uc = RagChatUseCase.__new__(RagChatUseCase)
+    text = f"1. Tải bộ cài plugin ký số từ cổng thông tin.\n![Tải]({PREFIX}/doc_p/{H1}.png)\n2. Cài đặt plugin.\n"
+    passage = {"payload": {"doc_id": "doc_p", "tenant_id": "tenant_a", "text": text}}
+    citation = {"index": 1, "doc_id": "doc_p", "title": "HDSD Plugin ký số", "text": text, "page_number": 2}
+    plan = _TurnPlan(analysis=SimpleNamespace(focus_terms=[], wants_location=False, wants_brief=True),
+                     rewrite=None, standalone_query="cài plugin ký số", raw_citations=[citation],
+                     section_pool=[passage])
+    answer = "1. Tải bộ cài plugin ký số từ cổng thông tin [1].\n2. Cài đặt plugin [1]."
+    tail, cited, _ = asyncio.run(uc._finalize_answer(plan, None, answer, {1: 1}, False, "tenant_a", "u", "s"))
+    assert plan.inline_body and plan.inline_body.index(H1) < plan.inline_body.index("2. Cài đặt")
+    assert not plan.answer_replaced  # not a replaced answer: status, escalation and refusal stay as they are
+    assert "**Nguồn:**" in tail and "HDSD Plugin ký số" in tail and "Hình ảnh trong tài liệu" not in tail
+
+
+def test_streamed_procedure_shows_each_screenshot_under_its_step_with_the_sources():
+    """What the browser ends up showing (tokens, reset re-render) and what is saved for the conversation."""
+    import json
+
+    from solutions.rag.application.dtos import RagChatRequestDTO
+    from tests.test_rag_answer_pipeline import CorpusStore, ScriptedLLM, _chunk
+    from tests.test_rag_answer_pipeline import _use_case as pipeline_use_case
+
+    procedure = [_chunk(0, "Cài đặt Plugin ký số", (
+        "Bước 1: Tải bộ cài plugin ký số từ cổng thông tin.\n"
+        f"![Tải bộ cài]({PREFIX}/doc_plug/{H1}.png)\n"
+        "Bước 2: Chạy tệp cài đặt plugin và bấm Đồng ý.\n"
+        f"![Cài đặt]({PREFIX}/doc_plug/{H2}.png)"), doc_id="doc_plug", title="HDSD Plugin ký số")]
+
+    class ProcedureStore(CorpusStore):
+        async def search(self, **kwargs):
+            return [dict(c) for c in procedure]
+
+        async def fetch_document_chunks(self, doc_id, tenant_id, user_role="user", limit=300):
+            return [dict(c) for c in procedure if c["payload"]["doc_id"] == doc_id]
+
+    answer = ("* **Bước 1:** Tải bộ cài plugin ký số từ cổng thông tin [1].\n"
+              "* **Bước 2:** Chạy tệp cài đặt plugin và bấm Đồng ý [1].")
+    llm = ScriptedLLM({"intent": "document_question", "standalone_query": "Hướng dẫn cài plugin ký số"}, answer)
+    uc, _store, repo = pipeline_use_case(llm)
+    uc.vector_store = ProcedureStore()
+
+    async def run():
+        return [e async for e in uc.stream_execute(
+            RagChatRequestDTO(query="Hướng dẫn cài plugin ký số", stream=True, similarity_threshold=0.65),
+            tenant_id="tenant_a")]
+
+    shown = ""
+    for e in asyncio.run(run()):
+        data = json.loads(e[6:])
+        if data.get("reset"):
+            shown = ""
+        shown += data.get("token", "")
+    assert shown.index("Bước 1") < shown.index(H1) < shown.index("Bước 2") < shown.index(H2)
+    assert "**Nguồn:**" in shown and "HDSD Plugin ký số" in shown
+    assert "Hình ảnh trong tài liệu" not in shown  # no picture left in a block at the end
+    assert repo.turns[-1][1]["content"] == shown  # the conversation keeps what was shown
+
+
+def test_the_block_after_a_final_text_never_loses_an_image():
+    from solutions.rag.application.use_cases.chat_use_case import RagChatUseCase
+
+    uc = RagChatUseCase.__new__(RagChatUseCase)
+    p = _passage(f"1. Tải bộ cài.\n![Tải]({PREFIX}/doc_1/{H1}.png)")
+    cited = [{"index": 1, "doc_id": "doc_1", "text": p["payload"]["text"]}]
+    block = uc._attach_images(cited, cited, [p], "tenant_a", "1. Tải bộ cài [1].")
+    assert H1 in block  # the text is final: an image matching a step is shown after it, not dropped
+

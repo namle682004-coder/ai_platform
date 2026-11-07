@@ -415,6 +415,7 @@ def test_support_request_returns_contact_channels_and_ticket(monkeypatch):
     # Routing only: the speculative first-message search (run during analysis, then cancelled for
     # non-document turns) is covered by test_rag_speculative_retrieval.py.
     monkeypatch.setattr(rag_settings, "speculative_retrieval_enabled", False)
+    monkeypatch.setattr(rag_settings, "escalation_hotline", "0262 123 456")  # a deployment's configured channel
     llm = ScriptedLLM({"intent": "support_request"}, "unused")
     uc, store, repo = _use_case(llm)
     resp = asyncio.run(uc.execute(RagChatRequestDTO(query="Cho tôi gặp nhân viên hỗ trợ")))

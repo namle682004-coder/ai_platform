@@ -11,7 +11,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
-from ...domain.entities import normalize_iso_date, normalize_tenant_id
+from ...domain.entities import ParsedPage, normalize_iso_date, normalize_tenant_id
 from ...domain.exceptions import EmbeddingError, VectorStoreError
 from ...domain.ports import (
     CachePort,
@@ -20,16 +20,34 @@ from ...domain.ports import (
     EmbeddingPort,
     NullCacheAdapter,
     NullObservabilityAdapter,
+    NullTableStore,
     ObservabilityPort,
     StoragePort,
+    TableStorePort,
     VectorStorePort,
 )
 from ..components import media_assets
+from ..components.table_store import extract_tables
 from ..components.chunker import DocumentChunker
 from ..components.acronym_harvester import acronym_harvester
 from ...config import rag_settings
 
 logger = logging.getLogger("aip-rag.ingestion_use_case")
+
+
+def chunk_search_text(text: str, glossary: Dict[str, Any], title: Optional[str]) -> str:
+    """
+    Text a chunk is searched by (embedded and BM25-indexed). The document's title leads it: documents made
+    from one template (one job description per position, one report per month) have chunks that are almost
+    identical apart from the document they belong to, and the question names that document ("level required
+    of a senior lecturer"). Without the title, every document's chunk matches equally and the right one is
+    ranked by chance. The displayed chunk text is unchanged.
+    """
+    enriched = acronym_harvester.enrich_chunk_for_embedding(text, glossary)
+    title = (title or "").strip()
+    if title and title.lower() not in enriched[:300].lower():
+        return f"[Tài liệu: {title}]\n{enriched}"
+    return enriched
 
 
 class DocumentIngestionUseCase:
@@ -45,7 +63,9 @@ class DocumentIngestionUseCase:
         vector_store: VectorStorePort,
         cache_service: Optional[CachePort] = None,
         observability_service: Optional[ObservabilityPort] = None,
+        table_store: Optional[TableStorePort] = None,
     ) -> None:
+        self.table_store = table_store or NullTableStore()
         self.doc_repo = doc_repo
         self.storage = storage
         self.parser = parser
@@ -97,6 +117,28 @@ class DocumentIngestionUseCase:
             page.text = rewrite(page.text)
         logger.info("Document %s: %d image(s) stored in %s, %d skipped", doc_id, len(stored), bucket, len(failed - stored))
         return len(stored)
+
+    async def retire_replaced(self, old_doc_id: str, new_doc_id: str, tenant_id: str) -> bool:
+        """
+        The previous version of a document leaves retrieval (passages and tables) once its replacement is indexed.
+        Its record stays, marked SUPERSEDED with a link to the new version.
+        """
+        old = await self.doc_repo.get_document(old_doc_id)
+        if not old or normalize_tenant_id(old.get("tenant_id")) != tenant_id or old.get("status") == "SUPERSEDED":
+            return False
+        await self.doc_repo.update_document_status(
+            old_doc_id, "SUPERSEDED", {"effective_status": "SUPERSEDED", "superseded_by": new_doc_id}
+        )
+        try:
+            await self.vector_store.delete_by_doc_id(old_doc_id, tenant_id)
+        except Exception as exc:  # noqa: BLE001 - the record says SUPERSEDED; passages left are found by doc_id later
+            logger.warning("Passages of superseded doc=%s not deleted: %s", old_doc_id, exc)
+        try:
+            await self.table_store.delete_document(tenant_id, old_doc_id)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Tables of superseded doc=%s not deleted: %s", old_doc_id, exc)
+        logger.info("Document %s superseded by %s", old_doc_id, new_doc_id)
+        return True
 
     async def ingest_document(self, task_payload: Dict[str, Any]) -> Dict[str, Any]:
         doc_id = task_payload.get("doc_id") or task_payload.get("task_id", "")
@@ -200,7 +242,7 @@ class DocumentIngestionUseCase:
                 c.metadata["expiry_date"] = effective_to
 
             # Enrich chunk text for search to eliminate Cross-Chunk Disconnection (RET-RAG-01)
-            c.metadata["search_text"] = acronym_harvester.enrich_chunk_for_embedding(c.text, doc_glossary)
+            c.metadata["search_text"] = chunk_search_text(c.text, doc_glossary, title)
 
         logger.info("Document %s split into %d chunks (status=%s)", doc_id, len(chunks), effective_status)
 
@@ -234,11 +276,28 @@ class DocumentIngestionUseCase:
             )
             return {"status": "failed", "error": err, "doc_id": doc_id}
 
+        # 6b. Whole tables, for questions answered in code over every row (filter / count / list / sum).
+        #     Cells are PII-masked like the chunks. A failure leaves those questions to the passage routes.
+        tables_stored = 0
+        try:
+            masked = [ParsedPage(page_number=p.page_number, text=self.chunker._mask_pii(p.text or ""))
+                      for p in parsed_doc.pages]
+            tables = extract_tables(masked, doc_id, title)
+            tables_stored = await self.table_store.replace_document(
+                tenant_id, doc_id, allowed_roles, [t.to_dict() for t in tables]
+            )
+        except Exception as exc:  # noqa: BLE001 - tables are an addition to the passage index
+            logger.warning("Document %s: tables not stored (%s)", doc_id, exc)
+
         # 7. Update status: INDEXED
         await self.doc_repo.update_document_status(
             doc_id,
             "INDEXED",
             {
+                "tables_stored": tables_stored,
+                # Scanned pages left without text (OCR failed or over the per-document budget).
+                "ocr_failed_pages": (parsed_doc.metadata or {}).get("ocr_failed_pages", []),
+                "ocr_skipped_pages": (parsed_doc.metadata or {}).get("ocr_skipped_pages", []),
                 "total_chunks": len(chunks),
                 "total_pages": len(parsed_doc.pages),
                 "indexed_at": int(time.time()),
@@ -248,6 +307,12 @@ class DocumentIngestionUseCase:
             },
         )
         logger.info("Document %s successfully indexed with %d points", doc_id, upserted)
+
+        # 7b. A new version takes the place of the one it replaces only now that it can be found.
+        record = await self.doc_repo.get_document(doc_id)
+        replaces = (record or {}).get("replaces_doc_id") or task_payload.get("replaces_doc_id")
+        if replaces:
+            await self.retire_replaced(replaces, doc_id, tenant_id)
 
         # 8. Invalidate tenant cache (EXEC-RAG-06)
         try:

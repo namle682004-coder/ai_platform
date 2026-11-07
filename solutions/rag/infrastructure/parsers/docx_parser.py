@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Set
 from ...domain.entities import ParsedDocument, ParsedPage
 from ...domain.exceptions import DocumentParsingError
 from .base import BaseDocumentParser
+from .table_grid import GridCell, clean, render_table
 
 logger = logging.getLogger("aip-rag.parser.docx")
 
@@ -35,64 +36,58 @@ class DocxDocumentParser(BaseDocumentParser):
 
     @staticmethod
     def _table_to_markdown(table) -> str:
-        """Convert a python-docx Table into clean Markdown table format."""
+        """
+        Word table → Markdown via the shared table renderer. python-docx returns the same `_tc` element for
+        every grid position of a merged cell (horizontal gridSpan and vertical vMerge), which is the merge key.
+        """
         try:
-            rows_data = []
-            for row in table.rows:
-                row_cells = []
-                seen_tc = set()
-                for cell in row.cells:
-                    tc_id = id(cell._tc)
-                    if tc_id in seen_tc:
-                        row_cells.append("")
-                        continue
-                    seen_tc.add(tc_id)
-                    txt = " ".join(cell.text.split()).replace("|", "\\|")
-                    row_cells.append(txt)
-                if any(bool(c.strip()) for c in row_cells):
-                    rows_data.append(row_cells)
-
-            if not rows_data:
-                return ""
-
-            num_cols = max(len(r) for r in rows_data)
-            header = rows_data[0]
-            while len(header) < num_cols:
-                header.append("")
-
-            lines = [
-                "| " + " | ".join(header) + " |",
-                "| " + " | ".join(["---"] * num_cols) + " |",
+            grid = [
+                [GridCell(clean(cell.text), id(cell._tc)) for cell in row.cells]
+                for row in table.rows
             ]
-            for r in rows_data[1:]:
-                while len(r) < num_cols:
-                    r.append("")
-                lines.append("| " + " | ".join(r[:num_cols]) + " |")
-
-            return "\n".join(lines)
+            return render_table(grid)
         except Exception as exc:
             logger.warning("Error converting Word table to Markdown: %s", exc)
             return ""
 
     @staticmethod
-    def _format_paragraph(p) -> str:
-        """Format a Word paragraph, prefixing Markdown headings if style indicates a heading."""
+    def _heading_level(p) -> Optional[int]:
+        """
+        Markdown level (1-6) of a heading paragraph. Word's outline level (on the paragraph or inherited from
+        its style chain) is used first: it is what the navigation pane shows and does not depend on the
+        style's display name, which is localized ("Heading 1", "Tiêu đề 1", custom styles).
+        """
+        try:
+            from docx.oxml.ns import qn
+
+            sources = [p._p.pPr]
+            style = getattr(p, "style", None)
+            while style is not None:
+                sources.append(style.element.pPr)
+                style = style.base_style
+            for ppr in sources:
+                el = ppr.find(qn("w:outlineLvl")) if ppr is not None else None
+                if el is not None:
+                    level = int(el.get(qn("w:val")))
+                    return level + 1 if level < 6 else None  # 9 = body text
+        except Exception:  # noqa: BLE001 - fall back to the style name
+            pass
+        style_name = (getattr(getattr(p, "style", None), "name", "") or "").strip().lower()
+        names = {"title": 1, "heading 1": 1, "subtitle": 2, "heading 2": 2, "heading 3": 3,
+                 "heading 4": 4, "heading 5": 5, "heading 6": 6}
+        return names.get(style_name)
+
+    @classmethod
+    def _format_paragraph(cls, p) -> str:
+        """Format a Word paragraph, prefixing Markdown headings if its outline level / style is a heading."""
         txt = p.text.strip()
         if not txt:
             return ""
-        style_name = (getattr(getattr(p, "style", None), "name", "") or "").strip().lower()
-        if style_name in ("title", "heading 1"):
-            return f"# {txt}"
-        elif style_name in ("subtitle", "heading 2"):
-            return f"## {txt}"
-        elif style_name == "heading 3":
-            return f"### {txt}"
-        elif style_name == "heading 4":
-            return f"#### {txt}"
-        elif style_name == "heading 5":
-            return f"##### {txt}"
-        elif style_name == "heading 6":
-            return f"###### {txt}"
+        level = cls._heading_level(p)
+        if level:
+            # A heading typed on several lines ("Chương I" / "QUY ĐỊNH CHUNG") is one heading: left multi-line,
+            # its later lines would be taken for headings of their own and break the section hierarchy.
+            return f"{'#' * level} {' – '.join(part.strip() for part in txt.splitlines() if part.strip())}"
         return txt
 
     def _extract_images_from_paragraph(

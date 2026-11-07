@@ -21,6 +21,8 @@ from ...config import rag_settings
 from ...domain.entities import DEFAULT_TENANT_ID, normalize_tenant_id
 
 ADMIN_ROLES = frozenset({"admin", "system_admin", "superadmin", "knowledge_admin"})
+# Customer service: read the conversations behind tickets and reply to customers (administrators can too).
+SUPPORT_ROLES = ADMIN_ROLES | frozenset({"support", "agent", "cskh"})
 _PUBLIC_PATHS = {"/health", "/health/live", "/health/ready", "/metrics", "/docs", "/openapi.json"}
 
 
@@ -54,6 +56,10 @@ def extract_user(request: Request) -> str:
 
 def is_admin(request: Request) -> bool:
     return extract_role(request) in ADMIN_ROLES
+
+
+def is_support(request: Request) -> bool:
+    return extract_role(request) in SUPPORT_ROLES
 
 
 def can_write_tenant(request: Request, tenant_id: str) -> bool:

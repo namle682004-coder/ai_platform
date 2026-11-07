@@ -24,11 +24,17 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence
 
-from .lexical_evidence import extract_identifiers
+from .lexical_evidence import extract_identifiers, mostly_unaccented, normalize_for_match
 
 logger = logging.getLogger("aip-rag.query-analyzer")
 
 ANALYZER_MARKER = "[QUERY_ANALYZER]"
+
+# A rewrite "restates" the conversation when (almost) all its words come from the history...
+RESTATED_MIN_HISTORY_SHARE = 0.8
+# ...and (almost) none from the new message itself.
+RESTATED_MAX_OWN_SHARE = 0.2
+MESSAGE_KINDS = ("request", "greeting", "feedback")
 
 
 class Intent(str, Enum):
@@ -63,6 +69,7 @@ class QueryAnalysis:
     aggregate: str = ""  # computation over figures: max | min | diff | sum | avg | sort | count
     count_unit: str = ""  # what is being counted / measured, in the user's words
     source: str = "llm"  # "llm" | "fallback"
+    message_kind: str = ""  # set when a restated question was re-checked: request | greeting | feedback
     latency_ms: float = 0.0
     raw: Dict[str, Any] = field(default_factory=dict)
 
@@ -91,11 +98,11 @@ def _system_prompt(out_of_scope_policy: str) -> str:
         "intent là một trong:\n"
         "- document_question: hỏi nội dung có thể có trong tài liệu, kể cả câu hỏi nối tiếp, câu phản bác hoặc đính chính câu trả lời trước.\n"
         "- support_request: muốn gặp/nói chuyện với người hỗ trợ, kỹ thuật viên, hỏi hotline hoặc cách liên hệ.\n"
-        "- feedback: báo lỗi, phàn nàn, nói câu trả lời trước chưa đúng ý mà không kèm câu hỏi mới.\n"
+        "- feedback: báo lỗi, phàn nàn, chê, tỏ ra không hiểu hoặc không hài lòng với câu trả lời trước mà không kèm câu hỏi mới.\n"
         "- contact_info: tin nhắn cung cấp số điện thoại hoặc thông tin liên hệ của chính người dùng.\n"
         "- decline_contact: từ chối để lại thông tin liên hệ.\n"
         "- ticket_status: hỏi câu hỏi/yêu cầu trước đó đã được ghi nhận hoặc chuyển người phụ trách chưa.\n"
-        "- greeting: chỉ chào hỏi, cảm ơn, tạm biệt.\n"
+        "- greeting: chỉ chào hỏi, cảm ơn, tạm biệt (kể cả khi đã có lịch sử hội thoại).\n"
         f"- out_of_scope: thuộc các nhóm bị từ chối theo chính sách: {out_of_scope_policy}.\n"
         "- unclear: quá chung chung, chưa xác định được cần tra cứu nội dung gì.\n\n"
         "standalone_query (chỉ khi intent là document_question): viết lại tin nhắn mới nhất thành một câu hỏi tra cứu "
@@ -104,6 +111,7 @@ def _system_prompt(out_of_scope_policy: str) -> str:
         "- nếu người dùng nhắc tới một câu hỏi trước đó (ví dụ câu đầu tiên), thay bằng nội dung câu đó;\n"
         "- nếu là câu phản bác/đính chính, viết thành câu hỏi kiểm tra lại thông tin đang tranh luận;\n"
         "- bỏ qua các lượt chen ngang không liên quan; nếu chuyển sang chủ đề mới thì KHÔNG mang ngữ cảnh cũ;\n"
+        "- tin nhắn không yêu cầu thông tin nào thì KHÔNG phải document_question và KHÔNG chép câu hỏi trước làm standalone_query;\n"
         "- câu nối tiếp không nêu đối tượng riêng thì kế thừa đối tượng và phạm vi của lượt liên quan gần nhất trong "
         "TRẠNG THÁI HỘI THOẠI; câu có đối tượng mới thì KHÔNG kế thừa phạm vi cũ; tham chiếu tương đối (trước, sau, "
         "trên, dưới) giải theo thứ tự các mục trong lịch sử;\n"
@@ -163,6 +171,60 @@ def _as_terms(value: Any, limit: int = 4) -> List[str]:
     return list(dict.fromkeys(t for t in terms if len(t) <= 80))[:limit]
 
 
+def keep_typed_spelling(rewrite: str, message: str) -> str:
+    """
+    A message typed with diacritics spells its words as meant: the rewrite keeps them. A small model "restoring"
+    accents turns a correct word into another one ("ngắm voi" → "ngắm với"). Only an (almost) unaccented message
+    has its accents restored by the rewrite.
+    """
+    if not rewrite or mostly_unaccented(message):
+        return rewrite
+    typed: Dict[str, str] = {}
+    for w in re.findall(r"\w+", message):
+        typed.setdefault(normalize_for_match(w), w)
+
+    def keep(m: re.Match) -> str:
+        w = m.group(0)
+        original = typed.get(normalize_for_match(w))
+        if original is None or original.lower() == w.lower():
+            return w
+        return original if not w[:1].isupper() else original[:1].upper() + original[1:]
+
+    return re.sub(r"\w+", keep, rewrite)
+
+
+def _message_kind_prompt() -> str:
+    return (
+        f"{ANALYZER_MARKER} Bạn phân loại MỘT tin nhắn người dùng gửi cho trợ lý tra cứu tài liệu, ngay sau một câu trả lời "
+        'của trợ lý. Trả về DUY NHẤT JSON {"kind": "request" | "greeting" | "feedback"}:\n'
+        "- request: tin nhắn yêu cầu thông tin hoặc nội dung (hỏi tiếp, hỏi lại, nhờ giải thích thêm, nhắc tới câu hỏi trước).\n"
+        "- greeting: chỉ chào hỏi, cảm ơn, tạm biệt; không yêu cầu thông tin gì.\n"
+        "- feedback: phàn nàn, chê, tỏ ra không hiểu hoặc không hài lòng với câu trả lời trước, không nêu thông tin cần tra."
+    )
+
+
+def _tokens(text: str) -> set:
+    return set(normalize_for_match(text).split())
+
+
+def restates_history(query: str, standalone: str, history_texts: Sequence[str]) -> bool:
+    """
+    The rewritten question is made of the conversation's words, not of the new message's.
+
+    That is what a small analyzer produces for a message with nothing to look up ("hi", a complaint about
+    the last answer): it falls back on the topic in the history, and the pipeline then answers the old
+    question again. Legitimate follow-ups ("explain more", "the first question I asked") look the same,
+    so this only flags the turn for a narrow re-check; it does not decide the intent.
+    """
+    s = _tokens(standalone)
+    if not s:
+        return False
+    if len(s & _tokens(query)) / len(s) > RESTATED_MAX_OWN_SHARE:
+        return False
+    history = set().union(*(_tokens(t) for t in history_texts)) if history_texts else set()
+    return len(s & history) / len(s) >= RESTATED_MIN_HISTORY_SHARE
+
+
 def _policy_prompt(policy: str) -> str:
     return (
         f"{ANALYZER_MARKER} Bạn kiểm tra chính sách cho trợ lý tra cứu tài liệu nội bộ. Các nhóm yêu cầu bị từ chối: {policy}.\n"
@@ -191,6 +253,60 @@ class QueryAnalyzer:
             for m in history or []
             if m.get("role") == "user" and (m.get("content") or "").strip()
         ]
+
+    def _history_texts(self, history: Sequence[Dict[str, Any]]) -> List[str]:
+        """What the analyzer saw of the conversation: messages (questions also as rewritten)."""
+        out: List[str] = []
+        for m in list(history or [])[-self.history_messages:]:
+            out += [t.strip() for t in (m.get("content"), m.get("standalone")) if t and t.strip()]
+        return out
+
+    async def _message_kind(
+        self, query: str, llm_port: Any, model: str, timeout: float, authorization: Optional[str]
+    ) -> str:
+        """request | greeting | feedback for one message, '' when the check is unavailable."""
+        try:
+            content, _, _ = await asyncio.wait_for(
+                llm_port.generate(
+                    messages=[
+                        {"role": "system", "content": _message_kind_prompt()},
+                        {"role": "user", "content": f"TIN NHẮN: {query.strip()}\n\nJSON:"},
+                    ],
+                    model=model, temperature=0.0, max_tokens=20, authorization=authorization,
+                ),
+                timeout=timeout,
+            )
+        except Exception as exc:  # noqa: BLE001 - best effort: keep the analyzer's decision
+            logger.debug("Message kind check failed: %s", exc)
+            return ""
+        return _choice((_extract_json(content) or {}).get("kind"), MESSAGE_KINDS)
+
+    async def _recheck_restated(
+        self,
+        analysis: QueryAnalysis,
+        query: str,
+        history: Sequence[Dict[str, Any]],
+        llm_port: Any,
+        model: str,
+        timeout: float,
+        authorization: Optional[str],
+    ) -> QueryAnalysis:
+        """A document question that only restates an earlier one is re-checked: greeting / feedback are routed as such."""
+        if analysis.intent != Intent.DOCUMENT_QUESTION or not history:
+            return analysis
+        if not restates_history(query, analysis.standalone_query, self._history_texts(history)):
+            return analysis
+        kind = await self._message_kind(query, llm_port, model, timeout, authorization)
+        analysis.message_kind = kind
+        if kind == "greeting":
+            analysis.intent = Intent.GREETING
+        elif kind == "feedback":
+            analysis.intent, analysis.challenge = Intent.FEEDBACK, True
+        if kind in ("greeting", "feedback"):
+            # The rewrite was the old question, not this message: nothing to look up or cache under it.
+            analysis.standalone_query = query.strip()
+            logger.info("Restated question re-checked as %s: %r", kind, query[:80])
+        return analysis
 
     def fallback(self, query: str, history: Sequence[Dict[str, Any]], latency_ms: float = 0.0) -> QueryAnalysis:
         """Concatenate the previous user turn to short follow-ups; long messages stand alone."""
@@ -259,7 +375,7 @@ class QueryAnalyzer:
             intent = Intent(str(data.get("intent", "document_question")).strip().lower())
         except ValueError:
             intent = Intent.DOCUMENT_QUESTION
-        standalone = str(data.get("standalone_query") or "").strip() or query.strip()
+        standalone = keep_typed_spelling(str(data.get("standalone_query") or "").strip() or query.strip(), query)
         if not set(extract_identifiers(query)) <= set(extract_identifiers(standalone)):
             # The rewrite dropped a code/number the user typed: it changed the question, keep the original.
             standalone = self.fallback(query, history, latency_ms).standalone_query
@@ -325,7 +441,11 @@ class QueryAnalyzer:
         except Exception as exc:  # noqa: BLE001 - the analyzer must never break the chat
             logger.warning("Query analysis failed (%s); using fallback", exc)
             return self.fallback(query, history, (time.perf_counter() - t0) * 1000)
-        return self.parse(content, query, history, (time.perf_counter() - t0) * 1000)
+        analysis = self.parse(content, query, history, (time.perf_counter() - t0) * 1000)
+        if analysis.source == "llm":
+            analysis = await self._recheck_restated(analysis, query, history, llm_port, model, timeout, authorization)
+            analysis.latency_ms = (time.perf_counter() - t0) * 1000
+        return analysis
 
     async def policy_category(
         self, query: str, llm_port: Any, model: str, authorization: Optional[str] = None

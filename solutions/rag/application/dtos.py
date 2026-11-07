@@ -117,6 +117,7 @@ class ChatMessageDTO(BaseModel):
     role: str
     content: str
     timestamp: float = Field(default_factory=time.time)
+    author: Optional[str] = Field(None, description="'agent' for a reply written by customer service, else the bot")
     citations: List[RagCitationDTO] = Field(default_factory=list)
     model: Optional[str] = None
     intent: Optional[str] = None
@@ -167,6 +168,11 @@ class DocumentResponseDTO(BaseModel):
     effective_status: Optional[str] = "ACTIVE"
     effective_date: Optional[str] = None
     expiry_date: Optional[str] = None
+    version: int = 1
+    replaces_doc_id: Optional[str] = None
+    superseded_by: Optional[str] = None
+    # True when the upload matched a document already in this knowledge base: that record is returned, nothing is re-indexed.
+    deduplicated: bool = False
 
 
 class DocumentListResponseDTO(BaseModel):

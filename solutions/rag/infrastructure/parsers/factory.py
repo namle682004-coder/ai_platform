@@ -12,6 +12,7 @@ from ...domain.ports import DocumentParserPort
 from .base import BaseDocumentParser
 from .docx_parser import DocxDocumentParser
 from .excel_parser import ExcelDocumentParser
+from .html_parser import HtmlDocumentParser
 from .pdf_parser import PdfDocumentParser
 from .text_parser import TextDocumentParser
 
@@ -24,6 +25,8 @@ class DocumentParserFactory(DocumentParserPort):
         ".docx": DocxDocumentParser,
         ".xlsx": ExcelDocumentParser,
         ".xls": ExcelDocumentParser,
+        ".html": HtmlDocumentParser,
+        ".htm": HtmlDocumentParser,
         ".txt": TextDocumentParser,
         ".md": TextDocumentParser,
         ".markdown": TextDocumentParser,

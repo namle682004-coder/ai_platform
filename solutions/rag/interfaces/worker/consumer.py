@@ -14,14 +14,19 @@ import aio_pika
 
 from ...application.components.chunker import DocumentChunker
 from ...application.use_cases.ingestion_use_case import DocumentIngestionUseCase
+from ...application.use_cases.knowledge_use_case import KnowledgeManagementUseCase
+from ...application.use_cases.source_sync_use_case import SourceSyncUseCase
 from ...config import rag_settings
 from ...infrastructure.adapters.embedding_adapter import HttpEmbeddingAdapter
 from ...infrastructure.adapters.qdrant_adapter import QdrantVectorStoreAdapter
 from ...infrastructure.adapters.rabbitmq_adapter import RAG_QUEUE_ARGUMENTS
 from ...infrastructure.adapters.redis_cache_adapter import redis_cache
 from ...infrastructure.adapters.storage_adapter import MinioStorageAdapter
+from ...infrastructure.connectors import build_connector
 from ...infrastructure.parsers.factory import parser_factory
 from ...infrastructure.repositories.mongo_document_repo import MongoDocumentRepositoryAdapter
+from ...infrastructure.repositories.mongo_source_repo import MongoSourceRepository
+from ...infrastructure.repositories.mongo_table_repo import MongoTableStore
 from .publisher import publish_callback_event
 
 logger = logging.getLogger("aip-rag.worker.consumer")
@@ -63,7 +68,35 @@ class RagWorkerConsumer:
             vector_store=self.vector_store,
             cache_service=self.cache_service,
             observability_service=rag_observability,
+            table_store=MongoTableStore(rag_settings.mongo_uri),
         )
+        knowledge = KnowledgeManagementUseCase(
+            doc_repo=self.doc_repo, storage=self.storage, vector_store=self.vector_store,
+            cache_service=self.cache_service, table_store=MongoTableStore(rag_settings.mongo_uri),
+        )
+        self.source_sync = SourceSyncUseCase(
+            sources=MongoSourceRepository(rag_settings.mongo_uri),
+            connector_for=build_connector,
+            doc_repo=self.doc_repo,
+            storage=self.storage,
+            ingest=self.ingestion_use_case.ingest_document,
+            delete_document=knowledge.delete_document,
+            bucket=rag_settings.minio_bucket,
+            lease_seconds=rag_settings.connector_lease_seconds,
+            default_timezone=rag_settings.connector_timezone,
+        )
+
+    async def _schedule_sources(self, stop_event: asyncio.Event) -> None:
+        """Syncs connector sources when they are due. A failure is logged and retried on the next tick."""
+        while not stop_event.is_set():
+            try:
+                await self.source_sync.run_due()
+            except Exception as exc:  # noqa: BLE001 - the scheduler must outlive one bad source
+                logger.exception("Source scheduler tick failed: %s", exc)
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=rag_settings.connector_scheduler_interval_seconds)
+            except asyncio.TimeoutError:
+                pass
 
     async def run(self) -> None:
         logger.info("Initializing AIP Distributed RAG Ingestion Worker...")
@@ -93,6 +126,7 @@ class RagWorkerConsumer:
             await channel.set_qos(prefetch_count=rag_settings.prefetch_count)
             queue = await channel.declare_queue(rag_settings.rag_queue, durable=True, arguments=RAG_QUEUE_ARGUMENTS)
         logger.info("Worker listening for ingestion jobs on '%s'...", rag_settings.rag_queue)
+        scheduler = asyncio.create_task(self._schedule_sources(stop_event)) if rag_settings.connectors_enabled else None
 
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
@@ -106,6 +140,9 @@ class RagWorkerConsumer:
                     try:
                         payload = json.loads(message.body.decode())
                         task_data = payload.get("payload", payload)
+                        if task_data.get("type") == "source_sync":  # sync requested through the API
+                            await self.source_sync.sync(str(task_data.get("source_id")), trigger="api")
+                            continue
                         doc_id = task_data.get("doc_id", "unknown")
 
                         result = await self.ingestion_use_case.ingest_document(task_data)
@@ -114,6 +151,8 @@ class RagWorkerConsumer:
                         logger.exception("Error processing document %s: %s", doc_id, exc)
                         await publish_callback_event(channel, doc_id, "failed", {"error": str(exc)})
 
+        if scheduler:
+            scheduler.cancel()
         await self.embedding_service.close()
         await connection.close()
         logger.info("AIP RAG Ingestion Worker stopped successfully.")

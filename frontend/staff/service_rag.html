@@ -8236,7 +8236,9 @@
           bar.style.width = "100%";
           if (res.ok) {
             const data = await res.json();
-            if (isGlobal) {
+            if (data.deduplicated) {
+              txt.innerText = `Tài liệu này đã có trong kho ("${data.title || data.filename}", ${data.total_chunks || 0} chunks) nên không nạp lại.`;
+            } else if (isGlobal) {
               txt.innerText = `Nạp thành công vào Kho tri thức dùng chung toàn hệ thống (${data.total_chunks || 0} chunks).`;
             } else {
               txt.innerText = `Nạp thành công vào Kho riêng của workspace "${currentStaffIngestScopeName}" (${data.total_chunks || 0} chunks).`;

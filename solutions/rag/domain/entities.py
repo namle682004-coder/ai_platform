@@ -13,6 +13,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 DEFAULT_TENANT_ID: str = "proj_default"
+# Department of documents meant for everyone of a tenant: a question asked for a department also sees them.
+SHARED_DEPARTMENT: str = "GENERAL"
 FALLBACK_TENANT_ALIASES = frozenset({"default_tenant", "tenant_default", "default", "global", ""})
 
 

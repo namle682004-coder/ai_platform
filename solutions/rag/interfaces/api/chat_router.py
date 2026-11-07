@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Requ
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from .identity import extract_role, extract_tenant, extract_user, is_admin
+from .identity import extract_role, extract_tenant, extract_user, is_admin, is_support
 from .rate_limiter import ChatRateLimitDependency, RateLimitDependency
 
 from ...application.dtos import (
@@ -34,6 +34,7 @@ from ...infrastructure.adapters.llm_adapter import HttpLlmAdapter
 from ...infrastructure.adapters.qdrant_adapter import QdrantVectorStoreAdapter
 from ...infrastructure.parsers.factory import parser_factory
 from ...infrastructure.repositories.mongo_session_repo import MongoSessionRepositoryAdapter
+from ...infrastructure.repositories.mongo_support_repo import MongoSupportRepository
 from ...application.components.error_attribution import error_attribution_service
 from ...application.components.run_trace import chunk_ref
 from ...application.components.trace_diagnosis import diagnose, final_route
@@ -51,6 +52,7 @@ from ...config import rag_settings
 from ...infrastructure.adapters.redis_cache_adapter import redis_cache
 from ...infrastructure.adapters.reranker_adapter import build_reranker
 from ...infrastructure.observability import RagTracer, rag_observability
+from ...infrastructure.repositories.mongo_table_repo import MongoTableStore
 from ...infrastructure.repositories.mongo_trace_store import MongoTraceStore
 
 # Model endpoints (embed-standard / rerank-standard / chat aliases) resolve through the alias registry.
@@ -70,6 +72,8 @@ chat_use_case = RagChatUseCase(
     reranker_service=_reranker_service,
     observability_service=rag_observability,
     trace_store=_trace_store,
+    table_store=MongoTableStore(rag_settings.mongo_uri),
+    support_repo=MongoSupportRepository(rag_settings.mongo_uri),
 )
 
 
@@ -259,6 +263,27 @@ async def get_rag_session(
     if not sess:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat session not found")
     return sess
+
+
+@router.get("/sessions/{session_id}/agent-replies")
+async def session_agent_replies(
+    session_id: str,
+    request: Request,
+    since: float = Query(default=0.0, ge=0, description="Only replies written after this time (epoch seconds)"),
+) -> Dict[str, Any]:
+    """
+    For the customer's own conversation: replies written by customer service after `since`, and how many of the
+    conversation's questions still wait for one (the chat keeps checking only while some do).
+    """
+    tenant_id = _extract_tenant(request)
+    user_id = _extract_user(request)
+    sess = await session_use_case.get_session(session_id=session_id, user_id=user_id, tenant_id=tenant_id)
+    if not sess or sess.tenant_id != tenant_id or sess.user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat session not found")
+    replies = [{"message_id": m.message_id, "content": m.content, "timestamp": m.timestamp}
+               for m in sess.messages if m.author == "agent" and m.timestamp > since]
+    pending = await _session_repo.count_open_tickets(tenant_id, sess.session_id)
+    return {"replies": replies, "pending": pending}
 
 
 class UpdateSessionTitleRequest(BaseModel):
@@ -512,6 +537,76 @@ async def update_ticket(ticket_id: str, payload: TicketUpdateDTO, request: Reque
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ticket '{ticket_id}' not found")
     return ticket
+
+
+TICKET_CONTEXT_MESSAGES = 8
+
+
+@router.get("/tickets/{ticket_id}/conversation")
+async def ticket_conversation(ticket_id: str, request: Request) -> Dict[str, Any]:
+    """
+    The ticket with the end of the conversation that led to it (the customer's turns, the bot's replies up to the
+    ticket, and what customer service replied since), so customer service answers knowing what was asked.
+    Conversations belong to end users: customer service / administrators of the ticket's tenant only.
+    """
+    if not is_support(request):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Reading conversations requires a support role")
+    tenant_id = _extract_tenant(request)
+    ticket = await _session_repo.get_escalation_ticket(ticket_id, tenant_id)
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ticket '{ticket_id}' not found")
+    messages = []
+    sess = await _ticket_session(ticket, tenant_id)
+    if sess:
+        until = float(ticket.get("created_at") or time.time()) + 120  # the bot's reply to that turn included
+        kept = [m for m in sess.messages if m.timestamp <= until][-TICKET_CONTEXT_MESSAGES:]
+        kept += [m for m in sess.messages if m.timestamp > until and m.author == "agent"]  # replies sent since
+        messages = [{"role": m.role, "content": m.content, "timestamp": m.timestamp, "author": m.author} for m in kept]
+    return {"ticket": ticket, "messages": messages}
+
+
+async def _ticket_session(ticket: Dict[str, Any], tenant_id: str) -> Optional[ChatSessionDTO]:
+    """The conversation a ticket came from; sessions are looked up by id only: never another tenant's."""
+    if not ticket.get("session_id"):
+        return None
+    sess = await session_use_case.get_session(
+        session_id=ticket["session_id"], user_id=ticket.get("user_id") or "", tenant_id=tenant_id
+    )
+    return sess if sess and sess.tenant_id == tenant_id else None
+
+
+class TicketReplyDTO(BaseModel):
+    message: str = Field(..., min_length=1, max_length=4000)
+    resolve: bool = Field(default=True, description="Mark the ticket handled once the reply is delivered")
+
+
+@router.post("/tickets/{ticket_id}/reply")
+async def reply_to_ticket(ticket_id: str, payload: TicketReplyDTO, request: Request) -> Dict[str, Any]:
+    """
+    Customer service answers the customer whose question the bot could not answer: the reply is added to that
+    customer's conversation (shown as written by customer service, never reused by the bot as an answer from the
+    documents) and the ticket records it. Unlike a Q&A pair, nothing changes how the bot answers next time.
+    """
+    if not is_support(request):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Replying to customers requires a support role")
+    tenant_id = _extract_tenant(request)
+    ticket = await _session_repo.get_escalation_ticket(ticket_id, tenant_id)
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ticket '{ticket_id}' not found")
+    sess = await _ticket_session(ticket, tenant_id)
+    if not sess:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="The customer's conversation no longer exists: contact them another way")
+    now = time.time()
+    staff = extract_user(request)
+    message = {"role": "assistant", "author": "agent", "content": payload.message.strip(), "ticket_id": ticket_id,
+               "replied_by": staff, "timestamp": now}
+    await _session_repo.append_message(sess.session_id, sess.user_id, tenant_id, message)
+    fields: Dict[str, Any] = {"reply": message["content"], "replied_at": now, "replied_by": staff}
+    if payload.resolve:
+        fields.update(status="resolved", resolved_at=now, resolved_by=staff)
+    updated = await _session_repo.update_escalation_ticket(ticket_id, tenant_id, fields)
+    return {"ticket": updated or {**ticket, **fields}, "message": {k: message[k] for k in ("role", "author", "content", "timestamp")}}
 
 
 @router.post("/cache/clear", status_code=status.HTTP_200_OK)

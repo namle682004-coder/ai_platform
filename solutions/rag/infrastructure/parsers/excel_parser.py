@@ -1,18 +1,42 @@
 """
 Excel Spreadsheet (.xlsx, .xls) Document Parser.
-Converts spreadsheet worksheets into structured Markdown tables directly in RAM.
+Converts each worksheet into one or more Markdown tables (a sheet often holds several tables separated by
+an empty row and a title row), with merged cells resolved by the shared table renderer.
 """
 
 from __future__ import annotations
 
 import io
 import logging
-from typing import List
+from typing import Dict, List, Tuple
+
 from ...domain.entities import ParsedDocument, ParsedPage
 from ...domain.exceptions import DocumentParsingError
 from .base import BaseDocumentParser
+from .table_grid import GridCell, clean, render_table, split_blocks
 
 logger = logging.getLogger("aip-rag.parser.excel")
+
+
+def _sheet_grid(ws) -> List[List[GridCell]]:
+    """Cell grid of a worksheet; every position of a merged range carries its value and the range as key."""
+    merged: Dict[Tuple[int, int], Tuple[str, int]] = {}
+    for rng in ws.merged_cells.ranges:
+        top_left = ws.cell(row=rng.min_row, column=rng.min_col).value
+        for r in range(rng.min_row, rng.max_row + 1):
+            for c in range(rng.min_col, rng.max_col + 1):
+                merged[(r, c)] = (clean(top_left), id(rng))
+    grid: List[List[GridCell]] = []
+    for row in ws.iter_rows():
+        cells = []
+        for cell in row:
+            if (cell.row, cell.column) in merged:
+                text, key = merged[(cell.row, cell.column)]
+                cells.append(GridCell(text, key))
+            else:
+                cells.append(GridCell(clean(cell.value)))
+        grid.append(cells)
+    return grid
 
 
 class ExcelDocumentParser(BaseDocumentParser):
@@ -29,30 +53,11 @@ class ExcelDocumentParser(BaseDocumentParser):
             pages: List[ParsedPage] = []
 
             for sheet_idx, sheet_name in enumerate(wb.sheetnames, start=1):
-                ws = wb[sheet_name]
-                lines = [f"### Bảng tính: {sheet_name}\n"]
-
-                rows = list(ws.iter_rows(values_only=True))
-                # Filter out completely empty rows
-                non_empty_rows = [
-                    [str(cell if cell is not None else "").strip() for cell in r]
-                    for r in rows
-                    if any(cell is not None and str(cell).strip() != "" for cell in r)
-                ]
-
-                if not non_empty_rows:
+                tables = [render_table(block) for block in split_blocks(_sheet_grid(wb[sheet_name]))]
+                tables = [t for t in tables if t]
+                if not tables:
                     continue
-
-                header = non_empty_rows[0]
-                max_cols = len(header)
-                lines.append("| " + " | ".join(header[i] if i < len(header) else "" for i in range(max_cols)) + " |")
-                lines.append("| " + " | ".join(["---"] * max_cols) + " |")
-
-                for row in non_empty_rows[1:]:
-                    row_vals = [row[i] if i < len(row) else "" for i in range(max_cols)]
-                    lines.append("| " + " | ".join(row_vals) + " |")
-
-                sheet_text = "\n".join(lines)
+                sheet_text = f"### Bảng tính: {sheet_name}\n\n" + "\n\n".join(tables)
                 pages.append(ParsedPage(page_number=sheet_idx, text=sheet_text))
 
             if not pages:
