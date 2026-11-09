@@ -50,7 +50,7 @@ fi
 
 echo "▶ Building images and restarting the stack ..."
 ssh "$SSH_HOST" "set -e
-  rm -rf $REMOTE_ROOT/app.prev
+  rm -rf $REMOTE_ROOT/app.prev 2>/dev/null || docker run --rm -v $REMOTE_ROOT:/data alpine rm -rf /data/app.prev
   if [ -d $REMOTE_ROOT/app ]; then mv $REMOTE_ROOT/app $REMOTE_ROOT/app.prev; fi
   mv $REMOTE_ROOT/app.next $REMOTE_ROOT/app
   cd $REMOTE_ROOT/app
