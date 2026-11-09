@@ -94,8 +94,8 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./deploy/server/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./deploy/server/certs:/etc/nginx/certs:ro
+      - ../server/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../server/certs:/etc/nginx/certs:ro
     depends_on:
       gateway:
         condition: service_healthy

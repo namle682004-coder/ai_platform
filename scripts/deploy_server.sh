@@ -54,6 +54,7 @@ ssh "$SSH_HOST" "set -e
   if [ -d $REMOTE_ROOT/app ]; then mv $REMOTE_ROOT/app $REMOTE_ROOT/app.prev; fi
   mv $REMOTE_ROOT/app.next $REMOTE_ROOT/app
   cd $REMOTE_ROOT/app
+  docker rm -f aip-nginx 2>/dev/null || true
   export AIP_ENV_FILE=$REMOTE_ENV_FILE AIP_VERSION=$SHA
   docker compose -f deploy/docker-compose/docker-compose.server.yml up -d --build --remove-orphans
   # Disk on the server is small: keep only the images of the revision now running.
