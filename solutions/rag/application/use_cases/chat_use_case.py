@@ -3337,7 +3337,7 @@ class RagChatUseCase:
 
         selected_blocks = []
         cur_chars = 0
-        for score, idx, block in scored_blocks:
+        for _score, idx, block in scored_blocks:
             if cur_chars + len(block) > max_chars and selected_blocks:
                 break
             selected_blocks.append((idx, block))

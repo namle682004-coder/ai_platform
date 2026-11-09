@@ -31,8 +31,7 @@ async def _test_repo():
 
 
 def test_http_routes():
-    print("
-=== 4. HTTP ROUTING: /projects/{project}/services/{service} ===")
+    print("\n=== 4. HTTP ROUTING: /projects/{project}/services/{service} ===")
     client = TestClient(app)
 
     canonical = "/projects/shared/services/llm-chat"
@@ -54,8 +53,7 @@ def test_http_routes():
     print(f"  GET {legacy_name} (Legacy) -> {res4.status_code} {res4.headers.get('location')}")
     assert res4.status_code == 301 and res4.headers.get("location") == "/services/llm-chat"
 
-    print("
-[ALL TESTS PASSED SUCCESSFULLY!]")
+    print("\n[ALL TESTS PASSED SUCCESSFULLY!]")
 
 
 if __name__ == "__main__":
