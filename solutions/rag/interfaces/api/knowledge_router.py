@@ -285,6 +285,12 @@ async def get_document_raw(doc_id: str, request: Request) -> Response:
         media_type = "text/markdown; charset=utf-8"
     elif file_type == "txt" or filename.endswith(".txt"):
         media_type = "text/plain; charset=utf-8"
+    elif file_type in ("html", "htm") or filename.endswith((".html", ".htm")):
+        media_type = "text/html; charset=utf-8"
+    elif file_type == "json" or filename.endswith(".json"):
+        media_type = "application/json; charset=utf-8"
+    elif file_type == "csv" or filename.endswith(".csv"):
+        media_type = "text/csv; charset=utf-8"
     elif file_type == "docx" or filename.endswith(".docx"):
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
@@ -315,6 +321,22 @@ async def get_document_content(doc_id: str, request: Request) -> Dict[str, Any]:
                     content_text = file_bytes.decode("utf-8")
                 except UnicodeDecodeError:
                     content_text = file_bytes.decode("utf-8", errors="replace")
+            elif file_type in ("html", "htm") or filename.endswith((".html", ".htm")):
+                try:
+                    from ...infrastructure.parsers.html_parser import decode_html, html_to_markdown
+                    title, md, _ = html_to_markdown(decode_html(file_bytes))
+                    content_text = f"# {title}\n\n{md}" if title and not md.startswith("# ") else md
+                except Exception as exc:
+                    logger.warning("Could not convert html to markdown for %s: %s", doc_id, exc)
+                    try:
+                        content_text = file_bytes.decode("utf-8", errors="replace")
+                    except Exception:
+                        content_text = ""
+            elif file_type in ("json", "csv") or filename.endswith((".json", ".csv")):
+                try:
+                    content_text = file_bytes.decode("utf-8")
+                except UnicodeDecodeError:
+                    content_text = file_bytes.decode("utf-8", errors="replace")
             elif file_type == "docx" or filename.endswith(".docx"):
                 try:
                     import zipfile
@@ -333,6 +355,21 @@ async def get_document_content(doc_id: str, request: Request) -> Dict[str, Any]:
                     content_text = "(Không thể bóc tách bản xem trước dạng văn bản. Vui lòng tải file gốc về máy)"
             elif file_type == "pdf" or filename.endswith(".pdf"):
                 content_text = f"[Tài liệu PDF: {filename}] Bạn có thể xem bản vẽ/trang đầy đủ qua trình đọc PDF trực tiếp bên trên."
+
+    # If content_text is still empty (e.g. S3 object missing or custom format), fall back to indexed vector chunks
+    if not content_text and file_type not in ("pdf", "docx"):
+        try:
+            tenant_id = doc.get("tenant_id") or _extract_tenant(request)
+            user_role = extract_role(request)
+            chunks = await _vector_store.fetch_document_chunks(doc_id=doc_id, tenant_id=tenant_id, user_role=user_role)
+            if chunks:
+                chunk_texts = [
+                    (c.get("payload") or {}).get("chunk_text") or (c.get("payload") or {}).get("text", "")
+                    for c in chunks
+                ]
+                content_text = "\n\n".join([t for t in chunk_texts if t])
+        except Exception as exc:
+            logger.warning("Fallback chunk extraction failed for %s: %s", doc_id, exc)
 
     return {
         "doc_id": doc_id,
