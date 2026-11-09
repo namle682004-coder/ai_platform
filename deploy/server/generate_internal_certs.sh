@@ -16,7 +16,7 @@ openssl genrsa -out cyber_internal.key 2048
 
 echo "=== 3. Tạo Certificate Signing Request (CSR) ==="
 openssl req -new -key cyber_internal.key -out cyber_internal.csr \
-  -subj "/C=VN/ST=Hanoi/O=Cyber Company/OU=AI Platform/CN=rag.cyber.internal"
+  -subj "/C=VN/ST=Hanoi/O=Cyber Company/OU=AI Platform/CN=aip.cyber.internal"
 
 echo "=== 4. Tạo file cấu hình SAN (Subject Alternative Names) ==="
 cat << 'EOF' > san.ext
@@ -26,8 +26,8 @@ keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = *.cyber.internal
-DNS.2 = aip.cyber.internal
+DNS.1 = aip.cyber.internal
+DNS.2 = *.cyber.internal
 DNS.3 = api.cyber.internal
 IP.1 = 172.16.20.2
 EOF
