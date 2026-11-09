@@ -7339,7 +7339,7 @@
         }
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
+      function initStaffRagPage() {
         loadStaffDocCount();
         setupStaffDropzone();
         loadStaffModels();
@@ -7367,7 +7367,13 @@
             closeAllSessionActionMenus();
           }
         });
-      });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initStaffRagPage);
+      } else {
+        initStaffRagPage();
+      }
 
       async function loadStaffModels() {
         try {
@@ -10135,6 +10141,33 @@
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#039;");
       }
+
+      // Explicit global exports for inline HTML onclick/onchange handlers
+      window.askStaffSample = askStaffSample;
+      window.sendStaffChat = sendStaffChat;
+      window.clearStaffChat = clearStaffChat;
+      window.handleStaffKeyDown = handleStaffKeyDown;
+      window.toggleStaffHistorySidebar = toggleStaffHistorySidebar;
+      window.toggleStaffModelDropdown = toggleStaffModelDropdown;
+      window.selectStaffModel = selectStaffModel;
+      window.loadStaffModels = loadStaffModels;
+      window.openChatSearchModal = openChatSearchModal;
+      window.closeChatSearchModal = typeof closeChatSearchModal === "function" ? closeChatSearchModal : () => { const m = document.getElementById("modal-chat-search"); if (m) m.style.display = "none"; };
+      window.triggerStaffFileInput = triggerStaffFileInput;
+      window.handleStaffFileInputChange = handleStaffFileInputChange;
+      window.removeStaffAdhocAttachment = removeStaffAdhocAttachment;
+      window.retryStaffQuery = retryStaffQuery;
+      window.copyStaffAnswer = copyStaffAnswer;
+      window.shareStaffAnswer = shareStaffAnswer;
+      window.closeStaffCitationModal = closeStaffCitationModal;
+      window.closeStaffCitationModalDirect = closeStaffCitationModalDirect;
+      window.toggleSessionActionMenu = toggleSessionActionMenu;
+      window.renameStaffSessionPrompt = renameStaffSessionPrompt;
+      window.deleteStaffSession = deleteStaffSession;
+      window.switchStaffConversation = switchStaffConversation;
+      window.startNewStaffSession = typeof startNewStaffSession === "function" ? startNewStaffSession : clearStaffChat;
+      window.initStaffRagPage = initStaffRagPage;
+      window.autoResizeStaffChatInput = autoResizeStaffChatInput;
     </script>
   </body>
 </html>

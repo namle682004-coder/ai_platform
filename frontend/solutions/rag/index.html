@@ -5616,9 +5616,7 @@
                       onclick="toggleStaffModelDropdown(event)"
                     >
                       <i class="fa-solid fa-layer-group"></i>
-                      <span id="staff-selected-model-label"
-                        >Qwen 2.5 7B (Local Server)</span
-                      >
+                      <span id="staff-selected-model-label">Qwen 2.5 7B</span>
                       <i class="fa-solid fa-chevron-up"></i>
                     </button>
                     <div
@@ -5626,61 +5624,7 @@
                       class="model-dropdown-menu"
                       style="display: none"
                     >
-                      <div
-                        class="model-opt active"
-                        onclick="
-                          selectStaffModel(
-                            'chat-general-standard',
-                            'Qwen 2.5 7B (Local Server)',
-                          )
-                        "
-                      >
-                        <i
-                          class="fa-solid fa-server"
-                          style="margin-right: 6px; color: #475569"
-                        ></i>
-                        Qwen 2.5 7B (Local Server)
-                      </div>
-                      <div
-                        class="model-opt"
-                        onclick="
-                          selectStaffModel(
-                            'claude-3-5-sonnet',
-                            'Claude 3.5 Sonnet (Cloud Pro)',
-                          )
-                        "
-                      >
-                        <i
-                          class="fa-solid fa-wand-magic-sparkles"
-                          style="margin-right: 6px; color: #7c3aed"
-                        ></i>
-                        Claude 3.5 Sonnet (Cloud Pro)
-                      </div>
-                      <div
-                        class="model-opt"
-                        onclick="selectStaffModel('gpt-4o', 'GPT-4o (Cloud)')"
-                      >
-                        <i
-                          class="fa-solid fa-bolt"
-                          style="margin-right: 6px; color: #0284c7"
-                        ></i>
-                        GPT-4o (Cloud)
-                      </div>
-                      <div
-                        class="model-opt"
-                        onclick="
-                          selectStaffModel(
-                            'chat-fast',
-                            'GPT-4o-mini (Cloud Fast)',
-                          )
-                        "
-                      >
-                        <i
-                          class="fa-solid fa-gauge-high"
-                          style="margin-right: 6px; color: #16a34a"
-                        ></i>
-                        GPT-4o-mini (Cloud Fast)
-                      </div>
+                      <!-- Rendered dynamically by loadStaffModels() -->
                     </div>
                   </div>
 
@@ -10072,7 +10016,7 @@
         }
       });
 
-      document.addEventListener("DOMContentLoaded", async () => {
+      async function initStaffRagPage() {
         loadStaffDocCount();
         setupStaffDropzone();
         loadStaffModels();
@@ -10105,7 +10049,13 @@
             closeAllSessionActionMenus();
           }
         });
-      });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initStaffRagPage);
+      } else {
+        initStaffRagPage();
+      }
 
       async function loadStaffModels() {
         try {
@@ -15381,6 +15331,39 @@ fetch(${JSON.stringify(rawUrl)}).then(r => r.blob()).then(b => docx.renderAsync(
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#039;");
       }
+
+      // Explicit global exports for inline HTML onclick/onchange handlers
+      window.askStaffSample = askStaffSample;
+      window.sendStaffChat = sendStaffChat;
+      window.clearStaffChat = clearStaffChat;
+      window.handleStaffKeyDown = handleStaffKeyDown;
+      window.toggleStaffHistorySidebar = toggleStaffHistorySidebar;
+      window.toggleStaffModelDropdown = toggleStaffModelDropdown;
+      window.selectStaffModel = selectStaffModel;
+      window.loadStaffModels = loadStaffModels;
+      window.openChatSearchModal = openChatSearchModal;
+      window.closeChatSearchModal = typeof closeChatSearchModal === "function" ? closeChatSearchModal : () => { const m = document.getElementById("modal-chat-search"); if (m) m.style.display = "none"; };
+      window.toggleStaffInboxPopover = toggleStaffInboxPopover;
+      window.openStaffInboxPopover = openStaffInboxPopover;
+      window.closeStaffInboxPopover = closeStaffInboxPopover;
+      window.openStaffInboxPage = openStaffInboxPage;
+      window.closeStaffInboxPage = closeStaffInboxPage;
+      window.triggerStaffFileInput = triggerStaffFileInput;
+      window.handleStaffFileInputChange = handleStaffFileInputChange;
+      window.removeStaffAdhocAttachment = removeStaffAdhocAttachment;
+      window.retryStaffQuery = retryStaffQuery;
+      window.copyStaffAnswer = copyStaffAnswer;
+      window.shareStaffAnswer = shareStaffAnswer;
+      window.closeStaffCitationModal = closeStaffCitationModal;
+      window.closeStaffCitationModalDirect = closeStaffCitationModalDirect;
+      window.openStaffCitationModalDirect = typeof openStaffCitationModalDirect === "function" ? openStaffCitationModalDirect : () => {};
+      window.toggleSessionActionMenu = toggleSessionActionMenu;
+      window.renameStaffSessionPrompt = renameStaffSessionPrompt;
+      window.deleteStaffSession = deleteStaffSession;
+      window.switchStaffConversation = switchStaffConversation;
+      window.startNewStaffSession = typeof startNewStaffSession === "function" ? startNewStaffSession : clearStaffChat;
+      window.initStaffRagPage = initStaffRagPage;
+      window.autoResizeStaffChatInput = autoResizeStaffChatInput;
     </script>
   </body>
 </html>

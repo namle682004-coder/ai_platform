@@ -2061,6 +2061,9 @@ import '/staff/applications_nav.js';
             }
             StaffLayout.init();
             await runPageScripts(parsedPage, finalUrl);
+            if (typeof window.initStaffRagPage === "function") {
+                try { await window.initStaffRagPage(); } catch (e) { console.warn("initStaffRagPage error:", e); }
+            }
             window.scrollTo(0, 0);
         } catch (error) {
             if (error.name === 'AbortError') return;
