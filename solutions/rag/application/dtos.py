@@ -36,7 +36,11 @@ class RagChatRequestDTO(BaseModel):
         None,
         description="Previous conversation turns for multi-turn context (e.g. [{\"role\": \"user\", \"content\": \"...\"}])",
     )
-    model: str = Field(default="chat-general-standard", description="Model alias for LLM reasoning")
+    model: str = Field(default="chat-general-standard", description="Model alias for LLM reasoning (local or cloud)")
+    analyzer_model: Optional[str] = Field(
+        None,
+        description="Optional model alias for intent analysis, query rewriting, and decomposition. Defaults to RAG_QUERY_ANALYSIS_MODEL or model.",
+    )
     department: Optional[str] = Field(None, description="Filter documents by department")
     doc_ids: Optional[List[str]] = Field(None, description="Restrict search to specific document IDs")
     similarity_threshold: float = Field(
@@ -56,6 +60,10 @@ class RagChatRequestDTO(BaseModel):
     )
     adhoc_context: Optional[str] = Field(None, description="Optional text context parsed in-memory from user attached file")
     adhoc_filename: Optional[str] = Field(None, description="Optional filename of user attached file")
+    adhoc_strategy: Optional[str] = Field(
+        default=None,
+        description="Optional processing strategy for ad-hoc attachment: 'direct_llm', 'structured_table', 'large_document'",
+    )
     enable_hyde: Optional[bool] = Field(
         default=None,
         description="Whether to enable Hypothetical Document Embeddings (HyDE - Slide 138). None for auto-trigger on short/definitional queries, True to force enable, False to disable.",

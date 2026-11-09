@@ -1,0 +1,94 @@
+# ==============================================================================
+# AIP Model Inference Platform (MIP) - Centralized Model Gateway (LiteLLM)
+# ==============================================================================
+# Mapping tập trung toàn bộ Model cho Enterprise RAG:
+# - Embedding & Reranker: Giữ nguyên trên server công ty (172.16.20.2:8012).
+# - Intent / Query Rewrite: Model siêu tốc, bắt ngữ cảnh & dấu tiếng Việt cực nhạy.
+# - Answer Generator: Model suy luận sâu, bám sát context, không bịa (Zero-hallucination).
+# ==============================================================================
+
+model_list:
+  # ----------------------------------------------------------------------------
+  # 1. LOCAL SERVER CÔNG TY (Port 8011 trên 172.16.20.2 - TITAN Xp)
+  # ----------------------------------------------------------------------------
+  - model_name: chat-general-standard
+    litellm_params:
+      model: openai/Qwen/Qwen2.5-7B-Instruct
+      api_base: http://172.16.20.2:8011/v1
+      api_key: "none"
+      timeout: 120
+
+  - model_name: qwen2.5-7b-local
+    litellm_params:
+      model: openai/Qwen/Qwen2.5-7B-Instruct
+      api_base: http://172.16.20.2:8011/v1
+      api_key: "none"
+      timeout: 120
+
+  # ----------------------------------------------------------------------------
+  # 2. GENERATOR HÀNG ĐẦU TIẾNG VIỆT (Deep Reasoning, RAG Groundedness)
+  # ----------------------------------------------------------------------------
+  - model_name: chat-general-pro
+    litellm_params:
+      model: claude-3-5-sonnet-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 4096
+      temperature: 0.2
+
+  - model_name: claude-3-5-sonnet
+    litellm_params:
+      model: claude-3-5-sonnet-20241022
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 4096
+      temperature: 0.2
+
+  - model_name: gpt-4o
+    litellm_params:
+      model: gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+      max_tokens: 4096
+      temperature: 0.2
+
+  # ----------------------------------------------------------------------------
+  # 3. INTENT & QUERY REWRITING HÀNG ĐẦU (Siêu nhanh <400ms, Xử lý Tiếng Việt cực tốt)
+  # ----------------------------------------------------------------------------
+  - model_name: chat-fast
+    litellm_params:
+      model: gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+      max_tokens: 500
+      temperature: 0.0
+
+  - model_name: gemini-1.5-flash
+    litellm_params:
+      model: gemini/gemini-1.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+      max_tokens: 500
+      temperature: 0.0
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+      max_tokens: 500
+      temperature: 0.0
+
+# ------------------------------------------------------------------------------
+# ROUTER & HIGH AVAILABILITY SETTINGS
+# ------------------------------------------------------------------------------
+router_settings:
+  routing_strategy: "latency-based-routing"
+  num_retries: 2
+  timeout: 60
+
+# Tự động chuyển hướng khi server nội bộ bị nghẽn GPU/OOM/timeout
+fallbacks:
+  - chat-general-standard: ["chat-fast", "claude-3-5-sonnet"]
+
+# ------------------------------------------------------------------------------
+# MIP GOVERNANCE & SECURITY (Theo SRS-LIT-001/005, SRS-SEC)
+# ------------------------------------------------------------------------------
+general_settings:
+  master_key: os.environ/MIP_MASTER_KEY
+  store_model_in_db: false   # Quản lý bằng file manifest/GitOps
+  drop_params: false         # Không nuốt tham số không hỗ trợ

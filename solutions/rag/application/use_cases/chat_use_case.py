@@ -1307,8 +1307,9 @@ class RagChatUseCase:
             spec_task = asyncio.ensure_future(self._speculative_retrieval(
                 request, spec_query, spec_rewrite.sparse_query or spec_query, tenant_id, user_role))
         try:
+            analyzer_model = getattr(request, "analyzer_model", None) or rag_settings.query_analysis_model or request.model
             analysis = await self.query_analyzer.analyze(
-                raw_query, history, self.llm_service, request.model, authorization=authorization,
+                raw_query, history, self.llm_service, analyzer_model, authorization=authorization,
             )
         except BaseException:
             if spec_task is not None:
@@ -1366,7 +1367,7 @@ class RagChatUseCase:
         multi_hop_flag = getattr(request, "multi_hop", None)
         if multi_hop_flag is True or (multi_hop_flag is None and query_decomposer.should_decompose(plan.standalone_query)):
             decomp = await query_decomposer.decompose(
-                plan.standalone_query, llm_port=self.llm_service, model=request.model, timeout=0.8
+                plan.standalone_query, llm_port=self.llm_service, model=analyzer_model, timeout=0.8
             )
             if decomp.is_multi_hop and len(decomp.sub_queries) >= 2:
                 self._drop_speculative(plan)
@@ -3310,17 +3311,89 @@ class RagChatUseCase:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _extract_relevant_adhoc_context(query: str, text: str, max_chars: int) -> str:
+        """
+        Intelligently extracts the most relevant passages from a large ad-hoc document
+        if its size exceeds max_chars, ensuring no section of a multi-page document is lost.
+        """
+        if len(text) <= max_chars:
+            return text
+
+        blocks = [b.strip() for b in re.split(r"\n{2,}|(?=### (?:Trang|Bảng tính|Phần))", text) if b.strip()]
+        if len(blocks) <= 1:
+            blocks = [p.strip() for p in text.split("\n\n") if p.strip()]
+
+        if not blocks:
+            return text[:max_chars]
+
+        query_terms = set(re.findall(r"\w+", query.lower()))
+        scored_blocks = []
+        for idx, block in enumerate(blocks):
+            block_terms = set(re.findall(r"\w+", block.lower()))
+            overlap = len(query_terms & block_terms) if query_terms else 1
+            scored_blocks.append((overlap, idx, block))
+
+        scored_blocks.sort(key=lambda x: (x[0], -x[1]), reverse=True)
+
+        selected_blocks = []
+        cur_chars = 0
+        for score, idx, block in scored_blocks:
+            if cur_chars + len(block) > max_chars and selected_blocks:
+                break
+            selected_blocks.append((idx, block))
+            cur_chars += len(block)
+
+        selected_blocks.sort(key=lambda x: x[0])
+        extracted = "\n\n---\n\n".join(b[1] for b in selected_blocks)
+
+        header_notice = (
+            f"[Hệ thống: Tài liệu đính kèm gồm {len(text):,} ký tự. "
+            f"Đã tự động trích lọc các phần liên quan nhất ({len(extracted):,} ký tự) tới câu hỏi]:\n\n"
+        )
+        return header_notice + extracted
+
+    @staticmethod
     def _adhoc_messages(request: RagChatRequestDTO, history: List[Dict[str, str]]) -> Tuple[List[Dict[str, str]], List[Dict[str, Any]]]:
         adhoc_title = getattr(request, "adhoc_filename", None) or "Tài liệu đính kèm tạm thời"
+        strategy = getattr(request, "adhoc_strategy", None) or ""
+        max_chars = getattr(rag_settings, "adhoc_max_context_chars", 64000)
+
+        context_text = RagChatUseCase._extract_relevant_adhoc_context(request.query, request.adhoc_context, max_chars)
         adhoc_excerpt = request.adhoc_context[:350].strip() + "..." if len(request.adhoc_context) > 350 else request.adhoc_context.strip()
-        system_prompt = (
-            f"Bạn là Trợ lý AI Chuyên nghiệp của AIP Platform. Người dùng đã đính kèm tài liệu cá nhân '{adhoc_title}'.\n"
-            "Nhiệm vụ của bạn là đọc kỹ tài liệu đính kèm bên dưới và trả lời câu hỏi của người dùng một cách chính xác, trung thực, có cấu trúc rõ ràng (bảng biểu, gạch đầu dòng nếu phù hợp).\n"
-            "Nếu thông tin không có trong tài liệu, hãy thành thật nêu rõ không có trong tài liệu.\n\n"
-            f"=== NỘI DUNG TÀI LIỆU ĐÍNH KÈM ({adhoc_title}) ===\n"
-            f"{request.adhoc_context[:16000]}\n"
-            "=================================================="
-        )
+
+        is_table = strategy == "structured_table" or any(adhoc_title.lower().endswith(ext) for ext in (".xlsx", ".xls", ".csv"))
+        is_large = strategy == "large_document" or len(request.adhoc_context) > getattr(rag_settings, "adhoc_large_doc_threshold_chars", 40000)
+
+        if is_table:
+            system_prompt = (
+                f"Bạn là Chuyên gia Phân tích Dữ liệu Bảng tính của AIP Platform. Người dùng đã đính kèm bảng dữ liệu '{adhoc_title}'.\n"
+                "Nhiệm vụ của bạn là phân tích chính xác từng dòng, từng cột trong bảng dữ liệu dưới đây để trả lời câu hỏi của người dùng.\n"
+                "- Khi thực hiện phép tính (tổng, trung bình, đếm, so sánh, lọc), hãy liệt kê rõ số liệu nguồn từ bảng và tính toán cẩn thận, không được suy đoán hoặc bịa số.\n"
+                "- Trình bày kết quả rõ ràng, sử dụng bảng Markdown hoặc danh sách có cấu trúc.\n\n"
+                f"=== DỮ LIỆU BẢNG TÍNH ({adhoc_title}) ===\n"
+                f"{context_text}\n"
+                "=========================================="
+            )
+        elif is_large:
+            system_prompt = (
+                f"Bạn là Trợ lý AI Chuyên nghiệp của AIP Platform. Người dùng đã đính kèm tài liệu dài '{adhoc_title}'.\n"
+                "Hệ thống đã tự động trích lọc các đoạn thông tin liên quan nhất từ toàn bộ tài liệu để bạn xử lý.\n"
+                "Nhiệm vụ của bạn là đọc kỹ các trích đoạn bên dưới và trả lời câu hỏi của người dùng một cách chính xác, trung thực, có cấu trúc rõ ràng.\n"
+                "Nếu thông tin không có trong các đoạn trích, hãy thành thật nêu rõ không có trong tài liệu.\n\n"
+                f"=== TRÍCH ĐOẠN TÀI LIỆU LIÊN QUAN ({adhoc_title}) ===\n"
+                f"{context_text}\n"
+                "=================================================="
+            )
+        else:
+            system_prompt = (
+                f"Bạn là Trợ lý AI Chuyên nghiệp của AIP Platform. Người dùng đã đính kèm tài liệu cá nhân '{adhoc_title}'.\n"
+                "Nhiệm vụ của bạn là đọc kỹ tài liệu đính kèm bên dưới và trả lời câu hỏi của người dùng một cách chính xác, trung thực, có cấu trúc rõ ràng (bảng biểu, gạch đầu dòng nếu phù hợp).\n"
+                "Nếu thông tin không có trong tài liệu, hãy thành thật nêu rõ không có trong tài liệu.\n\n"
+                f"=== NỘI DUNG TÀI LIỆU ĐÍNH KÈM ({adhoc_title}) ===\n"
+                f"{context_text}\n"
+                "=================================================="
+            )
+
         citations = [{
             "index": 1, "doc_id": "adhoc_attachment", "title": adhoc_title,
             "page_number": 1, "score": 1.0, "excerpt": adhoc_excerpt,

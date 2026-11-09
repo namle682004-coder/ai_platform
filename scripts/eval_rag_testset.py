@@ -74,6 +74,8 @@ def call_chat(client: httpx.Client, api: str, query: str, session_id: str, args:
         "similarity_threshold": args.threshold,
         "temperature": args.temperature,
     }
+    if getattr(args, "analyzer_model", None):
+        body["analyzer_model"] = args.analyzer_model
     t0 = time.time()
     if not args.stream:
         res = client.post(f"{api}/v1/rag/chat", json=body)
@@ -129,6 +131,7 @@ def main() -> None:
     parser.add_argument("--col-type", default="Loại")
     parser.add_argument("--col-ref", default="Căn cứ (mã YCCĐ)")
     parser.add_argument("--model", default="chat-general-standard")
+    parser.add_argument("--analyzer-model", default=None, help="Optional model alias for intent analysis and query rewriting")
     parser.add_argument("--top-k", type=int, default=4)
     parser.add_argument("--threshold", type=float, default=0.65)
     parser.add_argument("--temperature", type=float, default=0.2)

@@ -1,0 +1,27 @@
+# ==============================================================================
+# AIP MIP Gateway (LiteLLM) - Docker Compose Service
+# ==============================================================================
+name: aip-gateway
+
+services:
+  litellm-gateway:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: aip-litellm-gateway
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../gateway/litellm_config.yaml:/app/config.yaml:ro
+    environment:
+      - MIP_MASTER_KEY=${MIP_MASTER_KEY:-sk-mip-master-key-lenam2026}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--detailed_debug"]
+    restart: unless-stopped
+    networks:
+      - default
+
+networks:
+  default:
+    name: aip-infra_default
+    external: true

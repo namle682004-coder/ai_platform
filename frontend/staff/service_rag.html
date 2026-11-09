@@ -2654,10 +2654,7 @@
                       class="btn-model-picker"
                       onclick="toggleStaffModelDropdown(event)"
                     >
-                      <i class="fa-solid fa-plus"></i>
-                      <span id="staff-selected-model-label"
-                        >Qwen 2.5 1.5B Fast</span
-                      >
+                      <span id="staff-selected-model-label">Qwen 2.5 7B</span>
                       <i class="fa-solid fa-chevron-up"></i>
                     </button>
                     <div
@@ -2665,28 +2662,7 @@
                       class="model-dropdown-menu"
                       style="display: none"
                     >
-                      <div
-                        class="model-opt active"
-                        onclick="
-                          selectStaffModel(
-                            'chat-general-standard',
-                            'Qwen 2.5 1.5B Fast',
-                          )
-                        "
-                      >
-                        Qwen 2.5 1.5B Fast
-                      </div>
-                      <div
-                        class="model-opt"
-                        onclick="
-                          selectStaffModel(
-                            'chat-general-high-quality',
-                            'Qwen 2.5 14B High Quality',
-                          )
-                        "
-                      >
-                        Qwen 2.5 14B High Quality
-                      </div>
+                      <!-- Rendered dynamically by loadStaffModels() -->
                     </div>
                   </div>
                 </div>
@@ -7366,6 +7342,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         loadStaffDocCount();
         setupStaffDropzone();
+        loadStaffModels();
         loadStaffRecentSessions();
         if (window.innerWidth >= 1200 && !isHistorySidebarOpen) {
           toggleStaffHistorySidebar();
@@ -7392,6 +7369,56 @@
         });
       });
 
+      async function loadStaffModels() {
+        try {
+          const res = await fetch(`${API_BASE}/v1/rag/models`, {
+            headers: { Authorization: DEFAULT_TOKEN },
+          });
+          if (!res.ok) throw new Error("Status " + res.status);
+          const data = await res.json();
+          const models = data.models || [];
+          if (models.length === 0) return;
+
+          const saved = localStorage.getItem("aip_staff_selected_model") || data.default || models[0].id;
+          const current = models.find((m) => m.id === saved) || models[0];
+          staffCurrentModel = current.id;
+
+          const lbl = document.getElementById("staff-selected-model-label");
+          if (lbl) lbl.innerText = current.name;
+
+          const menu = document.getElementById("staff-model-dropdown-menu");
+          if (menu) {
+            menu.innerHTML = models
+              .map(
+                (m) =>
+                  `<div class="model-opt ${m.id === staffCurrentModel ? "active" : ""}" onclick="selectStaffModel('${escapeHtml(m.id)}', '${escapeHtml(m.name)}')">${escapeHtml(m.name)}</div>`
+              )
+              .join("");
+          }
+        } catch (e) {
+          console.warn("Could not load models from server, using fallback:", e);
+          const fallbackModels = [
+            { id: "chat-general-standard", name: "Qwen 2.5 7B" },
+            { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet" },
+            { id: "gpt-4o", name: "GPT-4o" },
+            { id: "chat-fast", name: "GPT-4o-mini" },
+          ];
+          const current = fallbackModels[0];
+          staffCurrentModel = current.id;
+          const lbl = document.getElementById("staff-selected-model-label");
+          if (lbl) lbl.innerText = current.name;
+          const menu = document.getElementById("staff-model-dropdown-menu");
+          if (menu) {
+            menu.innerHTML = fallbackModels
+              .map(
+                (m) =>
+                  `<div class="model-opt ${m.id === staffCurrentModel ? "active" : ""}" onclick="selectStaffModel('${m.id}', '${m.name}')">${m.name}</div>`
+              )
+              .join("");
+          }
+        }
+      }
+
       function toggleStaffModelDropdown(e) {
         e.stopPropagation();
         const menu = document.getElementById("staff-model-dropdown-menu");
@@ -7400,14 +7427,16 @@
 
       function selectStaffModel(modelId, label) {
         staffCurrentModel = modelId;
-        document.getElementById("staff-selected-model-label").innerText = label;
+        localStorage.setItem("aip_staff_selected_model", modelId);
+        const lbl = document.getElementById("staff-selected-model-label");
+        if (lbl) lbl.innerText = label;
         document
           .querySelectorAll("#staff-model-dropdown-menu .model-opt")
           .forEach((el) => {
-            el.classList.toggle("active", el.innerText.includes(label));
+            el.classList.toggle("active", el.innerText.trim() === label.trim());
           });
-        document.getElementById("staff-model-dropdown-menu").style.display =
-          "none";
+        const menu = document.getElementById("staff-model-dropdown-menu");
+        if (menu) menu.style.display = "none";
       }
 
       function setupStaffDropzone() {
@@ -9320,13 +9349,15 @@
               filename: data.filename,
               file_type: data.file_type,
               total_pages: data.total_pages,
+              char_count: data.char_count,
               size_bytes: data.size_bytes,
+              strategy: data.strategy,
               text: data.text,
             };
 
             const sizeKb = (data.size_bytes / 1024).toFixed(1) + " KB";
             if (sizeEl) {
-              sizeEl.innerText = `${sizeKb} • ${data.total_pages} trang/sheet • Đã nạp vào RAM`;
+              sizeEl.innerText = data.summary || `${sizeKb} • ${data.total_pages} trang/sheet • Đã nạp vào RAM`;
             }
             if (clipBtn) clipBtn.classList.add("attached");
             showStaffToast(
@@ -9805,6 +9836,7 @@
                 content: h.content,
               })),
               model: staffCurrentModel,
+              analyzer_model: staffCurrentModel,
               similarity_threshold: ragSettings.similarity_threshold || 0.65,
               top_k: ragSettings.top_k || 4,
               temperature: 0.2,
@@ -9812,6 +9844,7 @@
               stream: true,
               adhoc_context: adhocContextPayload,
               adhoc_filename: adhocFilenamePayload,
+              adhoc_strategy: currentStaffAdhocAttachment ? currentStaffAdhocAttachment.strategy : undefined,
             }),
           });
 

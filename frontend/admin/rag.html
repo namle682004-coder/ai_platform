@@ -546,17 +546,11 @@
                             <!-- Compact model selector on the left -->
                             <div class="model-picker-container">
                                 <button type="button" class="btn-model-picker" onclick="toggleModelDropdown(event)">
-                                    <i class="fa-solid fa-plus"></i>
-                                    <span id="selected-model-label">Qwen 2.5 1.5B Fast</span>
+                                    <span id="selected-model-label">Qwen 2.5 7B</span>
                                     <i class="fa-solid fa-chevron-up"></i>
                                 </button>
                                 <div id="model-dropdown-menu" class="model-dropdown-menu" style="display: none;">
-                                    <div class="model-opt active" onclick="selectModel('chat-general-standard', 'Qwen 2.5 1.5B Fast')">
-                                        Qwen 2.5 1.5B Fast
-                                    </div>
-                                    <div class="model-opt" onclick="selectModel('chat-general-high-quality', 'Qwen 2.5 14B High Quality')">
-                                        Qwen 2.5 14B High Quality
-                                    </div>
+                                    <!-- Rendered dynamically by loadAdminModels() -->
                                 </div>
                             </div>
 
@@ -729,6 +723,7 @@
         document.addEventListener("DOMContentLoaded", () => {
             loadDocumentCount();
             setupDropzone();
+            loadAdminModels();
             document.addEventListener('click', (e) => {
                 const picker = document.querySelector('.model-picker-container');
                 if (picker && !picker.contains(e.target)) {
@@ -736,6 +731,50 @@
                 }
             });
         });
+
+        async function loadAdminModels() {
+            try {
+                const res = await fetch(`${API_BASE}/v1/rag/models`, {
+                    headers: { 'Authorization': DEFAULT_TOKEN }
+                });
+                if (!res.ok) throw new Error("Status " + res.status);
+                const data = await res.json();
+                const models = data.models || [];
+                if (models.length === 0) return;
+
+                const saved = localStorage.getItem("aip_admin_selected_model") || data.default || models[0].id;
+                const current = models.find(m => m.id === saved) || models[0];
+                currentModel = current.id;
+
+                const lbl = document.getElementById("selected-model-label");
+                if (lbl) lbl.innerText = current.name;
+
+                const menu = document.getElementById("model-dropdown-menu");
+                if (menu) {
+                    menu.innerHTML = models.map(m =>
+                        `<div class="model-opt ${m.id === currentModel ? 'active' : ''}" onclick="selectModel('${m.id}', '${m.name}')">${m.name}</div>`
+                    ).join("");
+                }
+            } catch (e) {
+                console.warn("Could not load models from server:", e);
+                const fallbackModels = [
+                    { id: "chat-general-standard", name: "Qwen 2.5 7B" },
+                    { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet" },
+                    { id: "gpt-4o", name: "GPT-4o" },
+                    { id: "chat-fast", name: "GPT-4o-mini" },
+                ];
+                const current = fallbackModels[0];
+                currentModel = current.id;
+                const lbl = document.getElementById("selected-model-label");
+                if (lbl) lbl.innerText = current.name;
+                const menu = document.getElementById("model-dropdown-menu");
+                if (menu) {
+                    menu.innerHTML = fallbackModels.map(m =>
+                        `<div class="model-opt ${m.id === currentModel ? 'active' : ''}" onclick="selectModel('${m.id}', '${m.name}')">${m.name}</div>`
+                    ).join("");
+                }
+            }
+        }
 
         function toggleModelDropdown(e) {
             e.stopPropagation();
@@ -745,9 +784,10 @@
 
         function selectModel(modelId, label) {
             currentModel = modelId;
+            localStorage.setItem("aip_admin_selected_model", modelId);
             document.getElementById('selected-model-label').innerText = label;
             document.querySelectorAll('.model-opt').forEach(el => {
-                el.classList.toggle('active', el.innerText.includes(label));
+                el.classList.toggle('active', el.innerText.trim() === label.trim());
             });
             document.getElementById('model-dropdown-menu').style.display = 'none';
         }
@@ -1235,6 +1275,7 @@ function formatAdminCitations(citations, query, answer) {
                         conversation_id: activeConversationId,
                         history: chatHistory,
                         model: currentModel,
+                        analyzer_model: currentModel,
                         similarity_threshold: 0.65,
                         top_k: 4,
                         temperature: 0.2,

@@ -43,6 +43,10 @@ echo "▶ Shipping $SHA to $SSH_HOST:$REMOTE_ROOT/app ..."
 ssh "$SSH_HOST" "test -f $REMOTE_ENV_FILE || { echo 'Missing $REMOTE_ENV_FILE (see deploy/docker-compose/server.env.example)'; exit 1; }
   rm -rf $REMOTE_ROOT/app.next && mkdir -p $REMOTE_ROOT/app.next"
 git archive --format=tar "$REF" | ssh "$SSH_HOST" "tar -x -C $REMOTE_ROOT/app.next && echo $SHA > $REMOTE_ROOT/app.next/DEPLOYED_REVISION"
+if [ -d deploy/server/certs ]; then
+  echo "▶ Syncing TLS certificates to $SSH_HOST ..."
+  scp -r deploy/server/certs "$SSH_HOST:$REMOTE_ROOT/app.next/deploy/server/"
+fi
 
 echo "▶ Building images and restarting the stack ..."
 ssh "$SSH_HOST" "set -e
@@ -62,4 +66,4 @@ ssh "$SSH_HOST" "set -e
   df -h / | tail -1
   docker compose -f deploy/docker-compose/docker-compose.server.yml ps"
 
-echo "✔ Deployed $SHA. Gateway: http://172.16.20.2:8000"
+echo "✔ Deployed $SHA. Gateway: http://172.16.20.2:8000 | HTTPS: https://rag.cyber.internal"

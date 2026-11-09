@@ -117,6 +117,52 @@ async def get_document_image(
     )
 
 
+@router.get("/models", summary="List Available RAG Chat Models")
+async def list_rag_models():
+    """
+    Returns active chat models available for RAG conversations.
+    Names are clean display labels (no icons, no status tags).
+    """
+    friendly_names = {
+        "chat-general-standard": "Qwen 2.5 7B",
+        "chat-qwen2.5-7b": "Qwen 2.5 7B",
+        "chat-general-pro": "Claude 3.5 Sonnet",
+        "claude-3-5-sonnet": "Claude 3.5 Sonnet",
+        "gpt-4o": "GPT-4o",
+        "chat-fast": "GPT-4o-mini",
+    }
+    try:
+        from common.models.catalog import AIP_MODEL_CATALOG
+        catalog = AIP_MODEL_CATALOG
+    except ImportError:
+        catalog = {}
+
+    models = []
+    seen_names = set()
+    for alias_id, alias_obj in catalog.items():
+        if getattr(alias_obj, "category", "") == "llm" and getattr(alias_obj, "status", "") == "active":
+            name = friendly_names.get(alias_id, getattr(alias_obj, "physical_model", alias_id))
+            if name not in seen_names:
+                seen_names.add(name)
+                models.append({
+                    "id": alias_id,
+                    "name": name,
+                })
+
+    if not models:
+        models = [
+            {"id": "chat-general-standard", "name": "Qwen 2.5 7B"},
+            {"id": "claude-3-5-sonnet", "name": "Claude 3.5 Sonnet"},
+            {"id": "gpt-4o", "name": "GPT-4o"},
+            {"id": "chat-fast", "name": "GPT-4o-mini"},
+        ]
+
+    return {
+        "models": models,
+        "default": "chat-general-standard",
+    }
+
+
 def _request_trace_id() -> Optional[str]:
     """The trace id the observability middleware returns in X-Trace-ID, so headers, body and store agree."""
     ctx = RagTracer.get_current_trace()
@@ -135,8 +181,12 @@ async def parse_adhoc_document(
     file: UploadFile = File(...),
     request: Request = None,
 ) -> Dict[str, Any]:
-    """Parse temporary attached document directly in RAM (Ad-hoc RAG).
-    Extracts text without uploading to MinIO and without indexing vectors into Qdrant.
+    """Parse temporary attached document directly in RAM (Ad-hoc Hybrid Intelligence).
+    Extracts text/tables without uploading to MinIO and without indexing vectors into Qdrant.
+    Automatically classifies the document:
+      - 'structured_table': Excel/CSV data requiring accurate row-by-row analysis
+      - 'large_document': Multi-page documents requiring in-memory passage extraction
+      - 'direct_llm': Small/medium documents injected directly into LLM context
     """
     try:
         file_bytes = await file.read()
@@ -144,11 +194,34 @@ async def parse_adhoc_document(
         parsed_doc = parser_factory.parse(file_bytes, filename)
         full_text = chr(10).join(p.text for p in parsed_doc.pages if p.text)
 
+        total_pages = len(parsed_doc.pages)
+        char_count = len(full_text)
+        file_ext = (parsed_doc.file_type or filename.split(".")[-1]).lower()
+        is_tabular = file_ext in ("xlsx", "xls", "csv") or (
+            full_text.count("|") > 20 and "\n| ---" in full_text
+        )
+
+        large_threshold = rag_settings.adhoc_large_doc_threshold_chars
+        if is_tabular:
+            strategy = "structured_table"
+            mode_label = "Bảng dữ liệu"
+        elif char_count > large_threshold or total_pages > 20:
+            strategy = "large_document"
+            mode_label = "Tài liệu lớn (In-Memory RAG)"
+        else:
+            strategy = "direct_llm"
+            mode_label = "Direct LLM"
+
+        summary = f"{mode_label} • {total_pages} trang/sheet • {char_count:,} ký tự"
+
         return {
             "filename": filename,
             "file_type": parsed_doc.file_type,
-            "total_pages": len(parsed_doc.pages),
+            "total_pages": total_pages,
+            "char_count": char_count,
             "size_bytes": len(file_bytes),
+            "strategy": strategy,
+            "summary": summary,
             "text": full_text,
             "excerpt": full_text[:300].strip() + "..." if len(full_text) > 300 else full_text,
         }

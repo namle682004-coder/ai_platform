@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Optional
 from dotenv import load_dotenv
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -247,6 +248,17 @@ class RagSolutionSettings(BaseSettings):
     media_max_image_bytes: int = Field(
         default=15 * 1024 * 1024, validation_alias=AliasChoices("RAG_MEDIA_MAX_IMAGE_BYTES", "media_max_image_bytes")
     )
+    # --- Ad-hoc / Session-level file upload settings ---
+    adhoc_max_context_chars: int = Field(
+        default=64000,
+        validation_alias=AliasChoices("RAG_ADHOC_MAX_CONTEXT_CHARS", "adhoc_max_context_chars"),
+        description="Maximum characters of ad-hoc attachment text to inject directly into LLM context before using in-memory passage extraction",
+    )
+    adhoc_large_doc_threshold_chars: int = Field(
+        default=40000,
+        validation_alias=AliasChoices("RAG_ADHOC_LARGE_DOC_THRESHOLD_CHARS", "adhoc_large_doc_threshold_chars"),
+        description="Threshold of characters beyond which an ad-hoc document switches from Direct LLM to In-Memory Retrieval",
+    )
     chunk_size_chars: int = Field(
         default=900,
         validation_alias=AliasChoices("RAG_CHUNK_SIZE", "chunk_size_chars"),
@@ -446,6 +458,11 @@ class RagSolutionSettings(BaseSettings):
     query_analysis_enabled: bool = Field(
         default=True,
         validation_alias=AliasChoices("RAG_QUERY_ANALYSIS_ENABLED", "query_analysis_enabled"),
+    )
+    query_analysis_model: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("RAG_QUERY_ANALYSIS_MODEL", "query_analysis_model"),
+        description="Model alias for query rewriting and intent analysis (e.g. 'chat-fast'). When None, falls back to request.model.",
     )
     query_analysis_timeout: float = Field(
         default=6.0,
