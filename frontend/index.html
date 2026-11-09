@@ -12,15 +12,15 @@
             try {
                 const user = JSON.parse(session);
                 if (user.role === 'admin') {
-                    window.location.replace('/admin/dashboard.html');
+                    window.location.replace('/admin/dashboard');
                 } else {
-                    window.location.replace('/staff/dashboard.html');
+                    window.location.replace('/dashboard');
                 }
             } catch (e) {
-                window.location.replace('/auth/login.html');
+                window.location.replace('/auth/login');
             }
         } else {
-            window.location.replace('/auth/login.html');
+            window.location.replace('/auth/login');
         }
     </script>
 </head>

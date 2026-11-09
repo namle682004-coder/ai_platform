@@ -1856,7 +1856,7 @@ import '/staff/applications_nav.js';
         const userSession = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
         if (!userSession) {
             const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
-            window.location.replace('/auth/login.html?redirect=' + redirectUrl);
+            window.location.replace('/auth/login?redirect=' + redirectUrl);
             return;
         }
 
@@ -1885,7 +1885,7 @@ import '/staff/applications_nav.js';
         localStorage.removeItem('aip_active_project');
         localStorage.removeItem('aip_active_tenant_id');
         localStorage.removeItem('aip_active_project_id');
-        window.location.href = '/auth/login.html';
+        window.location.href = '/auth/login';
     }
 
     // 9. Standard Topbar & Sidebar Markup (Unified Image 3 & Image 4 MatDash)

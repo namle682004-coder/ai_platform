@@ -98,6 +98,12 @@ def _service_response(project: Optional[str], service: str, view: str = "", quer
     return _frontend_page(entry["page"] if entry.get("live") else ROUTE_PAGES["underDevelopment"])
 
 
+@router.get("/projects.html", include_in_schema=False)
+@router.get("/projects/index.html", include_in_schema=False)
+async def redirect_projects_html():
+    return RedirectResponse(url="/projects", status_code=301)
+
+
 @router.get("/projects", include_in_schema=False)
 @router.get("/projects/", include_in_schema=False)
 @router.get("/projects/{project}", include_in_schema=False)
@@ -105,6 +111,86 @@ def _service_response(project: Optional[str], service: str, view: str = "", quer
 @router.get("/projects/{project}/dashboard", include_in_schema=False)
 async def serve_project_dashboard(project: str = ""):
     return _frontend_page(ROUTE_PAGES["dashboard"])
+
+
+@router.get("/dashboard", include_in_schema=False)
+@router.get("/dashboard/", include_in_schema=False)
+@router.get("/console/dashboard", include_in_schema=False)
+async def serve_dashboard():
+    for cand in [FRONTEND_DIR / "console" / "dashboard.html", STAFF_DIR / "dashboard.html"]:
+        if cand.is_file():
+            return FileResponse(cand)
+    return _frontend_page(ROUTE_PAGES["dashboard"])
+
+
+@router.get("/dashboard.html", include_in_schema=False)
+@router.get("/console/dashboard.html", include_in_schema=False)
+async def redirect_dashboard_html():
+    return RedirectResponse(url="/dashboard", status_code=301)
+
+
+@router.get("/keys", include_in_schema=False)
+@router.get("/keys/", include_in_schema=False)
+@router.get("/console/keys", include_in_schema=False)
+async def serve_keys():
+    for cand in [FRONTEND_DIR / "console" / "keys.html", STAFF_DIR / "keys.html"]:
+        if cand.is_file():
+            return FileResponse(cand)
+    raise HTTPException(status_code=404, detail="Keys page not found")
+
+
+@router.get("/keys.html", include_in_schema=False)
+@router.get("/console/keys.html", include_in_schema=False)
+async def redirect_keys_html():
+    return RedirectResponse(url="/keys", status_code=301)
+
+
+@router.get("/apis", include_in_schema=False)
+@router.get("/apis/", include_in_schema=False)
+@router.get("/console/apis", include_in_schema=False)
+async def serve_apis():
+    for cand in [FRONTEND_DIR / "console" / "apis.html", STAFF_DIR / "apis.html"]:
+        if cand.is_file():
+            return FileResponse(cand)
+    raise HTTPException(status_code=404, detail="APIs page not found")
+
+
+@router.get("/apis.html", include_in_schema=False)
+@router.get("/console/apis.html", include_in_schema=False)
+async def redirect_apis_html():
+    return RedirectResponse(url="/apis", status_code=301)
+
+
+@router.get("/report", include_in_schema=False)
+@router.get("/report/", include_in_schema=False)
+@router.get("/console/report", include_in_schema=False)
+async def serve_report():
+    for cand in [FRONTEND_DIR / "console" / "report.html", STAFF_DIR / "report.html"]:
+        if cand.is_file():
+            return FileResponse(cand)
+    raise HTTPException(status_code=404, detail="Report page not found")
+
+
+@router.get("/report.html", include_in_schema=False)
+@router.get("/console/report.html", include_in_schema=False)
+async def redirect_report_html():
+    return RedirectResponse(url="/report", status_code=301)
+
+
+@router.get("/payment", include_in_schema=False)
+@router.get("/payment/", include_in_schema=False)
+@router.get("/console/payment", include_in_schema=False)
+async def serve_payment():
+    for cand in [FRONTEND_DIR / "console" / "payment.html", STAFF_DIR / "payment.html"]:
+        if cand.is_file():
+            return FileResponse(cand)
+    raise HTTPException(status_code=404, detail="Payment page not found")
+
+
+@router.get("/payment.html", include_in_schema=False)
+@router.get("/console/payment.html", include_in_schema=False)
+async def redirect_payment_html():
+    return RedirectResponse(url="/payment", status_code=301)
 
 
 @router.get("/projects/{project}/services", include_in_schema=False)
@@ -163,7 +249,7 @@ async def serve_staff_root():
     dash = STAFF_DIR / "dashboard.html"
     if dash.exists():
         return FileResponse(dash)
-    return RedirectResponse(url="/staff/apis")
+    return RedirectResponse(url="/apis")
 
 
 @router.get("/staff/apis", include_in_schema=False)
@@ -182,10 +268,16 @@ async def serve_staff_apis(request: Request):
 
 
 @router.get("/staff/{page:path}", include_in_schema=False)
-async def serve_staff_page(page: str):
+async def serve_staff_page(page: str, request: Request):
     clean_page = page.strip("/").lower()
+    if clean_page.endswith(".html"):
+        clean_name = clean_page[:-5]
+        query = request.url.query
+        target = f"/staff/{clean_name}" + (f"?{query}" if query else "")
+        return RedirectResponse(url=target, status_code=301)
+
     # Check if page is legacy named service (e.g. service-llm, service-stt)
-    # Redirect cleanly to /project/{project_id}/apis/{api_id}
+    # Redirect cleanly to /services/{service}
     clean_without_ext = clean_page.replace(".html", "")
     if clean_without_ext in SERVICE_LEGACY_TO_UUID:
         slug = _service_slug(SERVICE_LEGACY_TO_UUID[clean_without_ext])
@@ -195,6 +287,24 @@ async def serve_staff_page(page: str):
     if found:
         return FileResponse(found)
     raise HTTPException(status_code=404, detail=f"Staff page '{page}' not found")
+
+
+@router.get("/console/{page:path}", include_in_schema=False)
+async def serve_console_page(page: str, request: Request):
+    clean_page = page.strip("/").lower()
+    if clean_page.endswith(".html"):
+        clean_name = clean_page[:-5]
+        query = request.url.query
+        target = f"/{clean_name}" + (f"?{query}" if query else "")
+        return RedirectResponse(url=target, status_code=301)
+    if clean_page in ("dashboard", "keys", "apis", "report", "payment", "profile"):
+        query = request.url.query
+        target = f"/{clean_page}" + (f"?{query}" if query else "")
+        return RedirectResponse(url=target, status_code=301)
+    found = _resolve_page(FRONTEND_DIR / "console", page)
+    if found:
+        return FileResponse(found)
+    raise HTTPException(status_code=404, detail=f"Console page '{page}' not found")
 
 
 # --- 3. ADMIN CONSOLE ROUTES ---
@@ -209,10 +319,16 @@ async def serve_admin_root():
 
 
 @router.get("/admin/{page:path}", include_in_schema=False)
-async def serve_admin_page(page: str):
+async def serve_admin_page(page: str, request: Request):
     # Safety guard: Skip /admin/v1 API routes
     if page.startswith("v1") or page.startswith("v1/"):
         raise HTTPException(status_code=404, detail="Not Found")
+    clean_page = page.strip("/").lower()
+    if clean_page.endswith(".html"):
+        clean_name = clean_page[:-5]
+        query = request.url.query
+        target = f"/admin/{clean_name}" + (f"?{query}" if query else "")
+        return RedirectResponse(url=target, status_code=301)
     found = _resolve_page(ADMIN_DIR, page)
     if found:
         return FileResponse(found)
@@ -223,7 +339,6 @@ async def serve_admin_page(page: str):
 
 @router.get("/login", include_in_schema=False)
 @router.get("/auth/login", include_in_schema=False)
-@router.get("/auth/login.html", include_in_schema=False)
 async def serve_login():
     login_html = AUTH_DIR / "login.html"
     if login_html.exists():
@@ -231,9 +346,18 @@ async def serve_login():
     raise HTTPException(status_code=404, detail="Login page not found")
 
 
+@router.get("/login.html", include_in_schema=False)
+@router.get("/auth/login.html", include_in_schema=False)
+async def redirect_login_html(request: Request):
+    query = request.url.query
+    target = "/auth/login" + (f"?{query}" if query else "")
+    return RedirectResponse(url=target, status_code=301)
+
+
 @router.get("/signup", include_in_schema=False)
 @router.get("/auth/signup", include_in_schema=False)
-@router.get("/auth/signup.html", include_in_schema=False)
+@router.get("/register", include_in_schema=False)
+@router.get("/auth/register", include_in_schema=False)
 async def serve_signup():
     signup_html = AUTH_DIR / "signup.html"
     if signup_html.exists():
@@ -241,30 +365,45 @@ async def serve_signup():
     raise HTTPException(status_code=404, detail="Signup page not found")
 
 
+@router.get("/signup.html", include_in_schema=False)
+@router.get("/auth/signup.html", include_in_schema=False)
+@router.get("/register.html", include_in_schema=False)
+@router.get("/auth/register.html", include_in_schema=False)
+async def redirect_signup_html(request: Request):
+    query = request.url.query
+    target = "/auth/signup" + (f"?{query}" if query else "")
+    return RedirectResponse(url=target, status_code=301)
+
+
 @router.get("/status", include_in_schema=False)
+@router.get("/status/", include_in_schema=False)
 async def serve_status(request: Request):
-    accept = request.headers.get("accept", "")
-    if "text/html" in accept:
-        status_html = FRONTEND_DIR / "status.html"
-        if status_html.exists():
-            return FileResponse(status_html)
     status_html = FRONTEND_DIR / "status.html"
     if status_html.exists():
         return FileResponse(status_html)
     raise HTTPException(status_code=404, detail="Status page not found")
 
 
+@router.get("/status.html", include_in_schema=False)
+async def redirect_status_html():
+    return RedirectResponse(url="/status", status_code=301)
+
+
 @router.get("/profile", include_in_schema=False)
-@router.get("/profile.html", include_in_schema=False)
+@router.get("/profile/", include_in_schema=False)
+@router.get("/console/profile", include_in_schema=False)
 @router.get("/user/profile", include_in_schema=False)
 async def serve_profile():
-    profile_html = STAFF_DIR / "profile.html"
-    if profile_html.is_file():
-        return FileResponse(profile_html)
-    console_profile = FRONTEND_DIR / "console" / "profile.html"
-    if console_profile.is_file():
-        return FileResponse(console_profile)
+    for cand in [STAFF_DIR / "profile.html", FRONTEND_DIR / "console" / "profile.html"]:
+        if cand.is_file():
+            return FileResponse(cand)
     raise HTTPException(status_code=404, detail="Profile page not found")
+
+
+@router.get("/profile.html", include_in_schema=False)
+@router.get("/console/profile.html", include_in_schema=False)
+async def redirect_profile_html():
+    return RedirectResponse(url="/profile", status_code=301)
 
 
 # --- 5. SOLUTIONS ROUTES ---
@@ -276,8 +415,13 @@ async def serve_rag_alias():
 
 
 @router.get("/solutions/{path:path}", include_in_schema=False)
-async def serve_solutions(path: str):
+async def serve_solutions(path: str, request: Request):
     clean = path.strip("/")
+    if clean.endswith(".html"):
+        clean_name = clean[:-5]
+        query = request.url.query
+        target = f"/solutions/{clean_name}" + (f"?{query}" if query else "")
+        return RedirectResponse(url=target, status_code=301)
     target = SOLUTIONS_DIR / clean
     if target.is_dir() and (target / "index.html").is_file():
         return FileResponse(target / "index.html")

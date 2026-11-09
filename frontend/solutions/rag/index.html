@@ -10075,6 +10075,7 @@
       document.addEventListener("DOMContentLoaded", async () => {
         loadStaffDocCount();
         setupStaffDropzone();
+        loadStaffModels();
         startStaffInboxRefresh();
         loadStaffDepartments();
         await loadStaffRecentSessions();
@@ -10106,6 +10107,56 @@
         });
       });
 
+      async function loadStaffModels() {
+        try {
+          const res = await fetch(`${API_BASE}/v1/rag/models`, {
+            headers: { Authorization: DEFAULT_TOKEN },
+          });
+          if (!res.ok) throw new Error("Status " + res.status);
+          const data = await res.json();
+          const models = data.models || [];
+          if (models.length === 0) return;
+
+          const saved = localStorage.getItem("aip_staff_selected_model") || data.default || models[0].id;
+          const current = models.find((m) => m.id === saved) || models[0];
+          staffCurrentModel = current.id;
+
+          const lbl = document.getElementById("staff-selected-model-label");
+          if (lbl) lbl.innerText = current.name;
+
+          const menu = document.getElementById("staff-model-dropdown-menu");
+          if (menu) {
+            menu.innerHTML = models
+              .map(
+                (m) =>
+                  `<div class="model-opt ${m.id === staffCurrentModel ? "active" : ""}" onclick="selectStaffModel('${escapeHtml(m.id)}', '${escapeHtml(m.name)}')">${escapeHtml(m.name)}</div>`
+              )
+              .join("");
+          }
+        } catch (e) {
+          console.warn("Could not load models from server, using fallback:", e);
+          const fallbackModels = [
+            { id: "chat-general-standard", name: "Qwen 2.5 7B" },
+            { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet" },
+            { id: "gpt-4o", name: "GPT-4o" },
+            { id: "chat-fast", name: "GPT-4o-mini" },
+          ];
+          const current = fallbackModels[0];
+          staffCurrentModel = current.id;
+          const lbl = document.getElementById("staff-selected-model-label");
+          if (lbl) lbl.innerText = current.name;
+          const menu = document.getElementById("staff-model-dropdown-menu");
+          if (menu) {
+            menu.innerHTML = fallbackModels
+              .map(
+                (m) =>
+                  `<div class="model-opt ${m.id === staffCurrentModel ? "active" : ""}" onclick="selectStaffModel('${m.id}', '${m.name}')">${m.name}</div>`
+              )
+              .join("");
+          }
+        }
+      }
+
       function toggleStaffModelDropdown(e) {
         e.stopPropagation();
         const menu = document.getElementById("staff-model-dropdown-menu");
@@ -10114,11 +10165,13 @@
 
       function selectStaffModel(modelId, label) {
         staffCurrentModel = modelId;
-        document.getElementById("staff-selected-model-label").innerText = label;
+        localStorage.setItem("aip_staff_selected_model", modelId);
+        const lbl = document.getElementById("staff-selected-model-label");
+        if (lbl) lbl.innerText = label;
         document
           .querySelectorAll("#staff-model-dropdown-menu .model-opt")
           .forEach((el) => {
-            el.classList.toggle("active", el.innerText.includes(label));
+            el.classList.toggle("active", el.innerText.trim() === label.trim());
           });
         document.getElementById("staff-model-dropdown-menu").style.display =
           "none";
@@ -14157,5 +14210,1177 @@ fetch(${JSON.stringify(rawUrl)}).then(r => r.blob()).then(b => docx.renderAsync(
       function submitStaffDialogFeedback() {
         const textarea = document.getElementById("staff-dialog-feedback-text");
         const customText = textarea ? textarea.value.trim() : "";
-        const reasons = Array.
-... [truncated for diff preview]
+        const reasons = Array.from(selectedDialogFeedbackChips);
+
+        if (currentFeedbackTargetBtn) {
+          currentFeedbackTargetBtn.style.color = "#ef4444";
+          currentFeedbackTargetBtn.title = "Đã gửi phản hồi";
+          const group = currentFeedbackTargetBtn.closest(".msg-actions");
+          if (group) {
+            const upBtn = group.querySelector(".btn-thumbs-up");
+            if (upBtn) upBtn.style.color = "";
+          }
+        }
+
+        try {
+          const feedbackPayload = {
+            session_id: currentFeedbackSessionId,
+            score: -1,
+            reasons: reasons,
+            comment: customText,
+            timestamp: new Date().toISOString(),
+          };
+          fetch(`${API_BASE}/v1/rag/feedback`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: DEFAULT_TOKEN,
+              "X-Tenant-Id": getStaffActiveTenantId(),
+              "X-User-Id": getStaffCurrentUserId(),
+            },
+            body: JSON.stringify(feedbackPayload),
+          }).catch(() => {});
+        } catch (err) {}
+
+        closeStaffShareFeedbackModal();
+        showStaffToast("Thank you for sharing your feedback!", "info");
+      }
+
+      window.handleStaffFeedback = handleStaffFeedback;
+      window.openStaffShareFeedbackModal = openStaffShareFeedbackModal;
+      window.closeStaffShareFeedbackModal = closeStaffShareFeedbackModal;
+      window.toggleDialogFeedbackChip = toggleDialogFeedbackChip;
+      window.handleFeedbackDialogInput = handleFeedbackDialogInput;
+      window.submitStaffDialogFeedback = submitStaffDialogFeedback;
+
+      function shareStaffAnswer(btn) {
+        const copyBtn = btn
+          .closest(".msg-actions")
+          ?.querySelector("button[data-answer]");
+        if (copyBtn) {
+          const text = copyBtn.getAttribute("data-answer");
+          navigator.clipboard.writeText(text);
+          showStaffToast(
+            "Đã sao chép nội dung câu trả lời để chia sẻ!",
+            "success",
+          );
+        }
+      }
+
+      function copyStaffAnswer(btn) {
+        const txt = btn.getAttribute("data-answer");
+        if (txt) {
+          navigator.clipboard.writeText(txt);
+          const icon = btn.querySelector("i");
+          if (icon) icon.className = "fa-solid fa-check";
+          setTimeout(() => {
+            if (icon) icon.className = "fa-regular fa-copy";
+          }, 1500);
+        }
+      }
+
+      function retryStaffQuery(q) {
+        if (!q) return;
+        if (staffIsChatStreaming) return;
+        const inp = document.getElementById("staff-chat-input");
+        if (inp) {
+          inp.value = q;
+          autoResizeStaffChatInput();
+        }
+        sendStaffChat(q);
+      }
+
+      function parseTimestampToMs(ts) {
+        if (!ts) return Date.now();
+        if (typeof ts === "number") {
+          return ts < 1e11 ? ts * 1000 : ts;
+        }
+        if (typeof ts === "string") {
+          const num = Number(ts);
+          if (!isNaN(num) && num > 0) {
+            return num < 1e11 ? num * 1000 : num;
+          }
+          const parsed = Date.parse(ts);
+          if (!isNaN(parsed)) return parsed;
+        }
+        return Date.now();
+      }
+
+      function formatMessageTimestamp(ts) {
+        const ms = parseTimestampToMs(ts);
+        const d = new Date(ms);
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const month = months[d.getMonth()];
+        const day = d.getDate();
+        let hours = d.getHours();
+        const minutes = d.getMinutes().toString().padStart(2, "0");
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        return `${month} ${day}, ${hours}:${minutes} ${ampm}`;
+      }
+
+      function toggleMsgMoreMenu(event, btn) {
+        if (event) event.stopPropagation();
+        const parent = btn.closest(".msg-more-wrapper");
+        if (!parent) return;
+        const popover = parent.querySelector(".msg-more-popover");
+        if (!popover) return;
+        const isShowing = popover.style.display !== "none";
+        closeAllMsgMorePopovers();
+        if (!isShowing) {
+          popover.style.display = "block";
+        }
+      }
+
+      function closeAllMsgMorePopovers() {
+        document.querySelectorAll(".msg-more-popover").forEach((p) => {
+          p.style.display = "none";
+        });
+      }
+
+      document.addEventListener("click", () => {
+        closeAllMsgMorePopovers();
+      });
+
+      function speakStaffAnswer(btn) {
+        if (!("speechSynthesis" in window)) {
+          showStaffToast("Trình duyệt không hỗ trợ đọc văn bản", "warning");
+          return;
+        }
+        if (window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+          btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          btn.title = "Đọc câu trả lời";
+          return;
+        }
+        const answerBtn = btn.closest(".msg-actions")?.querySelector("button[data-answer]");
+        let text = answerBtn?.getAttribute("data-answer") || "";
+        if (!text) {
+          const bubble = btn.closest(".msg-bubble");
+          text = bubble?.querySelector(".staff-markdown-body")?.innerText || "";
+        }
+        if (!text) return;
+        text = text.replace(/[*#`_\[\]()]/g, " ").replace(/\s+/g, " ").trim();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "vi-VN";
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark" style="color: #ef4444;"></i>';
+        btn.title = "Dừng đọc";
+        utterance.onend = () => {
+          btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          btn.title = "Đọc câu trả lời";
+        };
+        utterance.onerror = () => {
+          btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          btn.title = "Đọc câu trả lời";
+        };
+        window.speechSynthesis.speak(utterance);
+      }
+
+      async function branchStaffChatFromIndex(msgIndex) {
+        closeAllMsgMorePopovers();
+        if (
+          msgIndex === null ||
+          msgIndex === undefined ||
+          msgIndex < 0 ||
+          msgIndex >= staffChatHistory.length
+        ) {
+          showStaffToast("Không tìm thấy tin nhắn để rẽ nhánh", "warning");
+          return;
+        }
+
+        const branched = staffChatHistory.slice(0, msgIndex + 1);
+        if (branched.length === 0) return;
+
+        const newConvId =
+          staffNewSessionId();
+        staffConversationId = newConvId;
+        localStorage.setItem("aip_active_rag_session", newConvId);
+        staffSetView([]);
+
+        staffChatHistory = JSON.parse(JSON.stringify(branched));
+
+        const container =
+          document.getElementById("staff-stream-container") ||
+          document.getElementById("staff-chat-messages");
+        if (container) {
+          container.innerHTML = "";
+          staffChatHistory.forEach((m, idx) => {
+            const mTs = m.timestamp || Date.now();
+            if (m.role === "user") {
+              container.innerHTML += renderStaffUserMessageHtml(
+                m.content,
+                "",
+                null,
+                null,
+                mTs,
+                idx,
+              );
+            } else if (m.author === "agent") {
+              container.innerHTML += renderStaffAgentMessageHtml(m.content, mTs, idx);
+            } else {
+              let citHtml = formatStaffCitations(
+                m.citations || [],
+                "",
+                m.content,
+              );
+              container.innerHTML += `
+                <div class="msg-bubble msg-assistant" data-msg-index="${idx}">
+                  <div class="msg-header"><i class="fa-solid fa-robot" style="color: #0f4c81;"></i> Trợ lý Tri thức</div>
+                  <div class="staff-markdown-body">${renderStaffMarkdown(m.content)}</div>
+                  ${citHtml}
+                  ${renderStaffAssistantActionsHtml(m.content, newConvId, m.citations || [], mTs, idx)}
+                </div>
+              `;
+            }
+          });
+          container.scrollTop = container.scrollHeight;
+        }
+
+        document
+          .querySelectorAll(".chatgpt-recent-item")
+          .forEach((el) => el.classList.remove("active"));
+
+        showStaffToast("Đã tạo nhánh cuộc trò chuyện mới!", "success");
+
+        const input = document.getElementById("staff-chat-input");
+        if (input) input.focus();
+      }
+
+      function renderStaffAssistantActionsHtml(
+        content,
+        sessionId,
+        citations = [],
+        timestamp = null,
+        msgIndex = null,
+        query = "",
+      ) {
+        const formattedTime = formatMessageTimestamp(timestamp);
+        const safeContent = escapeHtml(content || "");
+        const safeQuery = escapeHtml(query || "");
+        const sessId = escapeHtml(sessionId || staffConversationId || "");
+        const idx = msgIndex !== null && msgIndex !== undefined ? msgIndex : "";
+
+        return `
+          <div class="msg-actions" style="position: relative;" data-msg-index="${idx}">
+            <button type="button" class="btn-action-icon" title="Sao chép" onclick="copyStaffAnswer(this)" data-answer="${safeContent}"><i class="fa-regular fa-copy"></i></button>
+            <button type="button" class="btn-action-icon btn-thumbs-up" title="Hữu ích" onclick="handleStaffFeedback(this, '${sessId}', 1)"><i class="fa-regular fa-thumbs-up"></i></button>
+            <button type="button" class="btn-action-icon btn-thumbs-down" title="Chưa chuẩn" onclick="handleStaffFeedback(this, '${sessId}', -1)"><i class="fa-regular fa-thumbs-down"></i></button>
+            <button type="button" class="btn-action-icon btn-listen" title="Đọc câu trả lời" onclick="speakStaffAnswer(this)"><i class="fa-solid fa-volume-high"></i></button>
+            <button type="button" class="btn-action-icon" title="Chia sẻ" onclick="shareStaffAnswer(this)"><i class="fa-solid fa-arrow-up-from-bracket"></i></button>
+            <button type="button" class="btn-action-icon" title="Thử lại" onclick="retryStaffQuery('${safeQuery || safeContent}')"><i class="fa-solid fa-rotate-right"></i></button>
+            <div class="msg-more-wrapper">
+              <button type="button" class="btn-action-icon btn-msg-more" title="Tùy chọn khác (${formattedTime})" onclick="toggleMsgMoreMenu(event, this)"><i class="fa-solid fa-ellipsis"></i></button>
+              <div class="msg-more-popover" style="display: none;">
+                <div class="msg-popover-time">${formattedTime}</div>
+                <div class="msg-popover-item" onclick="branchStaffChatFromIndex(${idx})">
+                  <i class="fa-solid fa-code-branch"></i>
+                  <span>Branch in new chat</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      window.formatMessageTimestamp = formatMessageTimestamp;
+      window.toggleMsgMoreMenu = toggleMsgMoreMenu;
+      window.closeAllMsgMorePopovers = closeAllMsgMorePopovers;
+      window.speakStaffAnswer = speakStaffAnswer;
+      window.branchStaffChatFromIndex = branchStaffChatFromIndex;
+      window.renderStaffAssistantActionsHtml = renderStaffAssistantActionsHtml;
+
+      let currentStaffAdhocAttachment = null; // { filename, text, size_bytes, file_type }
+
+      function triggerStaffFileAttach() {
+        const fileInput = document.getElementById("staff-file-attach-input");
+        if (fileInput) {
+          fileInput.click();
+        }
+      }
+
+      async function handleStaffFileSelected(input) {
+        if (!input.files || input.files.length === 0) return;
+        const file = input.files[0];
+
+        if (file.size > 20 * 1024 * 1024) {
+          showStaffToast("File đính kèm không được vượt quá 20MB.", "error");
+          input.value = "";
+          return;
+        }
+
+        const chipEl = document.getElementById("staff-attached-chip");
+        const nameEl = document.getElementById("staff-chip-filename");
+        const sizeEl = document.getElementById("staff-chip-size");
+        const clipBtn = document.getElementById("staff-btn-attach");
+
+        if (chipEl && nameEl && sizeEl) {
+          chipEl.style.display = "flex";
+          nameEl.innerText = file.name;
+          sizeEl.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px;"></i> Đang nạp nội dung vào RAM...';
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const res = await fetch(`${API_BASE}/v1/rag/adhoc/parse`, {
+            method: "POST",
+            headers: {
+              Authorization: DEFAULT_TOKEN,
+            },
+            body: formData,
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            currentStaffAdhocAttachment = {
+              filename: data.filename,
+              file_type: data.file_type,
+              total_pages: data.total_pages,
+              size_bytes: data.size_bytes,
+              text: data.text,
+            };
+
+            const sizeKb = (data.size_bytes / 1024).toFixed(1) + " KB";
+            if (sizeEl) {
+              sizeEl.innerText = `${sizeKb} • ${data.total_pages} trang/sheet • Đã nạp vào RAM`;
+            }
+            if (clipBtn) clipBtn.classList.add("attached");
+            showStaffToast(
+              `Đã đọc tài liệu "${data.filename}" vào RAM. Bạn có thể hỏi ngay!`,
+              "success",
+            );
+
+            const inp = document.getElementById("staff-chat-input");
+            if (inp) {
+              inp.placeholder = `Hỏi về tài liệu ${data.filename}...`;
+              inp.focus();
+            }
+          } else {
+            const err = await res.json().catch(() => ({}));
+            showStaffToast(
+              err.detail || "Không thể phân tích file đính kèm",
+              "error",
+            );
+            removeStaffAttachment();
+          }
+        } catch (e) {
+          console.error("Ad-hoc file parse error:", e);
+          showStaffToast("Lỗi kết nối khi gửi file đính kèm", "error");
+          removeStaffAttachment();
+        }
+      }
+
+      function removeStaffAttachment() {
+        currentStaffAdhocAttachment = null;
+        const fileInput = document.getElementById("staff-file-attach-input");
+        if (fileInput) fileInput.value = "";
+
+        const chipEl = document.getElementById("staff-attached-chip");
+        if (chipEl) chipEl.style.display = "none";
+
+        const clipBtn = document.getElementById("staff-btn-attach");
+        if (clipBtn) clipBtn.classList.remove("attached");
+
+        const inp = document.getElementById("staff-chat-input");
+        if (inp)
+          inp.placeholder =
+            "Nhập câu hỏi tra cứu (Nhấn Enter để gửi, Shift+Enter xuống dòng)...";
+      }
+
+      let staffIsChatStreaming = false;
+
+      function renderStaffUserMessageHtml(
+        query,
+        adhocBadgeHtml = "",
+        adhocContext = null,
+        adhocFilename = null,
+        timestamp = null,
+        msgIndex = null,
+      ) {
+        const safeQuery = escapeHtml(query);
+        const safeContext = adhocContext ? escapeHtml(adhocContext) : "";
+        const safeFilename = adhocFilename ? escapeHtml(adhocFilename) : "";
+        const formattedTime = formatMessageTimestamp(timestamp);
+        const idx = msgIndex !== null && msgIndex !== undefined ? msgIndex : "";
+
+        return `
+          <div class="msg-user-wrapper" data-msg-index="${idx}">
+            <div class="msg-bubble msg-user" data-user-query="${safeQuery}" data-adhoc-context="${safeContext}" data-adhoc-filename="${safeFilename}">
+              <div class="msg-user-view">
+                ${adhocBadgeHtml || ""}
+                <div class="msg-header"><i class="fa-regular fa-user" style="color: #64748b;"></i> Bạn</div>
+                <div class="msg-user-text">${safeQuery}</div>
+              </div>
+              <div class="msg-user-edit-box" style="display: none;">
+                <textarea class="msg-user-edit-textarea" rows="1" placeholder="Nhập câu hỏi tra cứu...">${safeQuery}</textarea>
+                <div class="msg-user-edit-actions">
+                  <button type="button" class="btn-user-cancel" onclick="cancelStaffUserEdit(this)">Cancel</button>
+                  <button type="button" class="btn-user-send" onclick="submitStaffUserEdit(this)">Send</button>
+                </div>
+              </div>
+            </div>
+            <div class="msg-user-actions" style="position: relative;">
+              <button type="button" class="btn-action-icon" title="Sửa" onclick="startStaffUserEdit(this)"><i class="fa-regular fa-pen-to-square"></i></button>
+              <button type="button" class="btn-action-icon" title="Sao chép" onclick="copyStaffUserQuery(this)"><i class="fa-regular fa-copy"></i></button>
+              <div class="msg-more-wrapper">
+                <button type="button" class="btn-action-icon btn-msg-more" title="Tùy chọn khác (${formattedTime})" onclick="toggleMsgMoreMenu(event, this)"><i class="fa-solid fa-ellipsis"></i></button>
+                <div class="msg-more-popover" style="display: none;">
+                  <div class="msg-popover-time">${formattedTime}</div>
+                  <div class="msg-popover-item" onclick="branchStaffChatFromIndex(${idx})">
+                    <i class="fa-solid fa-code-branch"></i>
+                    <span>Branch in new chat</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function copyStaffUserQuery(btn) {
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        const query = bubble
+          ? bubble.getAttribute("data-user-query") ||
+            bubble.querySelector(".msg-user-text")?.innerText ||
+            ""
+          : "";
+        if (!query) return;
+
+        const updateIcon = () => {
+          const icon = btn.querySelector("i");
+          if (icon) {
+            const origClass = icon.className;
+            icon.className = "fa-solid fa-check";
+            icon.style.color = "#10b981";
+            setTimeout(() => {
+              icon.className = origClass;
+              icon.style.color = "";
+            }, 1500);
+          }
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(query)
+            .then(updateIcon)
+            .catch(() => {
+              fallbackCopyText(query, updateIcon);
+            });
+        } else {
+          fallbackCopyText(query, updateIcon);
+        }
+      }
+
+      function fallbackCopyText(text, callback) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand("copy");
+          if (callback) callback();
+        } catch (e) {
+          console.error("fallbackCopyText error:", e);
+        }
+        document.body.removeChild(ta);
+      }
+
+      function startStaffUserEdit(btn) {
+        if (staffIsChatStreaming) return;
+        // Close any other open edit box
+        document
+          .querySelectorAll(".msg-user-wrapper.editing .btn-user-cancel")
+          .forEach((b) => b.click());
+
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        if (!bubble) return;
+
+        const viewDiv = bubble.querySelector(".msg-user-view");
+        const editDiv = bubble.querySelector(".msg-user-edit-box");
+        const actionsDiv = wrapper.querySelector(".msg-user-actions");
+        const textarea = editDiv
+          ? editDiv.querySelector(".msg-user-edit-textarea")
+          : null;
+        if (!textarea) return;
+
+        const currentQuery =
+          bubble.getAttribute("data-user-query") ||
+          bubble.querySelector(".msg-user-text")?.innerText ||
+          "";
+        textarea.value = currentQuery;
+
+        wrapper.classList.add("editing");
+        bubble.classList.add("editing");
+        if (viewDiv) viewDiv.style.display = "none";
+        if (editDiv) editDiv.style.display = "block";
+        if (actionsDiv) actionsDiv.style.display = "none";
+
+        // Auto-resize textarea to content
+        textarea.style.height = "auto";
+        textarea.style.height = Math.max(38, textarea.scrollHeight) + "px";
+
+        // Focus & place cursor at the end
+        textarea.focus();
+        const len = textarea.value.length;
+        textarea.setSelectionRange(len, len);
+
+        if (!textarea._bound) {
+          textarea._bound = true;
+          textarea.addEventListener("input", () => {
+            textarea.style.height = "auto";
+            textarea.style.height = Math.max(38, textarea.scrollHeight) + "px";
+          });
+          textarea.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              const sendBtn = editDiv.querySelector(".btn-user-send");
+              if (sendBtn) sendBtn.click();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              const cancelBtn = editDiv.querySelector(".btn-user-cancel");
+              if (cancelBtn) cancelBtn.click();
+            }
+          });
+        }
+      }
+
+      function cancelStaffUserEdit(btn) {
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        if (!bubble) return;
+
+        const viewDiv = bubble.querySelector(".msg-user-view");
+        const editDiv = bubble.querySelector(".msg-user-edit-box");
+        const actionsDiv = wrapper.querySelector(".msg-user-actions");
+        const textarea = editDiv
+          ? editDiv.querySelector(".msg-user-edit-textarea")
+          : null;
+
+        const currentQuery =
+          bubble.getAttribute("data-user-query") ||
+          bubble.querySelector(".msg-user-text")?.innerText ||
+          "";
+        if (textarea) textarea.value = currentQuery;
+
+        wrapper.classList.remove("editing");
+        bubble.classList.remove("editing");
+        if (editDiv) editDiv.style.display = "none";
+        if (viewDiv) viewDiv.style.display = "block";
+        if (actionsDiv) actionsDiv.style.display = "flex";
+      }
+
+      async function submitStaffUserEdit(btn) {
+        if (staffIsChatStreaming) return;
+        const wrapper = btn.closest(".msg-user-wrapper");
+        if (!wrapper) return;
+        const bubble = wrapper.querySelector(".msg-user");
+        if (!bubble) return;
+
+        const editDiv = bubble.querySelector(".msg-user-edit-box");
+        const textarea = editDiv
+          ? editDiv.querySelector(".msg-user-edit-textarea")
+          : null;
+        const newQuery = textarea ? textarea.value.trim() : "";
+        if (!newQuery) {
+          if (textarea) textarea.focus();
+          return;
+        }
+
+        const adhocContext = bubble.getAttribute("data-adhoc-context") || null;
+        const adhocFilename =
+          bubble.getAttribute("data-adhoc-filename") || null;
+
+        bubble.setAttribute("data-user-query", newQuery);
+        const textEl = bubble.querySelector(".msg-user-text");
+        if (textEl) textEl.textContent = newQuery;
+
+        cancelStaffUserEdit(btn);
+
+        const container =
+          document.getElementById("staff-stream-container") ||
+          document.getElementById("staff-chat-messages");
+        if (!container) return;
+
+        const allUserWrappers = Array.from(
+          container.querySelectorAll(".msg-user-wrapper"),
+        );
+        const userIndex = allUserWrappers.indexOf(wrapper);
+
+        while (wrapper.nextSibling) {
+          wrapper.nextSibling.remove();
+        }
+
+        if (userIndex >= 0) {
+          staffChatHistory = staffChatHistory.slice(0, userIndex * 2);
+          if (userIndex === 0) {
+            const list = document.getElementById("chatgpt-recents-list");
+            if (list) {
+              const activeItem = list.querySelector(
+                `.chatgpt-recent-item[data-session-id="${staffConversationId}"]`,
+              );
+              if (activeItem) {
+                const titleSpan = activeItem.querySelector(
+                  ".chatgpt-recent-title",
+                );
+                if (titleSpan) {
+                  titleSpan.innerText =
+                    newQuery.length > 35
+                      ? newQuery.substring(0, 35) + "..."
+                      : newQuery;
+                }
+              }
+            }
+          }
+        }
+
+        await sendStaffChat(newQuery, {
+          isEdit: true,
+          adhocContext,
+          adhocFilename,
+        });
+      }
+
+      // ---------------------------------------------------------------- replies of customer service in the chat
+      const STAFF_AGENT_POLL_MS = 15000;
+      let staffAgentWatch = null; // { sessionId, since (epoch s), timer, seen }
+
+      function renderStaffAgentMessageHtml(content, ts, idx) {
+        const ms = ts ? (ts > 1e12 ? ts : ts * 1000) : 0;
+        const at = ms ? new Date(ms).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "";
+        return `
+          <div class="msg-bubble msg-assistant msg-agent" data-msg-index="${idx}">
+            <div class="msg-header"><i class="fa-solid fa-headset"></i> Nhân viên hỗ trợ${at ? ` · ${escapeHtml(at)}` : ""}</div>
+            <div class="staff-markdown-body" style="white-space: pre-wrap">${escapeHtml(content || "")}</div>
+          </div>`;
+      }
+
+      function stopStaffAgentWatch() {
+        if (staffAgentWatch && staffAgentWatch.timer) clearTimeout(staffAgentWatch.timer);
+        staffAgentWatch = null;
+      }
+
+      /** Checks the conversation for replies of customer service; keeps checking only while a question waits. */
+      function watchStaffAgentReplies(sessionId, since) {
+        stopStaffAgentWatch();
+        if (!sessionId) return;
+        staffAgentWatch = { sessionId, since: Number(since) || Date.now() / 1000, timer: null, seen: new Set() };
+        pollStaffAgentReplies(staffAgentWatch);
+      }
+
+      async function pollStaffAgentReplies(w) {
+        if (staffAgentWatch !== w) return;
+        if (w.sessionId !== staffConversationId) return stopStaffAgentWatch();
+        let data = null;
+        if (!document.hidden) {
+          try {
+            const tenantId = getStaffActiveTenantId();
+            const res = await fetch(
+              `${API_BASE}/v1/rag/sessions/${encodeURIComponent(w.sessionId)}/agent-replies?since=${encodeURIComponent(w.since)}`,
+              { headers: { Authorization: DEFAULT_TOKEN, "X-Tenant-Id": tenantId, "X-Tenant-ID": tenantId, "X-User-Id": getStaffCurrentUserId() } },
+            );
+            if (res.ok) data = await res.json();
+            else if (res.status === 404) return stopStaffAgentWatch();
+          } catch (err) {
+            /* network hiccup: try again later */
+          }
+        }
+        if (staffAgentWatch !== w || w.sessionId !== staffConversationId) return;
+        if (data) {
+          const container = document.getElementById("staff-stream-container") || document.getElementById("staff-chat-messages");
+          (data.replies || []).forEach((r) => {
+            if (w.seen.has(r.message_id)) return;
+            w.seen.add(r.message_id);
+            w.since = Math.max(w.since, Number(r.timestamp) || 0);
+            const idx = staffChatHistory.length;
+            staffChatHistory.push({ role: "assistant", author: "agent", content: r.content, timestamp: r.timestamp, citations: [] });
+            if (container) {
+              container.insertAdjacentHTML("beforeend", renderStaffAgentMessageHtml(r.content, r.timestamp, idx));
+              container.scrollTop = container.scrollHeight;
+            }
+            showStaffToast("Nhân viên hỗ trợ vừa trả lời bạn.", "success");
+          });
+          if (!data.pending) return stopStaffAgentWatch(); // nothing of this conversation waits any more
+        }
+        w.timer = setTimeout(() => pollStaffAgentReplies(w), STAFF_AGENT_POLL_MS);
+      }
+
+      async function sendStaffChat(overrideQuery, options = {}) {
+        const isEdit = Boolean(options && options.isEdit);
+        const input = document.getElementById("staff-chat-input");
+        const query =
+          overrideQuery !== undefined && overrideQuery !== null
+            ? String(overrideQuery).trim()
+            : input
+              ? input.value.trim()
+              : "";
+        if (!query) return;
+
+        if (staffIsChatStreaming) return;
+        staffIsChatStreaming = true;
+        staffCurrentAbortController = new AbortController();
+        updateStaffSendButtonToStop();
+        const sendBtnEl = document.getElementById("staff-send-btn");
+
+        if (!isEdit && input) {
+          input.value = "";
+          autoResizeStaffChatInput();
+        }
+        const container =
+          document.getElementById("staff-stream-container") ||
+          document.getElementById("staff-chat-messages");
+        const scrollArea = document.getElementById("staff-chat-messages");
+
+        // Cập nhật hoặc thêm ngay cuộc hội thoại ở sidebar nếu là câu hỏi đầu tiên (ChatGPT style)
+        const isFirstPrompt = staffChatHistory.length === 0;
+        if (isFirstPrompt) {
+          const list = document.getElementById("chatgpt-recents-list");
+          if (list) {
+            const firstTitle =
+              query.length > 35 ? query.substring(0, 35) + "..." : query;
+            const emptyItem = list.querySelector("div[style*='italic']");
+            if (emptyItem) emptyItem.remove();
+
+            let existingActive = list.querySelector(
+              `.chatgpt-recent-item[data-session-id="${staffConversationId}"]`,
+            );
+            if (!existingActive) {
+              existingActive = document.createElement("div");
+              existingActive.className = "chatgpt-recent-item active";
+              existingActive.setAttribute(
+                "data-session-id",
+                staffConversationId,
+              );
+              existingActive.innerHTML = `
+                            <span class="chatgpt-recent-title" title="${escapeHtml(firstTitle)}">${escapeHtml(firstTitle)}</span>
+                            <div class="chatgpt-recent-actions">
+                                <button type="button" class="btn-recent-dots" title="Tùy chọn" onclick="toggleSessionActionMenu(event, '${staffConversationId}')">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                            </div>
+                            <div class="recent-actions-dropdown" id="dropdown-${staffConversationId}" style="display: none;">
+                                <div class="recent-dropdown-item" onclick="renameStaffSessionPrompt(event, '${staffConversationId}', '${encodeURIComponent(firstTitle)}')">
+                                    <i class="fa-regular fa-pen-to-square"></i> Đổi tên
+                                </div>
+                                <div class="recent-dropdown-item danger" onclick="deleteStaffSession(event, '${staffConversationId}')">
+                                    <i class="fa-regular fa-trash-can"></i> Xóa
+                                </div>
+                            </div>
+                        `;
+              existingActive.onclick = (e) => {
+                if (
+                  e.target.closest(".chatgpt-recent-actions") ||
+                  e.target.closest(".recent-actions-dropdown") ||
+                  e.target.closest(".chatgpt-rename-input") ||
+                  e.target.closest(".btn-recent-dots")
+                )
+                  return;
+                closeAllSessionActionMenus();
+                switchStaffConversation(existingActive, staffConversationId);
+              };
+              document
+                .querySelectorAll("#chatgpt-recents-list .chatgpt-recent-item")
+                .forEach((i) => i.classList.remove("active"));
+              list.insertBefore(existingActive, list.firstChild);
+            } else {
+              const titleSpan = existingActive.querySelector(
+                ".chatgpt-recent-title",
+              );
+              if (titleSpan) titleSpan.innerText = firstTitle;
+            }
+          }
+        }
+
+        let adhocBadgeHtml = "";
+        let adhocContextPayload = null;
+        let adhocFilenamePayload = null;
+
+        if (isEdit && options) {
+          if (options.adhocContext) {
+            adhocContextPayload = options.adhocContext;
+            adhocFilenamePayload = options.adhocFilename;
+          }
+        } else if (
+          currentStaffAdhocAttachment &&
+          currentStaffAdhocAttachment.text
+        ) {
+          adhocBadgeHtml = `<div class="msg-adhoc-badge"><i class="fa-solid fa-paperclip"></i> ${escapeHtml(currentStaffAdhocAttachment.filename)}</div>`;
+          adhocContextPayload = currentStaffAdhocAttachment.text;
+          adhocFilenamePayload = currentStaffAdhocAttachment.filename;
+        }
+
+        const nowTs = Date.now();
+        const pendingUserIdx = staffChatHistory.length;
+        if (!isEdit) {
+          container.insertAdjacentHTML(
+            "beforeend",
+            renderStaffUserMessageHtml(
+              query,
+              adhocBadgeHtml,
+              adhocContextPayload,
+              adhocFilenamePayload,
+              nowTs,
+              pendingUserIdx,
+            ),
+          );
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+        }
+
+        const botId = "staff-bot-" + Date.now();
+        const botName =
+          staffActivePersona && staffActivePersona.name
+            ? staffActivePersona.name
+            : "Trợ lý Tri thức";
+        container.insertAdjacentHTML(
+          "beforeend",
+          `
+                <div class="msg-bubble msg-assistant" id="${botId}">
+                    <div class="msg-header">
+                        <i class="fa-solid fa-robot" style="color: #0f4c81;"></i> <span class="assistant-status-title">${botName}</span>
+                    </div>
+                    <div class="staff-markdown-body" id="${botId}-content">
+                        <span style="color: #8e8e8e; font-size: 13.5px;"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i>Đang suy luận...</span>
+                    </div>
+                </div>
+            `,
+        );
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+
+        let accumulatedAnswer = "";
+        let serverSessionId = staffConversationId;
+        let finalCitations = [];
+        let firstChunkReceived = false;
+
+        try {
+          const ragSettings = getStaffRagSettings();
+          const tenantId = getStaffActiveTenantId();
+          let effectiveQuery = query;
+          if (staffActivePersona && staffActivePersona.instruction) {
+            effectiveQuery = `[Chỉ thị vai trò: ${staffActivePersona.name} - ${staffActivePersona.instruction}]\n\n${query}`;
+          }
+
+          const res = await fetch(`${API_BASE}/v1/rag/chat`, {
+            method: "POST",
+            signal: staffCurrentAbortController ? staffCurrentAbortController.signal : undefined,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: DEFAULT_TOKEN,
+              "X-Tenant-Id": tenantId,
+              "X-Tenant-ID": tenantId,
+              "X-User-Id": getStaffCurrentUserId(),
+            },
+            body: JSON.stringify({
+              query: effectiveQuery,
+              conversation_id: staffConversationId,
+              // Customer service replies are not answers of the bot: never sent back to it as history.
+              history: staffChatHistory.filter((h) => h.author !== "agent").map((h) => ({
+                role: h.role,
+                content: h.content,
+              })),
+              model: staffCurrentModel,
+              department: staffCurrentDepartment || undefined,
+              similarity_threshold: ragSettings.similarity_threshold || 0.65,
+              top_k: ragSettings.top_k || 4,
+              temperature: 0.2,
+              max_tokens: 1024,
+              stream: true,
+              adhoc_context: adhocContextPayload,
+              adhoc_filename: adhocFilenamePayload,
+            }),
+          });
+
+          const botEl = document.getElementById(botId);
+          const contentEl = document.getElementById(`${botId}-content`);
+
+          if (res.ok) {
+
+            const streamCursorHtml =
+              '<span class="stream-typing-cursor"></span>';
+            function renderStreamBubble(targetEl, text) {
+              if (!targetEl) return;
+              let html = "";
+              if (
+                typeof marked !== "undefined" &&
+                typeof marked.parse === "function"
+              ) {
+                try {
+                  html = marked.parse(stripStaffSourcesFooter(text));
+                } catch (e) {
+                  html = escapeHtml(text).replace(/\n/g, "<br>");
+                }
+              } else {
+                html = escapeHtml(text).replace(/\n/g, "<br>");
+              }
+
+              // Attach cursor directly to the last inline element (inside </p>, </li>, or at end)
+              // This strictly prevents the cursor from wrapping to a separate line!
+              if (html.includes("</p>")) {
+                html = html.replace(
+                  /(<\/p>(?![\s\S]*<\/p>))/,
+                  streamCursorHtml + "$1",
+                );
+              } else if (html.includes("</li>")) {
+                html = html.replace(
+                  /(<\/li>(?![\s\S]*<\/li>))/,
+                  streamCursorHtml + "$1",
+                );
+              } else {
+                html = html + streamCursorHtml;
+              }
+
+              targetEl.innerHTML = html;
+            }
+
+            if (res.body && typeof res.body.getReader === "function") {
+              const reader = res.body.getReader();
+              const decoder = new TextDecoder("utf-8");
+              let buffer = "";
+              let rafScheduled = false;
+              let lastScrollTs = 0;
+
+              function scheduleStreamUpdate() {
+                if (rafScheduled) return;
+                rafScheduled = true;
+                requestAnimationFrame(() => {
+                  rafScheduled = false;
+                  if (contentEl) {
+                    renderStreamBubble(contentEl, accumulatedAnswer);
+                  }
+                  const now = performance.now();
+                  if (now - lastScrollTs > 40) {
+                    scrollArea.scrollTop = scrollArea.scrollHeight;
+                    lastScrollTs = now;
+                  }
+                });
+              }
+
+              while (true) {
+                if (!staffIsChatStreaming) break;
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+
+                const lines = buffer.split("\n");
+                buffer = lines.pop(); // keep partial trailing line
+
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (!trimmed || !trimmed.startsWith("data: ")) continue;
+                  const jsonStr = trimmed.substring(6).trim();
+                  if (jsonStr === "[DONE]") break;
+                  try {
+                    const parsed = JSON.parse(jsonStr);
+                    if (parsed.session_id) {
+                      serverSessionId = parsed.session_id;
+                    }
+                    if (parsed.token) {
+                      if (!firstChunkReceived) {
+                        firstChunkReceived = true;
+                        accumulatedAnswer = "";
+                        // Switch header to normal Assistant title and remove spinner
+                        if (botEl) {
+                          const headerTitle = botEl.querySelector(
+                            ".assistant-status-title",
+                          );
+                          if (headerTitle)
+                            headerTitle.innerText = "Trợ lý Tri thức";
+                          const spinner =
+                            botEl.querySelector(".status-spinner");
+                          if (spinner) spinner.remove();
+                        }
+                      }
+                      accumulatedAnswer += parsed.token;
+                      scheduleStreamUpdate();
+                    }
+                    if (parsed.reset) {
+                      // The server is generating the answer again (the model runtime cut it off under load):
+                      // the partial text shown so far is replaced by the new answer.
+                      accumulatedAnswer = "";
+                      scheduleStreamUpdate();
+                    }
+                    if (parsed.error && parsed.message) {
+                      // Upstream failure (e.g. LLM runtime down): show it instead of an empty bubble.
+                      firstChunkReceived = true;
+                      accumulatedAnswer +=
+                        (accumulatedAnswer ? "\n\n" : "") + "⚠️ " + parsed.message;
+                      scheduleStreamUpdate();
+                    }
+                    if (parsed.done) {
+                      if (parsed.citations) {
+                        finalCitations = parsed.citations;
+                      }
+                    }
+                  } catch (e) {
+                    console.debug("SSE JSON parse error:", e);
+                  }
+                }
+              }
+            } else {
+              // Fallback if ReadableStream is not supported
+              const data = await res.json();
+              accumulatedAnswer = data.answer || "";
+              serverSessionId = data.session_id || serverSessionId;
+              finalCitations = data.citations || [];
+            }
+
+            // Remove stream cursor & render final sanitized markdown with syntax highlighting cleanly
+            if (contentEl) {
+              contentEl.innerHTML = renderStaffMarkdown(accumulatedAnswer);
+              if (typeof hljs !== "undefined") {
+                contentEl.querySelectorAll("pre code").forEach((b) => {
+                  try {
+                    hljs.highlightElement(b);
+                  } catch (e) {}
+                });
+              }
+            }
+            if (botEl) {
+              const spinner = botEl.querySelector(".status-spinner");
+              if (spinner) spinner.remove();
+              const headerTitle = botEl.querySelector(
+                ".assistant-status-title",
+              );
+              if (headerTitle) headerTitle.innerText = "Trợ lý Tri thức";
+            }
+            scrollArea.scrollTop = scrollArea.scrollHeight;
+
+            // Save turn to chat history
+            const userMsgTs = Date.now();
+            const botMsgTs = Date.now();
+            const userMsgIdx = staffChatHistory.length;
+            const botMsgIdx = userMsgIdx + 1;
+            staffChatHistory.push({
+              role: "user",
+              content: query,
+              timestamp: userMsgTs,
+            });
+            staffChatHistory.push({
+              role: "assistant",
+              content: accumulatedAnswer,
+              citations: finalCitations,
+              timestamp: botMsgTs,
+            });
+            if (serverSessionId) {
+              staffConversationId = serverSessionId;
+              localStorage.setItem("aip_active_rag_session", serverSessionId);
+              staffSetChatView(serverSessionId, { replace: true });
+            }
+
+            // Format citations & render action buttons
+            let citHtml = formatStaffCitations(
+              finalCitations,
+              query,
+              accumulatedAnswer,
+            );
+            if (botEl) {
+              botEl.setAttribute("data-msg-index", botMsgIdx);
+              const actionsDiv = document.createElement("div");
+              actionsDiv.innerHTML = `
+                ${citHtml}
+                ${renderStaffAssistantActionsHtml(accumulatedAnswer, serverSessionId, finalCitations, botMsgTs, botMsgIdx, query)}
+              `;
+              botEl.appendChild(actionsDiv);
+            }
+            await loadStaffRecentSessions();
+            // A question the bot could not answer goes to customer service: show their reply when it comes.
+            watchStaffAgentReplies(serverSessionId || staffConversationId, Date.now() / 1000 - 5);
+          } else {
+            const err = await res.json().catch(() => ({}));
+            if (botEl)
+              botEl.innerHTML = `<div style="color:#ef4444; padding:8px 0;">Lỗi: ${escapeHtml(err.detail || err.error?.message || "Không thể lấy phản hồi từ máy chủ")}</div>`;
+          }
+        } catch (e) {
+          if (e && (e.name === "AbortError" || e.message === "The user aborted a request.")) {
+            console.log("sendStaffChat generation stopped by user");
+            const botEl = document.getElementById(botId);
+            const contentEl = document.getElementById(`${botId}-content`);
+            if (contentEl) {
+              contentEl.querySelectorAll(".stream-typing-cursor").forEach((c) => c.remove());
+              const stopBadge = document.createElement("div");
+              stopBadge.style.cssText = "margin-top: 8px; font-size: 11.5px; color: #94a3b8; font-style: italic;";
+              stopBadge.innerHTML = '<i class="fa-solid fa-stop-circle" style="margin-right: 4px;"></i>Phản hồi đã dừng theo yêu cầu người dùng.';
+              contentEl.appendChild(stopBadge);
+            }
+            if (accumulatedAnswer) {
+              const userMsgTs = Date.now();
+              const botMsgTs = Date.now();
+              const userMsgIdx = staffChatHistory.length;
+              const botMsgIdx = userMsgIdx + 1;
+              staffChatHistory.push({
+                role: "user",
+                content: query,
+                timestamp: userMsgTs,
+              });
+              staffChatHistory.push({
+                role: "assistant",
+                content: accumulatedAnswer,
+                timestamp: botMsgTs,
+              });
+              if (botEl) {
+                botEl.setAttribute("data-msg-index", botMsgIdx);
+                const actionsDiv = document.createElement("div");
+                actionsDiv.innerHTML = renderStaffAssistantActionsHtml(
+                  accumulatedAnswer,
+                  serverSessionId,
+                  [],
+                  botMsgTs,
+                  botMsgIdx,
+                  query,
+                );
+                botEl.appendChild(actionsDiv);
+              }
+            }
+          } else {
+            console.error("sendStaffChat error:", e);
+            const el = document.getElementById(botId);
+            if (el)
+              el.innerHTML = `<div style="color:#ef4444; padding:8px 0;">Lỗi kết nối tới máy chủ AI.</div>`;
+          }
+        } finally {
+          staffIsChatStreaming = false;
+          staffCurrentAbortController = null;
+          resetStaffSendButton();
+        }
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+      }
+
+      document.addEventListener("click", (e) => {
+        const box = document.getElementById("invite-search-box");
+        const dd = document.getElementById("invite-members-dropdown");
+        if (box && dd && !box.contains(e.target) && !dd.contains(e.target)) {
+          hideInviteMembersDropdown();
+        }
+
+        const scopeBtn = document.getElementById("staff-scope-picker-btn");
+        const scopeMenu = document.getElementById("staff-scope-picker-menu");
+        if (
+          scopeBtn &&
+          scopeMenu &&
+          !scopeBtn.contains(e.target) &&
+          !scopeMenu.contains(e.target)
+        ) {
+          hideStaffScopeDropdown();
+        }
+      });
+
+      function escapeHtml(t) {
+        if (!t) return "";
+        return String(t)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+    </script>
+  </body>
+</html>

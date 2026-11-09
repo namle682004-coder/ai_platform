@@ -67,4 +67,4 @@ ssh "$SSH_HOST" "set -e
   df -h / | tail -1
   docker compose -f deploy/docker-compose/docker-compose.server.yml ps"
 
-echo "✔ Deployed $SHA. Gateway: http://172.16.20.2:8000 | HTTPS: https://rag.cyber.internal"
+echo "✔ Deployed $SHA. Gateway: http://172.16.20.2:8000 | HTTPS: https://aip.cyber.internal"

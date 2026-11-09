@@ -26,11 +26,9 @@ keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = rag.cyber.internal
-DNS.2 = *.cyber.internal
-DNS.3 = aip.cyber.internal
-DNS.4 = dcp.cyber.internal
-DNS.5 = api.cyber.internal
+DNS.1 = *.cyber.internal
+DNS.2 = aip.cyber.internal
+DNS.3 = api.cyber.internal
 IP.1 = 172.16.20.2
 EOF
 

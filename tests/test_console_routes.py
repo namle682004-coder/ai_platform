@@ -171,3 +171,45 @@ def test_browser_routes_follow_the_url(tmp_path):
     assert out["samePage"] is True and out["otherPage"] is False
     assert out["href"] == "/projects/khao-thi-dak-lak/services/speech-to-text"
     assert out["slugify"] == slugify("  AI / Lớp 10 — Đề cương!! ")
+
+
+# ---------------------------------------------------------------- clean extensionless URLs
+@pytest.mark.parametrize("path", [
+    "/dashboard",
+    "/keys",
+    "/apis",
+    "/report",
+    "/payment",
+    "/profile",
+    "/auth/login",
+    "/auth/signup",
+    "/auth/register",
+    "/status",
+])
+def test_clean_urls_serve_ok(client, path):
+    res = client.get(path)
+    assert res.status_code == 200
+
+
+@pytest.mark.parametrize("html_path, target_path", [
+    ("/dashboard.html", "/dashboard"),
+    ("/projects.html", "/projects"),
+    ("/projects/index.html", "/projects"),
+    ("/keys.html", "/keys"),
+    ("/apis.html", "/apis"),
+    ("/report.html", "/report"),
+    ("/payment.html", "/payment"),
+    ("/profile.html", "/profile"),
+    ("/auth/login.html", "/auth/login"),
+    ("/login.html", "/auth/login"),
+    ("/auth/signup.html", "/auth/signup"),
+    ("/auth/register.html", "/auth/signup"),
+    ("/signup.html", "/auth/signup"),
+    ("/status.html", "/status"),
+    ("/staff/keys.html", "/staff/keys"),
+    ("/admin/users.html", "/admin/users"),
+])
+def test_html_urls_redirect_to_clean_urls(client, html_path, target_path):
+    res = client.get(html_path, follow_redirects=False)
+    assert res.status_code == 301
+    assert res.headers["location"] == target_path

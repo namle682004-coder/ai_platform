@@ -1116,7 +1116,7 @@
       function loadUserData() {
         const raw = localStorage.getItem('aip_user_session') || sessionStorage.getItem('aip_user_session');
         if (!raw) {
-          window.location.replace('/auth/login.html?redirect=' + encodeURIComponent(window.location.pathname));
+          window.location.replace('/auth/login?redirect=' + encodeURIComponent(window.location.pathname));
           return;
         }
         try {
