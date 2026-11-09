@@ -1,186 +1,192 @@
-# Hướng dẫn Cấu hình HTTPS & Domain Nội bộ cho AIP Enterprise RAG (`rag.cyber.internal`)
+# Hướng dẫn Triển khai HTTPS, Domain Nội bộ & Cài đặt Chứng chỉ Client (`aip.cyber.internal`)
 
-Tài liệu này hướng dẫn chi tiết từng bước thiết lập **HTTPS (SSL/TLS)** với Reverse Proxy **Nginx** cho hệ thống Chatbot RAG và nền tảng AI Platform (AIP) chạy trên máy chủ LAB công ty (`172.16.20.2`), sử dụng domain nội bộ **`rag.cyber.internal`**.
+Tài liệu này cung cấp hướng dẫn đầy đủ từ **phía Quản trị viên (Admin/Server)** đến **phía Người dùng cuối (Client/Nhân viên nội bộ)** để truy cập nền tảng **AIP Enterprise Platform** và **RAG Chatbot** qua giao thức bảo mật HTTPS với domain nội bộ **`https://aip.cyber.internal`**.
 
 ---
 
 ## 1. Kiến trúc Tổng quan (Architecture)
 
 ```
-[ Trình duyệt nhân viên / Client ]
-             │  HTTPS (Port 443, TLS 1.3/1.2)
+[ Máy tính Nhân viên / Client ]
+             │  HTTPS (Port 443, TLS 1.3 / 1.2)
              ▼
 ┌────────────────────────────────────────────────────────┐
-│  aip-nginx Container (Nginx Alpine, RAM cap: 64MB)     │
-│  - Domain: rag.cyber.internal, aip.cyber.internal      │
-│  - SAN IP: 172.16.20.2                                 │
+│  aip-nginx Container (Nginx Alpine, RAM limit: 64MB)   │
+│  - Domain chính: aip.cyber.internal                    │
+│  - SAN IP: 172.16.20.2, Wildcard: *.cyber.internal     │
 │  - SSE Streaming: proxy_buffering off                  │
 │  - File Upload: client_max_body_size 50M               │
+│  - Clean URLs: Tự động 301 Redirect mọi đuôi .html    │
 └───────────────────────┬────────────────────────────────┘
                         │ HTTP nội bộ
                         ▼
 ┌────────────────────────────────────────────────────────┐
 │  aip-gateway Container (FastAPI, Port 8000)            │
-│  - Vẫn giữ nguyên port 8000 cho script/curl cũ         │
+│  - Đường dẫn sạch: /auth/login, /dashboard, /projects  │
+│  - RAG Service: /services/rag-chatbot                  │
 └───────────────────────┬────────────────────────────────┘
                         │
                         ▼
 ┌────────────────────────────────────────────────────────┐
-│  aip-rag-api (Port 8010) & Model Server (Port 8011/8012)│
+│  aip-rag-api (Port 8010) & Model Server (Port 8011)    │
 └────────────────────────────────────────────────────────┘
 ```
 
-### Ưu điểm kiến trúc:
-1. **Không phá vỡ hệ thống cũ**: Port `8000` của Gateway vẫn mở, các script benchmark, curl test cũ vẫn chạy bình thường.
-2. **Bảo mật & Trực quan**: Người dùng truy cập qua trình duyệt với `https://rag.cyber.internal` có **ổ khóa xanh bảo mật (Secure)**.
-3. **Tiết kiệm tài nguyên**: Container Nginx Alpine chỉ tốn ~10–20 MB RAM, tuân thủ giới hạn RAM nghiêm ngặt của server 8GB.
-4. **Hỗ trợ Chatbot SSE Stream**: Đã cấu hình `proxy_buffering off` để các token câu trả lời của LLM hiển thị tức thì (real-time stream).
+### Chuẩn hóa URL Production (Không đuôi `.html`):
+- **Trang chủ / Portal**: `https://aip.cyber.internal`
+- **Đăng nhập**: `https://aip.cyber.internal/auth/login`
+- **Đăng ký**: `https://aip.cyber.internal/auth/signup`
+- **Bảng điều khiển**: `https://aip.cyber.internal/dashboard`
+- **Quản lý Dự án**: `https://aip.cyber.internal/projects`
+- **Trợ lý AI RAG**: `https://aip.cyber.internal/services/rag-chatbot`
 
 ---
 
-## 2. Các Thành phần Đã Cấu hình Trên Repo
+## 2. Vị trí File Chứng chỉ SSL & Root CA
 
-Hệ thống đã chuẩn bị sẵn các file cấu hình tại:
+Hệ thống sử dụng cơ chế **Root CA nội bộ (Cyber Internal Root CA)** để cấp chứng chỉ cho `aip.cyber.internal`.
 
-| File | Vị trí | Tác dụng |
-| :--- | :--- | :--- |
-| `generate_internal_certs.sh` | [`deploy/server/generate_internal_certs.sh`](file:///home/namle/AI-Projects/llm-apps/ai_platform/deploy/server/generate_internal_certs.sh) | Script tự động tạo Root CA & cấp chứng chỉ SSL Wildcard cho `*.cyber.internal` + `172.16.20.2` |
-| `nginx.conf` | [`deploy/server/nginx.conf`](file:///home/namle/AI-Projects/llm-apps/ai_platform/deploy/server/nginx.conf) | Cấu hình Nginx SSL termination, proxy_pass vào gateway, tắt buffer cho SSE streaming |
-| `docker-compose.server.yml` | [`deploy/docker-compose/docker-compose.server.yml`](file:///home/namle/AI-Projects/llm-apps/ai_platform/deploy/docker-compose/docker-compose.server.yml) | Service `nginx` lắng nghe port 80/443, gắn volume chứng chỉ và config |
-| `deploy_server.sh` | [`scripts/deploy_server.sh`](file:///home/namle/AI-Projects/llm-apps/ai_platform/scripts/deploy_server.sh) | Script deploy 1-click qua SSH, tự đồng bộ certs và build container |
+### Vị trí các file trên máy tính Admin (WSL / Windows):
+```text
+\\wsl$\Ubuntu-22.04\home\namle\AI-Projects\llm-apps\ai_platform\deploy\server\certs\
+├── Cyber-Internal-Root-CA.cer    <-- File chuẩn gửi cho Client / Nhân viên
+├── cyber_ca.crt                  <-- File chứng chỉ Root CA gốc
+├── cyber_ca.key                  <-- Private key của Root CA (Bảo mật, không gửi ra ngoài)
+├── cyber_internal.crt            <-- Chứng chỉ Server cấp cho aip.cyber.internal
+└── cyber_internal.key            <-- Private key Server Nginx dùng
+```
 
----
-
-## 3. Hướng dẫn Chi tiết Từng Bước
-
-### PHẦN I: Trên Máy trạm / Laptop Người Dùng (Client Windows)
-
-Do `cyber.internal` là tên miền nội bộ công ty (không đăng ký trên Internet), máy tính của bạn cần 2 thiết lập đơn giản:
-
-#### Bước 1: Cấu hình phân giải domain (File Hosts)
-1. Bấm phím **Windows**, gõ `Notepad`.
-2. Nhấp chuột phải vào Notepad → Chọn **Run as administrator** (Chạy với quyền quản trị viên).
-3. Trong Notepad, bấm `Ctrl + O`, mở file theo đường dẫn:
-   ```text
-   C:\Windows\System32\drivers\etc\hosts
-   ```
-   *(Lưu ý: Chọn hiển thị "All Files (*.*)" ở góc dưới bên phải hộp thoại Open để thấy file hosts).*
-4. Thêm dòng sau vào **cuối file**:
-   ```text
-   172.16.20.2   rag.cyber.internal aip.cyber.internal
-   ```
-5. Bấm `Ctrl + S` để lưu file.
-
-> **Mẹo quản trị mạng:** Nếu Router / DNS Server nội bộ công ty (Pi-hole, Windows DNS Server) đã trỏ `*.cyber.internal -> 172.16.20.2` thì nhân viên **không cần** sửa file hosts thủ công.
+### Vị trí trên Server LAB (`172.16.20.2`):
+```text
+/home/lenam/aip/app/deploy/server/certs/
+```
 
 ---
 
-#### Bước 2: Cài đặt Chứng chỉ Root CA (Xóa vĩnh viễn "Not Secure")
-Để Chrome / Edge hiển thị ổ khóa xanh thay vì cảnh báo đỏ:
+## 3. Cách Xuất File Root CA `.cer` (Dành cho Quản trị viên)
 
-1. Mở File Explorer trên Windows, dán đường dẫn sau vào thanh địa chỉ:
+Nếu bạn cần xuất lại file chứng chỉ Root CA từ máy tính Windows đã cài đặt:
+
+1. Nhấn tổ hợp phím `Win + R` → Nhập:
    ```text
-   \\wsl$\Ubuntu-22.04\home\namle\AI-Projects\llm-apps\ai_platform\deploy\server\certs
+   certlm.msc
    ```
-2. Nhấp đúp chuột vào file **`cyber_ca.crt`**.
-3. Cửa sổ *Certificate* hiện ra, bấm nút **Install Certificate...**
-4. Chọn **Local Machine** (Máy tính cục bộ) → Bấm **Next**.
-5. Chọn ô thứ 2: **Place all certificates in the following store** (Đặt tất cả chứng chỉ vào kho sau).
-6. Bấm **Browse...** → Chọn thư mục:
+   *(Hoặc `certmgr.msc` nếu dùng quyền người dùng hiện tại)*
+2. Điều hướng theo cây thư mục bên trái:
    ```text
    Trusted Root Certification Authorities (Nhà cung cấp chứng thực gốc đáng tin cậy)
+   └── Certificates
    ```
-7. Bấm **OK** → **Next** → **Finish** → Hiện thông báo *"The import was successful"* là xong!
+3. Tìm chứng chỉ có tên: **`Cyber Internal Root CA`**.
+4. Nhấp chuột phải vào chứng chỉ → Chọn **All Tasks** → **Export...**
+5. Trong trình thuật sĩ:
+   - Chọn: **No, do not export the private key** → Bấm **Next**.
+   - Chọn định dạng: **Base-64 encoded X.509 (.CER)** → Bấm **Next**.
+   - Bấm **Browse...** và đặt tên file: `Cyber-Internal-Root-CA.cer`.
+   - Bấm **Next** → **Finish**.
+
+> **Mẹo:** Bạn không nhất thiết phải làm bước xuất này vì file **`Cyber-Internal-Root-CA.cer`** đã được tạo sẵn ngay trong thư mục `deploy/server/certs/` của dự án!
 
 ---
 
-### PHẦN II: Deploy và Khởi chạy trên Server (`172.16.20.2`)
+## 4. HƯỚNG DẪN DÀNH CHO CLIENT / NHÂN VIÊN (Copy gửi cho người dùng)
 
-#### Cách 1: Deploy tự động từ máy dev qua Script (Khuyến nghị)
-Tại terminal WSL trên máy dev của bạn:
+> Bạn có thể sao chép toàn bộ phần khung bên dưới để gửi cho đồng nghiệp / nhân viên qua Email nội bộ, Slack, Zalo hoặc Teams:
 
+```markdown
+### 📢 Hướng dẫn Truy cập Hệ thống AIP Platform (`https://aip.cyber.internal`)
+
+Để truy cập cổng AI Platform và Chatbot RAG của công ty với kết nối bảo mật HTTPS (ổ khóa xanh an toàn), bạn chỉ cần thực hiện 2 bước đơn giản:
+
+---
+
+#### BƯỚC 1: Cài đặt Chứng chỉ Bảo mật Nội bộ (Chỉ làm lần đầu)
+1. Tải về file đính kèm: `Cyber-Internal-Root-CA.cer` (hoặc `cyber_ca.crt`).
+2. Nhấp đúp chuột vào file vừa tải về.
+3. Bấm nút **Install Certificate...**
+4. Chọn **Local Machine** (Máy cục bộ) → Bấm **Next** (Cần xác nhận quyền Admin nếu có).
+5. Tích chọn ô thứ hai: **Place all certificates in the following store** (Đặt tất cả chứng chỉ vào kho sau).
+6. Bấm **Browse...** → Chọn thư mục:
+   👉 **Trusted Root Certification Authorities** (Nhà cung cấp chứng thực gốc đáng tin cậy).
+7. Bấm **OK** → **Next** → **Finish**. Xuất hiện thông báo *"The import was successful"* là xong!
+
+---
+
+#### BƯỚC 2: Cấu hình Phân giải Tên miền (DNS / File Hosts)
+
+> **Lưu ý:** Nếu mạng WiFi/LAN công ty đã được quản trị viên cấu hình DNS tự động, bạn có thể bỏ qua bước này.
+
+**Cách 1: Nhanh nhất qua PowerShell (Khuyến nghị)**
+1. Bấm phím **Windows**, gõ `powershell`.
+2. Nhấp chuột phải vào **Windows PowerShell** → Chọn **Run as administrator**.
+3. Dán dòng lệnh sau và nhấn **Enter**:
+   ```powershell
+   Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n172.16.20.2 aip.cyber.internal" -Force
+   ```
+
+**Cách 2: Sửa bằng Notepad thủ công**
+1. Bấm phím **Windows**, gõ `Notepad`.
+2. Nhấp chuột phải vào Notepad → Chọn **Run as administrator**.
+3. Bấm `Ctrl + O`, mở file `C:\Windows\System32\drivers\etc\hosts` (chọn hiển thị Tất cả tệp `*.*`).
+4. Thêm dòng sau vào cuối file và lưu lại (`Ctrl + S`):
+   ```text
+   172.16.20.2   aip.cyber.internal
+   ```
+
+---
+
+#### BƯỚC 3: Truy cập Hệ thống
+Mở trình duyệt (Chrome, Edge, Cốc Cốc) và truy cập:
+👉 **https://aip.cyber.internal**
+
+Trình duyệt sẽ hiển thị biểu tượng **Ổ khóa bảo mật** an toàn màu xám/xanh.
+- Đăng nhập: `https://aip.cyber.internal/auth/login`
+- Trợ lý AI Trực ban: `https://aip.cyber.internal/services/rag-chatbot`
+```
+
+---
+
+## 5. Dành cho Quản trị viên: Triển khai & Vận hành Server
+
+### 1. Kịch bản Deploy 1-Click
+Trên terminal WSL máy tính của bạn:
 ```bash
-# 1. Chuyển vào thư mục dự án
 cd /home/namle/AI-Projects/llm-apps/ai_platform
-
-# 2. Cấp quyền thực thi cho script (nếu chưa có)
-chmod +x scripts/deploy_server.sh deploy/server/generate_internal_certs.sh
-
-# 3. Chạy lệnh deploy lên server msp (172.16.20.2)
 ./scripts/deploy_server.sh
 ```
+Script sẽ tự động:
+- Đóng gói mã nguồn và đồng bộ certs sang server `msp`.
+- Xử lý dọn dẹp an toàn các container cũ.
+- Biên dịch image và khởi chạy stack:
+  - `aip-nginx`: Reverse proxy HTTPS port 443 & HTTP port 80.
+  - `aip-gateway`: API Gateway port 8000.
+  - `aip-rag-api`: Backend RAG port 8010.
+  - `aip-rag-worker`: Celery worker xử lý tác vụ nền.
 
-Script này sẽ tự động:
-- Đồng bộ mã nguồn và thư mục chứng chỉ `certs` sang server `msp`.
-- Khởi động lại stack compose gồm `gateway`, `rag-api`, `rag-worker` và `nginx`.
-- Nginx lắng nghe tại port `80` và `443`.
-
----
-
-#### Cách 2: Chạy trực tiếp bằng tay trên Server (SSH)
-Nếu bạn đang SSH trực tiếp trên server `172.16.20.2` (`lenam@msp`):
-
+### 2. Kiểm tra nhanh trạng thái dịch vụ trên Server
 ```bash
-# 1. Chuyển vào thư mục chứa code
-cd ~/aip/app
-
-# 2. Tạo chứng chỉ nếu chưa có
-./deploy/server/generate_internal_certs.sh
-
-# 3. Khởi động lại stack
-docker compose -f deploy/docker-compose/docker-compose.server.yml up -d
+ssh msp "docker compose -f ~/aip/app/deploy/docker-compose/docker-compose.server.yml ps"
 ```
 
-Kiểm tra trạng thái Nginx:
+### 3. Kiểm tra chứng chỉ SSL từ dòng lệnh:
 ```bash
-docker ps | grep aip-nginx
-# Kết quả mong đợi: Up ... 0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+curl -k -I https://172.16.20.2/auth/login
 ```
-
----
-
-## 4. Kiểm tra Kết quả
-
-Mở trình duyệt (Chrome, Edge) trên máy tính của bạn và truy cập:
-
-👉 **`https://rag.cyber.internal`**
-
-### Kết quả chuẩn:
-- Giao diện Chatbot RAG hiển thị nhanh chóng.
-- Bên trái thanh địa chỉ hiển thị biểu tượng **Ổ khóa bảo mật** (*Connection is secure / Kết nối an toàn*).
-- Không còn bất kỳ cảnh báo đỏ nào về SSL.
-- Chat thử một câu hỏi để kiểm tra: câu trả lời được stream từng token mượt mà qua HTTPS.
-
----
-
-## 5. Bảng Tên Miền Nội bộ Đề xuất (`cyber.internal`)
-
-Khi hệ thống mở rộng, bạn có thể tái sử dụng chứng chỉ wildcard `*.cyber.internal` này cho các dịch vụ khác:
-
-| Dịch vụ | Domain nội bộ | Cổng backend thực tế |
-| :--- | :--- | :--- |
-| **Chatbot RAG** | `https://rag.cyber.internal` | Port 8000 (AIP Gateway) |
-| **AIP Platform Portal** | `https://aip.cyber.internal` | Port 8000 (AIP Gateway) |
-| **DCP Platform** | `https://dcp.cyber.internal` | Port 18000 (DCP Control-plane) |
-| **API Gateway** | `https://api.cyber.internal` | Port 8000 (/v1/*) |
-| **Grafana Monitoring** | `https://grafana.cyber.internal`| Port 3000 |
-| **Qdrant Vector DB UI** | `https://qdrant.cyber.internal` | Port 6333 |
+Kết quả mong đợi: `HTTP/2 200` với Header `server: nginx/1.27.5`.
 
 ---
 
 ## 6. Xử lý Sự cố Thường Gặp (Troubleshooting)
 
-### 1. Lỗi `-bash: ./deploy/server/generate_internal_certs.sh: No such file or directory`
-- **Nguyên nhân**: Bạn đang đứng ở `/mnt/c/Users/ADMIN` chứ chưa vào thư mục repo.
-- **Khắc phục**: Gõ `cd /home/namle/AI-Projects/llm-apps/ai_platform` trước khi chạy lệnh.
+### 1. Trình duyệt báo `DNS_PROBE_FINISHED_NXDOMAIN`
+- **Nguyên nhân**: Máy tính chưa biết domain `aip.cyber.internal` trỏ về IP nào.
+- **Khắc phục**: Làm lại Bước 2 (thêm `172.16.20.2 aip.cyber.internal` vào file hosts bằng PowerShell Administrator).
 
-### 2. Lỗi `-bash: ./scripts/deploy_server.sh: Permission denied`
-- **Khắc phục**: Chạy `chmod +x scripts/deploy_server.sh` để cấp quyền thực thi.
+### 2. Trình duyệt báo "Not secure" / "Kết nối của bạn không phải là riêng tư"
+- **Nguyên nhân**: File chứng chỉ Root CA chưa được import đúng vào thư mục **Trusted Root Certification Authorities** (mà bị đưa nhầm vào Personal hoặc tự động).
+- **Khắc phục**: Mở `certlm.msc`, kiểm tra xem trong mục *Trusted Root Certification Authorities \ Certificates* đã có chứng chỉ tên **Cyber Internal Root CA** chưa. Nếu chưa, hãy import lại theo hướng dẫn ở Bước 1.
+- Khởi động lại trình duyệt Chrome/Edge hoặc thử bằng cửa sổ Ẩn danh (Incognito).
 
-### 3. Trình duyệt vẫn báo "Not secure" sau khi cài file `.crt`
-- **Nguyên nhân 1**: File `cyber_ca.crt` chưa được lưu vào mục **Trusted Root Certification Authorities** (mà bị lưu nhầm vào *Personal* hoặc *Intermediate*). Hãy mở `certmgr.msc` trên Windows để kiểm tra.
-- **Nguyên nhân 2**: Trình duyệt Chrome lưu cache SSL cũ. Hãy đóng hoàn toàn Chrome rồi mở lại, hoặc mở thử bằng cửa sổ ẩn danh (*Incognito*).
-
-### 4. Lỗi `client_loop: send disconnect: Broken pipe` khi SSH
-- **Nguyên nhân**: Kết nối mạng đến server bị ngắt tạm thời hoặc server bị quá tải timeout.
-- **Khắc phục**: SSH lại vào server: `ssh msp` (hoặc `ssh lenam@172.16.20.2`).
+### 3. Lỗi "Bạn không có cấp phép để lưu vào vị trí này" khi sửa file hosts
+- **Nguyên nhân**: Notepad mở với quyền người dùng thông thường, không thể ghi vào thư mục hệ thống `System32\drivers\etc`.
+- **Khắc phục**: Dùng lệnh PowerShell Run as Administrator như ở Bước 2.
