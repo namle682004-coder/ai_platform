@@ -2,27 +2,32 @@
 # Memory caps on the containers of the model host. A container that reaches its cap is OOM-killed and
 # restarted by Docker; without a cap it takes memory from the model runtimes and from the host itself.
 #
-#   deploy/server/apply_container_limits.sh [--dry-run]
+#   deploy/onprem/host/scripts/apply_container_limits.sh [--dry-run]
 #
 # `docker update` keeps the cap across restarts of the same container. The AIP app containers also
 # get theirs from docker-compose.server.yml (mem_limit), so redeploys keep them; the infra stack
 # (~/aip-infra) is not in this repo: re-run this script after recreating one of its containers.
 #
-# Budget on the 8 GB host (caps, not typical use): runtimes 2G + 1G + 1G (systemd MemoryMax),
-# containers below ~4.5G, OS + page cache the rest. earlyoom is the last line if all peak at once.
+# Budget on the 32 GB host (caps, not typical use):
+# - Host model runtimes: chat 5G + embedding 2.5G + rerank 2.5G = ~10G (systemd MemoryMax)
+# - App & Infra containers: ~12G
+# - OS + page cache + buffers: ~10G
+# earlyoom remains the last defense line if unexpected spikes occur.
 set -euo pipefail
 
 DRY=0
 [ "${1:-}" = "--dry-run" ] && DRY=1
 
 declare -A LIMITS=(
-  [aip-qdrant]=1g
-  [aip-rabbitmq]=512m
-  [aip-minio]=512m
-  [aip-redis]=256m
-  [aip-gateway]=512m
-  [aip-rag-api]=1g
-  [aip-rag-worker]=768m
+  [aip-qdrant]=2g
+  [aip-rabbitmq]=1g
+  [aip-minio]=1g
+  [aip-redis]=512m
+  [aip-gateway]=1g
+  [aip-litellm]=1g
+  [aip-rag-api]=2g
+  [aip-rag-worker]=1536m
+  [aip-nginx]=128m
 )
 
 for name in "${!LIMITS[@]}"; do

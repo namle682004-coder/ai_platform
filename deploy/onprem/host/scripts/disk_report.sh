@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Read-only report of what fills the disk of the model host, with what could be freed. Deletes nothing.
-#   deploy/server/disk_report.sh            (on the server)   |   ssh msp 'bash -s' < deploy/server/disk_report.sh
+#   deploy/onprem/host/scripts/disk_report.sh            (on the server)   |   ssh msp 'bash -s' < deploy/onprem/host/scripts/disk_report.sh
 set -uo pipefail
 
 echo "== physical disks and volumes (is there unallocated space for the root volume?)"

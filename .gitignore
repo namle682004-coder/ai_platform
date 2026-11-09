@@ -165,5 +165,5 @@ benchmarks/rag/runs/
 
 # --- Deployment ---
 # deploy/ is versioned: scripts/deploy_server.sh ships only committed files. Model runtime settings
-# (deploy/server/models/*.env) hold no credentials; real secrets stay in untracked env files.
-!deploy/server/models/*.env
+# (deploy/onprem/host/models/*.env) hold no credentials; real secrets stay in untracked env files.
+!deploy/onprem/host/models/*.env

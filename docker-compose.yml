@@ -1,4 +1,4 @@
 name: docker-compose
 
 include:
-  - deploy/docker-compose/docker-compose.yml
+  - deploy/local/docker-compose.local.yml

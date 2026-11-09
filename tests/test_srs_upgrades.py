@@ -85,7 +85,7 @@ def test_srs_11_3_kubernetes_node_pools_and_tolerations():
     import yaml
     from pathlib import Path
 
-    values_path = Path("deploy/helm/aip-runtimes/values.yaml")
+    values_path = Path("deploy/kubernetes/helm/aip-runtimes/values.yaml")
     assert values_path.is_file()
     with open(values_path, "r", encoding="utf-8") as f:
         values = yaml.safe_load(f)

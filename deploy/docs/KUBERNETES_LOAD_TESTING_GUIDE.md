@@ -58,10 +58,10 @@ kubectl top nodes
 ### 2.3 Initialize Namespaces and Secrets
 ```bash
 # Apply the 6 architectural namespaces
-kubectl apply -f deploy/k8s/namespaces/namespaces.yaml
+kubectl apply -f deploy/kubernetes/manifests/namespaces/namespaces.yaml
 
 # Apply synchronized secrets across namespaces
-kubectl apply -f deploy/k8s/secrets/secrets.yaml
+kubectl apply -f deploy/kubernetes/manifests/secrets/secrets.yaml
 ```
 
 ### 2.4 Load Container Image into Kind (For Local Kind Clusters)
@@ -89,7 +89,7 @@ kubectl label node desktop-control-plane pool=control-plane --overwrite
 ### 3.2 Deploy Control Plane with HPA
 Deploy the gateway chart with autoscaling enabled:
 ```bash
-helm upgrade --install aip-control deploy/helm/aip-control \
+helm upgrade --install aip-control deploy/kubernetes/helm/aip-control \
   --namespace aip-control \
   --set image.pullPolicy=Never \
   --set autoscaling.enabled=true \
@@ -123,7 +123,7 @@ Open multiple terminals to observe scaling in real-time:
   ```
 - **Terminal 2: Run k6 ramp-up script (50 to 1,000 users):**
   ```bash
-  k6 run deploy/k6/load_users_k6.js
+  k6 run deploy/testing/k6/load_users_k6.js
   ```
 - **Terminal 3: Watch HPA and Pods scale in real-time:**
   ```bash

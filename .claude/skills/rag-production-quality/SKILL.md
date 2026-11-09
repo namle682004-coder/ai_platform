@@ -40,7 +40,7 @@ Báo kết quả đúng như thực tế: test nào fail thì dán output. Khôn
 
 ## 4. Hiệu năng và ổn định
 
-**Tiêu chuẩn hạ tầng và cổng server: [infra-standard.md](infra-standard.md).** Sau mỗi deploy chạy `deploy/server/server_gate.sh` (phải PASS); khi chưa có server diễn tập bằng `scripts/loadtest_local.sh`.
+**Tiêu chuẩn hạ tầng và cổng server: [infra-standard.md](infra-standard.md).** Sau mỗi deploy chạy `deploy/testing/scripts/server_gate.sh` (phải PASS); khi chưa có server diễn tập bằng `scripts/loadtest_local.sh`.
 
 
 - Giới hạn đồng thời theo runtime (`rerank_max_concurrent`, các giới hạn LLM trong `config.py`), `runtime_guard.py`, `rate_limiter.py`. Test liên quan: `test_rag_overload_protection.py`, `test_rag_stability.py`.

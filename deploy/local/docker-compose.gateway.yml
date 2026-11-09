@@ -10,9 +10,9 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      - ../gateway/litellm_config.yaml:/app/config.yaml:ro
+      - ../onprem/compose/configs/litellm/litellm_config.yaml:/app/config.yaml:ro
     environment:
-      - MIP_MASTER_KEY=${MIP_MASTER_KEY:-sk-mip-master-key-lenam2026}
+      - AIP_MASTER_KEY=${AIP_MASTER_KEY:-sk-aip-master-key-lenam2026}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}

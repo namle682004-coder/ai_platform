@@ -2,7 +2,7 @@
 
 Mục tiêu: **máy không bao giờ treo**. Quá tải thì từ chối có kiểm soát (429/503 kèm Retry-After), không xếp hàng vô hạn. Thành phần nào vượt bộ nhớ thì chỉ thành phần đó bị khởi động lại, máy vẫn sống.
 
-Công cụ: `deploy/server/server_gate.sh` (một lệnh sau mỗi lần deploy, trả PASS/FAIL). Diễn tập không cần GPU: `scripts/loadtest_local.sh` (stack cô lập + runtime giả lập `scripts/stub_runtimes.py`).
+Công cụ: `deploy/testing/scripts/server_gate.sh` (một lệnh sau mỗi lần deploy, trả PASS/FAIL). Diễn tập không cần GPU: `scripts/loadtest_local.sh` (stack cô lập + runtime giả lập `scripts/stub_runtimes.py`).
 
 ## 1. Các lớp bảo vệ bắt buộc
 
@@ -13,7 +13,7 @@ Công cụ: `deploy/server/server_gate.sh` (một lệnh sau mỗi lần deploy,
 | Ứng dụng – runtime model | Bulkhead theo số slot runtime báo về (`/props`) + circuit breaker | `infrastructure/adapters/runtime_guard.py`, `RAG_LLM_MAX_CONCURRENT`, `RAG_RUNTIME_QUEUE_TIMEOUT_SECONDS` |
 | Ứng dụng – nạp tài liệu | File ≤ 50 MB; OCR ≤ `RAG_OCR_MAX_PAGES` trang/tài liệu, ≤ `RAG_OCR_PAGE_TIMEOUT_SECONDS`/trang; trang bị bỏ qua được ghi lên tài liệu | `knowledge_use_case.py`, `pdf_parser.py` |
 | Container | `mem_limit` = `memswap_limit` cho mọi container; `restart: unless-stopped` | `docker-compose.server.yml`, `apply_container_limits.sh` |
-| Runtime model | systemd `MemoryMax` + `Restart=always`; `--no-mmap`; `--parallel` = slot | `deploy/server/models/` |
+| Runtime model | systemd `MemoryMax` + `Restart=always`; `--no-mmap`; `--parallel` = slot | `deploy/onprem/host/models/` |
 | Máy chủ | earlyoom (tắt model lớn nhất trước khi máy treo); swap 2 GB; ổ trống ≥ 6 GB trước khi build | `install.sh`, `scripts/deploy_server.sh` |
 
 Quy tắc đồng bộ cấu hình: `RAG_LLM_MAX_CONCURRENT` = `--parallel` của llama-server; `RAG_CHAT_MAX_INFLIGHT` ≤ 3 × số slot.
@@ -43,9 +43,9 @@ Ngưỡng p95/TTFT là của lab (ưu tiên chất lượng, 1–2 slot). Mục 
 
 ## 4. Quy trình mỗi lần deploy
 
-1. `deploy/server/disk_report.sh` – ổ trống ≥ 6 GB.
+1. `deploy/onprem/host/scripts/disk_report.sh` – ổ trống ≥ 6 GB.
 2. `make deploy-server` (tự kiểm tra ổ/RAM trước khi build).
-3. `deploy/server/server_gate.sh` với `AIP_GATE_DOCS=<thư mục 3 tài liệu thử>` → phải PASS.
+3. `deploy/testing/scripts/server_gate.sh` với `AIP_GATE_DOCS=<thư mục 3 tài liệu thử>` → phải PASS.
 4. Re-index nếu đổi parser/chunker: dọn trùng trước, `scripts/reindex_rag_documents.py --apply --delay 2`, theo dõi `health.sh`.
 5. Benchmark chất lượng (`make rag-eval …`).
 

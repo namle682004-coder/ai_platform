@@ -1,7 +1,7 @@
 # Model runtime (llama.cpp llama-server) as a systemd service, one instance per model:
 #   aip-model@chat  aip-model@embedding  aip-model@rerank
-# Settings per instance: /etc/aip/models/<instance>.env (templates in deploy/server/models/*.env);
-# its memory limits are a drop-in written by deploy/server/install.sh from MEMORY_HIGH / MEMORY_MAX of
+# Settings per instance: /etc/aip/models/<instance>.env (templates in deploy/onprem/host/models/*.env);
+# its memory limits are a drop-in written by deploy/onprem/host/scripts/install.sh from MEMORY_HIGH / MEMORY_MAX of
 # that file (systemd does not expand environment variables in resource directives).
 #
 # Why a service instead of a hand-started process (incident 2026-11-05, host out of memory and frozen):

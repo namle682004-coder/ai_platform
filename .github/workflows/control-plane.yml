@@ -89,11 +89,11 @@ jobs:
       - name: Validate & Lint Helm Charts
         shell: bash
         run: |
-          helm lint deploy/helm/aip-control
-          helm lint deploy/helm/aip-runtimes
-          helm lint deploy/helm/aip-infra
-          helm template test-control deploy/helm/aip-control
-          helm template test-runtimes deploy/helm/aip-runtimes
+          helm lint deploy/kubernetes/helm/aip-control
+          helm lint deploy/kubernetes/helm/aip-runtimes
+          helm lint deploy/kubernetes/helm/aip-infra
+          helm template test-control deploy/kubernetes/helm/aip-control
+          helm template test-runtimes deploy/kubernetes/helm/aip-runtimes
 
       - name: Export & verify OpenAPI
         shell: bash

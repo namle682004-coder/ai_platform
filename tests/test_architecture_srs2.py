@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def test_srs_2_4_all_six_kubernetes_namespaces_exist():
     """Verify all 6 official namespaces defined in SRS Section 2.4 exist in namespaces.yaml."""
-    manifest_path = os.path.join(BASE_DIR, "deploy/k8s/namespaces/namespaces.yaml")
+    manifest_path = os.path.join(BASE_DIR, "deploy/kubernetes/manifests/namespaces/namespaces.yaml")
     assert os.path.exists(manifest_path), f"{manifest_path} must exist"
 
     with open(manifest_path, "r", encoding="utf-8") as f:
@@ -39,7 +39,7 @@ def test_srs_2_4_all_six_kubernetes_namespaces_exist():
 
 def test_srs_2_3_helm_runtime_groups_and_namespaces_mapping():
     """Verify Helm values and deployments configure all runtime groups and map to proper namespaces."""
-    values_path = os.path.join(BASE_DIR, "deploy/helm/aip-runtimes/values.yaml")
+    values_path = os.path.join(BASE_DIR, "deploy/kubernetes/helm/aip-runtimes/values.yaml")
     assert os.path.exists(values_path)
 
     with open(values_path, "r", encoding="utf-8") as f:

@@ -6,9 +6,9 @@
 # runtime bulkheads, rate limits, memory caps, ingestion + OCR under chat load); it says nothing about
 # answer quality.
 #
-#   AIP_RAG_IMAGE=aip-rag:ocr-test docker compose -f deploy/docker-compose/docker-compose.loadtest.yml -p aip-loadtest up -d
+#   AIP_RAG_IMAGE=aip-rag:ocr-test docker compose -f deploy/testing/compose/docker-compose.loadtest.yml -p aip-loadtest up -d
 #   ... scripts/load_test_rag.py --api http://localhost:18010 ...
-#   docker compose -f deploy/docker-compose/docker-compose.loadtest.yml -p aip-loadtest down -v
+#   docker compose -f deploy/testing/compose/docker-compose.loadtest.yml -p aip-loadtest down -v
 
 name: aip-loadtest
 
@@ -69,7 +69,7 @@ services:
               "--prefill", "${STUB_PREFILL:-1.2}", "--tokens-per-s", "${STUB_TOKENS_PER_S:-25}",
               "--fail-rate", "${STUB_FAIL_RATE:-0}"]
     volumes:
-      - ../../scripts:/scripts:ro
+      - ../../../scripts:/scripts:ro
 
   rag-api:
     image: ${AIP_RAG_IMAGE:-aip/rag:latest}
@@ -82,7 +82,7 @@ services:
     restart: unless-stopped
     environment: *rag-env
     volumes:
-      - ../../solutions/rag:/app/solutions/rag:ro
+      - ../../../solutions/rag:/app/solutions/rag:ro
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -101,7 +101,7 @@ services:
     restart: unless-stopped  # as on the server: the worker exits when RabbitMQ refuses the first connection
     environment: *rag-env
     volumes:
-      - ../../solutions/rag:/app/solutions/rag:ro
+      - ../../../solutions/rag:/app/solutions/rag:ro
     depends_on:
       rabbitmq:
         condition: service_healthy

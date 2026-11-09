@@ -2,7 +2,7 @@
 # Generate Internal Root CA and TLS Certificate for *.cyber.internal and 172.16.20.2
 set -euo pipefail
 
-CERT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/certs"
+CERT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../compose/configs/certs" && pwd)"
 mkdir -p "$CERT_DIR"
 cd "$CERT_DIR"
 

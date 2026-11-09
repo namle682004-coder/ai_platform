@@ -1,5 +1,5 @@
 """
-End-to-end check of the connectors in the loadtest stack (deploy/docker-compose/docker-compose.connectors-e2e.yml).
+End-to-end check of the connectors in the loadtest stack (deploy/testing/compose/docker-compose.connectors-e2e.yml).
 
 Runs inside the rag-api container (`docker exec -i aip-loadtest-rag-api python - < scripts/e2e_connectors.py`):
 drives the real API, lets the real worker sync from scripts/fake_source.py, and checks what reached Mongo,

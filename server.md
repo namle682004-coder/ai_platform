@@ -58,7 +58,7 @@ Hệ thống sử dụng cơ chế **Root CA nội bộ (Cyber Internal Root CA)
 
 ### Vị trí trên Server LAB (`172.16.20.2`):
 ```text
-/home/lenam/aip/app/deploy/server/certs/
+/home/lenam/aip/app/deploy/onprem/compose/configs/certs/
 ```
 
 ---
@@ -85,7 +85,7 @@ Nếu bạn cần xuất lại file chứng chỉ Root CA từ máy tính Window
    - Bấm **Browse...** và đặt tên file: `Cyber-Internal-Root-CA.cer`.
    - Bấm **Next** → **Finish**.
 
-> **Mẹo:** Bạn không nhất thiết phải làm bước xuất này vì file **`Cyber-Internal-Root-CA.cer`** đã được tạo sẵn ngay trong thư mục `deploy/server/certs/` của dự án!
+> **Mẹo:** Bạn không nhất thiết phải làm bước xuất này vì file **`Cyber-Internal-Root-CA.cer`** đã được tạo sẵn ngay trong thư mục `deploy/onprem/compose/configs/certs/` của dự án!
 
 ---
 
@@ -165,7 +165,7 @@ Script sẽ tự động:
 
 ### 2. Kiểm tra nhanh trạng thái dịch vụ trên Server
 ```bash
-ssh msp "docker compose -f ~/aip/app/deploy/docker-compose/docker-compose.server.yml ps"
+ssh msp "docker compose -f ~/aip/app/deploy/onprem/compose/docker-compose.server.yml ps"
 ```
 
 ### 3. Kiểm tra chứng chỉ SSL từ dòng lệnh:

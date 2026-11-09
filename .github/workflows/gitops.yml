@@ -48,17 +48,17 @@ jobs:
       - name: Deploy Staging Charts
         if: steps.kubeconfig.outputs.skip != 'true'
         run: |
-          kubectl apply -f deploy/k8s/namespaces/namespaces.yaml
+          kubectl apply -f deploy/kubernetes/manifests/namespaces/namespaces.yaml
 
-          helm upgrade --install aip-infra deploy/helm/aip-infra \
+          helm upgrade --install aip-infra deploy/kubernetes/helm/aip-infra \
             -n aip-infra --create-namespace --atomic --wait --timeout 5m
 
-          helm upgrade --install aip-control deploy/helm/aip-control \
+          helm upgrade --install aip-control deploy/kubernetes/helm/aip-control \
             -n aip-control --create-namespace --atomic --wait --timeout 5m \
             --set image.tag=${{ github.sha }} \
             --set ragWorker.image.tag=${{ github.sha }}
 
-          helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
+          helm upgrade --install aip-runtimes deploy/kubernetes/helm/aip-runtimes \
             -n aip-multimodal --create-namespace --atomic --wait --timeout 10m \
             --set vllm.image.tag=${{ github.sha }} \
             --set stt.image.tag=${{ github.sha }} \
@@ -103,15 +103,15 @@ jobs:
       - name: Deploy Production Charts
         if: steps.kubeconfig.outputs.skip != 'true'
         run: |
-          kubectl apply -f deploy/k8s/namespaces/namespaces.yaml
+          kubectl apply -f deploy/kubernetes/manifests/namespaces/namespaces.yaml
 
-          helm upgrade --install aip-control deploy/helm/aip-control \
+          helm upgrade --install aip-control deploy/kubernetes/helm/aip-control \
             -n aip-control --atomic --wait --timeout 5m \
             --set image.tag=${{ github.sha }} \
             --set ragWorker.image.tag=${{ github.sha }} \
             --set replicaCount=5
 
-          helm upgrade --install aip-runtimes deploy/helm/aip-runtimes \
+          helm upgrade --install aip-runtimes deploy/kubernetes/helm/aip-runtimes \
             -n aip-multimodal --atomic --wait --timeout 10m \
             --set vllm.image.tag=${{ github.sha }} \
             --set stt.image.tag=${{ github.sha }} \

@@ -2,11 +2,11 @@
 # Read-only health check of the model host: memory, disk, load, GPU, model runtimes, containers.
 # Exit code: 0 healthy, 1 warning, 2 critical – usable from cron, CI or before an evaluation run.
 #
-#   deploy/server/health.sh                 # on the server
-#   ssh msp 'bash -s' < deploy/server/health.sh   # from a workstation
+#   deploy/onprem/host/scripts/health.sh                 # on the server
+#   ssh msp 'bash -s' < deploy/onprem/host/scripts/health.sh   # from a workstation
 set -uo pipefail
 
-WARN_MEM_MB="${AIP_WARN_MEM_MB:-1500}"; CRIT_MEM_MB="${AIP_CRIT_MEM_MB:-600}"
+WARN_MEM_MB="${AIP_WARN_MEM_MB:-4000}"; CRIT_MEM_MB="${AIP_CRIT_MEM_MB:-1500}"
 WARN_DISK_PCT="${AIP_WARN_DISK_PCT:-85}"; CRIT_DISK_PCT="${AIP_CRIT_DISK_PCT:-95}"
 status=0
 flag() { # flag <level 1|2> <message>
@@ -29,7 +29,7 @@ echo "memory: ${avail_mb} MB available of ${total_mb} MB | disk /: ${disk_pct}% 
   || { [ "$disk_pct" -ge "$WARN_DISK_PCT" ] && flag 1 "disk / ${disk_pct}% used"; }
 awk -v l="$load1" -v c="$cpus" 'BEGIN { exit !(l > 4 * c) }' && flag 2 "load $load1 > 4 x $cpus CPUs (host thrashing?)"
 swapon --show | grep -q . || echo "  (no swap configured)"
-systemctl is-active --quiet earlyoom 2>/dev/null || flag 1 "earlyoom is not running (deploy/server/install.sh)"
+systemctl is-active --quiet earlyoom 2>/dev/null || flag 1 "earlyoom is not running (deploy/onprem/host/scripts/install.sh)"
 
 echo "-- GPU"
 nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader 2>/dev/null || flag 1 "nvidia-smi unavailable"
@@ -48,7 +48,7 @@ done
 echo "-- containers (memory use / cap)"
 docker stats --no-stream --format '  {{.Name}}: {{.MemUsage}} ({{.MemPerc}})' 2>/dev/null | grep aip- || echo "  docker unavailable"
 for c in $(docker ps --format '{{.Names}}' 2>/dev/null | grep '^aip-'); do
-  [ "$(docker inspect -f '{{.HostConfig.Memory}}' "$c")" = 0 ] && flag 1 "container $c has no memory cap (deploy/server/apply_container_limits.sh)"
+  [ "$(docker inspect -f '{{.HostConfig.Memory}}' "$c")" = 0 ] && flag 1 "container $c has no memory cap (deploy/onprem/host/scripts/apply_container_limits.sh)"
 done
 
 echo "-- RAG overload state"

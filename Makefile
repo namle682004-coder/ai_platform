@@ -9,7 +9,7 @@
         rag-eval-import rag-eval-checklist rag-eval-calibrate rag-eval rag-gate rag-eval-test rag-connectors-e2e \
         test lint fmt export clean help
 
-COMPOSE_FILE ?= deploy/docker-compose/docker-compose.yml
+COMPOSE_FILE ?= deploy/local/docker-compose.local.yml
 DOCKER_COMPOSE ?= docker compose -f $(COMPOSE_FILE)
 PYTHON ?= ./venv/bin/python
 UVICORN ?= ./venv/bin/uvicorn
@@ -303,8 +303,8 @@ rag-data-gate:
 
 # Connector rehearsal: isolated stack + fake customer source (JSON API + intranet), real API/worker/Mongo/Qdrant.
 # make rag-connectors-e2e [AIP_RAG_IMAGE=aip-rag:ocr-test]   (exit 1 = a check failed; the stack is removed either way)
-RAG_E2E_COMPOSE = -f deploy/docker-compose/docker-compose.loadtest.yml \
-	-f deploy/docker-compose/docker-compose.connectors-e2e.yml -p aip-loadtest
+RAG_E2E_COMPOSE = -f deploy/testing/compose/docker-compose.loadtest.yml \
+	-f deploy/testing/compose/docker-compose.connectors-e2e.yml -p aip-loadtest
 rag-connectors-e2e:
 	docker compose $(RAG_E2E_COMPOSE) up -d --wait
 	docker exec -i aip-loadtest-rag-api python - < scripts/e2e_connectors.py; rc=$$?; \

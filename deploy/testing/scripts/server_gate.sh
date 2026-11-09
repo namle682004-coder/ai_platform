@@ -2,11 +2,11 @@
 # Server readiness gate: one command after a deploy, PASS / FAIL. Standard and thresholds:
 # .claude/skills/rag-production-quality/infra-standard.md
 #
-#   deploy/server/server_gate.sh                      # on msp, against the deployed stack
+#   deploy/testing/scripts/server_gate.sh                      # on msp, against the deployed stack
 #   AIP_GATE_MODE=local scripts/loadtest_local.sh     # same phases on the local rehearsal stack (stub runtimes)
 #
 # Phases (each must pass; a later phase still runs so the report is complete):
-#   0 preflight   host health (deploy/server/health.sh): memory, disk, earlyoom, model runtimes, caps
+#   0 preflight   host health (deploy/onprem/host/scripts/health.sh): memory, disk, earlyoom, model runtimes, caps
 #   1 steady      as many users as chat slots: nearly every request answered, p95 / TTFT within bounds
 #   2 burst       far more users than slots: refused cleanly (429 / 503), nothing hangs, no 5xx
 #   3 ingestion   documents uploaded *during* a chat burst are indexed; chat protections still hold
@@ -24,15 +24,15 @@
 #   AIP_GATE_MODE       server | local (local skips host checks that need systemd / journald)
 #   AIP_GATE_OUT        report folder                         (/tmp/aip_gate_<timestamp>)
 set -uo pipefail
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../../.."
 
 API=${AIP_GATE_API:-http://127.0.0.1:8010}
 TENANT=${AIP_GATE_TENANT:-gate_$(date +%Y%m%d)}
-SLOTS=${AIP_GATE_SLOTS:-2}
+SLOTS=${AIP_GATE_SLOTS:-4}
 MAX_P95=${AIP_GATE_MAX_P95:-45}
 MAX_TTFT=${AIP_GATE_MAX_TTFT:-15}
 MODE=${AIP_GATE_MODE:-server}
-CONTAINERS=${AIP_GATE_CONTAINERS:-aip-rag-api aip-rag-worker aip-gateway}
+CONTAINERS=${AIP_GATE_CONTAINERS:-aip-rag-api aip-rag-worker aip-gateway aip-litellm}
 OUT=${AIP_GATE_OUT:-${TMPDIR:-/tmp}/aip_gate_$(date +%Y%m%d_%H%M%S)}
 PY=${PYTHON:-python3}
 mkdir -p "$OUT"
@@ -60,7 +60,7 @@ runtime_restarts_before=$(model_restarts)
 
 # 0 preflight
 if [ "$MODE" = server ]; then
-  bash deploy/server/health.sh | tee "$OUT/preflight.log"; code=${PIPESTATUS[0]}
+  bash deploy/onprem/host/scripts/health.sh | tee "$OUT/preflight.log"; code=${PIPESTATUS[0]}
   RESULT[0_preflight]=$([ "$code" -le 1 ] && echo PASS || echo "FAIL (health.sh exit $code)")
 else
   curl -fsS -m 5 "$API/health" >/dev/null && RESULT[0_preflight]=PASS || RESULT[0_preflight]="FAIL (API not healthy)"
@@ -117,7 +117,7 @@ if [ "$MODE" = server ]; then
   oom=$(journalctl -k --since "@$start_epoch" 2>/dev/null | grep -ci -E "out of memory|oom-kill")
   [ "${oom:-0}" -gt 0 ] && problems="$problems kernel-oom:$oom"
   after=$(model_restarts); [ "$after" = "$runtime_restarts_before" ] || problems="$problems model-restarts:$runtime_restarts_before->$after"
-  bash deploy/server/health.sh > "$OUT/postcheck.log"; [ $? -le 1 ] || problems="$problems health-critical"
+  bash deploy/onprem/host/scripts/health.sh > "$OUT/postcheck.log"; [ $? -le 1 ] || problems="$problems health-critical"
 fi
 RESULT[4_postcheck]=$([ -z "$problems" ] && echo PASS || echo "FAIL ($problems )")
 

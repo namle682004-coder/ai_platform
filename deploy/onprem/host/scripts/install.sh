@@ -3,8 +3,8 @@
 # out of memory under chat load, stopped answering SSH and ping, and needed a manual reset.
 #
 # Run ON THE SERVER, from a checkout of this repo (needs sudo):
-#   sudo deploy/server/install.sh            # apply
-#   sudo deploy/server/install.sh --dry-run  # only print what would be done
+#   sudo deploy/onprem/host/scripts/install.sh            # apply
+#   sudo deploy/onprem/host/scripts/install.sh --dry-run  # only print what would be done
 #
 # What it sets up (each step is idempotent):
 #   1. Model runtimes as systemd services (aip-model@chat|embedding|rerank) with a memory cap each,
@@ -32,20 +32,20 @@ write() {  # write <path> <content>
 echo "== 1. Model runtimes as systemd services"
 run mkdir -p /etc/aip/models /var/log/aip
 run chown "$RUN_USER" /var/log/aip
-run install -m 0644 "$HERE/models/aip-model@.service" /etc/systemd/system/aip-model@.service
+run install -m 0644 "$HERE/../systemd/aip-model@.service" /etc/systemd/system/aip-model@.service
 for name in chat embedding rerank; do
   env_file="/etc/aip/models/$name.env"
   if [ -f "$env_file" ]; then
-    echo "  keep existing $env_file (compare with $HERE/models/$name.env)"
+    echo "  keep existing $env_file (compare with $HERE/../models/$name.env)"
   else
-    run install -m 0644 "$HERE/models/$name.env" "$env_file"
+    run install -m 0644 "$HERE/../models/$name.env" "$env_file"
   fi
-  src="$env_file"; [ -f "$src" ] || src="$HERE/models/$name.env"
+  src="$env_file"; [ -f "$src" ] || src="$HERE/../models/$name.env"
   high=$(grep -E '^MEMORY_HIGH=' "$src" | cut -d= -f2); max=$(grep -E '^MEMORY_MAX=' "$src" | cut -d= -f2)
   run mkdir -p "/etc/systemd/system/aip-model@$name.service.d"
   write "/etc/systemd/system/aip-model@$name.service.d/memory.conf" "[Service]
-MemoryHigh=${high:-1G}
-MemoryMax=${max:-2G}"
+MemoryHigh=${high:-3G}
+MemoryMax=${max:-5G}"
 done
 # Stop runtimes started by hand (nohup) on the same ports before the services take them over.
 for port in 8011 8012 8013; do
@@ -75,7 +75,7 @@ else
     run fallocate -l 2G /swapfile && run chmod 600 /swapfile && run mkswap /swapfile && run swapon /swapfile
     grep -q '^/swapfile' /etc/fstab || { [ "$DRY" = 1 ] || echo '/swapfile none swap sw 0 0' >> /etc/fstab; }
   else
-    echo "  SKIP: only ${free_gb:-?} GB free on / (need 8). Free disk first (deploy/server/disk_report.sh)."
+    echo "  SKIP: only ${free_gb:-?} GB free on / (need 8). Free disk first (deploy/onprem/host/scripts/disk_report.sh)."
   fi
 fi
 write /etc/sysctl.d/90-aip.conf "vm.swappiness=10
@@ -100,4 +100,4 @@ write /etc/docker/daemon.json.aip-hint "Container logs: add to /etc/docker/daemo
 {\"log-driver\": \"json-file\", \"log-opts\": {\"max-size\": \"20m\", \"max-file\": \"3\"}}"
 
 echo
-echo "Done. Check: systemctl status 'aip-model@*' earlyoom; deploy/server/health.sh"
+echo "Done. Check: systemctl status 'aip-model@*' earlyoom; deploy/onprem/host/scripts/health.sh"
