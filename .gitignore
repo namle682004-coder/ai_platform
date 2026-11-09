@@ -110,14 +110,17 @@ data/
 *.onnx
 *.engine
 *.gguf
-/models/
+models/*
+!models/translation/
 models_cache/
 hf_cache/
-!packages/common/common/models/
+!packages/common/commonmodels/*
+!models/translation/
 
 # --- ML Tracking & Training Runs ---
 wandb/
-runs/
+runs/*
+!runs/**
 checkpoints/
 .neptune/
 
@@ -125,7 +128,10 @@ checkpoints/
 *.log
 logs/
 tmp/
-scratch/
+scratch/*
+!scratch/*.py
+!scratch/*.sh
+!scratch/legacy_scripts/
 *.swp
 *.swo
 *~
@@ -134,7 +140,8 @@ scratch/
 
 # --- IDEs & OS System Files ---
 .idea/
-.vscode/
+.vscode/*
+!.vscode/**
 .DS_Store
 Thumbs.db
 ehthumbs.db
@@ -161,9 +168,29 @@ pnpm-debug.log*
 
 # --- Benchmark Artifacts ---
 # Run outputs are large and reproducible; datasets, configs and code stay versioned.
-benchmarks/rag/runs/
+benchmarks/rag/runs/*
+!runs/**
 
 # --- Deployment ---
 # deploy/ is versioned: scripts/deploy_server.sh ships only committed files. Model runtime settings
 # (deploy/onprem/host/models/*.env) hold no credentials; real secrets stay in untracked env files.
 !deploy/onprem/host/models/*.env
+
+# --- Preserved Internal Certificates ---
+!deploy/onprem/compose/configs/certs/*.crt
+!deploy/onprem/compose/configs/certs/*.key
+!deploy/onprem/compose/configs/certs/*.cer
+
+# --- Preserved Local Model Assets ---
+!models/translation/**
+
+# --- Preserved Diagnostic and Verification Scripts ---
+!scratch/*.py
+!scratch/*.sh
+!scratch/legacy_scripts/**
+
+# --- Preserved Benchmark Runs ---
+!runs/**
+
+# --- Preserved Editor Configuration ---
+!.vscode/**

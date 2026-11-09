@@ -1,0 +1,16 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.analysis.extraPaths": [
+    "\\\\wsl$\\Ubuntu-22.04\\home\\namle\\AI-Projects\\llm-apps\\ai_platform\\platform\\gateway",
+    "\\\\wsl$\\Ubuntu-22.04\\home\\namle\\AI-Projects\\llm-apps\\ai_platform\\solutions\\rag",
+    "\\\\wsl$\\Ubuntu-22.04\\home\\namle\\AI-Projects\\llm-apps\\ai_platform\\platform\\runtimes\\*",
+    "\\\\wsl$\\Ubuntu-22.04\\home\\namle\\AI-Projects\\llm-apps\\ai_platform\\platform\\workers\\dispatcher",
+    "\\\\wsl$\\Ubuntu-22.04\\home\\namle\\AI-Projects\\llm-apps\\ai_platform\\platform\\workers\\callback",
+    "\\\\wsl$\\Ubuntu-22.04\\home\\namle\\AI-Projects\\llm-apps\\ai_platform\\platform\\workers\\media\\*",
+    "\\\\wsl$\\Ubuntu-22.04\\home\\namle\\AI-Projects\\llm-apps\\ai_platform\\packages\\*"
+  ],
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.typeCheckingMode": "off"
+}
